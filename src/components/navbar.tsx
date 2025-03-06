@@ -41,9 +41,10 @@ export default function Navbar() {
         </div>
 
         <div className="flex flex-row gap-x-4 items-center">
-          <Link to="/application" className='button-primary py-2 px-4'>
+          {/* <Link to="/application" className='button-primary py-2 px-4'>
               Stáhnout aplikaci
-          </Link>
+          </Link> */}
+          <a href="https://download.strnadi.cz" className='button-primary py-2 px-4'>Stáhnout aplikaci</a>
           { session
             ? <AccountDropdown />
             : <Link to="/auth/login" className="button-secondary py-2 px-4">Přihlásit se</Link>

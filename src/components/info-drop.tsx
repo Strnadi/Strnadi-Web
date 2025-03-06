@@ -24,6 +24,16 @@ export default function InfoDropdown() {
             O strnadovi
           </Link>
         </li>
+        <li>
+          <Link to="/podminky-pouzivani" className='font-semibold flex-row gap-x-1 items-center block px-4 py-2 hover:bg-gray-100'>
+            Podmínky používání
+          </Link>
+        </li>
+        <li>
+          <Link to="/ochrana-osobnich-udaju" className='font-semibold flex-row gap-x-1 items-center block px-4 py-2 hover:bg-gray-100'>
+            Ochrana osobních údajů
+          </Link>
+        </li>
       </ul>
     </div>
   );

@@ -47,7 +47,7 @@ function App() {
             </Route>
           </Route>
 
-          { ["about-project", "about-bird", "how-to-record"].map((component) => (
+          { ["about-project", "about-bird", "how-to-record", "podminky-pouzivani", "ochrana-osobnich-udaju"].map((component) => (
             <Route
               key={component}
               path={component}
