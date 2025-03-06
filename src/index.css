@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap');
+@import "tailwindcss";
+
+:root {
+  font-family: 'Bricolage Grotesque', Arial, Helvetica, sans-serif;
+}
+
+button {
+  cursor: pointer;
+}
+
+.button-primary {
+  @apply bg-yellow-300 text-[#2D2B18];
+  @apply border-2 rounded-2xl border-none;
+  @apply font-bold;
+}
+
+.button-primary:hover {
+}
+
+.button-secondary {
+  @apply bg-white text-[#2D2B18];
+  @apply border-2 rounded-2xl border-[#E8E8E8];
+  @apply font-bold;
+}
+
+.button-secondary:hover {
+  @apply border-[#cccccc];
+}
+
+.switcher {
+  @apply bg-[#E8E8E8];
+}
+
+.switcher:active {
+
+}
+
+h1 {
+  @apply text-4xl;
+  @apply font-bold;
+  @apply text-black;
+}
+
+h2 {
+  @apply text-2xl;
+  @apply font-bold;
+  @apply text-black;
+}
+
+h3 {
+  @apply text-xl;
+  @apply font-bold;
+  @apply text-black;
+}
+
+h4 {
+  @apply font-bold;
+  @apply text-black;
+}
+
+p {
+  @apply text-gray-500;
+  @apply text-justify;
+}
+
+span {
+  @apply text-black;
+}
+
+a.external {
+  @apply text-blue-600;
+}
+
+
+input[type="text"], input[type="email"], input[type="password"] {
+  @apply border-2;
+  @apply border-[#F6F6F6];
+  @apply rounded-2xl;
+  @apply p-4;
+  @apply min-h-14;
+}
+
+input p {
+  @apply font-semibold;
+}
+
+input[type="text"]:focus {
+  @apply border-[#2D2B18];
+}
