@@ -11,15 +11,6 @@ import compression from 'vite-plugin-compression2';
 
 const ReactCompilerConfig = {  };
 
-const manualChunkMapping = {
-  'maps': ['react-leaflet', '@yaga/leaflet-cached-tile-layer', 'leaflet'],
-  'react-utils': ['react-dropzone', 'react-use', 'jose', 'zustand'],
-  //'firebase': ['@firebase'],
-  'network': ['http-status', 'axios'],
-  'sentry': ['@sentry'],
-  'react': ['react-dom', 'react-router', 'react'],
-};
-
 export default defineConfig({
   plugins: [
     tsconfigPaths(),
@@ -55,12 +46,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          for (const [key, values] of Object.entries(manualChunkMapping)) {
-            if (values.some(value => id.includes(value))) {
-              return key;
-            }
-          }
-
           if (id.includes('node_modules') || id.includes('src/vendor/')) {
             return 'vendor';
           }
