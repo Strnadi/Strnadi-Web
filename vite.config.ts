@@ -11,7 +11,7 @@ export default defineConfig({
     mdx(),
     react(),
     tailwindcss(),
-    //compression({deleteOriginalAssets: true})
+    compression()
   ],
   build: {
     rollupOptions: {
