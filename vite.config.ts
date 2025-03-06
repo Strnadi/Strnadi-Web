@@ -14,7 +14,7 @@ const ReactCompilerConfig = {  };
 const manualChunkMapping = {
   'maps': ['react-leaflet', '@yaga/leaflet-cached-tile-layer', 'leaflet'],
   'react-utils': ['react-dropzone', 'react-use', 'jose', 'zustand'],
-  'firebase': ['@firebase'],
+  //'firebase': ['@firebase'],
   'network': ['http-status', 'axios'],
   'sentry': ['@sentry'],
   'react': ['react-dom', 'react-router', 'react'],
