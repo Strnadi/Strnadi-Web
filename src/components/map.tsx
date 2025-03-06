@@ -1,13 +1,13 @@
 import {useGeolocation} from 'react-use';
 import { MapContainer, TileLayer, Marker, Popup, LayerGroup, useMap, TileLayerProps } from 'react-leaflet';
-import { icon, Icon, LatLng, Map } from 'leaflet';
+import { icon, Icon, LatLng, Map as LeafletMap } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import OptionsIcon from '@/assets/icon-options.svg'
 import InfoIcon from '@/assets/icon-info.svg'
-import { useMapState } from '@/store';
-import { CachedTileLayer } from '@yaga/leaflet-cached-tile-layer';
+import { useMapState } from '@/state/store';
+import { CachedTileLayer } from '@/vendor/cached-tile-map';
 
 const env = import.meta.env;
 
@@ -49,7 +49,7 @@ const icons = {
 };
 
 function Map() {
-  const map = useRef<Map>(null);
+  const map = useRef<LeafletMap>(null);
 
   const selectedLocation = useMapState(state => state.selectedLocation);
   const setSelectedLocation = useMapState(state => state.setSelectedLocation);

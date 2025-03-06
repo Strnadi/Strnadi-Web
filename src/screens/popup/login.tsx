@@ -1,4 +1,4 @@
-import { useAccount } from "@/store";
+import { useAccount } from "@/state/store";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import PopupLayout from "@/layouts/layout-popup";

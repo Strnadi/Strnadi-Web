@@ -1,4 +1,4 @@
-import { useRecordingState } from "@/store";
+import { useRecordingState } from "@/state/store";
 
 export default function AddInfo() {
   const nextStage = useRecordingState((state) => state.nextStage);

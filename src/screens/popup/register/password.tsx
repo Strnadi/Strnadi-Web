@@ -1,4 +1,4 @@
-import { useRegisterState } from "@/store";
+import { useRegisterState } from "@/state/store";
 
 export default function Register1() {
 

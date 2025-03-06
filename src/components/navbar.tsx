@@ -5,7 +5,7 @@ import List from '@/assets/icon-list.svg';
 import NotificationsEmpty from '@/assets/icon-notifications-empty.svg';
 
 import AccountDropdown from "@/components/account-drop";
-import { useAccount } from "@/store";
+import { useAccount } from "@/state/store";
 import InfoDropdown from "./info-drop";
 
 export default function Navbar() {

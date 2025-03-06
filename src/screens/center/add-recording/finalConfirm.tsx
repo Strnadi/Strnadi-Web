@@ -1,5 +1,5 @@
 import useAxios from "@/hooks/useAxios";
-import { useAccount, useRecordingState, useRegisterState } from "@/store";
+import { useAccount, useRecordingState, useRegisterState } from "@/state/store";
 import http_status from "http-status";
 import { Suspense, useState } from "react";
 import { useNavigate } from "react-router";

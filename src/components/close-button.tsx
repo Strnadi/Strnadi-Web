@@ -1,4 +1,4 @@
-import { useRecordingState, useRegisterState } from "@/store";
+import { useRecordingState, useRegisterState } from "@/state/store";
 import { useNavigate } from "react-router";
 
 export default function CloseButton() {

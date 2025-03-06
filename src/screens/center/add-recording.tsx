@@ -1,7 +1,7 @@
 import Loading from "@/components/loading";
 import CenterLayout from "@/layouts/layout-center";
 import PopupLayout from "@/layouts/layout-popup";
-import { useRecordingState, useRegisterState } from "@/store";
+import { useRecordingState, useRegisterState } from "@/state/store";
 import React, { Suspense } from "react";
 
 const componentFiles: Record<number, string> = {

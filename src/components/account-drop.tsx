@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 
-import { useAccount } from '@/store';
+import { useAccount } from '@/state/store';
 
 export default function AccountDropdown() {
   const user = useAccount(state => state.user)!;

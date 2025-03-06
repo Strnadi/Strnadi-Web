@@ -1,5 +1,5 @@
 import useAxios from "@/hooks/useAxios";
-import { useAccount, useRegisterState } from "@/store";
+import { useAccount, useRegisterState } from "@/state/store";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 

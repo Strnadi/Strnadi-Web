@@ -11,5 +11,7 @@ const firebaseConfig = {
   measurementId: "G-RST36B5B15"
 };
 
+const vapidKey = "BKOP5EHJJ_C3vVZB5-ZaY80d2eMr0kticqRqXiJRdA0ih9iLe2dnPnwwz-CrHTql6kH4ztle_1fmAMxffSWL574";
+
 export const app = initializeApp(firebaseConfig);
 export const messaging = getMessaging(app);

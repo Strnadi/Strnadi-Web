@@ -1,4 +1,4 @@
-import { useAccount, useRecordingState } from "@/store";
+import { useAccount, useRecordingState } from "@/state/store";
 import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 

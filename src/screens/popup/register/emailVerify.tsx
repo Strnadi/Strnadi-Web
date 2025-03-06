@@ -1,4 +1,4 @@
-import { useRegisterState } from '@/store';
+import { useRegisterState } from '@/state/store';
 import { useState, useRef, useEffect } from 'react';
 
 function DigitCodeInput() {

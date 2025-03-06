@@ -1,6 +1,6 @@
 import Loading from "@/components/loading";
 import PopupLayout from "@/layouts/layout-popup";
-import { useRegisterState } from "@/store";
+import { useRegisterState } from "@/state/store";
 import React, { Suspense } from "react";
 
 const componentFiles: Record<number, string> = {

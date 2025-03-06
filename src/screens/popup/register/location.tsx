@@ -1,4 +1,4 @@
-import { useRegisterState } from "@/store";
+import { useRegisterState } from "@/state/store";
 import { useNavigate } from "react-router";
 
 export default function Register1() {
