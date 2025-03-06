@@ -1,45 +1,44 @@
 import useAxios from "@/hooks/useAxios";
 import { useAccount, useRegisterState } from "@/store";
-import axios from "axios";
-import http_status from "http-status";
-import { Suspense, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { useEffectOnce } from "react-use";
 
 const env = import.meta.env;
 
 export default function Register1() {
-
   const navigate = useNavigate();
   const registerInfo = useRegisterState();
   const resetStage = useRegisterState(state => state.resetStage);
   const setSession = useAccount(state => state.login);
+  const [shouldFetch, setShouldFetch] = useState(true);
 
-  let isLoading, error, data: string | null;
-
-  const register = () => (
-    { loading: isLoading, error, data } = useAxios<string>(
-      'post',
-      `${env.VITE_API_URL}/auth/sign-up`,
-      {
-        email: registerInfo.email,
-        password: registerInfo.password,
-        nickname: registerInfo.nickname,
-        firstName: registerInfo.name,
-        lastName: registerInfo.surname,
-        // todo: city, postal code
-      }
-    )
-  )
-
-  useEffectOnce(() => {
-    register();
-  })
+  // Force re-fetch when shouldFetch changes
+  const key = shouldFetch ? 'fetch' : 'idle';
+  
+  const { data, loading: isLoading, error } = useAxios<string>(
+    'post',
+    `${env.VITE_API_URL}/auth/sign-up`,
+    {
+      email: registerInfo.email,
+      password: registerInfo.password,
+      nickname: registerInfo.nickname,
+      firstName: registerInfo.name,
+      lastName: registerInfo.surname,
+      // todo: city, postal code
+    }
+  );
 
   const onClick = () => {
     navigate("/");
-    setSession(data);
+    if (data) {
+      setSession(data);
+    }
     resetStage();      
+  }
+
+  const retryRegistration = () => {
+    // Toggle to trigger a re-fetch
+    setShouldFetch(prev => !prev);
   }
 
   if (isLoading) {
@@ -51,7 +50,7 @@ export default function Register1() {
       <div>
         <h1>Chyba</h1>
         <p>{error}</p>
-        <button onClick={register}>Zkusit znovu</button>
+        <button onClick={retryRegistration}>Zkusit znovu</button>
       </div>
     );
   }

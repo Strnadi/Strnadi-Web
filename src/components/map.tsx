@@ -1,5 +1,5 @@
 import {useGeolocation} from 'react-use';
-import { MapContainer, TileLayer, Marker, Popup, LayerGroup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, LayerGroup, useMap, TileLayerProps } from 'react-leaflet';
 import { icon, Icon, LatLng, Map } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import OptionsIcon from '@/assets/icon-options.svg'
 import InfoIcon from '@/assets/icon-info.svg'
 import { useMapState } from '@/store';
+import { CachedTileLayer } from '@yaga/leaflet-cached-tile-layer';
 
 const env = import.meta.env;
 
@@ -79,24 +80,39 @@ function Map() {
     return null;
   };
 
+  const CachedMapLayer = (props: TileLayerProps) => {
+    const leafletMap = useMap();
+
+    new CachedTileLayer(props.url, {
+      ...props,
+      databaseName: "tile-cache-data",
+      databaseVersion: 1,
+      objectStoreName: "OSM",
+      crawlDelay: 0,
+      maxAge: 1000 * 60 * 60 * 24 * 7
+    }).addTo(leafletMap);
+
+    return null;
+  }
+
   return (
     <MapContainer
       ref={map}
-      zoom={8}
+      zoom={10}
       center={[50, 15]}
       scrollWheelZoom={true}
       style={{ height: '100vh', width: '100%' }}
       zoomControl={false}
     >
       <MapEvents />
-      <TileLayer
+      <CachedMapLayer
         attribution='<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>'
         url={`https://api.mapy.cz/v1/maptiles/${mode}/256/{z}/{x}/{y}?apikey=${env.VITE_MAPYCZ_API_KEY}`}
         zIndex={1}
       />
 
       { mode == "aerial" &&
-        <TileLayer
+        <CachedMapLayer
           attribution='<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>'
           url={`https://api.mapy.cz/v1/maptiles/names-overlay/256/{z}/{x}/{y}?apikey=${env.VITE_MAPYCZ_API_KEY}`}
           zIndex={2}

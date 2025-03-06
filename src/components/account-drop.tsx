@@ -3,13 +3,13 @@ import { Link } from 'react-router';
 import { useAccount } from '@/store';
 
 export default function AccountDropdown() {
-  const session = useAccount(state => state.token);
+  const user = useAccount(state => state.user)!;
   const logout = useAccount(state => state.logout);
 
   return (
     <div className="relative group">
       <button className="flex items-center focus:outline-none">
-        { session ? session.sub : "Účet"}
+        { user.firstName } { user.lastName }
         <svg
           className="ml-1 h-4 w-4 fill-current text-gray-500 group-hover:text-gray-600"
           viewBox="0 0 20 20"
@@ -19,32 +19,19 @@ export default function AccountDropdown() {
         </svg>
       </button>
       <ul className="absolute right-0 mt-2 w-40 z-50 bg-white border border-gray-200 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        {
-        session ?
-          <>
-            <li>
-              <Link to="/account/profile">
-                <div className="block px-4 py-2 hover:bg-gray-100">Profil</div>
-              </Link>
-            </li>
-            <li>
-              <Link to="/account/settings">
-                <div className="block px-4 py-2 hover:bg-gray-100">Nastavení</div>
-              </Link>
-            </li>
-            <li className="cursor-pointer" onClick={logout}>
-              <div className="block px-4 py-2 hover:bg-gray-100">Odhlásit se</div>
-            </li>
-          </>
-        :
-          <>
-            <li>
-              <Link to="/auth/login">
-                <div className="block px-4 py-2 hover:bg-gray-100">Přihlásit se</div>
-              </Link>
-            </li>
-          </>
-        }
+        <li>
+          <Link to="/account/profile">
+            <div className="block px-4 py-2 hover:bg-gray-100">Profil</div>
+          </Link>
+        </li>
+        <li>
+          <Link to="/account/settings">
+            <div className="block px-4 py-2 hover:bg-gray-100">Nastavení</div>
+          </Link>
+        </li>
+        <li className="cursor-pointer" onClick={logout}>
+          <div className="block px-4 py-2 hover:bg-gray-100">Odhlásit se</div>
+        </li>
       </ul>
     </div>
   );
