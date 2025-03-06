@@ -12,12 +12,12 @@ import compression from 'vite-plugin-compression2';
 const ReactCompilerConfig = {  };
 
 const manualChunkMapping = {
-  'react': ['react', 'react-dom', 'react-router'],
-  'maps': ['leaflet', 'react-leaflet', '@yaga/leaflet-cached-tile-layer'],
+  'maps': ['react-leaflet', '@yaga/leaflet-cached-tile-layer', 'leaflet'],
   'react-utils': ['react-dropzone', 'react-use', 'jose', 'zustand'],
+  'firebase': ['@firebase'],
   'network': ['http-status', 'axios'],
   'sentry': ['@sentry'],
-  'firebase': ['firebase/app', 'firebase/messaging']
+  'react': ['react-dom', 'react-router', 'react'],
 };
 
 export default defineConfig({
@@ -46,7 +46,8 @@ export default defineConfig({
     }),
     visualizer({
       gzipSize: true,
-      open: true
+      open: true,
+      template: 'flamegraph'
     }),
   ],
 
@@ -54,13 +55,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Check if the id contains any of the keys in manualChunkMapping
           for (const [key, values] of Object.entries(manualChunkMapping)) {
             if (values.some(value => id.includes(value))) {
               return key;
             }
           }
-          // Default chunk name for other modules
+
           if (id.includes('node_modules') || id.includes('src/vendor/')) {
             return 'vendor';
           }
@@ -73,21 +73,16 @@ export default defineConfig({
 
   resolve: {
     alias: [
-      // Replace imports of leaflet-src.js (optionally with query string) with leaflet.js
       {
         find: /leaflet\/dist\/leaflet-src\.js(\?commonjs-es-import)?$/,
         replacement: 'leaflet/dist/leaflet.js'
       },
-      // Ensure the base "leaflet" import uses the ES version
       {
         find: /^leaflet$/,
         replacement: 'leaflet/dist/leaflet.js'
       }
     ],
-    dedupe: ['bn.js']
-  },
 
-  optimizeDeps: {
-    exclude: ['leaflet']
-  },
+    dedupe: ['bn.js']
+  }
 })

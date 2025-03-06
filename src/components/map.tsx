@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import OptionsIcon from '@/assets/icon-options.svg'
 import InfoIcon from '@/assets/icon-info.svg'
 import { useMapState } from '@/state/store';
-import { CachedTileLayer } from '@/vendor/cached-tile-map';
+import { CachedTileLayer } from '@yaga/leaflet-cached-tile-layer';
 
 const env = import.meta.env;
 
