@@ -2,7 +2,10 @@ import { useAccount } from "@/state/store";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import PopupLayout from "@/layouts/layout-popup";
-import useAxios from "@/hooks/useAxios";
+import { LoginRequest, Token } from "@/types/api/auth";
+import { useMutation } from "@tanstack/react-query";
+import { postLogin } from "@/api/account";
+import { useEffectOnce } from "react-use";
 
 const env = import.meta.env;
 
@@ -10,25 +13,20 @@ export default function Login() {
   const navigate = useNavigate();
   const login = useAccount(state => state.login);
 
-  const [loginParams, setLoginParams] = useState<{ email: string; password: string } | null>(null);
+  const [loginParams, setLoginParams] = useState<LoginRequest | null>(null);
 
-  const { data, loading, error } = useAxios<string>(
-    loginParams ? 'post' : null,
-    `${env.VITE_API_URL}/auth/login`,
-    loginParams
-  );
-
-  useEffect(() => {
-    if (data) {
+  const mutation = useMutation({
+    mutationFn: (loginInfo: LoginRequest) => postLogin(loginInfo),
+    onSuccess: (data: Token) => {
       login(data);
       navigate('/');
     }
-  }, [data]);
+  })
 
   const handleLogin = (formData: FormData) => {
     const email = formData.get("mail") as string;
     const password = formData.get("pass") as string;
-    setLoginParams({ email, password });
+    mutation.mutate({ email, password })
   };
 
   return (
@@ -36,16 +34,16 @@ export default function Login() {
       <h1>Login</h1>
 
       <div className="flex flex-col items-center gap-y-4 w-full">
-        {loading && <div>Načítání...</div>}
-        {error && <div>Chyba: {error}</div>}
+        {mutation.isPending && <div>Načítání...</div>}
+        {mutation.error && <div>Chyba: {mutation.error.message}</div>}
         <form className="flex flex-col w-full" action={handleLogin}>
           <div className="flex flex-col gap-x-2 w-full">
             <input name="mail" type="email" placeholder="E-Mail" />
             <input name="pass" type="password" placeholder="Heslo" />
           </div>
-          <button type="submit" disabled={loading}>Přihlásit</button>
+          <button type="submit" disabled={mutation.isPending}>Přihlásit</button>
         </form>
-        <button onClick={() => navigate("/auth/register")} disabled={loading}>
+        <button onClick={() => navigate("/auth/register")}>
           Nemáte ještě účet? Zaregistrujte se.
         </button>
       </div>

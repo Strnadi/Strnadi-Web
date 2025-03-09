@@ -4,8 +4,16 @@ import * as Sentry from '@sentry/react';
 import { BrowserRouter } from 'react-router';
 import { createRoot } from 'react-dom/client';
 import { StrictMode } from 'react';
+import {
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query'
+
 import App from '@/App';
 import '@/index.css';
+
+// Create a client
+const queryClient = new QueryClient()
 
 const rootElement = document.getElementById('root')!;
 
@@ -24,9 +32,11 @@ const rootOptions = {
 
 const app = (
   <StrictMode>
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </BrowserRouter>
   </StrictMode>
 );
 

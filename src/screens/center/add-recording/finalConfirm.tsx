@@ -1,7 +1,7 @@
-import useAxios from "@/hooks/useAxios";
-import { useAccount, useRecordingState, useRegisterState } from "@/state/store";
-import http_status from "http-status";
-import { Suspense, useState } from "react";
+import { postRecording } from "@/api/recording";
+import { useRecordingState } from "@/state/store";
+import { RecordingUploadReq } from "@/types/api/recording";
+import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { useEffectOnce } from "react-use";
 
@@ -12,33 +12,35 @@ export default function Register1() {
   const navigate = useNavigate();
   const resetStage = useRecordingState(state => state.resetStage);
 
-  let isLoading, error, data: string | null;
+  const mutation = useMutation({
+    mutationFn: (recording: RecordingUploadReq) => postRecording(recording)
+  })
 
-  const submit = () => (
-    { loading: isLoading, error, data } = useAxios<string>(
-      'post',
-      `${env.VITE_API_URL}/`,
-      {
-      }
-    )
-  )
+  const upload = () => mutation.mutate({
+    createdAt: "",
+    estimatedBirdsCount: 0,
+    byApp: false
+  });
 
-  useEffectOnce(() => { submit() });
+  useEffectOnce(() => {
+    upload();
+  })
 
   const onClick = () => {
     navigate("/");
     resetStage();
   }
 
-  if (isLoading) {
+  if (mutation.isPending) {
     return <p>Nahrávání vaší nahrávky...</p>;
   }
 
-  if (error) {
+  if (mutation.error) {
     return (
       <div>
         <h1>Chyba</h1>
-        <p>{error}</p>
+        <p>{mutation.error.message}</p>
+        <button onClick={upload}>Opakovat</button>
       </div>
     );
   }

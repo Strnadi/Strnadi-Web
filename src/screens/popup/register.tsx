@@ -1,4 +1,5 @@
 import Loading from "@/components/loading";
+import SegmentedProgressBar from "@/components/segmented-progress";
 import PopupLayout from "@/layouts/layout-popup";
 import { useRegisterState } from "@/state/store";
 import React, { Suspense } from "react";
@@ -23,6 +24,7 @@ export default function Register() {
       <h1 className='text-2xl font-bold'>Registrace</h1>
       <Suspense fallback={<Loading />}>
         <Component />
+        <SegmentedProgressBar totalSegments={6} progress={stage} />
       </Suspense>
     </PopupLayout>
   );

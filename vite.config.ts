@@ -8,8 +8,11 @@ import tailwindcss from '@tailwindcss/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import mdx from '@mdx-js/rollup';
 import compression from 'vite-plugin-compression2';
+import MillionLint from "@million/lint";
 
-const ReactCompilerConfig = {  };
+const ReactCompilerConfig = {
+  noEmit: process.env.MODE !== 'production'
+};
 
 export default defineConfig({
   plugins: [
@@ -26,9 +29,12 @@ export default defineConfig({
     compression(),
     nodePolyfills(),
     VitePWA({
-      srcDir: 'src/services/workers',
-      filename: 'notifications.ts',
-      strategies: 'injectManifest'
+      srcDir: 'src/services',
+      filename: 'worker.ts',
+      strategies: 'injectManifest',
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 10*1024*1024
+      }
     }),
     sentryVitePlugin({
       org: "delta-strnadi",
@@ -40,6 +46,7 @@ export default defineConfig({
       open: true,
       template: 'flamegraph'
     }),
+    // MillionLint.vite()
   ],
 
   build: {

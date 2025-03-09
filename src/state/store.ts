@@ -5,6 +5,8 @@ import { combine } from "zustand/middleware";
 import { persist, createJSONStorage } from "zustand/middleware";
 import axios from "axios";
 import { LatLng } from "leaflet";
+import { User } from "@/types/user";
+import { getUser } from "@/api/account";
 
 const env = import.meta.env;
 
@@ -12,20 +14,9 @@ const useAccount = create(
   persist(
     combine(
       {
+        token_string: null as string | null,
         token: null as string | null,
-        user: null as {
-          id: number,
-          email: string,
-          firstName: string,
-          lastName: string,
-          nickname: string,
-          creationDate: string,
-          consent: boolean,
-          isEmailVerified: boolean,
-          password: string,
-          role: "user" | "admin",
-          profilePicture: URL | null
-        } | null
+        user: null as User | null
       },
       (set) => ({
         logout: () => set(() => ({ token: null })),
@@ -34,20 +25,13 @@ const useAccount = create(
             return;
           }
 
-          try {
-            const response = await axios.get(`${env.VITE_API_URL}/users`, {
-              headers: {
-                Authorization: `Bearer ${jwt}`,
-              },
-            });
+          const user = await getUser(jwt);
 
-            set(() => ({ token: jose.decodeJwt(jwt) }));
-            set(() => ({ user: response.data }));
-  
-          } catch (error) {
-            console.log("Cannot fetch user info: ", error);
-            return;
-          }
+          set(() => ({
+            token: jose.decodeJwt(jwt),
+            token_string: jwt,
+            user: user
+          }));
         },
       })
     ),
@@ -90,6 +74,9 @@ const useRecordingState = create(
       stage: 1,
       recordings: null as File[] | null,
       photos: null as File[] | null,
+      location: null as LatLng | null,
+      description: "",
+      title: "",
     },
     (set) => ({
       resetStage: () => set(() => ({ stage: 1 })),

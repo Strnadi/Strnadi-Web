@@ -10,6 +10,8 @@ import AddRecording from '@/screens/center/add-recording';
 import Register from './screens/popup/register';
 import CenterText from './components/text-center';
 import PopupText from './components/text-popup';
+import NotFound from './components/not-found';
+import PopupLayout from './layouts/layout-popup';
 
 function App() {
 
@@ -60,6 +62,8 @@ function App() {
           </Route>
 
           <Route path="add-recording" element={<AddRecording />} />
+
+          <Route path='*' element={<PopupLayout><NotFound /></PopupLayout>} />
 
         </Routes>
       }

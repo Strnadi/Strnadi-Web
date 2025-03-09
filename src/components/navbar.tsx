@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router";
+import { Link } from "react-router";
 
 import Upload from '@/assets/icon-upload.svg';
 import List from '@/assets/icon-list.svg';
@@ -10,8 +10,6 @@ import InfoDropdown from "./info-drop";
 
 export default function Navbar() {
 
-  const location = useLocation();
-  const pathname = location.pathname;
   const session = useAccount(state => state.token);
 
   return (
@@ -23,18 +21,22 @@ export default function Navbar() {
               <img src="/logo.svg" />
             </div>
           </Link>
-          <Link to="/add-recording" className='font-semibold flex flex-row gap-x-1 items-center'>
-            <img src={Upload} />
-            Nahrát
-          </Link>
-          <Link to="/account/my-recordings" className='font-semibold flex flex-row gap-x-1 items-center'>
-            <img src={List} />
-            Moje záznamy
-          </Link>
-          <Link to="/account/notifications" className='font-semibold flex flex-row gap-x-1 items-center'>
-            <img src={NotificationsEmpty} />
-            Oznámení
-          </Link>
+          {session &&
+            <>
+              <Link to="/add-recording" className='font-semibold flex flex-row gap-x-1 items-center'>
+                <img src={Upload} />
+                Nahrát
+              </Link>
+              <Link to="/account/my-recordings" className='font-semibold flex flex-row gap-x-1 items-center'>
+                <img src={List} />
+                Moje záznamy
+              </Link>
+              <Link to="/account/notifications" className='font-semibold flex flex-row gap-x-1 items-center'>
+                <img src={NotificationsEmpty} />
+                Oznámení
+              </Link>
+            </>
+        }
           <div className='font-semibold flex flex-row gap-x-1 items-center'>            
             <InfoDropdown />
           </div>

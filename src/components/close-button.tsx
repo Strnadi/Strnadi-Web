@@ -14,7 +14,7 @@ export default function CloseButton() {
   }
 
   return (
-    <button className="inline w-5 h-min text-4xl" onClick={ resetState }>&times;</button>
+    <button className="inline-block w-5 h-full text-4xl" onClick={ resetState }>&times;</button>
   );
 
 }
