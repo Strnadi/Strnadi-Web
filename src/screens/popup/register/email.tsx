@@ -18,10 +18,10 @@ export default function Register1() {
     <div>
       <form className="flex flex-col" action={handleRegister}>
         <input name="email" type="email" placeholder="E-Mail" />
-        <button type="submit">Pokračovat</button>
+        <button className="primary p-2 m-2" type="submit">Pokračovat</button>
       </form>
 
-      <button onClick={() => navigate("/auth/login")}>
+      <button className="secondary" onClick={() => navigate("/auth/login")}>
         Máte již účet? Přihlašte se.
       </button>
     </div>

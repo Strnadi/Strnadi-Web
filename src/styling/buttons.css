@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+.button-primary, button, input[type="button"], input[type="submit"] {
+  cursor: pointer;
+  @apply font-semibold;
+}
+
+.button-primary, button.primary, input[type="button"].primary {
+  @apply bg-yellow-300 text-[#2D2B18];
+  @apply border-2 rounded-2xl border-none;
+  @apply font-bold;
+}
+
+.button-primary:hover, button.primary:hover, input[type="button"].primary:hover {
+}
+
+.button-secondary, button.secondary, input[type="button"].secondary {
+  @apply bg-white text-[#2D2B18];
+  @apply border-2 rounded-2xl border-[#E8E8E8];
+  @apply font-bold;
+}
+
+.button-secondary, button.secondary:hover {
+  @apply border-[#cccccc];
+}

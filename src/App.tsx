@@ -12,6 +12,7 @@ import CenterText from './components/text-center';
 import PopupText from './components/text-popup';
 import NotFound from './components/not-found';
 import PopupLayout from './layouts/layout-popup';
+import MapOptions from './screens/popup/map-options';
 
 function App() {
 
@@ -62,6 +63,8 @@ function App() {
           </Route>
 
           <Route path="add-recording" element={<AddRecording />} />
+
+          <Route path="map-options" element={<MapOptions />} />
 
           <Route path='*' element={<PopupLayout><NotFound /></PopupLayout>} />
 

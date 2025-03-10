@@ -1,5 +1,5 @@
 import './services/sentry';
-import './services/firebase';
+import './services/firebase-provider';
 import * as Sentry from '@sentry/react';
 import { BrowserRouter } from 'react-router';
 import { createRoot } from 'react-dom/client';

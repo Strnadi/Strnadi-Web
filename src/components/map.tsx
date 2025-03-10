@@ -8,43 +8,44 @@ import OptionsIcon from '@/assets/icon-options.svg'
 import InfoIcon from '@/assets/icon-info.svg'
 import { useMapState } from '@/state/store';
 import { CachedTileLayer } from '@yaga/leaflet-cached-tile-layer';
+import { Link } from 'react-router';
 
 const env = import.meta.env;
 
 const icons = {
   BC: new Icon({
     iconUrl: '/dialects/dialect-bc.svg',
-    iconSize: [16, 16]
+    iconSize: [24, 24]
   }),
 
   BE: new Icon({
     iconUrl: '/dialects/dialect-be.svg',
-    iconSize: [16, 16]
+    iconSize: [24, 24]
   }),
 
   XB: new Icon({
     iconUrl: '/dialects/dialect-xb.svg',
-    iconSize: [16, 16]
+    iconSize: [24, 24]
   }),
 
   BhBl: new Icon({
     iconUrl: '/dialects/dialect-bhbl.svg',
-    iconSize: [16, 16]
+    iconSize: [24, 24]
   }),
 
   BlBH: new Icon({
     iconUrl: '/dialects/dialect-blbh.svg',
-    iconSize: [16, 16]
+    iconSize: [24, 24]
   }),
 
   Other: new Icon({
     iconUrl: '/dialects/dialect-other.svg',
-    iconSize: [16, 16]
+    iconSize: [24, 24]
   }),
 
   NotSure: new Icon({
     iconUrl: '/dialects/dialect-notsure.svg',
-    iconSize: [16, 16]
+    iconSize: [24, 24]
   })
 };
 
@@ -66,34 +67,95 @@ function Map() {
 
   const MapEvents = () => {
     const leafletMap = useMap();
+    const setSelectedLocation = useMapState(state => state.setSelectedLocation);
+
+    const handleMapClick = useCallback((event) => {
+      setSelectedLocation(event.latlng);
+    }, [setSelectedLocation]);
 
     useEffect(() => {
-      leafletMap.on("click", (event) => {
-        setSelectedLocation(event.latlng);
-      });
+      leafletMap.on("click", handleMapClick);
 
       return () => {
-        leafletMap.off("click");
+        leafletMap.off("click", handleMapClick);
       };
-    }, [leafletMap]);
+    }, [leafletMap, handleMapClick]);
 
     return null;
   };
 
   const CachedMapLayer = (props: TileLayerProps) => {
     const leafletMap = useMap();
-
-    new CachedTileLayer(props.url, {
-      ...props,
-      databaseName: "tile-cache-data",
-      databaseVersion: 1,
-      objectStoreName: "OSM",
-      crawlDelay: 0,
-      maxAge: 1000 * 60 * 60 * 24 * 7
-    }).addTo(leafletMap);
+    
+    useEffect(() => {
+      // Create the layer
+      const tileLayer = new CachedTileLayer(props.url, {
+        ...props,
+        databaseName: "tile-cache-data",
+        databaseVersion: 1,
+        objectStoreName: "OSM",
+        crawlDelay: 0,
+        maxAge: 1000 * 60 * 60 * 24 * 7
+      });
+      
+      // Add it to the map
+      tileLayer.addTo(leafletMap);
+      
+      // Clean up on unmount or when props change
+      return () => {
+        if (leafletMap && tileLayer) {
+          leafletMap.removeLayer(tileLayer);
+        }
+      };
+    }, [leafletMap, props.url, props.zIndex]);
 
     return null;
   }
+
+  // Stable map layers that don't need to re-render when location changes
+  const MapLayers = useCallback(() => {
+    return (
+      <>
+        <TileLayer
+          url='/map-loading.png'
+          zIndex={0}
+        />
+
+        <CachedMapLayer
+          attribution='<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>'
+          url={`https://api.mapy.cz/v1/maptiles/${mode}/256/{z}/{x}/{y}?apikey=${env.VITE_MAPYCZ_API_KEY}`}
+          zIndex={1}
+        />
+
+        {mode === "aerial" && (
+          <CachedMapLayer
+            attribution='<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>'
+            url={`https://api.mapy.cz/v1/maptiles/names-overlay/256/{z}/{x}/{y}?apikey=${env.VITE_MAPYCZ_API_KEY}`}
+            zIndex={2}
+          />
+        )}
+      </>
+    );
+  }, [mode]);
+  
+  // Dynamic markers that depend on location state
+  const MapMarkers = useCallback(() => {
+    return (
+      <>
+        {!location_loading && location_latitude && location_longitude && (
+          <Marker position={[location_latitude, location_longitude]} icon={icons.Other}>
+            <Popup>Your current location</Popup>
+          </Marker>
+        )}
+
+        {selectedLocation && (
+          <Marker position={selectedLocation} icon={icons.XB}>
+            <Popup>Označená poloha</Popup>
+          </Marker>
+        )}
+      </>
+    );
+  }, [location_loading, location_latitude, location_longitude, selectedLocation]);
 
   return (
     <MapContainer
@@ -105,39 +167,12 @@ function Map() {
       zoomControl={false}
     >
       <MapEvents />
-      <CachedMapLayer
-        attribution='<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>'
-        url={`https://api.mapy.cz/v1/maptiles/${mode}/256/{z}/{x}/{y}?apikey=${env.VITE_MAPYCZ_API_KEY}`}
-        zIndex={1}
-      />
+      <MapLayers />
+      <MapMarkers />
 
-      { mode == "aerial" &&
-        <CachedMapLayer
-          attribution='<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>'
-          url={`https://api.mapy.cz/v1/maptiles/names-overlay/256/{z}/{x}/{y}?apikey=${env.VITE_MAPYCZ_API_KEY}`}
-          zIndex={2}
-        />
-      }
-
-      {(!location_loading && location_latitude && location_longitude) && (
-        <Marker position={[location_latitude, location_longitude]} icon={icons.Other}>
-          <Popup>
-            Your current location
-          </Popup>
-        </Marker>
-      )}
-
-      { selectedLocation &&
-        <Marker position={selectedLocation} icon={icons.XB}>
-          <Popup>
-            Označená poloha
-          </Popup>
-        </Marker>
-      }
-
-      <button className='drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white absolute left-0 bottom-0 z-[calc(1e10)]'><img src={InfoIcon} /></button>
-      <button className='drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white absolute right-0 bottom-0 z-[calc(1e10)]'><img src={OptionsIcon} /></button>
-      <button className='drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white absolute right-0 bottom-0 z-[calc(1e10)]'><img src={OptionsIcon} /></button>
+      <Link to={"/map-options"} className='drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white absolute right-0 bottom-0 z-[calc(1e10)]'>
+        <img src={OptionsIcon} />
+      </Link>
     </MapContainer>
   );
 }

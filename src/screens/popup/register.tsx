@@ -10,7 +10,8 @@ const componentFiles: Record<number, string> = {
   3: 'personalInfo',
   4: 'password',
   5: 'location',
-  6: 'finalConfirm'
+  6: 'agree',
+  7: 'finalConfirm'
 };
 
 export default function Register() {
@@ -19,12 +20,14 @@ export default function Register() {
 
   const Component = React.lazy(() => import(`./register/${componentFiles[stage]}.tsx`));
 
+  const totalSegments = React.useMemo(() => Object.keys(componentFiles).length, []);
+
   return (
     <PopupLayout>
       <h1 className='text-2xl font-bold'>Registrace</h1>
       <Suspense fallback={<Loading />}>
         <Component />
-        <SegmentedProgressBar totalSegments={6} progress={stage} />
+        <SegmentedProgressBar totalSegments={totalSegments} progress={stage} />
       </Suspense>
     </PopupLayout>
   );

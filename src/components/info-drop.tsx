@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import InfoIcon from '@/assets/icon-info.svg';
+import InfoDropdownItems from './info-list-items';
 
 export default function InfoDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,32 +42,9 @@ export default function InfoDropdown() {
         <ul 
           className="absolute right-0 mt-2 w-40 z-50 bg-white border border-gray-200 rounded shadow-lg"
           onMouseLeave={() => setIsOpen(false)}
+          onClick={() => setIsOpen(false)}
         >
-          <li>
-            <Link to="/how-to-record" className='font-semibold flex-row gap-x-1 items-center block px-4 py-2 hover:bg-gray-100' onClick={handleLinkClick}>
-              Jak nahrávat
-            </Link>
-          </li>
-          <li>
-            <Link to="/about-project" className='font-semibold flex-row gap-x-1 items-center block px-4 py-2 hover:bg-gray-100' onClick={handleLinkClick}>
-              O projektu
-            </Link>
-          </li>
-          <li>
-            <Link to="/about-bird" className='font-semibold flex-row gap-x-1 items-center block px-4 py-2 hover:bg-gray-100' onClick={handleLinkClick}>
-              O strnadovi
-            </Link>
-          </li>
-          <li>
-            <Link to="/podminky-pouzivani" className='font-semibold flex-row gap-x-1 items-center block px-4 py-2 hover:bg-gray-100' onClick={handleLinkClick}>
-              Podmínky používání
-            </Link>
-          </li>
-          <li>
-            <Link to="/ochrana-osobnich-udaju" className='font-semibold flex-row gap-x-1 items-center block px-4 py-2 hover:bg-gray-100' onClick={handleLinkClick}>
-              Ochrana osobních údajů
-            </Link>
-          </li>
+          <InfoDropdownItems />
         </ul>
       )}
     </div>

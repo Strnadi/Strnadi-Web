@@ -3,10 +3,10 @@ import { useState, useRef, useEffect } from 'react';
 
 function DigitCodeInput() {
   const [code, setCode] = useState('');
+  const [isInvalid, setIsInvalid] = useState(false);
   const inputRef = useRef(null);
 
   const nextStage = useRegisterState(state => state.nextStage);
-
 
   // Auto-focus the hidden input on mount
   useEffect(() => {
@@ -20,13 +20,20 @@ function DigitCodeInput() {
     let { value } = e.target;
     value = value.replace(/\D/g, ''); // Remove any non-digit characters
 
-    if (value.length > 6) {
-      value = value.slice(0, 6);
+    if (isInvalid) {
+      setIsInvalid(false);
+      value = value[value.length - 1];
     }
 
     if (value.length === 6) {
-      nextStage();
-      return;
+
+      // Here we would typically verify the code with an API
+      // For now, we'll simulate validation (replace with actual validation)
+      if (value === '123456') { // Example valid code
+        nextStage();
+      } else {
+        setIsInvalid(true);
+      }
     }
 
     setCode(value);
@@ -38,9 +45,11 @@ function DigitCodeInput() {
     boxes.push(
       <div
         key={i}
-        className="w-10 h-10 border border-gray-300 rounded-lg text-xl flex items-center justify-center"
+        className={`w-10 h-10 border border-gray-300 rounded-lg text-xl flex items-center justify-center ${
+          isInvalid ? 'bg-red-100 border-red-300' : ''
+        }`}
       >
-        {code[i] || ''}
+        {code[i] || '-'}
       </div>
     );
   }
@@ -52,7 +61,7 @@ function DigitCodeInput() {
       </h2>
 
       {/*
-        The “boxes” area. 
+        The "boxes" area. 
         - On click, focus the hidden input.
       */}
       <div
@@ -70,6 +79,10 @@ function DigitCodeInput() {
         value={code}
         onChange={handleChange}
       />
+
+      {isInvalid && (
+        <p className="text-red-500 text-sm mb-3">Neplatný kód, zkuste to znovu.</p>
+      )}
 
       <div className="flex flex-col">
         <p className="text-sm font-bold">Nepřišel vám kód?</p>

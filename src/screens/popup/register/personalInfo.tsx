@@ -24,7 +24,7 @@ export default function Register1() {
         <input name="name" type="text" placeholder="Jméno" />
         <input name="surname" type="text" placeholder="Příjmení" />
         <input name="nickname" type="text" placeholder="Přezdívka" />
-        <button type="submit">Pokračovat</button>
+        <button className="primary p-2 m-2" type="submit">Pokračovat</button>
       </form>
     </div>
   );

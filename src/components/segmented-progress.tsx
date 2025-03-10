@@ -1,3 +1,5 @@
+import "@/styling/segmented-progress.css"
+
 const SegmentedProgressBar = ({ progress = 1.0, totalSegments = 4 }) => {
   // progress: number of “filled” steps (can be fractional, e.g., 1.5)
   // totalSegments: total number of segments (default 4)

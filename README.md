@@ -34,3 +34,4 @@
 
 - [ ] Animace
 - [ ] Refactoring
+ - [ ] Zod type checking, zod type inference

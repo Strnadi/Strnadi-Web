@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/* ===== Radio Button Styles ===== */
+input[type="radio"] {
+  /* Base style for the radio button */
+  @apply appearance-none h-4 w-4 border border-gray-300 rounded-full;
+}
+
+/* Checked state */
+input[type="radio"]:checked {
+  @apply bg-blue-600 border-transparent;
+}
+
+/* Focus state */
+input[type="radio"]:focus {
+  @apply outline-none ring-2 ring-offset-2 ring-blue-600;
+}
+
+/* Disabled state */
+input[type="radio"]:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}

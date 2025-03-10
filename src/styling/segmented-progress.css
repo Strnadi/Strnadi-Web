@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+.segmented-progress-bar {
+  display: flex;
+  width: 200px;       /* Adjust as needed */
+  height: 20px;       /* Adjust as needed */
+  border: 1px solid #000;
+  box-sizing: border-box;
+  overflow: hidden;   /* In case of partial fill, ensures neat edges */
+}
+
+.segment {
+  flex: 1;
+  position: relative;
+  background-color: #fff; /* Base color of each segment */
+  border-right: 1px solid #000;
+}
+
+/* Remove the right border for the last segment */
+.segment:last-child {
+  border-right: none;
+}
+
+/* The fill portion of the segment */
+.segment-fill {
+  height: 100%;
+  background-color: #ffc107; /* The "filled" color (yellow) */
+  transition: width 0.3s ease; /* Optional smooth transition */
+}

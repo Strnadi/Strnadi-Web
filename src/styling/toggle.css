@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+.toggle {
+  @apply appearance-none w-[60px] h-[34px] bg-[#ccc] rounded-[34px] cursor-pointer outline-none relative transition-colors duration-[400ms];
+}
+
+.toggle::before {
+  content: "";
+  @apply absolute top-[4px] left-[4px] w-[26px] h-[26px] bg-[#fff] rounded-full transition-transform duration-[400ms];
+}
+
+.toggle:checked {
+  @apply bg-[#ffd600];
+}
+
+.toggle:checked::before {
+  @apply translate-x-[26px];
+}

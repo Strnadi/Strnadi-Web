@@ -23,7 +23,7 @@ export default function Register1() {
       <form className="flex flex-col" action={handleRegister}>
         <input name="postalCode" type="number" placeholder="PSČ" />
         <input name="city" type="text" placeholder="Město" />
-        <button type="submit">Pokračovat</button>
+        <button className="primary p-2 m-2" type="submit">Pokračovat</button>
       </form>
     </div>
   );

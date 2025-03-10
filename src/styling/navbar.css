@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+.dropdown-item {
+  @apply font-semibold block px-4 py-2 hover:bg-gray-100;
+}
+
+.navbar-item {
+  @apply font-semibold flex flex-row gap-x-1 items-center;
+}

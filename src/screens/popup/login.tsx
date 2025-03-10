@@ -7,6 +7,10 @@ import { useMutation } from "@tanstack/react-query";
 import { postLogin } from "@/api/account";
 import { useEffectOnce } from "react-use";
 
+import "@/styling/text.css"
+import "@/styling/buttons.css"
+import "@/styling/text-input.css"
+
 const env = import.meta.env;
 
 export default function Login() {
@@ -41,7 +45,7 @@ export default function Login() {
             <input name="mail" type="email" placeholder="E-Mail" />
             <input name="pass" type="password" placeholder="Heslo" />
           </div>
-          <button type="submit" disabled={mutation.isPending}>Přihlásit</button>
+          <button className="primary p-2 m-2" type="submit" disabled={mutation.isPending}>Přihlásit</button>
         </form>
         <button onClick={() => navigate("/auth/register")}>
           Nemáte ještě účet? Zaregistrujte se.

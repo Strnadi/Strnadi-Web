@@ -5,6 +5,8 @@ import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { useEffectOnce } from "react-use";
 
+import "@/styling/buttons.css";
+
 export default function Register1() {
   const navigate = useNavigate();
   const registerInfo = useRegisterState();
@@ -45,7 +47,7 @@ export default function Register1() {
     <div>
       <h1>Úspěch</h1>
       <h2>Váš účet byl založen.</h2>
-      <button onClick={onClick}>Pokračovat</button>
+      <button className="primary" onClick={onClick}>Pokračovat</button>
     </div>
   );
 }

@@ -15,3 +15,4 @@ const vapidKey = "BKOP5EHJJ_C3vVZB5-ZaY80d2eMr0kticqRqXiJRdA0ih9iLe2dnPnwwz-CrHT
 
 export const app = initializeApp(firebaseConfig);
 export const messaging = getMessaging(app);
+export const firebaseVapidKey = vapidKey;

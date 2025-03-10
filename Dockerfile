@@ -6,7 +6,7 @@ RUN bun install
 
 COPY src src
 COPY public public
-COPY index.html tsconfig*.json vite.config.ts .env ./
+COPY index.html tsconfig*.json vite.config.ts .env .env.sentry-build-plugin ./
 
 ENV NODE_ENV=production
 RUN bun run build
