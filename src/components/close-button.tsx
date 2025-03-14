@@ -1,16 +1,16 @@
+import navigateBack from "@/utils/navigate-back";
 import { useRecordingState, useRegisterState } from "@/state/store";
 import { useNavigate } from "react-router";
 
-export default function CloseButton() {
+export default function CloseButton({ onClick }: { onClick?: () => void }) {
   const navigate = useNavigate();
 
   const resetRecordingState = useRecordingState(state => state.resetStage);
   const resetRegisterState = useRegisterState(state => state.resetStage);
 
   const resetState = () => {
-    navigate("/");
-    resetRecordingState();
-    resetRegisterState();
+    navigateBack(navigate);
+    if (onClick) onClick();
   }
 
   return (

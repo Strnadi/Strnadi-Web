@@ -15,7 +15,7 @@ export default function Register1() {
   };
 
   return (
-    <div>
+    <div className="flex flex-col">
       <form className="flex flex-col" action={handleRegister}>
         <input name="email" type="email" placeholder="E-Mail" />
         <button className="primary p-2 m-2" type="submit">Pokračovat</button>

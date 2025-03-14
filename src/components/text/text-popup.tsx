@@ -4,7 +4,7 @@ import PopupLayout from "@/layouts/layout-popup";
 
 export default function PopupText({ component }: { component: string }) {
 
-  const Component = React.lazy(() => import(`../screens/texts/${component}.mdx`));
+  const Component = React.lazy(() => import(`../../screens/texts/${component}.mdx`));
 
   return (
     <PopupLayout>

@@ -1,5 +1,7 @@
 import { useRecordingState } from "@/state/store";
 
+import '@/styling/text.css'
+
 export default function AddInfo() {
   const nextStage = useRecordingState((state) => state.nextStage);
 

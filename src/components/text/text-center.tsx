@@ -4,7 +4,7 @@ import CenterLayout from "@/layouts/layout-center";
 
 export default function CenterText({ component }: { component: string }) {
 
-  const Component = React.lazy(() => import(`../screens/texts/${component}.mdx`));
+  const Component = React.lazy(() => import(`../../screens/texts/${component}.mdx`));
 
   return (
     <CenterLayout>

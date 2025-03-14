@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router';
+import { useSlot } from "@beqa/react-slots";
 import InfoIcon from '@/assets/icon-info.svg';
 import InfoDropdownItems from './info-list-items';
+import FormalStuff from './formal-stuff';
 
-export default function InfoDropdown() {
+export default function Dropdown({ children }) {
+  
+  const { slot } = useSlot(children);
+
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -35,16 +39,15 @@ export default function InfoDropdown() {
         className="flex items-center focus:outline-none" 
         onMouseEnter={() => setIsOpen(true)}
       >
-        <img src={InfoIcon} />
-        Informace
+        <slot.title />
       </button>
       {isOpen && (
         <ul 
-          className="absolute right-0 mt-2 w-40 z-50 bg-white border border-gray-200 rounded shadow-lg"
-          onMouseLeave={() => setIsOpen(false)}
-          onClick={() => setIsOpen(false)}
+          className="absolute left-0 mt-2 w-40 z-[calc(1e12)] bg-white border border-gray-200 rounded shadow-lg"
+          onMouseLeave={handleLinkClick}
+          onClick={handleLinkClick}
         >
-          <InfoDropdownItems />
+          <slot.default />
         </ul>
       )}
     </div>

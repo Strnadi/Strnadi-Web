@@ -19,16 +19,6 @@ export default function InfoDropdownItems() {
           O strnadovi
         </Link>
       </li>
-      <li>
-        <Link to="/podminky-pouzivani" className='dropdown-item'>
-          Podmínky používání
-        </Link>
-      </li>
-      <li>
-        <Link to="/ochrana-osobnich-udaju" className='dropdown-item'>
-          Ochrana osobních údajů
-        </Link>
-      </li>
     </>
   )
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 
 import { useAccount } from '@/state/store';
+import Dropdown from './dropdown';
 
 export default function AccountDropdown() {
   const user = useAccount(state => state.user)!;
@@ -35,11 +36,8 @@ export default function AccountDropdown() {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button 
-        className="flex items-center focus:outline-none"
-        onMouseEnter={() => setIsOpen(true)}
-      >
+    <Dropdown>
+      <div slot-name="title" className='flex flex-row items-center'>
         { user.firstName } { user.lastName }
         <svg
           className="ml-1 h-4 w-4 fill-current text-gray-500 hover:text-gray-600"
@@ -48,27 +46,21 @@ export default function AccountDropdown() {
         >
           <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z" />
         </svg>
-      </button>
-      {isOpen && (
-        <ul 
-          className="absolute right-0 mt-2 w-40 z-50 bg-white border border-gray-200 rounded shadow-lg"
-          onMouseLeave={() => setIsOpen(false)}
-        >
-          <li>
-            <Link to="/account/profile" onClick={handleLinkClick}>
-              <div className="dropdown-item">Profil</div>
-            </Link>
-          </li>
-          <li>
-            <Link to="/account/settings" onClick={handleLinkClick}>
-              <div className="dropdown-item">Nastavení</div>
-            </Link>
-          </li>
-          <li className="cursor-pointer" onClick={handleLogout}>
-            <div className="dropdown-item">Odhlásit se</div>
-          </li>
-        </ul>
-      )}
-    </div>
+      </div>
+
+      <li>
+        <Link to="/account/profile" onClick={handleLinkClick}>
+          <div className="dropdown-item">Profil</div>
+        </Link>
+      </li>
+      <li>
+        <Link to="/account/settings" onClick={handleLinkClick}>
+          <div className="dropdown-item">Nastavení</div>
+        </Link>
+      </li>
+      <li className="cursor-pointer" onClick={handleLogout}>
+        <div className="dropdown-item">Odhlásit se</div>
+      </li>
+    </Dropdown>
   );
 }

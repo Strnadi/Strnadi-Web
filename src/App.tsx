@@ -1,18 +1,18 @@
 import { Route, Routes, useLocation } from 'react-router';
-import Navbar from '@/components/navbar';
+import Navbar from '@/components/navbar/navbar';
 import Map from '@/components/map';
 import MyRecordings from '@/screens/left/my-recordings';
-import Text from '@/components/text';
+import Text from '@/components/text/text';
 import RecordingDetail from '@/screens/left/recording-detail';
 import Profile from '@/screens/left/profile';
 import Login from '@/screens/popup/login';
 import AddRecording from '@/screens/center/add-recording';
 import Register from './screens/popup/register';
-import CenterText from './components/text-center';
-import PopupText from './components/text-popup';
+import PopupText from './components/text/text-popup';
 import NotFound from './components/not-found';
 import PopupLayout from './layouts/layout-popup';
 import MapOptions from './screens/popup/map-options';
+import MapLegend from './screens/popup/map-legend';
 
 function App() {
 
@@ -21,7 +21,7 @@ function App() {
   return (
     <div>
       { /* Navbar */ }
-      <div className="fixed w-full z-[calc(1e9)] drop-shadow-2xl">
+      <div className="fixed w-full z-[calc(1e9)] drop-shadow-xl">
         <Navbar />
       </div>
 
@@ -39,9 +39,6 @@ function App() {
             <Route path="my-recordings/:id" element={<RecordingDetail />} />
           </Route>
 
-          <Route path="application" element={<PopupText component="application" />} />
-          <Route path="gdpr" element={<CenterText component="gdpr" />} />
-
           <Route path="auth">
             <Route path="login" element={<Login />} />
             <Route path="register">
@@ -50,6 +47,7 @@ function App() {
             </Route>
           </Route>
 
+          <Route path="application" element={<PopupText component="application" />} />
           { ["about-project", "about-bird", "how-to-record", "podminky-pouzivani", "ochrana-osobnich-udaju"].map((component) => (
             <Route
               key={component}
@@ -65,6 +63,7 @@ function App() {
           <Route path="add-recording" element={<AddRecording />} />
 
           <Route path="map-options" element={<MapOptions />} />
+          <Route path="map-legend" element={<MapLegend />} />
 
           <Route path='*' element={<PopupLayout><NotFound /></PopupLayout>} />
 

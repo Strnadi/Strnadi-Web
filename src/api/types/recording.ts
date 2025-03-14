@@ -26,10 +26,10 @@ export interface RecordingModel {
 
 export interface RecordingUploadReq {
   createdAt: string; // ISO date-time
-  estimatedBirdsCount: number;
-  device?: string | null;
   byApp: boolean;
-  note?: string | null;
+  estimatedBirdsCount: number;
+  device: string;
+  note: string | null;
 }
 
 export interface RecordingPartUploadReq {

@@ -3,12 +3,16 @@ import * as jose from "jose";
 
 import { combine } from "zustand/middleware";
 import { persist, createJSONStorage } from "zustand/middleware";
-import axios from "axios";
-import { LatLng } from "leaflet";
-import { User } from "@/types/user";
+import { User } from "@/api/types/auth";
 import { getUser } from "@/api/account";
+import { record } from "zod";
 
 const env = import.meta.env;
+
+type LatLng = {
+  lat: number;
+  lng: number;
+};
 
 const useAccount = create(
   persist(
@@ -16,7 +20,7 @@ const useAccount = create(
       {
         token_string: null as string | null,
         token: null as string | null,
-        user: null as User | null
+        user: null as User | null,
       },
       (set) => ({
         logout: () => set(() => ({ token: null })),
@@ -30,7 +34,7 @@ const useAccount = create(
           set(() => ({
             token: jose.decodeJwt(jwt),
             token_string: jwt,
-            user: user
+            user: user,
           }));
         },
       })
@@ -72,17 +76,33 @@ const useRecordingState = create(
   combine(
     {
       stage: 1,
-      recordings: null as File[] | null,
+      recordings: null as { recording: File; content: ArrayBuffer }[] | null,
       photos: null as File[] | null,
       location: null as LatLng | null,
-      description: "",
-      title: "",
+      note: "" as string | null,
+      title: "" as string | null,
+      device: "" as string | null,
+      birdCount: 1,
     },
     (set) => ({
       resetStage: () => set(() => ({ stage: 1 })),
       nextStage: () => set(({ stage }) => ({ stage: stage + 1 })),
-      setRecordings: (recordings: File[]) => set(() => ({ recordings })),
       setPhotos: (photos: File[]) => set(() => ({ photos })),
+      setBirdCount: (count: number) => set(() => ({ birdCount: count })),
+      setLocation: (location: LatLng) => set(() => ({ location })),
+      setNote: (note: string) => set(() => ({ note })),
+      setTitle: (title: string) => set(() => ({ title })),
+      setDevice: (device: string) => set(() => ({ device })),
+      setRecordings: async (recordings: File[]) => {
+        const recordingsWithContent = await Promise.all(
+          recordings.map(async (recording) => {
+            const content = await recording.arrayBuffer();
+            return { recording, content };
+          })
+        );
+
+        set(() => ({ recordings: recordingsWithContent }));
+      },
     })
   )
 );
@@ -90,12 +110,17 @@ const useRecordingState = create(
 const useMapState = create(
   combine(
     {
-      selectedLocation: null as { lat: number, lng: number } | null
+      selectedLocation: null as LatLng | null,
+      mode: "outdoor" as "aerial" | "basic" | "outdoor",
     },
     (set) => ({
-      setSelectedLocation: (selectedLocation: LatLng) => set(() => ({ selectedLocation }))
+      setSelectedLocation: (selectedLocation: LatLng) =>
+        set(() => ({ selectedLocation })),
+
+      setMode: (mode: "aerial" | "basic" | "outdoor") => 
+        set(() => ({ mode })),
     })
   )
-)
+);
 
 export { useAccount, useRegisterState, useRecordingState, useMapState };

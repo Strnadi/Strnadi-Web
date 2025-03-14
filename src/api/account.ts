@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
-import { LoginRequest, SignUpRequest, Token } from "@/types/api/auth";
-import { User } from "@/types/user";
+import { LoginRequest, SignUpRequest, Token } from "@/api/types/auth";
+import { User } from "./types/auth";
 import { ApiError } from "./api-error";
 
 const env = import.meta.env;
@@ -22,7 +22,7 @@ export const getUser = async (token: string): Promise<User> => {
         'Authorization': `Bearer ${token}`,
       },
     });
-  
+
     return response.data as User;  
   } catch(e) {
     const error = e as AxiosError;

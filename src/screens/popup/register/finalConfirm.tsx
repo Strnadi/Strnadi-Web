@@ -1,11 +1,12 @@
 import { postRegister } from "@/api/account";
 import { useAccount, useRegisterState } from "@/state/store";
-import { SignUpRequest } from "@/types/api/auth";
+import { SignUpRequest } from "@/api/types/auth";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { useEffectOnce } from "react-use";
 
 import "@/styling/buttons.css";
+import navigateBack from "@/utils/navigate-back";
 
 export default function Register1() {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ export default function Register1() {
   })
 
   const onClick = () => {
-    navigate("/");
+    navigateBack(navigate);
     resetStage();
     setSession(mutation.data!);
   }

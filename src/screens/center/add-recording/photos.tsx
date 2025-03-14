@@ -31,7 +31,7 @@ export default function UploadFile() {
 
   return (
     <div>
-      <h1>Nahrát nahrávku</h1>
+      <h1>Nahrát fotky</h1>
       {session ?
         /* Dropzone area */
         <div
@@ -40,17 +40,16 @@ export default function UploadFile() {
             isDragActive ? 'border-blue-500' : 'border-gray-300'
           }`}
         >
-      
-            <div>
-              <input {...getInputProps()} />
-              {/* Simple arrow icon */}
-              <div className="text-4xl mb-2 text-gray-500">↑</div>
-              <p>
-                Klikněte nebo přetáhněte zvuk<br/>
-                (.wav, .mp3, .flac)
-              </p>
-            </div>
-      
+
+          <div>
+            <input {...getInputProps()} />
+            {/* Simple arrow icon */}
+            <div className="text-4xl mb-2 text-gray-500">↑</div>
+            <p>
+              Klikněte nebo přetáhněte fotky
+            </p>
+          </div>
+
         </div>
         : <p>Je potřeba se nejdříve přihlásit.</p>
       }

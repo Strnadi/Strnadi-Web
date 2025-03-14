@@ -9,6 +9,8 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import mdx from '@mdx-js/rollup';
 import compression from 'vite-plugin-compression2';
 import MillionLint from "@million/lint";
+import unplugin from "@beqa/unplugin-transform-react-slots";
+
 
 const ReactCompilerConfig = {
   noEmit: process.env.MODE !== 'production'
@@ -17,6 +19,9 @@ const ReactCompilerConfig = {
 export default defineConfig({
   plugins: [
     tsconfigPaths(),
+    unplugin.vite(), // Slots
+    tailwindcss(),
+    nodePolyfills(),
     mdx(),
     react({
       babel: {
@@ -25,9 +30,6 @@ export default defineConfig({
         ]
       }
     }),
-    tailwindcss(),
-    compression(),
-    nodePolyfills(),
     VitePWA({
       srcDir: 'src/services',
       filename: 'worker.ts',
@@ -41,18 +43,23 @@ export default defineConfig({
       project: "strnadi-web",
       telemetry: false
     }),
+    compression(),
     visualizer({
       gzipSize: true,
       open: true,
       template: 'flamegraph'
     }),
-    // MillionLint.vite()
+    // MillionLint.vite() // Million.JS doesn't fully support React 19
   ],
 
   build: {
     rollupOptions: {
       output: {
         manualChunks: (id) => {
+          // if (id.includes('react')) {
+          //   return 'react';
+          // }
+
           if (id.includes('node_modules') || id.includes('src/vendor/')) {
             return 'vendor';
           }
@@ -76,5 +83,15 @@ export default defineConfig({
     ],
 
     dedupe: ['bn.js']
+  },
+
+  dev: {
+    sourcemap: true
+  },
+
+  server: {
+    headers: {
+      "content-security-policy": "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:;"
+    }
   }
 })

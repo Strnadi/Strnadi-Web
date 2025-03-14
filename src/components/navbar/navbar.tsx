@@ -5,13 +5,16 @@ import Upload from '@/assets/icon-upload.svg';
 import List from '@/assets/icon-list.svg';
 import NotificationsEmpty from '@/assets/icon-notifications-empty.svg';
 
-import AccountDropdown from "@/components/account-drop";
+import AccountDropdown from "@/components/navbar/dropdowns/account-drop";
 import { useAccount } from "@/state/store";
-import InfoDropdown from "./info-drop";
-import InfoDropdownItems from "./info-list-items";
+import InfoDropdown from "@/components/navbar/dropdowns/info-drop";
+import InfoDropdownItems from "./dropdowns/info-list-items";
 
 import "@/styling/navbar.css";
 import "@/styling/buttons.css";
+import Dropdown from "@/components/navbar/dropdowns/dropdown";
+import FormalStuff from "./dropdowns/formal-stuff";
+import InfoIcon from '@/assets/icon-info.svg';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -72,7 +75,16 @@ export default function Navbar() {
                 </li>
               </>
             ) : (
-              <InfoDropdownItems />
+              <>
+                <InfoDropdownItems />
+                <Dropdown>
+                  <div slot-name="title" className="flex flex-row content-center">
+                    <img src={InfoIcon} />
+                    Formality
+                  </div>
+                  <FormalStuff />
+                </Dropdown>
+              </>
             )}
           </ul>
 

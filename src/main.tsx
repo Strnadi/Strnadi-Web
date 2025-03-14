@@ -10,7 +10,7 @@ import {
 } from '@tanstack/react-query'
 
 import App from '@/App';
-import '@/index.css';
+import '@/main.css';
 
 // Create a client
 const queryClient = new QueryClient()

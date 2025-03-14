@@ -2,7 +2,7 @@ import { useAccount } from "@/state/store";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import PopupLayout from "@/layouts/layout-popup";
-import { LoginRequest, Token } from "@/types/api/auth";
+import { LoginRequest, Token } from "@/api/types/auth";
 import { useMutation } from "@tanstack/react-query";
 import { postLogin } from "@/api/account";
 import { useEffectOnce } from "react-use";
@@ -17,13 +17,11 @@ export default function Login() {
   const navigate = useNavigate();
   const login = useAccount(state => state.login);
 
-  const [loginParams, setLoginParams] = useState<LoginRequest | null>(null);
-
   const mutation = useMutation({
     mutationFn: (loginInfo: LoginRequest) => postLogin(loginInfo),
     onSuccess: (data: Token) => {
-      login(data);
       navigate('/');
+      login(data);
     }
   })
 

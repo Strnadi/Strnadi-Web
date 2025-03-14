@@ -1,10 +1,10 @@
 import React, { Suspense } from "react";
 import Loading from "@/components/loading";
-import LeftLayout from "../layouts/layout-left";
+import LeftLayout from "../../layouts/layout-left";
 
 export default function Text({ component }: { component: string }) {
 
-  const Component = React.lazy(() => import(`../screens/texts/${component}.mdx`));
+  const Component = React.lazy(() => import(`../../screens/texts/${component}.mdx`));
 
   return (
     <LeftLayout>
