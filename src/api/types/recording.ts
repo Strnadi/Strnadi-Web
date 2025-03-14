@@ -34,8 +34,8 @@ export interface RecordingUploadReq {
 
 export interface RecordingPartUploadReq {
   recordingId: number;
-  start: string; // ISO date-time
-  end: string;   // ISO date-time
+  startDate: string; // ISO date-time
+  endDate: string;   // ISO date-time
   latitudeStart: number;
   latitudeEnd: number;
   longitudeStart: number;

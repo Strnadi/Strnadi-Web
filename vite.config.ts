@@ -1,97 +1,85 @@
-import { defineConfig } from 'vite';
-import { VitePWA } from 'vite-plugin-pwa';
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
-import { visualizer } from 'rollup-plugin-visualizer';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
-import tsconfigPaths from 'vite-tsconfig-paths';
-import mdx from '@mdx-js/rollup';
-import compression from 'vite-plugin-compression2';
-import MillionLint from "@million/lint";
-import unplugin from "@beqa/unplugin-transform-react-slots";
+import { visualizer } from "rollup-plugin-visualizer";
+import vue from "@vitejs/plugin-vue";
+import tailwindcss from "@tailwindcss/vite";
+import tsconfigPaths from "vite-tsconfig-paths";
+import mdx from "@mdx-js/rollup";
+import compression from "vite-plugin-compression2";
 
-
-const ReactCompilerConfig = {
-  noEmit: process.env.MODE !== 'production'
-};
-
+// https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    tsconfigPaths(),
-    unplugin.vite(), // Slots
-    tailwindcss(),
     nodePolyfills(),
-    mdx(),
-    react({
-      babel: {
-        plugins: [
-          ["babel-plugin-react-compiler", ReactCompilerConfig]
-        ]
-      }
-    }),
+    tsconfigPaths({ loose: true }),
+    tailwindcss(),
+    vue(),
     VitePWA({
-      srcDir: 'src/services',
-      filename: 'worker.ts',
-      strategies: 'injectManifest',
+      srcDir: "src/workers",
+      filename: "Worker.ts",
+      strategies: "injectManifest",
       injectManifest: {
-        maximumFileSizeToCacheInBytes: 10*1024*1024
-      }
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+      },
     }),
+    compression(),
     sentryVitePlugin({
       org: "delta-strnadi",
       project: "strnadi-web",
-      telemetry: false
+      telemetry: false,
     }),
-    compression(),
     visualizer({
       gzipSize: true,
       open: true,
-      template: 'flamegraph'
+      template: "flamegraph",
     }),
-    // MillionLint.vite() // Million.JS doesn't fully support React 19
   ],
 
   build: {
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // if (id.includes('react')) {
-          //   return 'react';
-          // }
-
-          if (id.includes('node_modules') || id.includes('src/vendor/')) {
-            return 'vendor';
+          if (id.includes("node_modules") || id.includes("src/vendor/")) {
+            return "vendor";
           }
-        }
+        },
       },
     },
 
-    sourcemap: true
+    sourcemap: true,
   },
 
   resolve: {
     alias: [
       {
+        find: /leaflet\/dist\/leaflet-src\.esm.js$/,
+        replacement: "leaflet/dist/leaflet.js",
+      },
+      {
         find: /leaflet\/dist\/leaflet-src\.js(\?commonjs-es-import)?$/,
-        replacement: 'leaflet/dist/leaflet.js'
+        replacement: "leaflet/dist/leaflet.js",
       },
       {
         find: /^leaflet$/,
-        replacement: 'leaflet/dist/leaflet.js'
-      }
+        replacement: "leaflet/dist/leaflet.js",
+      },
     ],
 
-    dedupe: ['bn.js']
+    dedupe: ["bn.js"],
   },
 
   dev: {
-    sourcemap: true
+    sourcemap: true,
   },
 
   server: {
     headers: {
-      "content-security-policy": "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:;"
-    }
-  }
-})
+      "content-security-policy":
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:;",
+    },
+  },
+
+  assetsInclude: ["**/*.md"]
+});

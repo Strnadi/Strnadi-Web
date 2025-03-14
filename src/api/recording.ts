@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { ApiError } from "./api-error";
-import { RecordingModel, RecordingPartUploadReq, RecordingUploadReq } from "@/api/types/recording";
+import type { RecordingModel, RecordingPartUploadReq, RecordingUploadReq } from "@/api/types/recording";
 const env = import.meta.env;
 
 export const postRecording = async (

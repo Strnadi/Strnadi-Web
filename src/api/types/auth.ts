@@ -1,4 +1,13 @@
 
+export interface JwtObject {
+  sub: string,
+  iss: string,
+  aud: string,
+  nbf: number,
+  exp: number,
+  iat: number
+};
+
 export interface User {
   id: number;
   email: string;
