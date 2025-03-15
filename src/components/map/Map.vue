@@ -94,7 +94,7 @@ const coords = computed(() => {
     <ol-tile-layer>
       <ol-source-xyz
         v-if="mapStore.mode === 'aerial'"
-        :url="`https://api.mapy.cz/v1/maptiles/aerial/256/{z}/{x}/{y}?apikey=${env.VITE_MAPYCZ_API_KEY}`"
+        :url="`https://api.mapy.cz/v1/maptiles/names-overlay/256/{z}/{x}/{y}?apikey=${env.VITE_MAPYCZ_API_KEY}`"
         :z-index="2"
         name="AerialNames"
         attribution='<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>'

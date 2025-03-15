@@ -14,6 +14,12 @@ export const registerStore = reactive({
     this.stage++;
   },
 
+  prevStage() {
+    if (this.stage > 0) {
+      this.stage--;
+    }
+  },
+
   resetStage() {
     this.stage = 0;
   },

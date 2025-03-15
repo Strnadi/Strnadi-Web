@@ -81,7 +81,7 @@ const session = accountStore.user;
         </RouterLink>
         <li>
           <AccountDropdown v-if="session" />
-          <RouterLink v-else to="/auth/login" class="button-secondary py-2 px-4">Přihlásit se</RouterLink>
+          <RouterLink v-else to="/login" class="button-secondary py-2 px-4">Přihlásit se</RouterLink>
         </li>
       </ul>
     </div>
@@ -126,7 +126,7 @@ const session = accountStore.user;
       </li>
       <li class="pt-2">
         <AccountDropdown v-if="session"/>
-        <RouterLink v-else to="/auth/login" class="button-secondary py-2 px-4 block w-full text-center">Přihlásit se</RouterLink>
+        <RouterLink v-else to="/login" class="button-secondary py-2 px-4 block w-full text-center">Přihlásit se</RouterLink>
       </li>
     </ul>
   </div>

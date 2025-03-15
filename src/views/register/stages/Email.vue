@@ -1,29 +1,21 @@
 <template>
-  <div class="flex flex-col">
-    <form class="flex flex-col" @submit.prevent="handleRegister">
-      <input v-model="email" name="email" type="email" placeholder="E-Mail" />
-      <button class="primary p-2 m-2" type="submit">Pokračovat</button>
+  <div class="flex flex-col gap-y-4">
+    <form class="flex flex-col gap-y-2">
+      <input v-model="registerStore.email" type="email" placeholder="E-Mail" />
+      <div class="flex flex-row items-center gap-x-2">
+        <input type="checkbox" id="agreement" v-model="agreement" />
+        <label for="agreement">
+          <span class="text-sm">Zapojením do projektu občanské vědy Nářečí českých strnadů <router-link to="/podminky-pouziti" class="underline">souhlasím s podmínkami</router-link></span>
+        </label>
+      </div>
+      <button class="primary p-2 m-2" :disabled="!agreement" @click="registerStore.nextStage">Pokračovat</button>
     </form>
-    <button class="secondary" @click="navigateToLogin">
-      Máte již účet? Přihlašte se.
-    </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 import { registerStore } from "@/state/RegisterStore"; // Adjust the import based on your store structure
 
-const router = useRouter();
-const email = ref("");
-
-function handleRegister() {
-  registerStore.setEmail(email.value);
-  registerStore.nextStage();
-}
-
-function navigateToLogin() {
-  router.push("/auth/login");
-}
+const agreement = ref(false);
 </script>

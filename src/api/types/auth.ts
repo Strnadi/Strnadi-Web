@@ -33,6 +33,7 @@ export interface SignUpRequest {
   password?: string | null;
   firstName?: string | null;
   lastName?: string | null;
+  consent: true;
 }
 
 export type Token = string;

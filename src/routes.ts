@@ -11,6 +11,7 @@ import aboutBird from '@/assets/texts/about-bird.md?raw';
 import aboutProject from '@/assets/texts/about-project.md?raw';
 import application from '@/assets/texts/application.md?raw';
 import Upload from "./views/upload/Upload.vue";
+import MapOptions from "./views/MapOptions.vue";
 
 export const routes: readonly RouteRecordRaw[] = [
   {
@@ -18,13 +19,13 @@ export const routes: readonly RouteRecordRaw[] = [
     components: {}
   },
   {
-    path: '/auth/login',
+    path: '/login',
     components: {
       popup: Login
     },
   },
   {
-    path: '/auth/register',
+    path: '/registrace',
     components: {
       popup: Register
     }
@@ -36,7 +37,7 @@ export const routes: readonly RouteRecordRaw[] = [
     },
   },
   {
-    path: '/podminky-pouzivani',
+    path: '/podminky-pouziti',
     components: {
       center: VueMarkdown
     },
@@ -88,6 +89,12 @@ export const routes: readonly RouteRecordRaw[] = [
       side: {
         source: aboutBird
       }
+    }
+  },
+  {
+    path: '/nastaveni-mapy',
+    components: {
+      popup: MapOptions
     }
   },
 ]

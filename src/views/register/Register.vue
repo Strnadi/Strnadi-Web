@@ -3,14 +3,16 @@ import { ref, watch } from 'vue'
 import { defineAsyncComponent } from 'vue'
 import { registerStore } from '@/state/RegisterStore';
 import SegmentedProgress from '@/components/generic/SegmentedProgress.vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter()
 
 const STAGE_MAPPING: Record<number, string> = {
   0: "Email",
-  1: "Agreement",
-  2: "PersonalInfo",
-  3: "Location",
-  4: "Password",
-  5: "FinalConfirm"
+  1: "PersonalInfo",
+  2: "Location",
+  3: "Password",
+  4: "FinalConfirm"
 };
 
 const Component = ref(defineAsyncComponent({

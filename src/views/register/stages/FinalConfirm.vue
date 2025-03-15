@@ -40,7 +40,8 @@ const register = () => {
     firstName: registerStore.name,
     lastName: registerStore.surname,
     nickname: registerStore.nickname,
-    password: registerStore.password
+    password: registerStore.password,
+    consent: true // the user can't reach this point without consenting
   })
 }
 

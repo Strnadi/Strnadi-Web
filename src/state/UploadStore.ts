@@ -19,6 +19,12 @@ export const uploadStore = reactive({
     this.stage = 1
   },
 
+  prevStage() {
+    if (this.stage > 1) {
+      this.stage--
+    }
+  },
+
   nextStage() {
     this.stage++
   },
