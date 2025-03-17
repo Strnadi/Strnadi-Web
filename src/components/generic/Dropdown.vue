@@ -34,7 +34,7 @@ onBeforeUnmount(() => {
     </button>
     <ul
       v-if="isOpen"
-      class="absolute p-2 left-0 mt-2 min-w-40 w-max z-[calc(1e12)] bg-white border border-gray-200 rounded shadow-lg"
+      class="absolute p-2 left-0 lg:right-0 lg:left-auto mt-2 min-w-40 w-max z-[calc(1e12)] bg-white border border-gray-200 rounded shadow-lg"
       @mouseleave="close"
       @click="close"
     >

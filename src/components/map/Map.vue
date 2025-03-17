@@ -5,32 +5,22 @@ import { useQuery } from '@tanstack/vue-query';
 import { getRecordings } from '@/api/recording';
 import type { RecordingPartModel } from '@/api/types/recording';
 import type { MapBrowserEvent } from 'ol';
+import { MapIcons } from './MapIcons';
 const env = import.meta.env;
 
 const center = ref([15.5, 49.8]);
 const zoom = ref(8);
 
-const recordings = useQuery({
+const { data: recordings } = useQuery({
   queryKey: ["all-recordings"],
   queryFn: getRecordings,
 });
 
-const ICONS = {
-  BC: "/dialects/dialect-bc.svg",
-  BE: "/dialects/dialect-be.svg",
-  XB: "/dialects/dialect-xb.svg",
-  BhBl: "/dialects/dialect-bhbl.svg",
-  BlBH: "/dialects/dialect-blbh.svg",
-  Unknown: "/dialects/dialect-unknown.svg",
-  Other: "/dialects/dialect-other.svg",
-  NotSure: "/dialects/dialect-notsure.svg",
-  Marker: "/marker.svg",
-};
 
 const partAverageCoords = (part: RecordingPartModel) => {
   return [
-    (part.gpsLatitudeStart + part.gpsLatitudeEnd) / 2,
-    (part.gpsLongitudeStart + part.gpsLongitudeEnd) / 2
+    (part.gpsLongitudeStart + part.gpsLongitudeEnd) / 2,
+    (part.gpsLatitudeStart + part.gpsLatitudeEnd) / 2
   ]
 }
 
@@ -101,23 +91,27 @@ const coords = computed(() => {
       />
     </ol-tile-layer>
 
+    <!-- First vector layer for recordings -->
     <ol-vector-layer>
       <ol-source-vector v-if="recordings">
         <template v-for="recording in recordings" :key="recording.id">
           <ol-feature v-for="part in recording.parts" :key="part.id">
             <ol-geom-point :coordinates="partAverageCoords(part)" />
             <ol-style>
-              <ol-style-icon :src="ICONS.BC" />
+              <ol-style-icon :src="MapIcons.BC" />
             </ol-style>
           </ol-feature>
         </template>
       </ol-source-vector>
+    </ol-vector-layer>
 
+    <!-- Separate vector layer for the marker -->
+    <ol-vector-layer>
       <ol-source-vector v-if="mapStore.selectedLocation">
         <ol-feature>
           <ol-geom-point :coordinates="coords" />
           <ol-style>
-            <ol-style-icon :src="ICONS.Unknown" />
+            <ol-style-icon :src="MapIcons.Unknown" />
           </ol-style>
         </ol-feature>
       </ol-source-vector>

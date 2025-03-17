@@ -1,12 +1,12 @@
 <!-- filepath: /home/hroudis/strnadi-vue/src/views/register/stages/FinalConfirm.vue -->
 <template>
-  <div v-if="mutation.isPending && !mutation.isIdle">
+  <div v-if="isPending">
     <p>Vytváření účtu...</p>
   </div>
 
-  <div v-else-if="mutation.isError">
+  <div v-else-if="isError">
     <h1>Chyba</h1>
-    <p>{{ mutation.error.message }}</p>
+    <p>{{ error.message }}</p>
     <button @click="register">Zkusit znovu</button>
   </div>
 
@@ -28,14 +28,13 @@ import type { SignUpRequest } from '@/api/types/auth'
 
 const router = useRouter()
 
-// Create a mutation using vue-query
-const mutation = useMutation({
+const { mutate, isError, isPending, data, error } = useMutation({
   mutationFn: (data: SignUpRequest) => postRegister(data)
 })
 
 // Function to call the registration mutation
 const register = () => {
-  mutation.mutate({
+  mutate({
     email: registerStore.email,
     firstName: registerStore.name,
     lastName: registerStore.surname,
@@ -45,17 +44,15 @@ const register = () => {
   })
 }
 
-// Run the registration on component mount
 onMounted(() => {
   register()
 })
 
-// When user clicks "Pokračovat" update the session and navigate back
 const onClick = () => {
-  router.back();
-  registerStore.resetStage()
-  if (mutation.data.value) {
-    accountStore.login(mutation.data.value)
+  router.replace('/');
+  registerStore.resetStage();
+  if (data.value) {
+    accountStore.login(data.value)
   }
 }
 </script>

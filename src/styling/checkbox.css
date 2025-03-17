@@ -1,7 +1,6 @@
 /* ===== Checkbox Styles ===== */
 input[type="checkbox"] {
-  /* Base style for the checkbox */
-  @apply appearance-none h-4 w-4 border border-gray-300 rounded;
+  @apply appearance-none border border-gray-300 rounded w-6 h-6 flex-shrink-0;
 }
 
 /* Checked state */

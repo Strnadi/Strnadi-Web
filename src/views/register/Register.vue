@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
 import { defineAsyncComponent } from 'vue'
 import { registerStore } from '@/state/RegisterStore';
 import SegmentedProgress from '@/components/generic/SegmentedProgress.vue';
@@ -15,14 +15,14 @@ const STAGE_MAPPING: Record<number, string> = {
   4: "FinalConfirm"
 };
 
-const Component = ref(defineAsyncComponent({
-  loader: () => import(`./stages/${STAGE_MAPPING[registerStore.stage]}.vue`)
-}));
+const loadComponent = (stage: number) => defineAsyncComponent({
+  loader: () => import(`./stages/${STAGE_MAPPING[stage]}.vue`)
+});
+
+const Component = shallowRef(loadComponent(registerStore.stage));
 
 watch(() => registerStore.stage, (newStage) => {
-  Component.value = defineAsyncComponent({
-    loader: () => import(`./stages/${STAGE_MAPPING[newStage]}.vue`)
-  });
+  Component.value = loadComponent(newStage);
 });
 
 const stages = Object.keys(STAGE_MAPPING).length;

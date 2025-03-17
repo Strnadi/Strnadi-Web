@@ -1,6 +1,6 @@
 <template>
   <li>
-    <RouterLink to="/podminky-pouzivani" class="dropdown-item">
+    <RouterLink to="/podminky-pouziti" class="dropdown-item">
       Podmínky používání
     </RouterLink>
   </li>

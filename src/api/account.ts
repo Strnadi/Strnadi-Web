@@ -17,7 +17,7 @@ const genericPost = async<T> (path: string, data: T) => {
 
 export const getUser = async (token: string, token_object: JwtObject): Promise<User> => {
   try {
-    const response = await axios.get(`${env.VITE_API_URL}/users`, {
+    const response = await axios.get(`${env.VITE_API_URL}/users/${token_object.sub}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },

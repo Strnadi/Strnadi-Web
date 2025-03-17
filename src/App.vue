@@ -43,11 +43,12 @@ const goBack = () => {
 
   <router-view name="side" v-slot="{ Component }">
     <aside v-if="Component" class="side">
-      <div class="flex flex-col gap-x-2 gap-y-4 overflow-y-auto max-h-[80vh] rounded-4xl p-8">
-        <button @click="router.replace('/')" class="secondary p-2 self-start flex flex-row items-center"><img :src="Back" class="inline" /><span>Zpět</span></button>
-        <div>
-          <component :is="Component" />
-        </div>
+      <div class="flex flex-row flex-wrap gap-x-2 gap-y-4 overflow-y-auto max-h-[80vh] rounded-4xl p-8">
+        <button @click="router.replace('/')" class="secondary p-2 flex flex-row items-center">
+          <img :src="Back" class="inline" />
+          <span>Zpět</span>
+        </button>
+        <component :is="Component" />
       </div>
     </aside>
   </router-view>
@@ -55,7 +56,10 @@ const goBack = () => {
   <router-view name="popup" v-slot="{ Component }">
     <aside v-if="Component" class="popup">
       <div class="w-full md:w-1/2 lg:w-1/3 max-h-[80vh] flex flex-col bg-white/95 backdrop-blur-md rounded-lg overflow-y-auto p-8">
-        <button @click="goBack" class="secondary p-2 self-start flex flex-row items-center"><img :src="Back" class="inline" /><span>Zpět</span></button>
+        <button @click="goBack" class="secondary p-2 self-start flex flex-row items-center">
+          <img :src="Back" />
+          <span>Zpět</span>
+        </button>
         <div class="w-full">
           <component :is="Component" />
         </div>
@@ -65,9 +69,12 @@ const goBack = () => {
 
   <router-view name="center" v-slot="{ Component }">
     <aside v-if="Component" class="center">
-      <div class="flex flex-col gap-x-2 gap-y-4 overflow-y-auto max-h-[85vh] p-8">
-        <button @click="router.back" class="secondary p-2 self-start flex flex-row items-center"><img :src="Back" class="inline" /><span>Zpět</span></button>
-        <div>
+      <div class="flex flex-col gap-x-2 gap-y-4 overflow-y-auto max-h-[85vh] max-w-fit min-w-0 items-center p-8">
+        <button @click="goBack" class="secondary p-2 self-start flex flex-row items-center">
+          <img :src="Back" />
+          <span>Zpět</span>
+        </button>
+        <div class="max-w-fit flex flex-col items-center">
           <component :is="Component" />
         </div>
       </div>
@@ -96,7 +103,7 @@ const goBack = () => {
     @apply mx-5;
     @apply top-0;
     @apply sm:w-1/2;
-    @apply lg:w-1/3;
+    @apply xl:w-1/3;
     @apply z-[calc(1e7)];
     @apply flex;
     @apply flex-col;
@@ -110,6 +117,18 @@ const goBack = () => {
   }
 
   aside.center {
-    @apply drop-shadow-lg fixed mt-30 top-0 left-0 right-0 mx-auto w-full sm:w-1/2 lg:w-1/3 z-[calc(1e7)] flex flex-col bg-white/95 backdrop-blur-md rounded-lg;
+    @apply drop-shadow-lg;
+    @apply fixed;
+    @apply mt-30;
+    @apply top-0;
+    @apply left-0;
+    @apply right-0;
+    @apply mx-auto;
+    @apply w-fit;
+    @apply max-w-full;
+    @apply z-[calc(1e7)];
+    @apply bg-white/95;
+    @apply backdrop-blur-md;
+    @apply rounded-lg;
   }
 </style>

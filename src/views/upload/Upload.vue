@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
 import { defineAsyncComponent } from 'vue'
 import { accountStore } from "@/state/AccountStore";
-import { registerStore } from '@/state/RegisterStore';
+import { uploadStore } from '@/state/UploadStore';
 import SegmentedProgress from '@/components/generic/SegmentedProgress.vue';
 
 const STAGE_MAPPING: Record<number, string> = {
@@ -15,26 +15,26 @@ const STAGE_MAPPING: Record<number, string> = {
   6: "Submit"
 };
 
-const Component = ref(defineAsyncComponent({
-  loader: () => import(`./stages/${STAGE_MAPPING[registerStore.stage]}.vue`)
-}));
-
-watch(() => registerStore.stage, (newStage) => {
-  Component.value = defineAsyncComponent({
-    loader: () => import(`./stages/${STAGE_MAPPING[newStage]}.vue`)
-  });
+const loadComponent = (stage: number) => defineAsyncComponent({
+  loader: () => import(`./stages/${STAGE_MAPPING[stage]}.vue`)
 });
 
-const stages = Object.keys(STAGE_MAPPING).length;
+const Component = shallowRef(loadComponent(uploadStore.stage));
+
+watch(() => uploadStore.stage, (newStage) => {
+  Component.value = loadComponent(newStage);
+});
+
+const stages = Object.keys(STAGE_MAPPING).length - 1;
 
 </script>
 
 <template>
   <div class="flex flex-col items-center gap-y-4">
-    <div v-if="accountStore.user">
+    <template v-if="accountStore.user">
       <Component />
-      <SegmentedProgress :progress="registerStore.stage" :total-segments="stages" />
-    </div>
+      <SegmentedProgress :progress="uploadStore.stage" :total-segments="stages" />
+    </template>
     <p v-else>Je potřeba se nejdříve přihlásit.</p>
   </div>
 </template>

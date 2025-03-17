@@ -12,7 +12,7 @@ const router = useRouter();
 const email = ref('');
 const password = ref('');
 
-const mutation = useMutation({
+const { mutate, isPending, error } = useMutation({
   mutationFn: (loginInfo: { email: string; password: string }) => postLogin(loginInfo),
   onSuccess: (data) => {
     router.replace('/');
@@ -20,10 +20,9 @@ const mutation = useMutation({
   }
 });
 
-const loading = computed(() => mutation.isPending && !mutation.isIdle)
 
 const handleLogin = () => {
-  mutation.mutate({ email: email.value, password: password.value });
+  mutate({ email: email.value, password: password.value });
 };
 
 const navigateToRegister = () => {
@@ -37,10 +36,10 @@ const navigateToRegister = () => {
     <h1>Nářečí českých strnadů</h1>
     <span class="text-xl">Nahrávejte, mapujte, dobývejte</span>
 
-    <div v-if="mutation.error.value">Chyba: {{ mutation.error.value }}</div>
-    <div v-if="loading">Načítání...</div>
-    <div v-else class="flex flex-col gap-y-2">
-      <form class="flex flex-col w-full" @submit.prevent="handleLogin">
+    <div v-if="error">Chyba: {{ error }}</div>
+    <div v-if="isPending">Načítání...</div>
+    <div v-else class="flex flex-col gap-y-4">
+      <form class="flex flex-col w-full gap-y-2" @submit.prevent="handleLogin">
         <div class="flex flex-col gap-x-2 gap-y-4 w-full">
             <div>
               <label for="email" class="block text-sm font-medium mb-1">E-Mail</label>
@@ -51,7 +50,7 @@ const navigateToRegister = () => {
               <input id="password" v-model="password" name="pass" type="password" placeholder="Heslo" class="w-full p-2 border rounded" />
             </div>
         </div>
-        <button class="primary p-2 m-2" type="submit" :disabled="loading">
+        <button class="primary p-2" type="submit" :disabled="isPending">
           Přihlásit se
         </button>
       </form>

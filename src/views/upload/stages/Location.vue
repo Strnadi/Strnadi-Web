@@ -1,7 +1,7 @@
 <template>
   <h1 className='text-2xl font-bold'>Přidání lokace</h1>
   <p>Zaklikněte v mapě kde jste nahrávali</p>
-  <button @click="onClick">
+  <button class="primary p-2 w-full" @click="onClick">
     Pokračovat
   </button>
 </template>

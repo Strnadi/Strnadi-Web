@@ -36,9 +36,9 @@ export interface RecordingPartUploadReq {
   recordingId: number;
   startDate: string; // ISO date-time
   endDate: string;   // ISO date-time
-  latitudeStart: number;
-  latitudeEnd: number;
-  longitudeStart: number;
-  longitudeEnd: number;
-  data?: string | null;
+  gpsLatitudeStart: number;
+  gpsLatitudeEnd: number;
+  gpsLongitudeStart: number;
+  gpsLongitudeEnd: number;
+  dataBase64: string;
 }

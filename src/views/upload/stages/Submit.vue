@@ -9,8 +9,6 @@ import type { RecordingUploadReq, RecordingPartUploadReq } from "@/api/types/rec
 
 const router = useRouter();
 
-const error = ref(null);
-
 const onClick = () => {
   router.back();
   uploadStore.resetStage();
@@ -19,7 +17,7 @@ const onClick = () => {
 const toBase64 = (content: ArrayBuffer) =>
   btoa(new Uint8Array(content).reduce((data, byte) => data + String.fromCharCode(byte), ""));
 
-const mutation = useMutation({
+const { mutate, error, isPending } = useMutation({
   mutationFn: ({ token, recording, parts }: { token: string, recording: RecordingUploadReq, parts: RecordingPartUploadReq[] }) => postRecording(token, recording, parts),
 });
 
@@ -34,18 +32,18 @@ onMounted(() => {
   };
 
   // Each file is treated as a separate recording part
-  const recordingParts = uploadStore.recordings!.map(({ content }) => ({
+  const recordingParts = uploadStore.parts!.map(({ content }) => ({
     recordingId: 0, // Will get overridden
-    startDate: new Date().toISOString(),
-    endDate: new Date().toISOString(),
-    latitudeStart: uploadStore.location!.lat,
-    latitudeEnd: uploadStore.location!.lat,
-    longitudeStart: uploadStore.location!.lng,
-    longitudeEnd: uploadStore.location!.lng,
-    data: toBase64(content),
+    startDate: uploadStore.dateTime,
+    endDate: uploadStore.dateTime,
+    gpsLatitudeStart: uploadStore.location!.lat,
+    gpsLatitudeEnd: uploadStore.location!.lat,
+    gpsLongitudeStart: uploadStore.location!.lng,
+    gpsLongitudeEnd: uploadStore.location!.lng,
+    dataBase64: toBase64(content),
   } as RecordingPartUploadReq));
 
-  mutation.mutate({
+  mutate({
     token: accountStore.token!,
     recording: recording,
     parts: recordingParts
@@ -54,14 +52,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="mutation.isPending && !mutation.isIdle">
+  <div v-if="isPending">
     <p>Nahrávání vaší nahrávky...</p>
   </div>
 
   <div v-else-if="error">
     <h1>Chyba</h1>
-    <!-- <p>{{ error.message }}</p> -->
-    <!-- <button @click="upload">Opakovat</button> -->
+    <p>{{ error.message }}</p>
   </div>
 
   <div v-else>

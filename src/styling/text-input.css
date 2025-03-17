@@ -1,4 +1,4 @@
-input[type="text"], input[type="email"], input[type="password"] {
+input[type="text"], input[type="email"], input[type="password"], input[type="number"] {
   @apply font-semibold;
   @apply border-2;
   @apply border-[#d2d2d2];
@@ -7,6 +7,15 @@ input[type="text"], input[type="email"], input[type="password"] {
   @apply min-h-14;
 }
 
-input[type="text"]:focus {
+input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="number"]:focus {
   @apply border-[#2D2B18];
+}
+
+textarea {
+  @apply font-semibold;
+  @apply border-2;
+  @apply border-[#d2d2d2];
+  @apply rounded-2xl;
+  @apply p-4;
+  @apply min-h-14;
 }

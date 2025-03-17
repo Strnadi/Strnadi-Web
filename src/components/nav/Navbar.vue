@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { accountStore } from '@/state/AccountStore';
 
 import Dropdown from '@/components/generic/Dropdown.vue'
+import AccountDropdown from '@/components/nav/AccountDropdown.vue';
 
 import Upload from '@/assets/icon-upload.svg';
 import Notifications from '@/assets/icon-notifications-empty.svg';
@@ -10,14 +11,17 @@ import List from '@/assets/icon-list.svg';
 import Info from '@/assets/icon-info.svg';
 import Rights from './Rights.vue';
 import InfoDropdownItems from './InfoDropdownItems.vue';
+import InfoDropdown from './InfoDropdown.vue';
+
+import DropdownIcon from '@/assets/dropdown.svg'
 
 const isMenuOpen = ref(false);
-const session = accountStore.user;
+
 
 </script>
 
 <template>
-  <div class="flex justify-between items-center h-16 bg-white rounded-4xl m-2 2xl:m-5 pr-4">
+  <div class="flex justify-between items-center h-16 bg-white rounded-4xl m-2 lg:m-5 pr-4">
     <!-- Logo -->
     <div class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc]">
       <RouterLink to="/">
@@ -27,7 +31,7 @@ const session = accountStore.user;
 
     <!-- Mobile menu toggle -->
     <button 
-      class="2xl:hidden p-2" 
+      class="lg:hidden p-2" 
       aria-label="Toggle menu"
       v-on:click="isMenuOpen = !isMenuOpen"
     >
@@ -36,24 +40,24 @@ const session = accountStore.user;
       </svg>
     </button>
 
-    <!-- Desktop navigation - shown only on 2xl screens -->
-    <div class="hidden 2xl:flex justify-between items-center w-full ml-4">
-      <ul class='flex flex-row gap-x-8 items-center'>
-        <div v-if="session">
+    <!-- Desktop navigation - shown only on lg screens -->
+    <div class="hidden lg:flex justify-between items-center w-full ml-4">
+      <ul class='flex flex-row gap-x-4 items-center'>
+        <template v-if="accountStore.user">
           <li>
-            <RouterLink to="/add-recording" class='font-semibold flex flex-row gap-x-1 items-center'>
+            <RouterLink to="/nahrat" class='dropdown-item'>
               <img :src="Upload" alt="Upload" />
               Nahrát
             </RouterLink>
           </li>
           <li>
-            <RouterLink to="/account/my-recordings" class='font-semibold flex flex-row gap-x-1 items-center'>
+            <RouterLink to="/account/my-recordings" class='dropdown-item'>
               <img :src="List" alt="List" />
               Moje záznamy
             </RouterLink>
           </li>
           <li>
-            <RouterLink to="/account/notifications" class='font-semibold flex flex-row gap-x-1 items-center'>
+            <RouterLink to="/account/notifications" class='dropdown-item'>
               <img :src="Notifications" alt="Notifications" />
               Oznámení
             </RouterLink>
@@ -61,14 +65,14 @@ const session = accountStore.user;
           <li class='font-semibold'>
             <InfoDropdown />
           </li>
-        </div>
+        </template>
 
         <div v-else class="flex flex-row gap-x-4 items-center">
           <InfoDropdownItems />
           <Dropdown>
             <template v-slot:title class="flex flex-row items-center">
-              <img :src="Info" />
               Formality
+              <img :src="DropdownIcon" width="16" />
             </template>
             <Rights />
           </Dropdown>
@@ -76,39 +80,39 @@ const session = accountStore.user;
       </ul>
 
       <ul class="flex flex-row gap-x-4 items-center">
-        <RouterLink to="/application" class='button-primary py-2 px-4'>
+        <RouterLink to="/aplikace" class='button-primary py-2 px-4'>
           Stáhnout aplikaci
         </RouterLink>
         <li>
-          <AccountDropdown v-if="session" />
+          <AccountDropdown v-if="accountStore.user" />
           <RouterLink v-else to="/login" class="button-secondary py-2 px-4">Přihlásit se</RouterLink>
         </li>
       </ul>
     </div>
   </div>
 
-  <!-- Mobile menu - collapsible (shown on screens below 2xl) -->
+  <!-- Mobile menu - collapsible (shown on screens below lg) -->
   <div
     v-if="isMenuOpen"
-    class="2xl:hidden bg-white py-4 px-2 mx-2 rounded-2xl"
+    class="lg:hidden bg-white py-4 px-2 mx-2 rounded-lg"
     @click="isMenuOpen = !isMenuOpen"
   >
     <ul class='flex flex-col gap-y-4  p-4'>
-      <div v-if="session">
+      <div v-if="accountStore.user">
         <li>
-          <RouterLink to="/add-recording" class='font-semibold flex flex-row gap-x-1 items-center'>
+          <RouterLink to="/nahrat" class='dropdown-item'>
             <img :src="Upload" alt="Upload" />
             Nahrát
           </RouterLink>
         </li>
         <li>
-          <RouterLink to="/account/my-recordings" class='font-semibold flex flex-row gap-x-1 items-center'>
+          <RouterLink to="/account/my-recordings" class='dropdown-item'>
             <img :src="List" alt="List" />
             Moje záznamy
           </RouterLink>
         </li>
         <li>
-          <RouterLink to="/account/notifications" class='font-semibold flex flex-row gap-x-1 items-center'>
+          <RouterLink to="/account/notifications" class='dropdown-item'>
             <img :src="Notifications" alt="Notifications" />
             Oznámení
           </RouterLink>
@@ -125,7 +129,7 @@ const session = accountStore.user;
         </RouterLink>
       </li>
       <li class="pt-2">
-        <AccountDropdown v-if="session"/>
+        <AccountDropdown v-if="accountStore.user"/>
         <RouterLink v-else to="/login" class="button-secondary py-2 px-4 block w-full text-center">Přihlásit se</RouterLink>
       </li>
     </ul>
@@ -137,7 +141,7 @@ const session = accountStore.user;
 @reference "../../main.css";
 
 :deep(.dropdown-item) {
-  @apply font-semibold block px-4 py-2 hover:bg-gray-100 hover:border-0 rounded-xl;
+  @apply font-semibold flex flex-row items-center gap-x-1 px-2 py-2 hover:bg-gray-100 hover:border-0 rounded-xl;
 }
 
 </style>

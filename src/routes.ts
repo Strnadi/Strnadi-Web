@@ -1,100 +1,82 @@
 import type { RouteRecordRaw } from "vue-router";
 
-import VueMarkdown from 'vue-markdown-render';
-import Login from '@/views/Login.vue';
-import Register from '@/views/register/Register.vue'
-
-import termsOfServices from '@/assets/texts/terms-of-services.md?raw';
-import gdpr from '@/assets/texts/gdpr.md?raw';
-import howToRecord from '@/assets/texts/how-to-record.md?raw';
-import aboutBird from '@/assets/texts/about-bird.md?raw';
-import aboutProject from '@/assets/texts/about-project.md?raw';
-import application from '@/assets/texts/application.md?raw';
-import Upload from "./views/upload/Upload.vue";
-import MapOptions from "./views/MapOptions.vue";
-
 export const routes: readonly RouteRecordRaw[] = [
   {
     path: '/',
-    components: {}
+    components: {
+      "non-existent-component": { render: () => null }
+    }
   },
   {
     path: '/login',
     components: {
-      popup: Login
+      popup: () => import('@/views/Login.vue')
     },
   },
   {
     path: '/registrace',
     components: {
-      popup: Register
-    }
-  },
-  {
-    path: '/nahrat',
-    components: {
-      center: Upload
-    },
-  },
-  {
-    path: '/podminky-pouziti',
-    components: {
-      center: VueMarkdown
-    },
-    props: {
-      center: {
-        source: termsOfServices
-      }
-    }
-  },
-  {
-    path: '/ochrana-osobnich-udaju',
-    components: {
-      center: VueMarkdown
-    },
-    props: {
-      center: {
-        source: gdpr
-      }
-    }
-  },
-  {
-    path: '/jak-nahravat',
-    components: {
-      side: VueMarkdown
-    },
-    props: {
-      side: {
-        source: howToRecord
-      }
-    }
-  },
-  {
-    path: '/o-projektu',
-    components: {
-      side: VueMarkdown
-    },
-    props: {
-      side: {
-        source: aboutProject
-      }
-    }
-  },
-  {
-    path: '/o-strnadovi',
-    components: {
-      side: VueMarkdown
-    },
-    props: {
-      side: {
-        source: aboutBird
-      }
+      popup: () => import('@/views/register/Register.vue')
     }
   },
   {
     path: '/nastaveni-mapy',
     components: {
-      popup: MapOptions
+      popup: () => import('@/views/MapOptions.vue')
     }
   },
+  {
+    path: '/legenda-mapy',
+    components: {
+      popup: () => import('@/views/MapLegend.vue')
+    }
+  },
+  {
+    path: '/nahrat',
+    components: {
+      center: () => import('@/views/upload/Upload.vue')
+    },
+  },
+  {
+    path: '/podminky-pouziti',
+    components: {
+      center: () => import('@/texts/terms-of-services.md')
+    }
+  },
+  {
+    path: '/ochrana-osobnich-udaju',
+    components: {
+      center: () => import('@/texts/gdpr.md')
+    }
+  },
+  {
+    path: '/jak-nahravat',
+    components: {
+      side: () => import('@/texts/how-to-record.md')
+    }
+  },
+  {
+    path: '/o-projektu',
+    components: {
+      side: () => import('@/texts/about-project.md')
+    }
+  },
+  {
+    path: '/o-strnadovi',
+    components: {
+      side: () => import('@/texts/about-bird.md')
+    }
+  },
+  {
+    path: '/aplikace',
+    components: {
+      popup: () => import('@/texts/application.md')
+    }
+  },
+  {
+    path: "/:pathMatch(.*)*",
+    components: {
+      popup: () => import('@/texts/not-found.md')
+    }
+  }
 ]

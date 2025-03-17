@@ -6,8 +6,8 @@ import { visualizer } from "rollup-plugin-visualizer";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import mdx from "@mdx-js/rollup";
 import compression from "vite-plugin-compression2";
+import Markdown from 'unplugin-vue-markdown/vite';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -15,7 +15,8 @@ export default defineConfig({
     nodePolyfills(),
     tsconfigPaths({ loose: true }),
     tailwindcss(),
-    vue(),
+    vue({ include: [/\.vue$/, /\.md$/] }),
+    Markdown({  }),
     VitePWA({
       srcDir: "src/workers",
       filename: "Worker.ts",
@@ -32,7 +33,7 @@ export default defineConfig({
     }),
     visualizer({
       gzipSize: true,
-      open: true,
+      open: false,
       template: "flamegraph",
     }),
   ],
@@ -41,10 +42,20 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
+
+          if(id.includes("vue3-openlayers") || id.includes("/ol") || id.includes("geojson") || id.includes("geotiff")) {
+            return "maps";
+          }
+          
+          // if(id.includes("vue")) {
+          //   return "vue-core";
+          // }
+
           if (id.includes("node_modules") || id.includes("src/vendor/")) {
             return "vendor";
           }
         },
+        // hoistTransitiveImports: false
       },
     },
 
@@ -81,5 +92,5 @@ export default defineConfig({
     },
   },
 
-  assetsInclude: ["**/*.md"]
+  // assetsInclude: ["**/*.md"]
 });

@@ -27,7 +27,7 @@ Tím, že nahrajete tento obsah:
 **(a)** potvrzujete, že jste jeho autorem, obsah je váš, nebo máte souhlas autora k jeho poskytnutí za zde uvedených podmínek, \
 **(b)** souhlasíte, že obsah neodpovídající cílům projektu (výzkumu variability zpěvu strnada obecného na území ČR) může být odstraněn, \
 **(c)** souhlasíte, že obsah může být použit v rámci projektu Nářečí českých strnadů a navazujících výzkumných aktivit, \
-**(d)** souhlasíte s veřejným zpřístupněním obsahu pro vědecké a popularizační účely pod licencí *CC BY-NC (Creative Common By Attribution – Non Commercial; Creative Commons Uveďte původ – Neužívejte dílo komerčně)*. 
+**(d)** souhlasíte s veřejným zpřístupněním obsahu pro vědecké a popularizační účely pod licencí [*CC BY-NC (Creative Common By Attribution – Non Commercial; Creative Commons Uveďte původ – Neužívejte dílo komerčně)*](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.cs). 
 
 Všechny záznamy nahrané do projektu Nářečí českých strnadů prostřednictvích webu strnadi.cz nebo mobilní aplikace Nářečí českých strnadů budou uloženy na zabezpečeném serveru. Vaše jméno a přezdívka budou evidovány jako součást vědeckých záznamů. Otevřená data mohou být stažena, remixována a redistribuována třetími stranami. 
 
