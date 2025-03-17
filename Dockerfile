@@ -1,12 +1,12 @@
 FROM oven/bun:alpine AS build
 WORKDIR /usr/src/app
 
-COPY package.json .
+COPY bunfig.toml package.json .env .env.sentry-build-plugin ./
 RUN bun install
 
 COPY src src
 COPY public public
-COPY index.html tsconfig*.json vite.config.ts .env .env.sentry-build-plugin ./
+COPY index.html tsconfig*.json vite.config.ts ./
 
 ENV NODE_ENV=production
 RUN bun run build
