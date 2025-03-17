@@ -20,7 +20,7 @@ export default function Register1() {
   return (
     <div>
       <h1>Kde se nacházíte?</h1>
-      <form className="flex flex-col" action={handleRegister}>
+      <form className="flex flex-col gap-y-2" action={handleRegister}>
         <input name="postalCode" type="number" placeholder="PSČ" />
         <input name="city" type="text" placeholder="Město" />
         <button className="primary p-2 m-2" type="submit">Pokračovat</button>

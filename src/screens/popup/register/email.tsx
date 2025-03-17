@@ -1,6 +1,9 @@
 import { useRegisterState } from "@/state/store";
 import { useNavigate } from "react-router";
 
+
+import "@/styling/popups.css"
+
 export default function Register1() {
 
   const nextStage = useRegisterState(state => state.nextStage);
@@ -15,15 +18,19 @@ export default function Register1() {
   };
 
   return (
-    <div className="flex flex-col">
-      <form className="flex flex-col" action={handleRegister}>
+    <>
+    <h1 className='text-2xl font-bold'>Zadejte váš e-mail</h1>
+    <div className=" flex flex-col items-center gap-y-5 w-full">
+      <form className="flex flex-col w-full gap-y-2" action={handleRegister}>
         <input name="email" type="email" placeholder="E-Mail" />
         <button className="primary p-2 m-2" type="submit">Pokračovat</button>
       </form>
 
-      <button className="secondary" onClick={() => navigate("/auth/login")}>
+      <button onClick={() => navigate("/auth/login")}>
         Máte již účet? Přihlašte se.
       </button>
     </div>
+    </>
+
   );
 }

@@ -27,7 +27,6 @@ export default function Register() {
 
   return (
     <PopupLayout onClose={resetRegisterState}>
-      <h1 className='text-2xl font-bold'>Registrace</h1>
       <Suspense fallback={<Loading />}>
         <Component />
         <SegmentedProgressBar totalSegments={totalSegments} progress={stage} />

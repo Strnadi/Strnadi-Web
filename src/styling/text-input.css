@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-input[type="text"], input[type="email"], input[type="password"] {
+input[type="text"], input[type="email"], input[type="password"], input[type="number"] {
   @apply font-semibold;
   @apply border-2;
   @apply border-[#F6F6F6];

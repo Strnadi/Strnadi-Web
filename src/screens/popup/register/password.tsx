@@ -21,7 +21,7 @@ export default function Register1() {
   return (
     <div>
       <h1>Nastavte si heslo</h1>
-      <form className="flex flex-col" action={handleRegister}>
+      <form className="flex flex-col gap-y-2" action={handleRegister}>
         <input name="password" type="password" placeholder="Heslo" />
         <input name="passwordAgain" type="password" placeholder="Heslo znovu" />
         <button className="primary p-2 m-2" type="submit">Pokračovat</button>
