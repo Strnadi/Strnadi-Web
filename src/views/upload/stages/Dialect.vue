@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Spectrogram from '/home/hroudis/spectrogram-js-vue/dist/spectrogram-vue.es.js';
+import Spectrogram from '@strnadi/spectrogram-vue';
 import { uploadStore } from '@/state/UploadStore';
 
 // Todo multiple parts support

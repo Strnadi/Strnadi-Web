@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@sentry/vue": "^9.5.0",
-    "@strnadi/spectrogram-vue": "^0.0.2",
+    "@strnadi/spectrogram-vue": "^0.0.4",
     "@tanstack/vue-query": "^5.68.0",
     "@vuepic/vue-datepicker": "^11.0.2",
     "axios": "^1.8.3",
