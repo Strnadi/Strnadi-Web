@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { ApiError } from "./api-error";
-import { RecordingModel, RecordingPartUploadReq, RecordingUploadReq } from "@/api/types/recording";
+import type { RecordingModel, RecordingPartUploadReq, RecordingUploadReq } from "@/api/types/recording";
 const env = import.meta.env;
 
 export const postRecording = async (
@@ -9,14 +9,17 @@ export const postRecording = async (
 	recordingParts: RecordingPartUploadReq[]
 ): Promise<void> => {
 
-	const uploadedRecording = (await axios.post(`${env.VITE_API_URL}/recordings/upload`, recording, {
+	const uploadedRecordingId = (await axios.post(`${env.VITE_API_URL}/recordings/upload`, recording, {
 		headers: { "Authorization": `Bearer ${token}` }
 	})).data;
 
 	for await (const part of recordingParts) {
 		await axios.post(`${env.VITE_API_URL}/recordings/upload-part`, {
 			...part,
-			recordingId: uploadedRecording.id
+			recordingId: uploadedRecordingId
+		},
+		{
+			headers: { "Authorization": `Bearer ${token}` }
 		});
 	}
 }

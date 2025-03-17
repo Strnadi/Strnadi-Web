@@ -1,9 +1,7 @@
-@import "tailwindcss";
-
 /* ===== Radio Button Styles ===== */
 input[type="radio"] {
   /* Base style for the radio button */
-  @apply appearance-none h-4 w-4 border border-gray-300 rounded-full;
+  @apply appearance-none h-8 w-8 border border-gray-300 rounded-full;
 }
 
 /* Checked state */

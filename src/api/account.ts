@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
-import { LoginRequest, SignUpRequest, Token } from "@/api/types/auth";
-import { User } from "./types/auth";
 import { ApiError } from "./api-error";
+import type { JwtObject, User } from "./types/auth";
+import type { LoginRequest, SignUpRequest, Token } from "@/api/types/auth";
 
 const env = import.meta.env;
 
@@ -15,9 +15,9 @@ const genericPost = async<T> (path: string, data: T) => {
   }
 }
 
-export const getUser = async (token: string): Promise<User> => {
+export const getUser = async (token: string, token_object: JwtObject): Promise<User> => {
   try {
-    const response = await axios.get(`${env.VITE_API_URL}/users`, {
+    const response = await axios.get(`${env.VITE_API_URL}/users/${token_object.sub}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -34,4 +34,4 @@ export const postLogin = async (loginData: LoginRequest): Promise<Token> =>
   genericPost("login", loginData);
 
 export const postRegister = async (signUpData: SignUpRequest): Promise<Token> =>
-  genericPost("register", signUpData);
+  genericPost("sign-up", signUpData);

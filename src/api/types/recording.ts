@@ -34,11 +34,11 @@ export interface RecordingUploadReq {
 
 export interface RecordingPartUploadReq {
   recordingId: number;
-  start: string; // ISO date-time
-  end: string;   // ISO date-time
-  latitudeStart: number;
-  latitudeEnd: number;
-  longitudeStart: number;
-  longitudeEnd: number;
-  data?: string | null;
+  startDate: string; // ISO date-time
+  endDate: string;   // ISO date-time
+  gpsLatitudeStart: number;
+  gpsLatitudeEnd: number;
+  gpsLongitudeStart: number;
+  gpsLongitudeEnd: number;
+  dataBase64: string;
 }
