@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { mapStore } from '@/state/MapStore';
 import { useQuery } from '@tanstack/vue-query';
 import { getRecordings } from '@/api/recording';
@@ -24,22 +24,20 @@ const partAverageCoords = (part: RecordingPartModel) => {
   ]
 }
 
-const selectInteactionFilter = (feature) => {
-  return feature.values_.name != undefined;
-};
-
-function onFeatureSelect(event: MapBrowserEvent<UIEvent>) {
-  if (event.selected.length) {
-    const feature = event.selected[0];
-    const coords = feature.getGeometry().getCoordinates();
-    console.log(coords);
-  }
-}
-
 function onMapClick(event: MapBrowserEvent<UIEvent>) {
-  const coords = event.coordinate;
-  mapStore.setSelectedLocation(coords[1], coords[0]);
 
+  if (mapStore.selectEnabled) {
+    const coords = event.coordinate;
+    mapStore.setSelectedLocation(coords[1], coords[0]);
+  } else {
+    const featuresAtPixel = event.map.getFeaturesAtPixel(event.pixel);
+    if (featuresAtPixel && featuresAtPixel.length > 0) {
+      const feature = featuresAtPixel[0];
+      const coords = feature.getGeometry().getCoordinates();
+    }
+  }
+
+  // Don't block dragging event
   return true;
 }
 
@@ -116,10 +114,5 @@ const coords = computed(() => {
         </ol-feature>
       </ol-source-vector>
     </ol-vector-layer>
-
-    <ol-interaction-select
-      @select="onFeatureSelect"
-      :filter="selectInteactionFilter"
-    />
   </ol-map>
 </template>

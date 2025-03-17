@@ -8,6 +8,7 @@ import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import compression from "vite-plugin-compression2";
 import Markdown from 'unplugin-vue-markdown/vite';
+import mkcert from'vite-plugin-mkcert'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -36,6 +37,7 @@ export default defineConfig({
       open: false,
       template: "flamegraph",
     }),
+    // mkcert()
   ],
 
   build: {
@@ -90,7 +92,7 @@ export default defineConfig({
     headers: {
       "content-security-policy":
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:;",
-    },
+    }
   },
 
   // assetsInclude: ["**/*.md"]

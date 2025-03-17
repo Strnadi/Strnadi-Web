@@ -4,6 +4,7 @@ import { VueQueryPlugin } from '@tanstack/vue-query'
 import { useGeographic } from 'ol/proj';
 import OpenLayersMap from "vue3-openlayers";
 import App from '@/App.vue';
+import '@/firebase';
 import './main.css';
 
 import * as Sentry from "@sentry/vue";

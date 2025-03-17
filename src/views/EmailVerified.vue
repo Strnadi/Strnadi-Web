@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import LogoNoText from '@/assets/logo-no-text.svg';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+const goHome = () => router.replace('/');
+
 </script>
 
 <template>
@@ -8,9 +13,7 @@ import LogoNoText from '@/assets/logo-no-text.svg';
       <img :src="LogoNoText" />
       <h2>Nářečí českých strnadů</h2>
     </div>
-    <button class="primary p-2 w-full">
-      <div class="lg:hidden">Zpět do aplikace</div>
-      <div class="max-lg:hidden">Dokončit registraci</div>
-    </button>
+    <button class="primary lg:hidden">Zpět do aplikace</button>
+    <button class="primary max-lg:hidden" @click="goHome">Dokončit registraci</button>
   </div>
 </template>

@@ -13,13 +13,15 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  nickname: string;
+  nickname: string | null;
   creationDate: string;
   consent: boolean;
   isEmailVerified: boolean;
   password: string;
   role: "user" | "admin";
-  profilePicture: URL | null;
+  profilePicture: URL;
+  postalCode: string | null;
+  city: string | null;
 }
 
 export interface LoginRequest {

@@ -10,6 +10,7 @@
 
 import { uploadStore } from '@/state/UploadStore';
 import { mapStore } from '@/state/MapStore';
+import { onBeforeUnmount, onMounted } from 'vue';
 
 function onClick() {
   if (mapStore.selectedLocation) {
@@ -19,4 +20,12 @@ function onClick() {
     alert("Zaklikněte lokaci!");
   }
 }
+
+onMounted(() => {
+  mapStore.setSelectEnabled(true);
+});
+
+onBeforeUnmount(() => {
+  mapStore.setSelectEnabled(false);
+});
 </script>
