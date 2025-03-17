@@ -11,6 +11,6 @@ COPY index.html tsconfig*.json vite.config.ts ./
 ENV NODE_ENV=production
 RUN bun run build
 
-FROM nginx:custom-alpine-slim AS production
+FROM nginx:custom AS production
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY --from=build /usr/src/app/dist /usr/share/nginx/html
