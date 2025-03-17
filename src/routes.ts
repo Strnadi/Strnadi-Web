@@ -8,6 +8,12 @@ export const routes: readonly RouteRecordRaw[] = [
     }
   },
   {
+    path: '/email-verifikovan',
+    components: {
+      popup: () => import('@/views/EmailVerified.vue')
+    },
+  },
+  {
     path: '/login',
     components: {
       popup: () => import('@/views/Login.vue')

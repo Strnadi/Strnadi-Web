@@ -1,4 +1,3 @@
-import { remove } from 'ol/array';
 import { reactive } from 'vue'
 
 type LatLng = {
