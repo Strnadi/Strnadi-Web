@@ -6,3 +6,9 @@ declare module '*.md' {
   const Component: ComponentOptions
   export default Component
 }
+
+declare module '*.vue' {
+  import type { DefineComponent } from 'vue'
+  const component: DefineComponent<{}, {}, any>
+  export default component
+}

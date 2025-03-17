@@ -25,7 +25,7 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
       },
     }),
-    compression(),
+    compression({ algorithm: "brotliCompress" }),
     sentryVitePlugin({
       org: "delta-strnadi",
       project: "strnadi-web",
@@ -60,6 +60,7 @@ export default defineConfig({
     },
 
     sourcemap: true,
+    reportCompressedSize: false
   },
 
   resolve: {
