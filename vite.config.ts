@@ -1,3 +1,9 @@
+// This file is actually crazy. It went through so much stuff, so many plugins, two different
+// JavaScript frameworks, and a lot of trial and error. It is a miracle that it works at all.
+// I am not sure if I will ever understand how it works and how I got here.
+// Its inner workings are lost in chats with ChatGPT and nowhere else.
+// Do not touch, unless absolutely necessary.
+
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
@@ -8,7 +14,8 @@ import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import compression from "vite-plugin-compression2";
 import Markdown from 'unplugin-vue-markdown/vite';
-import mkcert from'vite-plugin-mkcert'
+// import mkcert from'vite-plugin-mkcert'
+// import { fileURLToPath } from "node:url";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -24,6 +31,11 @@ export default defineConfig({
       strategies: "injectManifest",
       injectManifest: {
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+        buildPlugins: {
+          vite: [
+            tsconfigPaths({ loose: true })
+          ]
+        }
       },
     }),
     compression({ algorithm: "brotliCompress" }),
@@ -41,17 +53,13 @@ export default defineConfig({
   ],
 
   build: {
+    target: "ESNext",
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-
           if(id.includes("vue3-openlayers") || id.includes("/ol") || id.includes("geojson") || id.includes("geotiff")) {
             return "maps";
           }
-          
-          // if(id.includes("vue")) {
-          //   return "vue-core";
-          // }
 
           if (id.includes("node_modules") || id.includes("src/vendor/")) {
             return "vendor";
@@ -59,6 +67,7 @@ export default defineConfig({
         },
         // hoistTransitiveImports: false
       },
+      // external: /firebaseConfig/,
     },
 
     sourcemap: true,

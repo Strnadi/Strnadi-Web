@@ -1,7 +1,7 @@
 import { precacheAndRoute } from 'workbox-precaching'
-import { firebaseConfig } from "@/firebase";
 import { initializeApp } from "firebase/app";
 import { getMessaging, onBackgroundMessage } from "firebase/messaging/sw";
+import { firebaseConfig } from "@/firebaseConfig";
 
 /* @ts-ignore */
 precacheAndRoute(self.__WB_MANIFEST)
