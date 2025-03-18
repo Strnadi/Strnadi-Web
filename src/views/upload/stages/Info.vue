@@ -10,7 +10,7 @@
       :inline="true"
     />
     <div>
-      <label for="title" class="block text-sm font-medium mb-1">Titulek</label>
+      <label for="title" class="block text-sm font-medium">Titulek</label>
       <input
         v-model="uploadStore.title"
         type="text"
@@ -18,11 +18,20 @@
       />
     </div>
     <div>
-      <label for="note" class="block text-sm font-medium mb-1">Poznámka</label>
+      <label for="note" class="block text-sm font-medium">Poznámka</label>
       <textarea
         v-model="uploadStore.note"
-        type="text"
         id="note"
+      />
+    </div>
+    <div>
+      <label for="birdCount" class="block text-sm font-medium">Poznámka</label>
+      <input
+        v-model="uploadStore.birdCount"
+        min="0"
+        max="2"
+        type="range"
+        id="birdCount"
       />
     </div>
   </div>

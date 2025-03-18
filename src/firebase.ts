@@ -14,11 +14,12 @@ if (permission === "granted") {
 }
 
 const registration = await navigator.serviceWorker.getRegistration("/");
-console.log(registration)
+// console.log(registration)
 
 try {
   const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
   if (token) {
+    // Todo: update fcm token in the database
     console.log("Token generated: ", token);
   } else {
     console.log("No registration token available. Request permission to generate one.");

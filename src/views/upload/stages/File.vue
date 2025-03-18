@@ -22,9 +22,6 @@ import type { FileRejectReason } from "vue3-dropzone";
 
 // Local state
 const error = ref<string | null>(null);
-const acceptTypes = [
-  'audio/ogg'
-]
 
 const onDrop = (acceptedFiles: any[], rejectReasons: FileRejectReason[]) => {
   if (acceptedFiles.length === 0) {
@@ -35,11 +32,6 @@ const onDrop = (acceptedFiles: any[], rejectReasons: FileRejectReason[]) => {
 
   uploadStore.setRecordings(acceptedFiles);
   uploadStore.nextStage();
-  error.value = null;
 };
 
 </script>
-
-<style scoped>
-/* Add any custom styles if needed */
-</style>

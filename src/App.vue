@@ -74,7 +74,7 @@ const goBack = () => {
           <img :src="Back" />
           <span>Zpět</span>
         </button>
-        <div class="max-w-fit flex flex-col items-center">
+        <div class="max-w-fit flex flex-col gap-y-2 items-center">
           <component :is="Component" />
         </div>
       </div>

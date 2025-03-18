@@ -38,23 +38,23 @@ const navigateToRegister = () => {
 
     <div v-if="error">Chyba: {{ error }}</div>
     <div v-if="isPending">Načítání...</div>
-    <div v-else class="flex flex-col gap-y-4">
-      <form class="flex flex-col w-full gap-y-2" @submit.prevent="handleLogin">
+    <div v-else class="flex flex-col items-center gap-y-6 w-full">
+      <form class="flex flex-col items-center gap-y-2 w-[75%] max-lg:w-full" @submit.prevent="handleLogin">
         <div class="flex flex-col gap-x-2 gap-y-4 w-full">
             <div>
               <label for="email" class="block text-sm font-medium mb-1">E-Mail</label>
               <input id="email" v-model="email" name="mail" type="email" placeholder="E-Mail" class="w-full p-2 border rounded" />
             </div>
             <div>
-              <label for="password" class="block text-sm font-medium mb-1 flex flex-row justify-between"><span>Heslo</span><button>Zapomenuté heslo</button></label>
+              <label for="password" class="text-sm font-medium mb-1 flex flex-row justify-between"><span>Heslo</span><button>Zapomenuté heslo</button></label>
               <input id="password" v-model="password" name="pass" type="password" placeholder="Heslo" class="w-full p-2 border rounded" />
             </div>
         </div>
-        <button class="primary p-2" type="submit" :disabled="isPending">
+        <button class="primary p-2 max-lg:w-full w-full" type="submit" :disabled="isPending">
           Přihlásit se
         </button>
       </form>
-      <button class="secondary p-2" @click="navigateToRegister">
+      <button class="secondary p-2 max-lg:w-full w-[75%]" @click="navigateToRegister">
         Založit účet
       </button>
     </div>

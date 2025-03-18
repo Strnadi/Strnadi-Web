@@ -21,7 +21,7 @@ const isMenuOpen = ref(false);
 </script>
 
 <template>
-  <div class="flex justify-between items-center h-16 bg-white rounded-4xl m-2 lg:m-5 pr-4">
+  <div class="flex justify-between gap-x-4 items-center h-16 bg-white rounded-4xl m-2 lg:m-5 pr-4">
     <!-- Logo -->
     <div class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc]">
       <RouterLink to="/">
@@ -41,7 +41,7 @@ const isMenuOpen = ref(false);
     </button>
 
     <!-- Desktop navigation - shown only on lg screens -->
-    <div class="hidden lg:flex justify-between items-center w-full ml-4">
+    <div class="hidden lg:flex justify-between items-center w-full">
       <ul class='flex flex-row gap-x-4 items-center'>
         <template v-if="accountStore.user">
           <li>
@@ -56,12 +56,12 @@ const isMenuOpen = ref(false);
               Moje záznamy
             </RouterLink>
           </li>
-          <li>
+          <!-- <li>
             <RouterLink to="/account/notifications" class='dropdown-item'>
               <img :src="Notifications" alt="Notifications" />
               Oznámení
             </RouterLink>
-          </li>
+          </li> -->
           <li class='font-semibold'>
             <InfoDropdown />
           </li>
@@ -106,18 +106,18 @@ const isMenuOpen = ref(false);
           </RouterLink>
         </li>
         <li>
-          <RouterLink to="/account/my-recordings" class='dropdown-item'>
+          <RouterLink to="/ucet/moje-nahravky" class='dropdown-item'>
             <img :src="List" alt="List" />
             Moje záznamy
           </RouterLink>
         </li>
-        <li>
+        <!-- <li>
           <RouterLink to="/account/notifications" class='dropdown-item'>
             <img :src="Notifications" alt="Notifications" />
             Oznámení
           </RouterLink>
-        </li>
-        <li class='font-semibold'>
+        </li> -->
+        <li class='dropdown-item'>
           <InfoDropdown />
         </li>
       </div>

@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useMutation } from '@tanstack/vue-query';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { accountStore } from "@/state/AccountStore";
 import { uploadStore } from "@/state/UploadStore";
 import { postRecording } from '@/api/recording';
 import type { RecordingUploadReq, RecordingPartUploadReq } from "@/api/types/recording";
+import { mapStore } from '@/state/MapStore';
 
 const router = useRouter();
+const queryClient = useQueryClient();
 
 const onClick = () => {
+  queryClient.invalidateQueries({ queryKey: ['all-recordings'] });
+  mapStore.selectedLocation = null;
   router.back();
   uploadStore.resetStage();
 };
@@ -64,6 +68,6 @@ onMounted(() => {
   <div v-else>
     <h1>Úspěch</h1>
     <h2>Vaše nahrávka byla uložena.</h2>
-    <button @click="onClick">Pokračovat zpět</button>
+    <button @click="onClick" class="primary p-2 w-full">Pokračovat zpět</button>
   </div>
 </template>

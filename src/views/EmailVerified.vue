@@ -13,7 +13,7 @@ const goHome = () => router.replace('/');
       <img :src="LogoNoText" />
       <h2>Nářečí českých strnadů</h2>
     </div>
-    <button class="primary lg:hidden">Zpět do aplikace</button>
-    <button class="primary max-lg:hidden" @click="goHome">Dokončit registraci</button>
+    <button class="primary p-2 w-full lg:hidden">Zpět do aplikace</button>
+    <button class="primary p-2 w-full max-lg:hidden" @click="goHome">Dokončit registraci</button>
   </div>
 </template>

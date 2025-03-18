@@ -14,7 +14,7 @@ export const mapStore = reactive({
     this.selectedLocation = { lat, lng };
   },
 
-  setMode(mode: "aerial" | "basic" | "outdoor") {
+  setMode(mode: typeof this.mode) {
     this.mode = mode;
   },
 
