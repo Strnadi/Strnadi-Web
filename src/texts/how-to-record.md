@@ -27,9 +27,7 @@
 
 **Tip**: Pokud můžete volit formát digitálního záznamu, preferujeme WAV před MP3. Stačí jeden kanál (mono), stereo nahrávky nepotřebujeme, ale samozřejmě si s nimi poradíme.
 
-5. Nahrávky pořízené pomocí mobilní aplikace se odešlou do databáze projektu automaticky.
-
-Nahrávky z jiných přístrojů odešlete pomocí intuitivního webového rozhraní na www.strnadi.cz.
+5. Nahrávky pořízené pomocí mobilní aplikace se odešlou do databáze projektu automaticky. Nahrávky z jiných přístrojů odešlete pomocí intuitivního webového rozhraní na www.strnadi.cz.
 
 # Kde nahrávat?
 
