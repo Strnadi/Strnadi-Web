@@ -3,10 +3,10 @@
 
 Zapojením do projektu občanské vědy Nářečí českých strnadů souhlasíte: 
 
-**(a)** s využitím poskytnutých nahrávek a souvisejících údajů pro vědecký výzkum variability ptačího zpěvu,  \
-**(b)** se zasíláním občasných zpráv o průběhu projektu formou notifikací v aplikaci nebo e-mailového newsletteru,  \
-**\(c\)** s tím, že Vás projektový tým může kontaktovat pro upřesnění informací týkajících se Vašich nahrávek nebo s nepovinným dotazníkem za účelem zpětné vazby a/nebo získání základních demografických údajů,   \
-**(d)** s možností, že Vás může oslovit Česká společnosti ornitologická s informacemi o svých aktivitách změřených na ochranu a poznání ptáků.  \
+**(a)** s využitím poskytnutých nahrávek a souvisejících údajů pro vědecký výzkum variability ptačího zpěvu, 
+**(b)** se zasíláním občasných zpráv o průběhu projektu formou notifikací v aplikaci nebo e-mailového newsletteru, 
+**\(c\)** s tím, že Vás projektový tým může kontaktovat pro upřesnění informací týkajících se Vašich nahrávek nebo s nepovinným dotazníkem za účelem zpětné vazby a/nebo získání základních demografických údajů,  
+**(d)** s možností, že Vás může oslovit Česká společnosti ornitologická s informacemi o svých aktivitách změřených na ochranu a poznání ptáků. 
 
 Tým projektu nenese odpovědnost za přesnost obsahu ani za případné škody vzniklé používáním informací z webových stránek nebo mobilní aplikace Nářečí českých strnadů.  
 
@@ -24,9 +24,9 @@ Používáním mobilní aplikace Nářečí českých strnadů nebo vkládáním
 
 Tím, že nahrajete tento obsah: 
 
-**(a)** potvrzujete, že jste jeho autorem, obsah je váš, nebo máte souhlas autora k jeho poskytnutí za zde uvedených podmínek, \
-**(b)** souhlasíte, že obsah neodpovídající cílům projektu (výzkumu variability zpěvu strnada obecného na území ČR) může být odstraněn, \
-**\(c\)** souhlasíte, že obsah může být použit v rámci projektu Nářečí českých strnadů a navazujících výzkumných aktivit, \
+**(a)** potvrzujete, že jste jeho autorem, obsah je váš, nebo máte souhlas autora k jeho poskytnutí za zde uvedených podmínek,
+**(b)** souhlasíte, že obsah neodpovídající cílům projektu (výzkumu variability zpěvu strnada obecného na území ČR) může být odstraněn,
+**\(c\)** souhlasíte, že obsah může být použit v rámci projektu Nářečí českých strnadů a navazujících výzkumných aktivit,
 **(d)** souhlasíte s veřejným zpřístupněním obsahu pro vědecké a popularizační účely pod licencí [*CC BY-NC (Creative Common By Attribution – Non Commercial; Creative Commons Uveďte původ – Neužívejte dílo komerčně)*](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.cs). 
 
 Všechny záznamy nahrané do projektu Nářečí českých strnadů prostřednictvích webu strnadi.cz nebo mobilní aplikace Nářečí českých strnadů budou uloženy na zabezpečeném serveru. Vaše jméno a přezdívka budou evidovány jako součást vědeckých záznamů. Otevřená data mohou být stažena, remixována a redistribuována třetími stranami. 
