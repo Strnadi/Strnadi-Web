@@ -2,7 +2,7 @@
 import { reactive } from 'vue'
 import type { User, JwtObject } from '@/api/types/auth'
 import * as jose from 'jose'
-import { getUser } from '@/api/account';
+import { getCurrentUserInfo } from '@/api/account';
 
 export const accountStore = reactive({
   token: null as string | null,
@@ -16,7 +16,7 @@ export const accountStore = reactive({
 
     const decoded = jose.decodeJwt(jwt) as JwtObject;
 
-    const user = await getUser(jwt, decoded);
+    const user = await getCurrentUserInfo(jwt, decoded);
 
     this.user = user;
     this.token = jwt;

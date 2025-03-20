@@ -15,9 +15,9 @@ const genericPost = async<T> (path: string, data: T) => {
   }
 }
 
-export const getUser = async (token: string, token_object: JwtObject): Promise<User> => {
+export const getUserInfo = async (token: string, email: string): Promise<User> => {
   try {
-    const response = await axios.get(`${env.VITE_API_URL}/users/${token_object.sub}`, {
+    const response = await axios.get(`${env.VITE_API_URL}/users/${email}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -28,7 +28,10 @@ export const getUser = async (token: string, token_object: JwtObject): Promise<U
     const error = e as AxiosError;
     throw new ApiError(error.code, error.response?.status);
   }
-};
+}
+
+export const getCurrentUserInfo = async (token: string, token_object: JwtObject): Promise<User> =>
+  getUserInfo(token, token_object.sub);
 
 export const postLogin = async (loginData: LoginRequest): Promise<Token> =>
   genericPost("login", loginData);

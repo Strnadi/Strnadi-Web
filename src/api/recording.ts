@@ -24,6 +24,17 @@ export const postRecording = async (
 	}
 }
 
+export const getRecording = async (id: number | string): Promise<RecordingModel> => {
+	try {
+		const response = await axios.get(`${env.VITE_API_URL}/recordings/${id}?parts=true`);
+		return response.data as RecordingModel;
+	} catch (e) {
+		const error = e as AxiosError;
+		throw new ApiError(error.code, error.response?.status);
+	}
+}
+
+
 export const getRecordings = async (): Promise<RecordingModel[]> => {
 	try {
 		const response = await axios.get(`${env.VITE_API_URL}/recordings?parts=true`);

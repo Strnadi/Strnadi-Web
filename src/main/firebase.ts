@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken } from "firebase/messaging";
-import { firebaseConfig, vapidKey } from "@/firebaseConfig";
+import { firebaseConfig, vapidKey } from "@/constants/firebaseConfig";
 
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);

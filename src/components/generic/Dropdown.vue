@@ -44,7 +44,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-@reference "../../main.css";
+@reference "../../main/main.css";
 
 ul > li {
   @apply font-semibold flex flex-row gap-x-1 items-center px-4 py-2 hover:bg-gray-100;

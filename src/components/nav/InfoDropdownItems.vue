@@ -11,7 +11,12 @@
   </li>
   <li>
     <RouterLink to="/jak-nahravat" class="dropdown-item">
-      Jak nahrávat
+      Jak nahrávat?
+    </RouterLink>
+  </li>
+  <li>
+    <RouterLink to="/kde-nahravat" class="dropdown-item">
+      Kde nahrávat?
     </RouterLink>
   </li>
 </template>

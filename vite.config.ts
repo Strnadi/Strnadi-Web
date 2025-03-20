@@ -6,7 +6,6 @@
 
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { visualizer } from "rollup-plugin-visualizer";
 import vue from "@vitejs/plugin-vue";
@@ -15,16 +14,14 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import compression from "vite-plugin-compression2";
 import Markdown from 'unplugin-vue-markdown/vite';
 // import mkcert from'vite-plugin-mkcert'
-// import { fileURLToPath } from "node:url";
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    nodePolyfills(),
     tsconfigPaths({ loose: true }),
     tailwindcss(),
     vue({ include: [/\.vue$/, /\.md$/] }),
-    Markdown({  }),
+    Markdown({ wrapperDiv: false }),
     VitePWA({
       srcDir: "src/workers",
       filename: "Worker.ts",
@@ -65,32 +62,11 @@ export default defineConfig({
             return "vendor";
           }
         },
-        // hoistTransitiveImports: false
       },
-      // external: /firebaseConfig/,
     },
 
     sourcemap: true,
     reportCompressedSize: false
-  },
-
-  resolve: {
-    alias: [
-      {
-        find: /leaflet\/dist\/leaflet-src\.esm.js$/,
-        replacement: "leaflet/dist/leaflet.js",
-      },
-      {
-        find: /leaflet\/dist\/leaflet-src\.js(\?commonjs-es-import)?$/,
-        replacement: "leaflet/dist/leaflet.js",
-      },
-      {
-        find: /^leaflet$/,
-        replacement: "leaflet/dist/leaflet.js",
-      },
-    ],
-
-    dedupe: ["bn.js"],
   },
 
   dev: {
@@ -103,6 +79,4 @@ export default defineConfig({
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:;",
     }
   },
-
-  // assetsInclude: ["**/*.md"]
 });

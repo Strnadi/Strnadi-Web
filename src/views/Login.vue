@@ -33,8 +33,8 @@ const navigateToRegister = () => {
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
     <img :src="LogoNoText" />
-    <h1>Nářečí českých strnadů</h1>
-    <span class="text-xl">Nahrávejte, mapujte, dobývejte</span>
+    <h1 class="text-center">Nářečí českých strnadů</h1>
+    <span class="text-xl text-center" >Nahrávejte, mapujte, dobývejte</span>
 
     <div v-if="error">Chyba: {{ error }}</div>
     <div v-if="isPending">Načítání...</div>

@@ -6,8 +6,10 @@ import { getRecordings } from '@/api/recording';
 import type { RecordingPartModel } from '@/api/types/recording';
 import type { MapBrowserEvent } from 'ol';
 import { MapIcons } from './MapIcons';
+import { useRouter } from 'vue-router';
 const env = import.meta.env;
 
+const router = useRouter();
 const center = ref([15.5, 49.8]);
 const zoom = ref(8);
 
@@ -33,7 +35,17 @@ function onMapClick(event: MapBrowserEvent<UIEvent>) {
     const featuresAtPixel = event.map.getFeaturesAtPixel(event.pixel);
     if (featuresAtPixel && featuresAtPixel.length > 0) {
       const feature = featuresAtPixel[0];
-      const coords = feature.getGeometry().getCoordinates();
+      const coords = feature.getGeometry()!.getCoordinates();
+
+      for(const recording of recordings.value!) {
+        for (const part of recording.parts || []) {
+          const partCoords = partAverageCoords(part);
+          if (coords[0] === partCoords[0] && coords[1] === partCoords[1]) {
+            router.push(`/nahravka/${recording.id}`);
+            return;
+          }
+        }
+      }
     }
   }
 
@@ -50,12 +62,12 @@ const coords = computed(() => {
 
 <template>
   <ol-map
+    @click="onMapClick"
     :loadTilesWhileAnimating="true"
     :loadTilesWhileInteracting="true"
     :controls="[]"
     ref="mapRef"
     class="w-full h-full"
-    @click="onMapClick"
   >
     <ol-view
       :center="center"

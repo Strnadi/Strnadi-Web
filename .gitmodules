@@ -1,0 +1,4 @@
+[submodule "src/texts"]
+	path = src/texts
+	url = https://github.com/Strnadi/Strnadi-Texts
+	branch = main

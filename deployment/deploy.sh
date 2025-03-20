@@ -17,6 +17,6 @@ if [ ! -z "$CONTAINER_ID" ]; then
   fi
 fi
 
-docker build --build-arg ENABLED_MODULES="brotli" -t nginx:custom -f ./nginx.dockerfile .
-docker build -t strnadi-web .
+docker build --build-arg ENABLED_MODULES="brotli" -t nginx:custom -f ./docker/nginx.dockerfile .
+docker build -t strnadi-web -f ./docker/Dockerfile .
 docker run -d -p $PORT:80 strnadi-web

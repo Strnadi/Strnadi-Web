@@ -1,4 +1,3 @@
-<!-- filepath: /home/hroudis/strnadi-vue/src/views/register/stages/FinalConfirm.vue -->
 <template>
   <div v-if="isPending">
     <p>Vytváření účtu...</p>
@@ -56,7 +55,3 @@ const onClick = () => {
   }
 }
 </script>
-
-<style scoped>
-/* You can add component specific CSS here if needed */
-</style>

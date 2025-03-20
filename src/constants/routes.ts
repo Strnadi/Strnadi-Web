@@ -44,6 +44,30 @@ export const routes: readonly RouteRecordRaw[] = [
     },
   },
   {
+    path: '/nahravka/:id',
+    components: {
+      side: () => import('@/views/Recording.vue')
+    },
+  },
+  {
+    path: '/ucet',
+    components: {
+      side: () => import('@/views/profile/Profile.vue')
+    },
+  },
+  {
+    path: '/ucet/nastaveni',
+    components: {
+      side: () => import('@/views/profile/Settings.vue')
+    },
+  },
+  {
+    path: '/ucet/moje-nahravky',
+    components: {
+      side: () => import('@/views/profile/MyRecordings.vue')
+    },
+  },
+  {
     path: '/podminky-pouziti',
     components: {
       center: () => import('@/texts/terms-of-services.md')
@@ -59,6 +83,12 @@ export const routes: readonly RouteRecordRaw[] = [
     path: '/jak-nahravat',
     components: {
       side: () => import('@/texts/how-to-record.md')
+    }
+  },
+  {
+    path: '/kde-nahravat',
+    components: {
+      side: () => import('@/texts/where-to-record.md')
     }
   },
   {

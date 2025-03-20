@@ -138,10 +138,10 @@ const isMenuOpen = ref(false);
 
 <style scoped>
 
-@reference "../../main.css";
+@reference "../../main/main.css";
 
 :deep(.dropdown-item) {
-  @apply font-semibold flex flex-row items-center gap-x-1 px-2 py-2 hover:bg-gray-100 hover:border-0 rounded-xl;
+  @apply font-semibold flex flex-row items-center gap-x-1 px-5 py-2 hover:bg-gray-100 hover:border-0 rounded-xl;
 }
 
 </style>
