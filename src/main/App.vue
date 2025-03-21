@@ -106,11 +106,8 @@ const maybeGoBack = (event: KeyboardEvent) => {
 
   aside.popup {
     @apply fixed inset-0 flex items-center justify-center bg-black/50 z-[calc(1e10)];
+    @apply backdrop-blur-sm;
   }
-
-  /* aside.popup > div {
-    @apply w-full md:w-1/2 desktop:w-1/3 max-h-[90vh] desktop:max-h-[80vh] flex flex-col bg-white/95 backdrop-blur-md rounded-lg overflow-y-auto p-8;
-  } */
 
   aside.side {
     @apply drop-shadow-lg;
@@ -123,7 +120,6 @@ const maybeGoBack = (event: KeyboardEvent) => {
     @apply sm:w-1/2;
     @apply xl:w-1/3;
     @apply z-[calc(1e7)];
-    @apply backdrop-blur-md;
     @apply rounded-lg;
   }
 
@@ -139,12 +135,14 @@ const maybeGoBack = (event: KeyboardEvent) => {
     @apply w-fit;
     @apply desktop:max-w-3/4;
     @apply z-[calc(1e7)];
-    @apply backdrop-blur-md;
     @apply rounded-lg;
   }
 
   aside > div {
-    @apply grid grid-cols-[auto_1fr] bg-white/95 overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] rounded-4xl items-center p-8;
+    @apply grid grid-cols-[auto_1fr] overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
+    @apply rounded-4xl;
+    @apply p-8;
+    @apply bg-white/95;
   }
 
   aside > div > :not(h1, button) {
