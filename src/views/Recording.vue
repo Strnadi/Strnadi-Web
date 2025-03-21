@@ -17,20 +17,18 @@ const { data: recording, isError, isLoading, refetch } = useQuery({
   queryFn: ({ queryKey }) => getRecording(queryKey[1] as string)
 })
 
-// TODO: this is bullshit
-// API only supports querying by email but here we get the id
+const uploaderEmail = computed(() => recording.value?.userEmail);
+const enabled = computed(() => !!uploaderEmail.value);
 
-const uploaderId = computed(() => `${recording.value?.userId}`);
-
-// Dependent query - only runs when we have an uploaderId from the recording
+// Dependent query - only runs when we have an uploaderEmail from the recording
 const { 
   data: uploader, 
   isLoading: isUploaderLoading, 
   isError: isUploaderError 
 } = useQuery({
-  queryKey: ['user', uploaderId],
-  queryFn: ({ queryKey }) => getUserInfo(accountStore.token!, queryKey[1]),
-  enabled: ({ queryKey }) => !!queryKey[1], // Only run this query when uploaderId is available
+  queryKey: ['user', uploaderEmail.value],
+  queryFn: () => getUserInfo(accountStore.token!, uploaderEmail.value!),
+  enabled, // Use the computed enabled value
 })
 
 onBeforeRouteUpdate(async (to) => {

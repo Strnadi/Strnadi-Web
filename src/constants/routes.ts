@@ -1,59 +1,23 @@
 import type { RouteRecordRaw } from "vue-router";
 
-export const routes: readonly RouteRecordRaw[] = [
-  {
-    path: '/',
-    components: {
-      "non-existent-component": { render: () => null }
-    }
-  },
-  {
-    path: '/email-verifikovan',
-    components: {
-      popup: () => import('@/views/EmailVerified.vue')
-    },
-  },
-  {
-    path: '/login',
-    components: {
-      popup: () => import('@/views/Login.vue')
-    },
-  },
-  {
-    path: '/registrace',
-    components: {
-      popup: () => import('@/views/register/Register.vue')
-    }
-  },
-  {
-    path: '/nastaveni-mapy',
-    components: {
-      popup: () => import('@/views/MapOptions.vue')
-    }
-  },
-  {
-    path: '/legenda-mapy',
-    components: {
-      popup: () => import('@/views/MapLegend.vue')
-    }
-  },
-  {
-    path: '/nahrat',
-    components: {
-      center: () => import('@/views/upload/Upload.vue')
-    },
-  },
-  {
-    path: '/nahravka/:id',
-    components: {
-      side: () => import('@/views/Recording.vue')
-    },
-  },
+const AccountRoutes: RouteRecordRaw[] = [
   {
     path: '/ucet',
     components: {
       side: () => import('@/views/profile/Profile.vue')
     },
+  },
+  {
+    path: '/ucet/prihlaseni',
+    components: {
+      popup: () => import('@/views/Login.vue')
+    },
+  },
+  {
+    path: '/ucet/registrace',
+    components: {
+      popup: () => import('@/views/register/Register.vue')
+    }
   },
   {
     path: '/ucet/nastaveni',
@@ -67,6 +31,27 @@ export const routes: readonly RouteRecordRaw[] = [
       side: () => import('@/views/profile/MyRecordings.vue')
     },
   },
+  {
+    path: '/ucet/email-verifikovan',
+    components: {
+      popup: () => import('@/views/EmailVerified.vue')
+    },
+  },
+  {
+    path: '/ucet/email-neverifikovan',
+    components: {
+      popup: () => import('@/views/EmailNotVerified.vue')
+    },
+  },
+  {
+    path: '/ucet/zapomenute-heslo',
+    components: {
+      popup: () => import('@/views/ForgottenPassword.vue')
+    },
+  }
+];
+
+const TextRoutes: RouteRecordRaw[] = [
   {
     path: '/podminky-pouziti',
     components: {
@@ -115,4 +100,48 @@ export const routes: readonly RouteRecordRaw[] = [
       popup: () => import('@/texts/not-found.md')
     }
   }
-]
+];
+
+const MapRoutes: RouteRecordRaw[] = [
+  {
+    path: '/nastaveni-mapy',
+    components: {
+      popup: () => import('@/views/MapOptions.vue')
+    }
+  },
+  {
+    path: '/legenda-mapy',
+    components: {
+      popup: () => import('@/views/MapLegend.vue')
+    }
+  }
+];
+
+const UploadRoutes: RouteRecordRaw[] = [
+  {
+    path: '/nahrat',
+    components: {
+      center: () => import('@/views/upload/Upload.vue')
+    },
+  },
+  {
+    path: '/nahravka/:id',
+    components: {
+      side: () => import('@/views/Recording.vue')
+    },
+  }
+];
+
+export const routes: readonly RouteRecordRaw[] = [
+  {
+    path: '/',
+    components: {
+      "non-existent-component": { render: () => null }
+    }
+  },
+
+  ...TextRoutes,
+  ...AccountRoutes,
+  ...MapRoutes,
+  ...UploadRoutes
+];

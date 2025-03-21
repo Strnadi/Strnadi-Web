@@ -14,14 +14,15 @@ export interface RecordingPartModel {
 
 export interface RecordingModel {
   id: number;
-  userId: number;
+  userEmail: string;
+  name: string;
   createdAt: string; // ISO date-time
   estimatedBirdsCount: number;
-  device?: string | null;
   byApp: boolean;
-  note?: string | null;
-  notePost?: string | null;
-  parts?: RecordingPartModel[] | null;
+  device: string | null;
+  note: string | null;
+  notePost: string | null;
+  parts: RecordingPartModel[] | null;
 }
 
 export interface RecordingUploadReq {

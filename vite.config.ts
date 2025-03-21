@@ -21,7 +21,24 @@ export default defineConfig({
     tsconfigPaths({ loose: true }),
     tailwindcss(),
     vue({ include: [/\.vue$/, /\.md$/] }),
-    Markdown({ wrapperDiv: false }),
+    Markdown({
+      wrapperDiv: false,
+      markdownItOptions: {
+        html: true,
+        linkify: true,
+      },
+      markdownItSetup(md) {
+        md.renderer.rules.image = (tokens, idx, options, env, self) => {
+          const token = tokens[idx];
+          const srcIndex = token.attrIndex('src');
+          const altIndex = token.attrIndex('alt');
+          const src = srcIndex >= 0 ? token.attrs[srcIndex][1] : '';
+          const alt = altIndex >= 0 ? token.attrs[altIndex][1] : '';
+
+          return `<ExpandableImage src="${src}" alt="${alt}"></ExpandableImage>`;
+        };
+      }
+    }),
     VitePWA({
       srcDir: "src/workers",
       filename: "Worker.ts",

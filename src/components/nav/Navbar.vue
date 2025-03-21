@@ -21,7 +21,7 @@ const isMenuOpen = ref(false);
 </script>
 
 <template>
-  <div class="flex justify-between gap-x-4 items-center h-16 bg-white rounded-4xl m-2 lg:m-5 pr-4">
+  <div class="flex justify-between gap-x-4 items-center h-16 bg-white rounded-4xl m-2 desktop:m-5 pr-4">
     <!-- Logo -->
     <div class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc]">
       <RouterLink to="/">
@@ -31,7 +31,7 @@ const isMenuOpen = ref(false);
 
     <!-- Mobile menu toggle -->
     <button 
-      class="lg:hidden p-2" 
+      class="desktop:hidden p-2" 
       aria-label="Toggle menu"
       v-on:click="isMenuOpen = !isMenuOpen"
     >
@@ -41,7 +41,7 @@ const isMenuOpen = ref(false);
     </button>
 
     <!-- Desktop navigation - shown only on lg screens -->
-    <div class="hidden lg:flex justify-between items-center w-full">
+    <div class="hidden desktop:flex justify-between items-center w-full">
       <ul class='flex flex-row gap-x-4 items-center'>
         <template v-if="accountStore.user">
           <li>
@@ -51,7 +51,7 @@ const isMenuOpen = ref(false);
             </RouterLink>
           </li>
           <li>
-            <RouterLink to="/account/my-recordings" class='dropdown-item'>
+            <RouterLink to="/ucet/moje-nahravky" class='dropdown-item'>
               <img :src="List" alt="List" />
               Moje záznamy
             </RouterLink>
@@ -85,7 +85,7 @@ const isMenuOpen = ref(false);
         </RouterLink>
         <li>
           <AccountDropdown v-if="accountStore.user" />
-          <RouterLink v-else to="/login" class="button-secondary py-2 px-4">Přihlásit se</RouterLink>
+          <RouterLink v-else to="/ucet/prihlaseni" class="button-secondary py-2 px-4">Přihlásit se</RouterLink>
         </li>
       </ul>
     </div>
@@ -94,7 +94,7 @@ const isMenuOpen = ref(false);
   <!-- Mobile menu - collapsible (shown on screens below lg) -->
   <div
     v-if="isMenuOpen"
-    class="lg:hidden bg-white py-4 px-2 mx-2 rounded-lg"
+    class="desktop:hidden bg-white py-4 px-2 mx-2 rounded-lg"
     @click="isMenuOpen = !isMenuOpen"
   >
     <ul class='flex flex-col gap-y-4  p-4'>
@@ -130,7 +130,7 @@ const isMenuOpen = ref(false);
       </li>
       <li class="pt-2">
         <AccountDropdown v-if="accountStore.user"/>
-        <RouterLink v-else to="/login" class="button-secondary py-2 px-4 block w-full text-center">Přihlásit se</RouterLink>
+        <RouterLink v-else to="/ucet/prihlaseni" class="button-secondary py-2 px-4 block w-full text-center">Přihlásit se</RouterLink>
       </li>
     </ul>
   </div>

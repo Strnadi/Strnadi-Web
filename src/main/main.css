@@ -10,3 +10,7 @@
 :root {
   font-family: 'Bricolage Grotesque', Arial, Helvetica, sans-serif;
 }
+
+@theme {
+  --breakpoint-desktop: 80rem; /*var(--breakpoint-xl);*/
+}

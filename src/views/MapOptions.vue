@@ -3,11 +3,11 @@
   
   <select id="map-mode-select" v-model="mapStore.mode">
     <option
-      v-for="modeOption in ['basic', 'aerial', 'outdoor']"
+      v-for="(modeLabel, modeOption) in {'outdoor': 'Turistická', 'aerial': 'Letecká', 'basic': 'Základní'}"
       :key="modeOption"
       :value="modeOption"
     >
-      {{ modeOption }}
+      {{ modeLabel }}
     </option>
   </select>
 </template>

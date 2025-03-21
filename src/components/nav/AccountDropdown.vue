@@ -18,12 +18,12 @@ const user = accountStore.user!;
       </svg>
     </template>
     <li>
-      <RouterLink to="/account/profile">
+      <RouterLink to="/ucet">
         <div class="dropdown-item">Profil</div>
       </RouterLink>
     </li>
     <li>
-      <RouterLink to="/account/settings">
+      <RouterLink to="/ucet/nastaveni">
         <div class="dropdown-item">Nastavení</div>
       </RouterLink>
     </li>
