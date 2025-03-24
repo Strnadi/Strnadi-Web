@@ -30,7 +30,7 @@ if (accountStore.user) {
         userEmail: accountStore.user.email,
         devicePlatform: "web",
         deviceModel: navigator.userAgent
-      });
+      }, accountStore.token!);
 
     } else {
       console.log(
