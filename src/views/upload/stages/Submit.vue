@@ -1,56 +1,72 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
 import { accountStore } from "@/state/AccountStore";
 import { uploadStore } from "@/state/UploadStore";
-import { postRecording } from '@/api/recording';
-import type { RecordingUploadReq, RecordingPartUploadReq } from "@/api/types/recording";
-import { mapStore } from '@/state/MapStore';
+import { postRecording } from "@/api/recording";
+import type {
+  RecordingUploadReq,
+  RecordingPartUploadParams,
+} from "@/api/types/recording";
+import { mapStore } from "@/state/MapStore";
 
 const router = useRouter();
 const queryClient = useQueryClient();
 
 const onClick = () => {
-  queryClient.invalidateQueries({ queryKey: ['all-recordings'] });
+  queryClient.invalidateQueries({ queryKey: ["all-recordings"] });
   mapStore.selectedLocation = null;
   router.back();
   uploadStore.resetStage();
 };
 
-const toBase64 = (content: ArrayBuffer) =>
-  btoa(new Uint8Array(content).reduce((data, byte) => data + String.fromCharCode(byte), ""));
-
-const { mutate, error, isPending } = useMutation({
-  mutationFn: ({ token, recording, parts }: { token: string, recording: RecordingUploadReq, parts: RecordingPartUploadReq[] }) => postRecording(token, recording, parts),
+const {
+  mutate: submitRecording,
+  error,
+  isPending,
+} = useMutation({
+  mutationFn: ({
+    token,
+    recording,
+    parts,
+    photos
+  }: {
+    token: string;
+    recording: RecordingUploadReq;
+    parts: RecordingPartUploadParams[];
+    photos?: File[];
+  }) => postRecording(token, recording, parts, photos),
 });
 
 onMounted(() => {
-
   const recording = {
     createdAt: new Date().toISOString(),
     estimatedBirdsCount: 0,
     device: uploadStore.device || "",
     byApp: false,
-    note: uploadStore.note
+    note: uploadStore.note,
   };
 
   // Each file is treated as a separate recording part
-  const recordingParts = uploadStore.parts!.map(({ content }) => ({
-    recordingId: 0, // Will get overridden
-    startDate: uploadStore.dateTime,
-    endDate: uploadStore.dateTime,
-    gpsLatitudeStart: uploadStore.location!.lat,
-    gpsLatitudeEnd: uploadStore.location!.lat,
-    gpsLongitudeStart: uploadStore.location!.lng,
-    gpsLongitudeEnd: uploadStore.location!.lng,
-    dataBase64: toBase64(content),
-  } as RecordingPartUploadReq));
+  const recordingParts = uploadStore.parts!.map(
+    ({ content }) =>
+      ({
+        startDate: uploadStore.dateTime,
+        endDate: uploadStore.dateTime,
+        gpsLatitudeStart: uploadStore.location!.lat,
+        gpsLatitudeEnd: uploadStore.location!.lat,
+        gpsLongitudeStart: uploadStore.location!.lng,
+        gpsLongitudeEnd: uploadStore.location!.lng,
+        data: content,
+      } as RecordingPartUploadParams)
+  );
 
-  mutate({
+  submitRecording({
     token: accountStore.token!,
     recording: recording,
-    parts: recordingParts
+    parts: recordingParts,
+    photos: uploadStore.photos ?? []
   });
 });
 </script>

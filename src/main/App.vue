@@ -51,7 +51,7 @@ const maybeGoBack = (event: KeyboardEvent) => {
     <Transition>
       <aside v-if="Component" class="side">
         <div>
-          <button @click="router.replace('/')" class="secondary px-2 py-1 m-2 self-start flex flex-row items-center">
+          <button class="secondary" @click="router.replace('/')">
             <img :src="Back" />
             <span>Zpět</span>
           </button>
@@ -65,7 +65,7 @@ const maybeGoBack = (event: KeyboardEvent) => {
     <Transition>
       <aside v-if="Component" class="popup">
         <div>
-          <button @click="goBack" @keydown="maybeGoBack" class="secondary px-2 py-1 self-start flex flex-row items-center">
+          <button class="secondary" @click="goBack" @keydown="maybeGoBack">
             <img :src="Back" />
             <span>Zpět</span>
           </button>
@@ -79,7 +79,7 @@ const maybeGoBack = (event: KeyboardEvent) => {
     <Transition>
       <aside v-if="Component" class="center">
         <div>
-          <button @click="goBack" class="secondary px-2 py-1 self-start flex flex-row items-center">
+          <button class="secondary" @click="goBack">
             <img :src="Back" />
             <span>Zpět</span>
           </button>
@@ -145,7 +145,11 @@ const maybeGoBack = (event: KeyboardEvent) => {
     @apply bg-white/95;
   }
 
-  aside > div > :not(h1, button) {
+  aside > div > button {
+    @apply px-2 py-1 mx-2 self-start flex flex-row items-center;
+  }
+
+  aside > div > :not(button, h1) {
     @apply col-span-2;
   }
 

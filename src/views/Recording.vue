@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { onBeforeRouteUpdate, useRoute } from 'vue-router';
+import { onBeforeRouteUpdate } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
+import { useRouteParams } from '@vueuse/router'
 import { getRecording } from '@/api/recording';
 import { getUserInfo } from '@/api/account';
-import { ref, computed } from 'vue';
+import { ref, computed, type Ref } from 'vue';
 import { accountStore } from '@/state/AccountStore';
-
-const route = useRoute();
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
-const recordingId = ref(route.params.id as string);
+const recordingId = useRouteParams('id') as Ref<string>;
 
 const { data: recording, isError, isLoading, refetch } = useQuery({
-  queryKey: ['recording', recordingId],
-  queryFn: ({ queryKey }) => getRecording(queryKey[1] as string)
+  queryKey: ['recording', recordingId.value],
+  queryFn: () => getRecording(recordingId.value)
 })
 
 const uploaderEmail = computed(() => recording.value?.userEmail);
@@ -39,6 +38,8 @@ onBeforeRouteUpdate(async (to) => {
 </script>
 
 <template>
+  <h1>Nahrávka</h1>
+
   <template v-if="isError"><span class="text-xl">Chyba: Nelze získat nahrávku.</span></template>
   <template v-if="isLoading">Načítání...</template>
   <template v-else>
@@ -54,9 +55,12 @@ onBeforeRouteUpdate(async (to) => {
         <template v-else-if="uploader">
           <p>Name: {{ uploader.firstName }} {{ uploader.lastName }}</p>
           <p>Email: {{ uploader.email }}</p>
-          <!-- Add more uploader details as needed -->
         </template>
       </div>
+
+      <template v-if="accountStore.user?.role == 'admin'">
+        <h3>Admin Actions</h3>
+      </template>
     </div>
   </template>
 </template>

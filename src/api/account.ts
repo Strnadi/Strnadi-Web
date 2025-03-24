@@ -1,5 +1,5 @@
 import axios, { AxiosError } from "axios";
-import { ApiError } from "./api-error";
+import { ApiError } from "./types/api-error";
 import type { JwtObject, User } from "./types/auth";
 import type { LoginRequest, SignUpRequest, Token } from "@/api/types/auth";
 

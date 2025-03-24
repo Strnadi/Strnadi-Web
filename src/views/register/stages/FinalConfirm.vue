@@ -5,7 +5,7 @@
 
   <div v-else-if="isError">
     <h1>Chyba</h1>
-    <p>{{ error.message }}</p>
+    <p>{{ error!.message }}</p>
     <button @click="register">Zkusit znovu</button>
   </div>
 
@@ -39,6 +39,8 @@ const register = () => {
     lastName: registerStore.surname,
     nickname: registerStore.nickname,
     password: registerStore.password,
+    postCode: registerStore.postalCode,
+    city: registerStore.city,
     consent: true // the user can't reach this point without consenting
   })
 }

@@ -6,14 +6,14 @@ import OptionsIcon from '@/assets/icon-options.svg';
 
 <template>
   <router-link
-    to="/legenda-mapy"
+    to="/mapa/legenda"
     class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
   >
     <img :src="InfoIcon" />
   </router-link>
 
   <router-link
-    to="/nastaveni-mapy"
+    to="/mapa/nastaveni"
     class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
   >
     <img :src="OptionsIcon" />

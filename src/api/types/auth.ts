@@ -25,16 +25,18 @@ export interface User {
 }
 
 export interface LoginRequest {
-  email?: string | null;
-  password?: string | null;
+  email: string;
+  password: string;
 }
 
 export interface SignUpRequest {
-  nickname?: string | null;
-  email?: string | null;
-  password?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
+  postCode: string;
+  city: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  nickname: string | null;
   consent: true;
 }
 

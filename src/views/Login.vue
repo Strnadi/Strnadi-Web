@@ -25,10 +25,6 @@ const handleLogin = () => {
   mutate({ email: email.value, password: password.value });
 };
 
-const navigateToRegister = () => {
-  router.push("/ucet/registrace");
-};
-
 const forgottenPassword = () => router.push("/ucet/zapomenute-heslo");
 </script>
 
@@ -83,12 +79,12 @@ const forgottenPassword = () => router.push("/ucet/zapomenute-heslo");
           Přihlásit se
         </button>
       </div>
-      <button
+      <RouterLink
         class="secondary p-2 max-lg:w-full w-[75%]"
-        @click="navigateToRegister"
+        to="/ucet/registrace"
       >
         Založit účet
-      </button>
+      </RouterLink>
     </div>
   </div>
 </template>

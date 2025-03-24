@@ -1,13 +1,27 @@
 import axios from "axios";
-import { ApiError } from "./api-error";
-import type { DeviceRequest } from "./types/device";
+import { ApiError } from "./types/api-error";
+import type { AddDeviceRequest, UpdateDeviceRequest } from "./types/device";
 const env = import.meta.env;
 
-export const postDevice = async (deviceRequest: DeviceRequest): Promise<any> => {
+export const postDevice = async (addRequest: AddDeviceRequest): Promise<void> => {
 	try {
-		const response = await axios.post(`${env.VITE_API_URL}/devices/device`, deviceRequest);
-		return response.data;
+		await axios.post(`${env.VITE_API_URL}/devices/add`, addRequest);
+	} catch(e) {
+		throw new ApiError((e as any).code, (e as any).response?.status);
+	}
+};
 
+export const postUpdateDevice = async (updateRequest: UpdateDeviceRequest): Promise<void> => {
+	try {
+		await axios.patch(`${env.VITE_API_URL}/devices/update`, updateRequest);
+	} catch(e) {
+		throw new ApiError((e as any).code, (e as any).response?.status);
+	}
+}
+
+export const postDeleteDevice = async (fcmToken: string): Promise<void> => {
+	try {
+		await axios.delete(`${env.VITE_API_URL}/devices/delete/${fcmToken}`);
 	} catch(e) {
 		throw new ApiError((e as any).code, (e as any).response?.status);
 	}

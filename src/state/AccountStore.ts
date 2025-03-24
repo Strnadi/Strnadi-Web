@@ -4,6 +4,9 @@ import type { User, JwtObject } from '@/api/types/auth'
 import * as jose from 'jose'
 import { getCurrentUserInfo } from '@/api/account';
 
+/* @ts-ignore */
+import persist from "vue-reactive-persisted";
+
 export const accountStore = reactive({
   token: null as string | null,
   user: null as User | null,
@@ -29,3 +32,5 @@ export const accountStore = reactive({
     this.token_object = null;
   }
 });
+
+persist(accountStore);

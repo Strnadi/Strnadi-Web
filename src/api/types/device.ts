@@ -1,6 +1,11 @@
-export interface DeviceRequest {
+export interface UpdateDeviceRequest {
   oldToken?: string | null;
   newToken?: string | null;
-  deviceName?: string | null;
-  devicePlatform?: string | null;
 }
+
+export interface AddDeviceRequest {
+  userEmail: string,
+  fcmToken: string,
+  devicePlatform: string,
+  deviceModel: string
+};

@@ -15,7 +15,7 @@ const zoom = ref(8);
 
 const { data: recordings } = useQuery({
   queryKey: ["all-recordings"],
-  queryFn: getRecordings,
+  queryFn: () => getRecordings(),
 });
 
 
@@ -87,7 +87,7 @@ const coords = computed(() => {
         :url="`https://api.mapy.cz/v1/maptiles/${mapStore.mode}/256/{z}/{x}/{y}?apikey=${env.VITE_MAPYCZ_API_KEY}`"
         :z-index="1"
         name="Base"
-        attribution='<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>'
+        attributions='<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>'
       />
     </ol-tile-layer>
 
@@ -97,7 +97,7 @@ const coords = computed(() => {
         :url="`https://api.mapy.cz/v1/maptiles/names-overlay/256/{z}/{x}/{y}?apikey=${env.VITE_MAPYCZ_API_KEY}`"
         :z-index="2"
         name="AerialNames"
-        attribution='<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>'
+        attributions='<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>'
       />
     </ol-tile-layer>
 
@@ -126,5 +126,7 @@ const coords = computed(() => {
         </ol-feature>
       </ol-source-vector>
     </ol-vector-layer>
+
+    <ol-attribution-control />
   </ol-map>
 </template>

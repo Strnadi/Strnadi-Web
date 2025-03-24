@@ -124,7 +124,7 @@ const isMenuOpen = ref(false);
       <InfoDropdownItems v-else />
 
       <li class="pt-4">
-        <RouterLink to="/application" class='button-primary py-2 px-4 block w-full text-center'>
+        <RouterLink to="/aplikace" class='button-primary py-2 px-4 block w-full text-center'>
           Stáhnout aplikaci
         </RouterLink>
       </li>
