@@ -16,7 +16,7 @@ const { data: recordings, isError, isLoading } = useQuery({
   <template v-if="isError">Error loading recordings.</template>
   <template v-else>
     <ul>
-      <li v-for="rec in recordings" :key="rec.id">{{ rec.name }}</li>
+      <li v-for="rec in recordings" :key="rec.id">{{ rec.id }} {{ rec.name }}</li>
     </ul>
   </template>
 </template>

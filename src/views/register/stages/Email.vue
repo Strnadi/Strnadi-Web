@@ -5,7 +5,7 @@
       <div class="flex flex-row items-center gap-x-2">
         <input type="checkbox" id="agreement" v-model="agreement" />
         <label for="agreement">
-          <span class="text-sm">Zapojením do projektu občanské vědy Nářečí českých strnadů <router-link to="/podminky-pouziti" class="underline">souhlasím s podmínkami</router-link></span>
+          <span class="text-sm">Zapojením do projektu občanské vědy Nářečí českých strnadů <PrefetchLink to="/podminky-pouziti" class="underline">souhlasím s podmínkami</PrefetchLink></span>
         </label>
       </div>
       <button class="primary p-2 m-2" :disabled="!agreement" @click="registerStore.nextStage">Pokračovat</button>

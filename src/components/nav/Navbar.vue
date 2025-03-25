@@ -24,9 +24,9 @@ const isMenuOpen = ref(false);
   <div class="flex justify-between gap-x-4 items-center h-16 bg-white rounded-4xl m-2 desktop:m-5 pr-4">
     <!-- Logo -->
     <div class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc]">
-      <RouterLink to="/">
+      <PrefetchLink to="/">
         <img src="/logo.svg" alt="Logo" />
-      </RouterLink>
+      </PrefetchLink>
     </div>
 
     <!-- Mobile menu toggle -->
@@ -45,22 +45,22 @@ const isMenuOpen = ref(false);
       <ul class='flex flex-row gap-x-4 items-center'>
         <template v-if="accountStore.user">
           <li>
-            <RouterLink to="/nahrat" class='dropdown-item'>
+            <PrefetchLink to="/nahrat" class='dropdown-item'>
               <img :src="Upload" alt="Upload" />
               Nahrát
-            </RouterLink>
+            </PrefetchLink>
           </li>
           <li>
-            <RouterLink to="/ucet/moje-nahravky" class='dropdown-item'>
+            <PrefetchLink to="/ucet/moje-nahravky" class='dropdown-item'>
               <img :src="List" alt="List" />
               Moje záznamy
-            </RouterLink>
+            </PrefetchLink>
           </li>
           <!-- <li>
-            <RouterLink to="/account/notifications" class='dropdown-item'>
+            <PrefetchLink to="/account/notifications" class='dropdown-item'>
               <img :src="Notifications" alt="Notifications" />
               Oznámení
-            </RouterLink>
+            </PrefetchLink>
           </li> -->
           <li class='font-semibold'>
             <InfoDropdown />
@@ -80,12 +80,12 @@ const isMenuOpen = ref(false);
       </ul>
 
       <ul class="flex flex-row gap-x-4 items-center">
-        <RouterLink to="/aplikace" class='button-primary py-2 px-4'>
+        <PrefetchLink to="/aplikace" class='button-primary py-2 px-4'>
           Stáhnout aplikaci
-        </RouterLink>
+        </PrefetchLink>
         <li>
           <AccountDropdown v-if="accountStore.user" />
-          <RouterLink v-else to="/ucet/prihlaseni" class="button-secondary py-2 px-4">Přihlásit se</RouterLink>
+          <PrefetchLink v-else to="/ucet/prihlaseni" class="button-secondary py-2 px-4">Přihlásit se</PrefetchLink>
         </li>
       </ul>
     </div>
@@ -100,22 +100,22 @@ const isMenuOpen = ref(false);
     <ul class='flex flex-col gap-y-4  p-4'>
       <div v-if="accountStore.user">
         <li>
-          <RouterLink to="/nahrat" class='dropdown-item'>
+          <PrefetchLink to="/nahrat" class='dropdown-item'>
             <img :src="Upload" alt="Upload" />
             Nahrát
-          </RouterLink>
+          </PrefetchLink>
         </li>
         <li>
-          <RouterLink to="/ucet/moje-nahravky" class='dropdown-item'>
+          <PrefetchLink to="/ucet/moje-nahravky" class='dropdown-item'>
             <img :src="List" alt="List" />
             Moje záznamy
-          </RouterLink>
+          </PrefetchLink>
         </li>
         <!-- <li>
-          <RouterLink to="/account/notifications" class='dropdown-item'>
+          <PrefetchLink to="/account/notifications" class='dropdown-item'>
             <img :src="Notifications" alt="Notifications" />
             Oznámení
-          </RouterLink>
+          </PrefetchLink>
         </li> -->
         <li class='dropdown-item'>
           <InfoDropdown />
@@ -124,13 +124,13 @@ const isMenuOpen = ref(false);
       <InfoDropdownItems v-else />
 
       <li class="pt-4">
-        <RouterLink to="/aplikace" class='button-primary py-2 px-4 block w-full text-center'>
+        <PrefetchLink to="/aplikace" class='button-primary py-2 px-4 block w-full text-center'>
           Stáhnout aplikaci
-        </RouterLink>
+        </PrefetchLink>
       </li>
       <li class="pt-2">
         <AccountDropdown v-if="accountStore.user"/>
-        <RouterLink v-else to="/ucet/prihlaseni" class="button-secondary py-2 px-4 block w-full text-center">Přihlásit se</RouterLink>
+        <PrefetchLink v-else to="/ucet/prihlaseni" class="button-secondary py-2 px-4 block w-full text-center">Přihlásit se</PrefetchLink>
       </li>
     </ul>
   </div>

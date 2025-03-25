@@ -36,7 +36,7 @@ const goBack = () => {
 };
 
 const maybeGoBack = (event: KeyboardEvent) => {
-  if(event.key == "") { // todo
+  if (event.key === "Escape") { // fixed key check
     goBack();
   }
 }
@@ -91,7 +91,7 @@ const maybeGoBack = (event: KeyboardEvent) => {
 
   <main>
     <Map class="w-screen h-screen" />
-    <div class="absolute bottom-0 right-0 z-[calc(1e6)] flex flex-col justify-end">
+    <div class="absolute bottom-0 right-0 z-[6] flex flex-col justify-end">
       <MapButtons />
     </div>
   </main>
@@ -101,11 +101,11 @@ const maybeGoBack = (event: KeyboardEvent) => {
   @reference "./main.css";
 
   nav {
-    @apply fixed z-[calc(1e9)] drop-shadow-xl min-w-0 w-full;
+    @apply fixed z-[9] drop-shadow-xl min-w-0 w-full;
   }
 
   aside.popup {
-    @apply fixed inset-0 flex items-center justify-center bg-black/50 z-[calc(1e10)];
+    @apply fixed inset-0 flex items-center justify-center bg-black/50 z-[10];
     @apply backdrop-blur-sm;
   }
 
@@ -119,7 +119,7 @@ const maybeGoBack = (event: KeyboardEvent) => {
     @apply min-w-0;
     @apply sm:w-1/2;
     @apply xl:w-1/3;
-    @apply z-[calc(1e7)];
+    @apply z-[7];
     @apply rounded-lg;
   }
 
@@ -134,7 +134,7 @@ const maybeGoBack = (event: KeyboardEvent) => {
     @apply mx-auto;
     @apply w-fit;
     @apply desktop:max-w-3/4;
-    @apply z-[calc(1e7)];
+    @apply z-[7];
     @apply rounded-lg;
   }
 

@@ -1,12 +1,12 @@
 <template>
   <li>
-    <RouterLink to="/podminky-pouziti" class="dropdown-item">
+    <PrefetchLink to="/podminky-pouziti" class="dropdown-item">
       Podmínky používání
-    </RouterLink>
+    </PrefetchLink>
   </li>
   <li>
-    <RouterLink to="/ochrana-osobnich-udaju" class="dropdown-item">
+    <PrefetchLink to="/ochrana-osobnich-udaju" class="dropdown-item">
       Ochrana osobních údajů
-    </RouterLink>
+    </PrefetchLink>
   </li>
 </template>

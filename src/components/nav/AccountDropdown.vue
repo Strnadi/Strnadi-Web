@@ -18,14 +18,14 @@ const user = accountStore.user!;
       </svg>
     </template>
     <li>
-      <RouterLink to="/ucet">
+      <PrefetchLink to="/ucet">
         <div class="dropdown-item">Profil</div>
-      </RouterLink>
+      </PrefetchLink>
     </li>
     <li>
-      <RouterLink to="/ucet/nastaveni">
+      <PrefetchLink to="/ucet/nastaveni">
         <div class="dropdown-item">Nastavení</div>
-      </RouterLink>
+      </PrefetchLink>
     </li>
     <li class="cursor-pointer" @click="accountStore.logout">
       <div class="dropdown-item">Odhlásit se</div>

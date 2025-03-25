@@ -6,21 +6,20 @@
 
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
-import { sentryVitePlugin } from "@sentry/vite-plugin";
-import { visualizer } from "rollup-plugin-visualizer";
-import vue from "@vitejs/plugin-vue";
-import tailwindcss from "@tailwindcss/vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-import compression from "vite-plugin-compression2";
+import { sentryVitePlugin as SentryVitePlugin } from "@sentry/vite-plugin";
+import { visualizer as Visualizer } from "rollup-plugin-visualizer";
+import Vue from "@vitejs/plugin-vue";
+import TailwindCSS from "@tailwindcss/vite";
+import TSConfigPaths from "vite-tsconfig-paths";
+import Compression from "vite-plugin-compression2";
 import Markdown from 'unplugin-vue-markdown/vite';
-// import mkcert from'vite-plugin-mkcert'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    tsconfigPaths({ loose: true }),
-    tailwindcss(),
-    vue({ include: [/\.vue$/, /\.md$/] }),
+    TSConfigPaths({ loose: true }),
+    TailwindCSS(),
+    Vue({ include: [/\.vue$/, /\.md$/] }),
     Markdown({
       wrapperDiv: false,
       markdownItOptions: {
@@ -35,35 +34,27 @@ export default defineConfig({
           const src = srcIndex >= 0 ? token.attrs![srcIndex][1] : '';
           const alt = altIndex >= 0 ? token.attrs![altIndex][1] : '';
 
-          return `<ExpandableImage src="${src}" alt="${alt}"></ExpandableImage>`;
+          return `<ExpandableImage src="${src}" alt="${alt}" />`;
         };
       }
     }),
     VitePWA({
-      srcDir: "src/workers",
-      filename: "Worker.ts",
-      strategies: "injectManifest",
-      injectManifest: {
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
-        buildPlugins: {
-          vite: [
-            tsconfigPaths({ loose: true })
-          ]
-        }
-      },
+      registerType: 'autoUpdate',
+      devOptions: {
+        enabled: true
+      }
     }),
-    compression({ algorithm: "brotliCompress" }),
-    sentryVitePlugin({
+    Compression({ algorithm: "brotliCompress" }),
+    SentryVitePlugin({
       org: "delta-strnadi",
       project: "strnadi-web",
       telemetry: false,
     }),
-    visualizer({
+    Visualizer({
       gzipSize: true,
       open: false,
-      template: "flamegraph",
+      template: "sunburst",
     }),
-    // mkcert()
   ],
 
   build: {

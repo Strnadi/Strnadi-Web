@@ -1,22 +1,22 @@
 <template>
   <li>
-    <RouterLink to="/o-projektu" class="dropdown-item">
+    <PrefetchLink to="/o-projektu" class="dropdown-item">
       O projektu
-    </RouterLink>
+    </PrefetchLink>
   </li>
   <li>
-    <RouterLink to="/o-strnadovi" class="dropdown-item">
+    <PrefetchLink to="/o-strnadovi" class="dropdown-item">
       O strnadovi
-    </RouterLink>
+    </PrefetchLink>
   </li>
   <li>
-    <RouterLink to="/jak-nahravat" class="dropdown-item">
+    <PrefetchLink to="/jak-nahravat" class="dropdown-item">
       Jak nahrávat?
-    </RouterLink>
+    </PrefetchLink>
   </li>
   <li>
-    <RouterLink to="/kde-nahravat" class="dropdown-item">
+    <PrefetchLink to="/kde-nahravat" class="dropdown-item">
       Kde nahrávat?
-    </RouterLink>
+    </PrefetchLink>
   </li>
 </template>

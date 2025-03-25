@@ -5,17 +5,17 @@ import OptionsIcon from '@/assets/icon-options.svg';
 </script>
 
 <template>
-  <router-link
+  <PrefetchLink
     to="/mapa/legenda"
     class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
   >
     <img :src="InfoIcon" />
-  </router-link>
+  </PrefetchLink>
 
-  <router-link
+  <PrefetchLink
     to="/mapa/nastaveni"
     class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
   >
     <img :src="OptionsIcon" />
-  </router-link>
+  </PrefetchLink>
 </template>

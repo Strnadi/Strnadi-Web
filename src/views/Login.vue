@@ -79,12 +79,12 @@ const forgottenPassword = () => router.push("/ucet/zapomenute-heslo");
           Přihlásit se
         </button>
       </div>
-      <RouterLink
-        class="secondary p-2 max-lg:w-full w-[75%]"
+      <PrefetchLink
+        class="button-secondary p-2 max-lg:w-full w-[75%] text-center"
         to="/ucet/registrace"
       >
         Založit účet
-      </RouterLink>
+      </PrefetchLink>
     </div>
   </div>
 </template>

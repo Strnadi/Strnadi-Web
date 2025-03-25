@@ -1,10 +1,13 @@
 import * as Sentry from "@sentry/vue";
 import App from "@/main/App.vue";
+import PrefetchPlugin from 'vue-route-prefetch'
 import { routes } from "@/constants/routes";
 import { createApp } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
 import { VueQueryPlugin } from "@tanstack/vue-query";
 import { useGeographic } from "ol/proj";
+
+// TODO: Remove unused layers from bundle
 import {
   Map as OpenLayersMap,
   Layers as OpenLayersMapLayers,
@@ -50,6 +53,7 @@ app.use(OpenLayersMapGeometries);
 app.use(OpenLayersMapStyles);
 
 app.use(router);
+app.use(PrefetchPlugin)
 app.component("VueDatePicker", VueDatePicker);
 app.component("ExpandableImage", ExpandableImage);
 app.mount("#app");
