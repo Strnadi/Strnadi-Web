@@ -22,11 +22,6 @@ const user = accountStore.user!;
         <div class="dropdown-item">Profil</div>
       </PrefetchLink>
     </li>
-    <li>
-      <PrefetchLink to="/ucet/nastaveni">
-        <div class="dropdown-item">Nastavení</div>
-      </PrefetchLink>
-    </li>
     <li class="cursor-pointer" @click="accountStore.logout">
       <div class="dropdown-item">Odhlásit se</div>
     </li>

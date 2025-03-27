@@ -20,9 +20,9 @@ const AccountRoutes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/ucet/nastaveni',
+    path: '/ucet/osobni-udaje',
     components: {
-      side: () => import('@/views/profile/Settings.vue')
+      side: () => import('@/views/profile/PersonalDetails.vue')
     },
   },
   {
@@ -93,12 +93,6 @@ const TextRoutes: RouteRecordRaw[] = [
     components: {
       popup: () => import('@/texts/application.md')
     }
-  },
-  {
-    path: "/:pathMatch(.*)*",
-    components: {
-      popup: () => import('@/texts/not-found.md')
-    }
   }
 ];
 
@@ -143,5 +137,12 @@ export const routes: readonly RouteRecordRaw[] = [
   ...TextRoutes,
   ...AccountRoutes,
   ...MapRoutes,
-  ...UploadRoutes
+  ...UploadRoutes,
+
+  {
+    path: "/:pathMatch(.*)*",
+    components: {
+      popup: () => import('@/texts/not-found.md')
+    }
+  }
 ];

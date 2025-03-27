@@ -1,11 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap');
 @import "tailwindcss";
-@import "../styling/text.css";
-@import "../styling/toggle.css";
-@import "../styling/buttons.css";
-@import "../styling/checkbox.css";
-@import "../styling/radio.css";
-@import "../styling/text-input.css";
+@import "./text.css";
+@import "./toggle.css";
+@import "./buttons.css";
+@import "./checkbox.css";
+@import "./radio.css";
+@import "./text-input.css";
 
 :root {
   font-family: 'Bricolage Grotesque', Arial, Helvetica, sans-serif;

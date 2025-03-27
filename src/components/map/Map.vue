@@ -112,7 +112,7 @@ const coords = computed(() => {
           <ol-feature v-for="part in recording.parts" :key="part.id">
             <ol-geom-point :coordinates="partAverageCoords(part)" />
             <ol-style>
-              <ol-style-icon :src="MapIcons.BC" />
+              <ol-style-icon :src="MapIcons.Unknown" />
             </ol-style>
           </ol-feature>
         </template>
@@ -125,7 +125,7 @@ const coords = computed(() => {
         <ol-feature>
           <ol-geom-point :coordinates="coords" />
           <ol-style>
-            <ol-style-icon :src="MapIcons.Unknown" />
+            <ol-style-icon :src="MapIcons.SelectedLocation" />
           </ol-style>
         </ol-feature>
       </ol-source-vector>

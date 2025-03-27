@@ -6,4 +6,5 @@ export const MapIcons = {
   BlBH: "/dialects/dialect-blbh.svg",
   Unknown: "/dialects/dialect-unknown.svg",
   Transition: "/dialects/dialect-transition.svg",
+  SelectedLocation: "/dialects/selected-location.svg",
 };

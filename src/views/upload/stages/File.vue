@@ -23,12 +23,18 @@ const accept = [
   "audio/wav",
   "audio/x-wav",
   "audio/wave",
+  "audio/x-pn-wav",
+  "audio/vnd.wave",
+  "audio/wave",
   "audio/mpeg",
   "audio/flac",
   "audio/x-flac",
   "audio/aac",
   "audio/x-aac",
   "audio/ogg",
+  "audio/vorbis",
+  "application/ogg",
+  "application/vorbis",
 ];
 
 // Local state

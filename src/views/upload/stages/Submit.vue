@@ -44,6 +44,7 @@ onMounted(() => {
     createdAt: new Date().toISOString(),
     estimatedBirdsCount: 0,
     device: uploadStore.device || "",
+    name: uploadStore.title,
     byApp: false,
     note: uploadStore.note,
   };

@@ -51,7 +51,7 @@ const maybeGoBack = (event: KeyboardEvent) => {
     <Transition>
       <aside v-if="Component" class="side">
         <div>
-          <button class="secondary" @click="router.replace('/')">
+          <button class="secondary" @click="goBack">
             <img :src="Back" />
             <span>Zpět</span>
           </button>
@@ -98,7 +98,7 @@ const maybeGoBack = (event: KeyboardEvent) => {
 </template>
 
 <style scoped>
-  @reference "./main.css";
+  @reference "../styling/main.css";
 
   nav {
     @apply fixed z-[9] drop-shadow-xl min-w-0 w-full;
@@ -149,7 +149,7 @@ const maybeGoBack = (event: KeyboardEvent) => {
     @apply px-2 py-1 mx-2 self-start flex flex-row items-center;
   }
 
-  aside > div > :not(button, h1) {
+  aside > div :not(button:first-of-type, h1:first-of-type) {
     @apply col-span-2;
   }
 

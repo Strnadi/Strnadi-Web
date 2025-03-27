@@ -30,6 +30,7 @@ export interface RecordingUploadReq {
   byApp: boolean;
   estimatedBirdsCount: number;
   device: string;
+  name: string;
   note: string | null;
 }
 

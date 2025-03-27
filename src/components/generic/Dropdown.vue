@@ -34,7 +34,7 @@ onBeforeUnmount(() => {
     </button>
     <ul
       v-if="isOpen"
-      class="absolute p-2 left-1/2 translate-x-1/2 desktop:right-0 desktop:left-auto mt-2 min-w-40 w-max z-[100] bg-white border border-gray-200 rounded shadow-lg"
+      class="absolute p-2 left-0 desktop:right-0 desktop:left-auto mt-2 min-w-40 w-max z-[100] bg-white border border-gray-200 rounded shadow-lg"
       @mouseleave="close"
       @click="close"
     >
@@ -44,7 +44,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-@reference "../../main/main.css";
+@reference "../../styling/main.css";
 
 ul > li {
   @apply font-semibold flex flex-row gap-x-1 items-center px-4 py-2 hover:bg-gray-100;

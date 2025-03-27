@@ -21,7 +21,7 @@ import VueDatePicker from "@vuepic/vue-datepicker";
 import ExpandableImage from "@/components/generic/ExpandableImage.vue";
 import "@vuepic/vue-datepicker/dist/main.css";
 import "@/main/firebase";
-import "./main.css";
+import "../styling/main.css";
 
 const app = createApp(App);
 const router = createRouter({

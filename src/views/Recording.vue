@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeRouteUpdate } from 'vue-router';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router'
 import { getRecording } from '@/api/recording';
 import { getUserInfo } from '@/api/account';
@@ -11,7 +11,7 @@ import { accountStore } from '@/state/AccountStore';
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
 const recordingId = useRouteParams('id') as Ref<string>;
 
-const { data: recording, isError, isLoading, refetch } = useQuery({
+const { data: recording, isError, isLoading, refetch: recordingRefetch } = useQuery({
   queryKey: ['recording', recordingId.value],
   queryFn: () => getRecording(recordingId.value)
 })
@@ -23,16 +23,20 @@ const enabled = computed(() => !!uploaderEmail.value);
 const { 
   data: uploader, 
   isLoading: isUploaderLoading, 
-  isError: isUploaderError 
+  isError: isUploaderError,
+  refetch: uploaderRefetch
 } = useQuery({
   queryKey: ['user', uploaderEmail.value],
   queryFn: () => getUserInfo(accountStore.token!, uploaderEmail.value!),
   enabled, // Use the computed enabled value
 })
 
+const queryClient = useQueryClient();
+
 onBeforeRouteUpdate(async (to) => {
   recordingId.value = to.params.id as string;
-  await refetch();
+  await queryClient.invalidateQueries({ queryKey: ['recording'] });
+  await queryClient.invalidateQueries({ queryKey: ['user'] });
 })
 
 </script>
