@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import InfoIcon from '@/assets/icon-info.svg';
-import OptionsIcon from '@/assets/icon-options.svg';
+import MapIcon from '@/assets/icon-map.svg';
+import PictureIcon from '@/assets/icon-picture.svg';
+import { mapStore } from '@/state/MapStore';
 
 </script>
 
@@ -12,10 +14,10 @@ import OptionsIcon from '@/assets/icon-options.svg';
     <img :src="InfoIcon" />
   </PrefetchLink>
 
-  <PrefetchLink
-    to="/mapa/nastaveni"
+  <button
     class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
+    @click="mapStore.mode = mapStore.mode == 'aerial' ? 'outdoor' : 'aerial'"
   >
-    <img :src="OptionsIcon" />
-  </PrefetchLink>
+    <img :src="mapStore.mode == 'aerial' ? MapIcon : PictureIcon" />
+  </button>
 </template>

@@ -9,14 +9,11 @@ const email = ref("");
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
     <img :src="LogoNoText" />
-    <h1 class="text-center">Nářečí českých strnadů</h1>
-    <span class="text-xl text-center">Nahrávejte, mapujte, dobývejte</span>
+    <h1 class="text-center">Zapomenuté heslo</h1>
 
-    <div v-if="error">Chyba: {{ error }}</div>
-    <div v-if="isPending">Načítání...</div>
-    <div v-else class="flex flex-col items-center gap-y-6 w-full">
-      <div>
-        <label for="email" class="block text-sm font-medium mb-1">E-Mail</label>
+    <div class="flex flex-col items-center gap-y-6 w-full">
+      <div class="w-full flex flex-col gap-y-1">
+        <label for="email" class="block text-sm font-medium">E-Mail</label>
         <input
           v-model="email"
           id="email"

@@ -11,7 +11,7 @@ export const uploadStore = reactive({
   photos: null as File[] | null,
   location: null as LatLng | null,
   note: "" as string | null,
-  title: "" as string | null,
+  title: "" as string,
   device: "" as string | null,
   birdCount: 1,
   dateTime: new Date().toISOString(),

@@ -31,8 +31,24 @@ const stages = Object.keys(STAGE_MAPPING).length - 1;
 
 <template>
   <template v-if="accountStore.user">
-    <Component />
+    <Transition name="fade" mode="out-in">
+      <Component :key="uploadStore.stage" />
+    </Transition>
     <SegmentedProgress :progress="uploadStore.stage" :total-segments="stages" />
   </template>
   <p v-else>Je potřeba se nejdříve přihlásit.</p>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  height: 0;
+  padding: 0;
+  margin: 0;
+}
+</style>

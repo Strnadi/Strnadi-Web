@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { ref, shallowRef, watch } from 'vue'
+import { shallowRef, watch } from 'vue'
 import { defineAsyncComponent } from 'vue'
 import { registerStore } from '@/state/RegisterStore';
 import SegmentedProgress from '@/components/generic/SegmentedProgress.vue';
-import { useRouter } from 'vue-router';
-
-const router = useRouter()
 
 const STAGE_MAPPING: Record<number, string> = {
   0: "Email",
@@ -30,8 +27,6 @@ const stages = Object.keys(STAGE_MAPPING).length;
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-y-4">
-    <Component />
-    <SegmentedProgress :progress="registerStore.stage" :total-segments="stages" />
-  </div>
+  <Component />
+  <SegmentedProgress :progress="registerStore.stage" :total-segments="stages" />
 </template>

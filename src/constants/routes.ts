@@ -98,12 +98,6 @@ const TextRoutes: RouteRecordRaw[] = [
 
 const MapRoutes: RouteRecordRaw[] = [
   {
-    path: '/mapa/nastaveni',
-    components: {
-      popup: () => import('@/views/MapOptions.vue')
-    }
-  },
-  {
     path: '/mapa/legenda',
     components: {
       popup: () => import('@/views/MapLegend.vue')

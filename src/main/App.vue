@@ -8,6 +8,7 @@ import MapButtons from '@/components/map/MapButtons.vue';
 
 import { registerStore } from '@/state/RegisterStore';
 import { uploadStore } from '@/state/UploadStore';
+import { computed, watch } from 'vue';
 
 const router = useRouter();
 
@@ -17,7 +18,7 @@ interface MultiStepStore {
 }
 
 const formRegistry: Record<string, MultiStepStore> = {
-  '/registrace': registerStore,
+  '/ucet/registrace': registerStore,
   '/nahrat': uploadStore
 };
 
@@ -61,16 +62,18 @@ const maybeGoBack = (event: KeyboardEvent) => {
     </Transition>
   </router-view>
 
-  <router-view name="popup" v-slot="{ Component }">
+  <router-view name="popup" v-slot="{ Component, route }">
     <Transition>
       <aside v-if="Component" class="popup">
-        <div>
-          <button class="secondary" @click="goBack" @keydown="maybeGoBack">
-            <img :src="Back" />
-            <span>Zpět</span>
-          </button>
-          <component :is="Component" />
-        </div>
+        <Transition name="fade" mode="out-in">
+          <div :key="`${route.path}-${formRegistry[route.path]?.stage}`">
+            <button class="secondary" @click="goBack" @keydown="maybeGoBack">
+              <img :src="Back" />
+              <span>Zpět</span>
+            </button>
+            <component :is="Component" />
+          </div>
+        </Transition>
       </aside>
     </Transition>
   </router-view>
@@ -161,5 +164,17 @@ const maybeGoBack = (event: KeyboardEvent) => {
   .v-enter-from,
   .v-leave-to {
     opacity: 0;
+  }
+
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: all 0.25s ease;
+  }
+
+  .fade-enter-from,
+  .fade-leave-to {
+    height: 0;
+    padding: 0;
+    margin: 0;
   }
 </style>

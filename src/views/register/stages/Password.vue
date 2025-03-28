@@ -17,12 +17,10 @@ const handleRegister = () => {
 </script>
 
 <template>
-  <div>
-    <h1>Nastavte si heslo</h1>
-    <form @submit.prevent="handleRegister" class="flex flex-col">
-      <input v-model="password" type="password" placeholder="Heslo" />
-      <input v-model="passwordAgain" type="password" placeholder="Heslo znovu" />
-      <button class="primary p-2 m-2" type="submit">Pokračovat</button>
-    </form>
+  <h1>Nastavte si heslo</h1>
+  <div @submit.prevent="handleRegister" class="flex flex-col">
+    <input v-model="password" type="password" placeholder="Heslo" />
+    <input v-model="passwordAgain" type="password" placeholder="Heslo znovu" />
+    <button class="primary p-2 m-2" type="submit">Pokračovat</button>
   </div>
 </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/* @ts-ignore */
 import Spectrogram from '@strnadi/spectrogram-vue';
 import { uploadStore } from '@/state/UploadStore';
 import { computed, ref } from 'vue';
@@ -17,7 +18,7 @@ const audioSrc = computed(() => {
 </script>
 
 <template>
-  <h1 class="text-2xl font-bold">Přidat předpokládaný dialekt</h1>
+  <h1>Přidat předpokládaný dialekt</h1>
   <Spectrogram :audioSrc="audioSrc" :minFrequency="0" :maxFrequency="12000"/>
   <button class="primary p-3 self-start m-2">Přidat dialekt</button>
   <button v-if="numberOfDialects == 0" @click="uploadStore.nextStage" class="secondary p-2 w-full">

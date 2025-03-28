@@ -73,18 +73,18 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="isPending">
+  <template v-if="isPending">
     <p>Nahrávání vaší nahrávky...</p>
-  </div>
+  </template>
 
-  <div v-else-if="error">
+  <template v-else-if="error">
     <h1>Chyba</h1>
     <p>{{ error.message }}</p>
-  </div>
+  </template>
 
-  <div v-else>
+  <template v-else>
     <h1>Úspěch</h1>
     <h2>Vaše nahrávka byla uložena.</h2>
     <button @click="onClick" class="primary p-2 w-full">Pokračovat zpět</button>
-  </div>
+  </template>
 </template>

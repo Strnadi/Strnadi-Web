@@ -1,6 +1,7 @@
 <template>
+  <h1>Zadejte váš E-Mail</h1>
   <div class="flex flex-col gap-y-4">
-    <form class="flex flex-col gap-y-2">
+    <div class="flex flex-col gap-y-2">
       <input v-model="registerStore.email" name="email" type="email" placeholder="E-Mail" />
       <div class="flex flex-row items-center gap-x-2">
         <input type="checkbox" id="agreement" v-model="agreement" />
@@ -9,7 +10,7 @@
         </label>
       </div>
       <button class="primary p-2 m-2" :disabled="!agreement" @click="registerStore.nextStage">Pokračovat</button>
-    </form>
+    </div>
   </div>
 </template>
 

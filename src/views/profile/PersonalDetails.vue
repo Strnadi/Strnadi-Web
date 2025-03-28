@@ -10,7 +10,10 @@ const town = ref('');
 </script>
 
 <template>
-  <h2>Osobní údaje</h2>
+  <h1 class="flex flex-row justify-between">
+    <span>Osobní údaje</span>
+    <button class="secondary py-1 px-2 text-sm">Uložit</button>
+  </h1>
   <div>
     <label for="name" class="block text-sm font-medium mb-1">Jméno</label>
     <input

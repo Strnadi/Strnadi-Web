@@ -3,7 +3,7 @@ import { uploadStore } from '@/state/UploadStore';
 </script>
 
 <template>
-  <h1 className='text-2xl font-bold'>Přidání info</h1>
+  <h1>Přidání info</h1>
   <div class="flex flex-col gap-x-2 gap-y-4 w-full">
     <VueDatePicker
       :inline="true"
