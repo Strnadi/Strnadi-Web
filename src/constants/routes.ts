@@ -48,6 +48,12 @@ const AccountRoutes: RouteRecordRaw[] = [
     components: {
       popup: () => import('@/views/ForgottenPassword.vue')
     },
+  },
+  {
+    path: '/ucet/smazat',
+    components: {
+      popup: () => import('@/views/profile/DeleteAccount.vue')
+    },
   }
 ];
 

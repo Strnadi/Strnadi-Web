@@ -38,3 +38,16 @@ export const postLogin = async (loginData: LoginRequest): Promise<Token> =>
 
 export const postRegister = async (signUpData: SignUpRequest): Promise<Token> =>
   genericPost("sign-up", signUpData);
+
+export const deleteAccount = async (token: string, email: string): Promise<void> => {
+  try {
+    await axios.delete(`${env.VITE_API_URL}/users/${email}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  } catch(e) {
+    const error = e as AxiosError;
+    throw new ApiError(error.code, error.response?.status);
+  }
+}

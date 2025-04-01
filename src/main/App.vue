@@ -8,7 +8,6 @@ import MapButtons from '@/components/map/MapButtons.vue';
 
 import { registerStore } from '@/state/RegisterStore';
 import { uploadStore } from '@/state/UploadStore';
-import { computed, watch } from 'vue';
 
 const router = useRouter();
 

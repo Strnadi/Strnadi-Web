@@ -16,6 +16,9 @@ import { accountStore } from '@/state/AccountStore';
   <prefetch-link to="/ucet/oznameni" class="link">
     Oznámení
   </prefetch-link>
+  <prefetch-link to="/ucet/smazat" class="link">
+    Smazat účet
+  </prefetch-link>
 </template>
 
 <style scoped>
