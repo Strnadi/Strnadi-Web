@@ -118,7 +118,7 @@ const MapRoutes: RouteRecordRaw[] = [
   {
     path: '/mapa/legenda',
     components: {
-      popup: () => import('@/views/MapLegend.vue')
+      small_popup: () => import('@/views/MapLegend.vue')
     }
   }
 ];
@@ -148,7 +148,7 @@ export const routes: readonly RouteRecordRaw[] = [
   {
     path: '/vitejte',
     components: {
-      popup: () => import('@/views/IntroScreen.vue')
+      small_popup: () => import('@/views/IntroScreen.vue')
     }
   },
 

@@ -47,6 +47,8 @@ function onMapClick(event: MapBrowserEvent<UIEvent>) {
     for (const part of recording.parts || []) {
       const partCoords = partAverageCoords(part);
       if (coords[0] === partCoords[0] && coords[1] === partCoords[1]) {
+        mapStore.setSelectedRecordingLocation(coords[1], coords[0]);
+
         router.push(`/nahravka/${recording.id}`);
         return true;
       }
@@ -57,8 +59,13 @@ function onMapClick(event: MapBrowserEvent<UIEvent>) {
   return true;
 }
 
-const coords = computed(() => {
+const userSelectedCoords = computed(() => {
   const coords = mapStore.selectedLocation!;
+  return [coords.lng, coords.lat];
+});
+
+const selectedRecordingCoords = computed(() => {
+  const coords = mapStore.selectedRecordingLocaition!;
   return [coords.lng, coords.lat];
 });
 
@@ -108,34 +115,42 @@ const coords = computed(() => {
         />
       </ol-tile-layer>
 
-      <!-- First vector layer for recordings -->
       <ol-vector-layer>
         <ol-source-vector v-if="recordings">
           <template v-for="recording in recordings" :key="recording.id">
             <ol-feature v-for="part in recording.parts" :key="part.id">
               <ol-geom-point :coordinates="partAverageCoords(part)" />
               <ol-style>
-                <ol-style-icon :src="MapIcons.Unknown" />
+                <ol-style-icon :src="MapIcons.Unknown.fileName" />
               </ol-style>
             </ol-feature>
           </template>
         </ol-source-vector>
       </ol-vector-layer>
 
-      <!-- Separate vector layer for the marker -->
       <ol-vector-layer>
         <ol-source-vector v-if="mapStore.selectedLocation">
           <ol-feature>
-            <ol-geom-point :coordinates="coords" />
+            <ol-geom-point :coordinates="userSelectedCoords" />
             <ol-style>
-              <ol-style-icon :src="MapIcons.SelectedLocation" />
+              <ol-style-icon :src="MapIcons.SelectedLocation.fileName" />
+            </ol-style>
+          </ol-feature>
+        </ol-source-vector>
+      </ol-vector-layer>
+
+      <ol-vector-layer>
+        <ol-source-vector v-if="mapStore.selectedRecordingLocaition">
+          <ol-feature>
+            <ol-geom-point :coordinates="selectedRecordingCoords" />
+            <ol-style>
+              <ol-style-icon :src="MapIcons.RecordingLocation.fileName" />
             </ol-style>
           </ol-feature>
         </ol-source-vector>
       </ol-vector-layer>
 
       <ol-attribution-control />
-
       <v-ol-control position="bottom-left">
         <div class="logocontrol ol-control">
           <a href="http://mapy.cz/" target="_blank">

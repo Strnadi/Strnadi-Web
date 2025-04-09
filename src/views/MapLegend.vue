@@ -6,11 +6,11 @@ import { MapIcons } from '@/components/map/MapIcons';
   <h1>Legenda nářečí</h1>
 
   <div
-    class="flex flex-row flex-wrap desktop:max-w-2/3"
+    class="flex flex-row flex-wrap"
   >
-    <div v-for="(icon, name) in MapIcons" :key="name" class="flex flex-col items-center flex-[1_0_25%]">
-      <img :src="icon" :alt="`Map Icon ${name}`" class="w-16 h-16 m-2" />
-      <span>{{ name }}</span>
+    <div v-for="(data, _) in MapIcons" :key="data.fileName" class="flex flex-col items-center flex-[1_0_25%]">
+      <img :src="data.fileName" :alt="`Map Icon ${data.friendlyName}`" class="w-16 h-16 m-2" />
+      <span>{{ data.friendlyName }}</span>
     </div>
   </div>
 

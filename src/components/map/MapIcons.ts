@@ -1,10 +1,46 @@
 export const MapIcons = {
-  BC: "/dialects/dialect-bc.svg",
-  BE: "/dialects/dialect-be.svg",
-  XB: "/dialects/dialect-xb.svg",
-  BhBl: "/dialects/dialect-bhbl.svg",
-  BlBH: "/dialects/dialect-blbh.svg",
-  Unknown: "/dialects/dialect-unknown.svg",
-  Transition: "/dialects/dialect-transition.svg",
-  SelectedLocation: "/dialects/selected-location.svg",
+  BC: {
+    fileName: "/dialects/dialect-bc.svg",
+    friendlyName: "BC",
+  },
+
+  BE: {
+    fileName: "/dialects/dialect-be.svg",
+    friendlyName: "BE",
+  },
+
+  XB: {
+    fileName: "/dialects/dialect-xb.svg",
+    friendlyName: "XB",
+  },
+
+  BhBl: {
+    fileName: "/dialects/dialect-bhbl.svg",
+    friendlyName: "BhBl",
+  },
+
+  BlBH: {
+    fileName: "/dialects/dialect-blbh.svg",
+    friendlyName: "BlBH",
+  },
+
+  Unknown: {
+    fileName: "/dialects/dialect-unknown.svg",
+    friendlyName: "Neznamý",
+  },
+
+  Transition: {
+    fileName: "/dialects/dialect-transition.svg",
+    friendlyName: "Přechod",
+  },
+
+  SelectedLocation: {
+    fileName: "/dialects/selected-location.svg",
+    friendlyName: "Vybraný bod",
+  },
+
+  RecordingLocation: {
+    fileName: "/dialects/selected-recording-location.svg",
+    friendlyName: "Vybraná nahrávka",
+  },
 };

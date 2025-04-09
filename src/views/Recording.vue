@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router'
 import { getRecording } from '@/api/recording';
 import { getUserInfo } from '@/api/account';
-import { ref, computed, type Ref } from 'vue';
+import { ref, computed, type Ref, onMounted, onUnmounted } from 'vue';
 import { accountStore } from '@/state/AccountStore';
 import RecordingPartAudio from '@/components/generic/RecordingPartAudio.vue';
 import { mapStore } from '@/state/MapStore';
@@ -36,6 +36,10 @@ const {
 })
 
 const queryClient = useQueryClient();
+
+onUnmounted(() => {
+  mapStore.selectedRecordingLocaition = null;
+})
 
 onBeforeRouteUpdate(async (to) => {
   recordingId.value = to.params.id as string;

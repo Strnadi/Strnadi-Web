@@ -33,18 +33,15 @@ const router = createRouter({
   }
 });
 
-Sentry.init({
-  app: app,
-  dsn: "https://e3caec48db03fc752eb60fcccceb5d7e@o4508834111291392.ingest.de.sentry.io/4509010454970448",
-  integrations: [
-    Sentry.browserTracingIntegration({ router }),
-    // Sentry.replayIntegration(),
-  ],
-  // tracesSampleRate: 1.0,
-  // tracePropagationTargets: ["localhost", /^https:\/\/api.strnadi\.cz/],
-  // replaysSessionSampleRate: 0.1,
-  // replaysOnErrorSampleRate: 1.0,
-});
+if(import.meta.env.PROD) {
+  Sentry.init({
+    app: app,
+    dsn: "https://e3caec48db03fc752eb60fcccceb5d7e@o4508834111291392.ingest.de.sentry.io/4509010454970448",
+    integrations: [
+      Sentry.browserTracingIntegration({ router }),
+    ],
+  });
+}
 
 axios.defaults.baseURL = import.meta.env.VITE_API_URL;
 

@@ -56,7 +56,7 @@ const closePopup = () => {
     <Transition>
       <aside v-if="Component" class="side">
         <div>
-          <button class="secondary border-none bg-transparent" @click="goBack">
+          <button class="secondary" @click="goBack">
             <img :src="Back" />
             <span>Zpět</span>
           </button>
@@ -71,7 +71,23 @@ const closePopup = () => {
       <aside v-if="Component" class="popup" @click="closePopup">
         <Transition name="fade" mode="out-in">
           <div :key="`${route.path}-${formRegistry[route.path]?.stage}`" @click.stop>
-            <button class="secondary border-none bg-transparent" @click="goBack" @keydown="maybeGoBack">
+            <button class="secondary" @click="goBack" @keydown="maybeGoBack">
+              <img :src="Back" />
+              <span>Zpět</span>
+            </button>
+            <component :is="Component" />
+          </div>
+        </Transition>
+      </aside>
+    </Transition>
+  </router-view>
+
+  <router-view name="small_popup" v-slot="{ Component, route }">
+    <Transition>
+      <aside v-if="Component" class="small_popup" @click="closePopup">
+        <Transition name="fade" mode="out-in">
+          <div :key="`${route.path}`" @click.stop>
+            <button class="secondary" @click="goBack" @keydown="maybeGoBack">
               <img :src="Back" />
               <span>Zpět</span>
             </button>
@@ -86,7 +102,7 @@ const closePopup = () => {
     <Transition>
       <aside v-if="Component" class="center">
         <div>
-          <button class="secondary border-none bg-transparent" @click="goBack">
+          <button class="secondary" @click="goBack">
             <img :src="Back" />
             <span>Zpět</span>
           </button>
@@ -120,6 +136,11 @@ const closePopup = () => {
   }
 
   aside.popup {
+    @apply fixed inset-0 flex items-center justify-center bg-black/50 z-[10];
+    @apply backdrop-blur-sm;
+  }
+
+  aside.small_popup {
     @apply fixed inset-0 flex items-center justify-center bg-black/50 z-[10];
     @apply backdrop-blur-sm;
   }
@@ -165,8 +186,13 @@ const closePopup = () => {
     @apply desktop:max-w-1/3;
   }
 
+  aside.small_popup > div {
+    @apply w-fit;
+    @apply desktop:max-w-1/4 lg:max-w-1/3 md:max-w-1/2 sm:max-w-2/3;
+  }
+
   aside > div > button {
-    @apply px-2 py-1 mx-2 self-start flex flex-row items-center;
+    @apply px-2 py-1 mx-2 self-start flex flex-row items-center border-none bg-transparent;
   }
 
   aside > div :not(button:first-of-type, h1:first-of-type) {
