@@ -8,6 +8,18 @@ const user = accountStore.user!;
 <template>
   <Dropdown>
     <template v-slot:title class='flex flex-row items-center'>
+      <svg
+        width="32px"
+        height="32px"
+        viewBox="0 0 16 16"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="#000000"
+        v-if="!user.isEmailVerified"
+      >
+        <title>Nemáte ověřený účet. Musíte si ověřit svůj e-mail.</title>
+        <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.553.553 0 0 1-1.1 0L7.1 4.995z"/>
+      </svg>
+
       {{ user.firstName }} {{ user.lastName }}
       <svg
         class="ml-1 h-4 w-4 fill-current text-gray-500 hover:text-gray-600"

@@ -1,19 +1,19 @@
 <template>
-  <div v-if="isPending">
+  <template v-if="isPending">
     <p>Vytváření účtu...</p>
-  </div>
+  </template>
 
-  <div v-else-if="isError">
+  <template v-else-if="isError">
     <h1>Chyba</h1>
     <p>{{ error!.message }}</p>
-    <button @click="register">Zkusit znovu</button>
-  </div>
+    <button @click="register" class="secondary p-2 w-full">Zkusit znovu</button>
+  </template>
 
-  <div v-else>
+  <template v-else>
     <h1>Úspěch</h1>
     <h2>Váš účet byl založen.</h2>
-    <button class="primary" @click="onClick">Pokračovat</button>
-  </div>
+    <button class="primary p-2 w-full" @click="onClick">Pokračovat</button>
+  </template>
 </template>
 
 <script setup lang="ts">

@@ -8,6 +8,7 @@ import MapButtons from '@/components/map/MapButtons.vue';
 
 import { registerStore } from '@/state/RegisterStore';
 import { uploadStore } from '@/state/UploadStore';
+import { accountStore } from '@/state/AccountStore';
 
 const router = useRouter();
 
@@ -36,9 +37,13 @@ const goBack = () => {
 };
 
 const maybeGoBack = (event: KeyboardEvent) => {
-  if (event.key === "Escape") { // fixed key check
+  if (event.key === "Escape") {
     goBack();
   }
+}
+
+const closePopup = () => {
+  router.replace('/');
 }
 </script>
 
@@ -51,7 +56,7 @@ const maybeGoBack = (event: KeyboardEvent) => {
     <Transition>
       <aside v-if="Component" class="side">
         <div>
-          <button class="secondary" @click="goBack">
+          <button class="secondary border-none bg-transparent" @click="goBack">
             <img :src="Back" />
             <span>Zpět</span>
           </button>
@@ -63,10 +68,10 @@ const maybeGoBack = (event: KeyboardEvent) => {
 
   <router-view name="popup" v-slot="{ Component, route }">
     <Transition>
-      <aside v-if="Component" class="popup">
+      <aside v-if="Component" class="popup" @click="closePopup">
         <Transition name="fade" mode="out-in">
-          <div :key="`${route.path}-${formRegistry[route.path]?.stage}`">
-            <button class="secondary" @click="goBack" @keydown="maybeGoBack">
+          <div :key="`${route.path}-${formRegistry[route.path]?.stage}`" @click.stop>
+            <button class="secondary border-none bg-transparent" @click="goBack" @keydown="maybeGoBack">
               <img :src="Back" />
               <span>Zpět</span>
             </button>
@@ -81,7 +86,7 @@ const maybeGoBack = (event: KeyboardEvent) => {
     <Transition>
       <aside v-if="Component" class="center">
         <div>
-          <button class="secondary" @click="goBack">
+          <button class="secondary border-none bg-transparent" @click="goBack">
             <img :src="Back" />
             <span>Zpět</span>
           </button>
@@ -91,10 +96,18 @@ const maybeGoBack = (event: KeyboardEvent) => {
     </Transition>
   </router-view>
 
-  <main>
-    <Map class="w-screen h-screen" />
-    <div class="absolute bottom-0 right-0 z-[6] flex flex-col justify-end">
-      <MapButtons />
+  <main class="flex flex-col w-screen h-screen">
+    <div class="w-full h-full relative">
+      <Map class="w-full h-full" />
+      <div class="absolute bottom-2 right-2 z-[6] flex flex-row justify-end">
+        <MapButtons />
+      </div>
+    </div>
+    <div
+      v-if="accountStore.user && !accountStore.user.isEmailVerified"
+      class="p-2 bg-red-300"
+    >
+      <marquee behavior="alternate" scrollamount="4">Nemáte dosud ověřený e-mail. Dokud si e-mail neověříte, nemůžete nahrávat a funkcionalita aplikace bude omezená.</marquee>
     </div>
   </main>
 </template>
@@ -145,6 +158,11 @@ const maybeGoBack = (event: KeyboardEvent) => {
     @apply rounded-4xl;
     @apply p-8;
     @apply bg-white/95;
+  }
+
+  aside.popup > div {
+    @apply w-fit;
+    @apply desktop:max-w-1/3;
   }
 
   aside > div > button {

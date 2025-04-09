@@ -1,7 +1,8 @@
 input[type="text"], input[type="email"], input[type="password"], input[type="number"] {
   @apply font-semibold;
   @apply border-2;
-  @apply border-[#d2d2d2];
+  @apply border-[#d2d2d240];
+  @apply bg-[#f5f5f5];
   @apply rounded-2xl;
   @apply p-4;
   @apply min-h-14;
@@ -14,7 +15,7 @@ input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focu
 textarea {
   @apply font-semibold;
   @apply border-2;
-  @apply border-[#d2d2d2];
+  @apply border-[#d2d2d240];
   @apply rounded-2xl;
   @apply p-4;
   @apply min-h-14;

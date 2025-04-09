@@ -1,11 +1,6 @@
+import type { JWTPayload } from "jose";
 
-export interface JwtObject {
-  sub: string,
-  iss: string,
-  aud: string,
-  nbf: number,
-  exp: number,
-  iat: number
+export interface JWTObject extends JWTPayload {
 };
 
 export interface User {

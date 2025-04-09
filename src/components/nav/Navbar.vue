@@ -24,7 +24,7 @@ const isMenuOpen = ref(false);
   <div class="flex justify-between gap-x-4 items-center h-16 bg-white rounded-4xl m-2 desktop:m-5 pr-4">
     <!-- Logo -->
     <div class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc]">
-      <PrefetchLink to="/">
+      <PrefetchLink to="/vitejte">
         <img src="/logo.svg" alt="Logo" />
       </PrefetchLink>
     </div>

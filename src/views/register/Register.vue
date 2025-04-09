@@ -28,5 +28,5 @@ const stages = Object.keys(STAGE_MAPPING).length;
 
 <template>
   <Component />
-  <SegmentedProgress :progress="registerStore.stage" :total-segments="stages" />
+  <SegmentedProgress v-if="registerStore.stage != 0" :progress="registerStore.stage" :total-segments="stages" />
 </template>

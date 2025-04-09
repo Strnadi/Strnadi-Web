@@ -5,7 +5,7 @@ const env = import.meta.env;
 
 export const postDevice = async (addRequest: AddDeviceRequest, token: string): Promise<void> => {
 	try {
-		await axios.post(`${env.VITE_API_URL}/devices/add`, addRequest, {
+		await axios.post(`/devices/add`, addRequest, {
 			headers: {
 				Authorization: `Bearer ${token}`
 			}
@@ -17,7 +17,7 @@ export const postDevice = async (addRequest: AddDeviceRequest, token: string): P
 
 export const postUpdateDevice = async (updateRequest: UpdateDeviceRequest, token: string): Promise<void> => {
 	try {
-		await axios.patch(`${env.VITE_API_URL}/devices/update`, updateRequest, {
+		await axios.patch(`/devices/update`, updateRequest, {
 			headers: {
 				Authorization: `Bearer ${token}`
 			}
@@ -29,7 +29,7 @@ export const postUpdateDevice = async (updateRequest: UpdateDeviceRequest, token
 
 export const postDeleteDevice = async (fcmToken: string, token: string): Promise<void> => {
 	try {
-		await axios.delete(`${env.VITE_API_URL}/devices/delete/${fcmToken}`, {
+		await axios.delete(`/devices/delete/${fcmToken}`, {
 			headers: {
 				Authorization: `Bearer ${token}`
 			}

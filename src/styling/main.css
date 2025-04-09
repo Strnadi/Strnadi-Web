@@ -12,5 +12,5 @@
 }
 
 @theme {
-  --breakpoint-desktop: 80rem; /*var(--breakpoint-xl);*/
+  --breakpoint-desktop: 85rem; /*var(--breakpoint-xl);*/
 }

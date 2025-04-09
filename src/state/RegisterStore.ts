@@ -24,6 +24,10 @@ export const registerStore = reactive({
     this.stage = 0;
   },
 
+  setStage(stage: number) {
+    this.stage = stage;
+  },
+
   setEmail(email: string) {
     this.email = email;
   },

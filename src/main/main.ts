@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/vue";
 import App from "@/main/App.vue";
 import PrefetchPlugin from 'vue-route-prefetch'
+import axios from "axios";
 import { routes } from "@/constants/routes";
 import { createApp } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
@@ -27,6 +28,9 @@ const app = createApp(App);
 const router = createRouter({
   history: createWebHistory(),
   routes: routes,
+  scrollBehavior(_to, _from, _savedPosition) {
+    return { top: 0 }; // Always scroll to top
+  }
 });
 
 Sentry.init({
@@ -41,6 +45,8 @@ Sentry.init({
   // replaysSessionSampleRate: 0.1,
   // replaysOnErrorSampleRate: 1.0,
 });
+
+axios.defaults.baseURL = import.meta.env.VITE_API_URL;
 
 useGeographic();
 app.use(VueQueryPlugin);

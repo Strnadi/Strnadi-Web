@@ -1,7 +1,7 @@
 FROM oven/bun:alpine AS build
 WORKDIR /usr/src/app
 
-COPY bunfig.toml package.json .env .env.sentry-build-plugin ./
+COPY package.json .env .env.sentry-build-plugin ./
 RUN bun install
 
 COPY src src

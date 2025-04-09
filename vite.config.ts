@@ -42,7 +42,41 @@ export default defineConfig({
       registerType: 'autoUpdate',
       devOptions: {
         enabled: true
-      }
+      },
+      manifest: {
+        name: "Strnadi",
+        short_name: "Strnadi",
+        theme_color: "#ffd641",
+        background_color: "#ffffff",
+        lang: "cs-CZ",
+        display: "standalone",
+        start_url: "/",
+        id: "cz.delta-skola.strnadi",
+        icons: [
+          {
+            src: "/logo.svg",
+            sizes: "121x42",
+            type: "image/svg+xml",
+            purpose: "any maskable",
+          },
+        ],
+      },
+      workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/(?:new\.)?strnadi\.cz\/.*$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'strnadi-cache',
+              expiration: {
+                maxEntries: 10000,
+                maxAgeSeconds: 24 * 60 * 60 * 7, // 1 week
+              },
+            },
+          },
+        ],
+        skipWaiting: true
+      },
     }),
     Compression({ algorithm: "brotliCompress" }),
     SentryVitePlugin({

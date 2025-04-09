@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { accountStore } from '@/state/AccountStore';
 import { ref } from 'vue';
 
-const name = ref('');
-const surname = ref('');
-const nickname = ref('');
-const zipcode = ref('');
-const town = ref('');
+const name = ref(accountStore.user?.firstName || '');
+const surname = ref(accountStore.user?.lastName || '');
+const nickname = ref(accountStore.user?.nickname || '');
+const zipcode = ref(accountStore.user?.postalCode || '');
+const town = ref(accountStore.user?.city || '');
 
 </script>
 
@@ -69,4 +70,7 @@ const town = ref('');
       class="w-full p-2 border rounded"
     />
   </div>
+  <prefetch-link to="/ucet/smazat" class="text-red-500">
+    Smazat účet
+  </prefetch-link>
 </template>

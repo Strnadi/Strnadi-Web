@@ -19,12 +19,12 @@ export const postRecording = async (
 	photos?: File[]
 ): Promise<void> => {
 
-	const uploadedRecordingId = (await axios.post(`${env.VITE_API_URL}/recordings/upload`, recording, {
+	const uploadedRecordingId = (await axios.post(`/recordings/upload`, recording, {
 		headers: { "Authorization": `Bearer ${token}` }
 	})).data;
 
 	for await (const part of recordingParts) {
-		await axios.post(`${env.VITE_API_URL}/recordings/upload-part`, {
+		await axios.post(`/recordings/upload-part`, {
 			startDate: part.startDate,
 			endDate: part.endDate,
 			gpsLatitudeStart: part.gpsLatitudeStart,
@@ -48,9 +48,9 @@ export const postRecording = async (
 	}
 }
 
-export const getRecording = async (id: number | string): Promise<RecordingModel> => {
+export const getRecording = async (id: number | string, audio = false): Promise<RecordingModel> => {
 	try {
-		const response = await axios.get(`${env.VITE_API_URL}/recordings/${id}?parts=true`);
+		const response = await axios.get(`/recordings/${id}?parts=true&sound=${audio}`);
 		return response.data as RecordingModel;
 	} catch (e) {
 		const error = e as AxiosError;
@@ -58,12 +58,14 @@ export const getRecording = async (id: number | string): Promise<RecordingModel>
 	}
 }
 
-export const getRecordings = async (email?: string): Promise<RecordingModel[]> => {
+export const getRecordings = async (
+	{ audio = false, email }: { audio?: boolean, email?: string } = {}
+): Promise<RecordingModel[]> => {
 	try {
 		const response = await axios.get(
 			(email !== undefined)
-				? `${env.VITE_API_URL}/recordings?email=${email}&parts=true`
-				: `${env.VITE_API_URL}/recordings?parts=true`,
+				? `/recordings?email=${email}&parts=true&sound=${audio ?? false}`
+				: `/recordings?parts=true&sound=${audio ?? false}`,
 		);
 
 		return response.data as RecordingModel[];
@@ -75,7 +77,7 @@ export const getRecordings = async (email?: string): Promise<RecordingModel[]> =
 
 // export const getFilteredRecordings = async (token: string): Promise<RecordingModel[]> => {
 // 	try {
-// 		const response = await axios.get(`${env.VITE_API_URL}/recordings/filtered`, {
+// 		const response = await axios.get(`/recordings/filtered`, {
 // 			headers: { "Authorization": `Bearer ${token}` }
 // 		});
 

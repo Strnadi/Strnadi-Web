@@ -95,6 +95,18 @@ const TextRoutes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/o-nas',
+    components: {
+      side: () => import('@/texts/about-us.md')
+    }
+  },
+  {
+    path: '/podporuji-nas',
+    components: {
+      side: () => import('@/texts/supporters.md')
+    }
+  },
+  {
     path: '/aplikace',
     components: {
       popup: () => import('@/texts/application.md')
@@ -131,6 +143,12 @@ export const routes: readonly RouteRecordRaw[] = [
     path: '/',
     components: {
       "non-existent-component": { render: () => null }
+    }
+  },
+  {
+    path: '/vitejte',
+    components: {
+      popup: () => import('@/views/IntroScreen.vue')
     }
   },
 

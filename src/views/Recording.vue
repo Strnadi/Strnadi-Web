@@ -6,12 +6,14 @@ import { getRecording } from '@/api/recording';
 import { getUserInfo } from '@/api/account';
 import { ref, computed, type Ref } from 'vue';
 import { accountStore } from '@/state/AccountStore';
+import RecordingPartAudio from '@/components/generic/RecordingPartAudio.vue';
+import { mapStore } from '@/state/MapStore';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
 const recordingId = useRouteParams('id') as Ref<string>;
 
-const { data: recording, isError, isLoading, refetch: recordingRefetch } = useQuery({
+const { data: recording, isError, isLoading } = useQuery({
   queryKey: ['recording', recordingId.value],
   queryFn: () => getRecording(recordingId.value)
 })
@@ -19,12 +21,14 @@ const { data: recording, isError, isLoading, refetch: recordingRefetch } = useQu
 const uploaderEmail = computed(() => recording.value?.userEmail);
 const enabled = computed(() => !!uploaderEmail.value);
 
+
+// todo select location in the map
+
 // Dependent query - only runs when we have an uploaderEmail from the recording
-const { 
+const {
   data: uploader, 
   isLoading: isUploaderLoading, 
-  isError: isUploaderError,
-  refetch: uploaderRefetch
+  isError: isUploaderError
 } = useQuery({
   queryKey: ['user', uploaderEmail.value],
   queryFn: () => getUserInfo(accountStore.token!, uploaderEmail.value!),
@@ -42,23 +46,43 @@ onBeforeRouteUpdate(async (to) => {
 </script>
 
 <template>
-  <h1>Nahrávka</h1>
+  <h1>Nahrávka {{ recording?.name }}</h1>
 
   <template v-if="isError"><span class="text-xl">Chyba: Nelze získat nahrávku.</span></template>
   <template v-if="isLoading">Načítání...</template>
   <template v-else>
     <div>
       <p>ID: {{ recordingId }}</p>
-      <p>Created At: {{ recording?.createdAt }}</p>
+      <p>Vytvořeno: {{ recording?.createdAt }}</p>
+      <p>Zařízení: {{ recording?.device }} {{ recording?.byApp && '(přes aplikaci)' }}</p>
+      <blockquote>{{ recording?.note }}</blockquote>
+
+      <button v-if="accountStore.user?.role == 'admin'" class="primary p-2">
+        Smazat nahrávku
+      </button>
+
+      <div>
+        <ul>
+          <li v-for="part in recording?.parts" :key="part.id">
+            <RecordingPartAudio
+              :recordingID="recordingId"
+              :recordingPartID="part.id"
+            />
+
+            <template v-if="accountStore.user?.role == 'admin'">
+              <button class="primary p-2">Smazat část</button>
+            </template>
+          </li>
+        </ul>
+      </div>
 
       <!-- Display uploader information -->
       <div>
-        <h3>Uploader Information</h3>
+        <h3>Uživatel</h3>
         <template v-if="isUploaderLoading">Načítání informací o uživateli...</template>
         <template v-else-if="isUploaderError">Chyba: Nelze získat informace o uživateli</template>
         <template v-else-if="uploader">
-          <p>Name: {{ uploader.firstName }} {{ uploader.lastName }}</p>
-          <p>Email: {{ uploader.email }}</p>
+          <p>{{ uploader.firstName }} {{ uploader.lastName }} - {{ uploader.email }}</p>
         </template>
       </div>
 

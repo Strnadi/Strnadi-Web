@@ -1,10 +1,5 @@
 <script setup lang="ts">
 import LogoNoText from '@/assets/logo-no-text.svg';
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
-const goHome = () => router.replace('/');
-
 </script>
 
 <template>
@@ -13,8 +8,8 @@ const goHome = () => router.replace('/');
       <img :src="LogoNoText" />
       <h2>Nářečí českých strnadů</h2>
     </div>
-    <span class="text-xl text-center">E-Mail nebyl ověřen - nastala chyba.</span>
-    <button class="primary p-2 w-full lg:hidden">Zpět do aplikace</button>
-    <button class="primary p-2 w-full max-lg:hidden" @click="goHome">Dokončit registraci</button>
+    <span class="text-xl text-center">E-Mail byl úspěšně ověřen.</span>
+    <a class="button-primary p-2 w-full lg:hidden text-center" href="com.delta.strnadi://">Zpět do aplikace</a>
+    <router-link class="button-primary p-2 w-full max-lg:hidden text-center" :replace="true" to="/">Dokončit registraci</router-link>
   </div>
 </template>

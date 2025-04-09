@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /* @ts-ignore */
-import Spectrogram from '@strnadi/spectrogram-vue';
+import Spectrogram from '@/components/spectrogram/Spectrogram.vue';
 import { uploadStore } from '@/state/UploadStore';
 import { computed, ref } from 'vue';
 

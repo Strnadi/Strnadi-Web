@@ -16,9 +16,6 @@ import { accountStore } from '@/state/AccountStore';
   <prefetch-link to="/ucet/oznameni" class="link">
     Oznámení
   </prefetch-link>
-  <prefetch-link to="/ucet/smazat" class="link">
-    Smazat účet
-  </prefetch-link>
 </template>
 
 <style scoped>
@@ -27,7 +24,7 @@ import { accountStore } from '@/state/AccountStore';
 
 .link {
   @apply flex flex-col justify-center;
-  @apply p-2 m-2;
+  @apply p-2 my-1 border-2 border-gray-300 rounded-lg;
 }
 
 </style>

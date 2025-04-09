@@ -7,7 +7,7 @@ import { computed } from 'vue';
 
 const { data: recordings, isError, isLoading } = useQuery({
   queryKey: ['my-recordings'],
-  queryFn: () => getRecordings(accountStore.user!.email)
+  queryFn: () => getRecordings({email: accountStore.user!.email})
 })
 
 const recordingsLength = computed(() => recordings.value?.length || 0);
@@ -15,6 +15,7 @@ const recordingsLength = computed(() => recordings.value?.length || 0);
 </script>
 
 <template>
+  <h1>Moje nahrávky</h1>
   <template v-if="isLoading">Loading...</template>
   <template v-if="isError">Error loading recordings.</template>
   <template v-else>
@@ -22,11 +23,12 @@ const recordingsLength = computed(() => recordings.value?.length || 0);
       <li v-for="rec in recordings" :key="rec.id">
         <router-link :to="`/nahravka/${rec.id}`" class="flex flex-col justify-around p-2 bg-gray-200 hover:bg-gray-300 h-20 rounded-lg">
           <div class="flex flex-row justify-between">
-            <span>{{ rec.name }}</span>
-            <span>{{ rec.createdAt}} </span>
+            <span class="text-lg font-bold">{{ rec.name }}</span>
+            <span class="text-lime-400">Nahráno</span>
           </div>
-          <div>
-
+          <div class="flex flex-row justify-between">
+            <span></span>
+            <span>{{ new Date(rec.createdAt).toLocaleString() }} </span>
           </div>
         </router-link>
       </li>
