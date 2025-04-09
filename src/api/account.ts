@@ -4,8 +4,6 @@ import type { JWTObject, User } from "./types/auth";
 import type { LoginRequest, SignUpRequest, Token } from "@/api/types/auth";
 import type { OAuth2SignUpResponse } from "./types/oauth2";
 
-const env = import.meta.env;
-
 const genericPost = async<T> (path: string, data: T) => {
   try {
     const response = await axios.post(`/auth/${path}`, data);

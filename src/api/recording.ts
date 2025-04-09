@@ -2,7 +2,6 @@ import axios, { AxiosError } from "axios";
 import { ApiError } from "./types/api-error";
 import type { RecordingModel, RecordingPartUploadParams, RecordingPartUploadReq, RecordingUploadReq } from "@/api/types/recording";
 import { postPhoto } from "./photos";
-const env = import.meta.env;
 
 const toBase64 = (content: ArrayBuffer) =>
   btoa(

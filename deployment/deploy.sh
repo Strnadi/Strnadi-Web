@@ -1,12 +1,22 @@
 #!/bin/bash
 
-PORT=1235
+# Reset to a clean state
+git reset --hard
 
-# Find container ID with port $PORT exposed
-CONTAINER_ID=$(docker ps | grep $PORT | awk '{print $1}')
+# Pull the latest changes, rebase if necessary (force push)
+git pull --rebase
+
+# Init & update submodules
+git submodule update --remote --init --merge --recursive
+
+# Port is the first and only argument to this script
+PORT=$1
+
+# Get the docker container ID that is bound to the specified port
+CONTAINER_ID=$(docker ps --filter "publish=$PORT" -q)
 
 # Check if a container was found
-if [ ! -z "$CONTAINER_ID" ]; then
+if [ -n "$CONTAINER_ID" ]; then
   docker kill "$CONTAINER_ID"
 
   if [ $? -eq 0 ]; then
@@ -17,6 +27,6 @@ if [ ! -z "$CONTAINER_ID" ]; then
   fi
 fi
 
-docker build --build-arg ENABLED_MODULES="brotli" -t nginx:custom -f ./docker/nginx.dockerfile .
+docker build --build-arg ENABLED_MODULES="brotli" -t nginx:strnadi-custom -f ./docker/nginx.dockerfile .
 docker build -t strnadi-web -f ./docker/Dockerfile .
 docker run -d -p $PORT:80 strnadi-web

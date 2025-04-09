@@ -1,7 +1,6 @@
 import axios from "axios";
 import { ApiError } from "./types/api-error";
 import type { AddDeviceRequest, UpdateDeviceRequest } from "./types/device";
-const env = import.meta.env;
 
 export const postDevice = async (addRequest: AddDeviceRequest, token: string): Promise<void> => {
 	try {
