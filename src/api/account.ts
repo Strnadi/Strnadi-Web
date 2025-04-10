@@ -1,32 +1,21 @@
-import axios, { AxiosError } from "axios";
-import { ApiError } from "./types/api-error";
+import axios from "axios";
 import type { JWTObject, User } from "./types/auth";
 import type { LoginRequest, SignUpRequest, Token } from "@/api/types/auth";
 import type { OAuth2SignUpResponse } from "./types/oauth2";
 
 const genericPost = async<T> (path: string, data: T) => {
-  try {
-    const response = await axios.post(`/auth/${path}`, data);
-    return response.data;
-  } catch(e) {
-    const error = e as AxiosError;
-    throw new ApiError(error.code, error.response?.status);
-  }
+  const response = await axios.post(`/auth/${path}`, data);
+  return response.data;
 }
 
 export const getUserInfo = async (token: string, email: string): Promise<User> => {
-  try {
-    const response = await axios.get(`/users/${email}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+  const response = await axios.get(`/users/${email}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
 
-    return response.data as User;  
-  } catch(e) {
-    const error = e as AxiosError;
-    throw new ApiError(error.code, error.response?.status);
-  }
+  return response.data as User;  
 }
 
 export const getCurrentUserInfo = async (token: string, token_object: JWTObject): Promise<User> =>
@@ -45,27 +34,17 @@ export const postGoogleSignup = async (signupInfo: { idToken: string }): Promise
   genericPost("sign-up-google", signupInfo);
 
 export const getUserExists = async (email: string): Promise<boolean> => {
-  try {
-    const response = await axios.get(`/users/exists?email=${email}`, {
-      validateStatus: () => true
-    });
+  const response = await axios.get(`/users/exists?email=${email}`, {
+    validateStatus: () => true
+  });
 
-    return response.status !== 200;
-  } catch(e) {
-    const error = e as AxiosError;
-    throw new ApiError(error.code, error.response?.status);
-  }
+  return response.status !== 200;
 }
 
 export const deleteAccount = async (token: string, email: string): Promise<void> => {
-  try {
-    await axios.delete(`/users/${email}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-  } catch(e) {
-    const error = e as AxiosError;
-    throw new ApiError(error.code, error.response?.status);
-  }
+  await axios.delete(`/users/${email}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
 }

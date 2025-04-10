@@ -62,6 +62,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/(?:new\.)?strnadi\.cz\/.*$/,
@@ -74,8 +77,18 @@ export default defineConfig({
               },
             },
           },
+          {
+            urlPattern: /^https:\/\/api.mapy.cz\/.*$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'mapy-cache',
+              expiration: {
+                maxEntries: 10000,
+                maxAgeSeconds: 24 * 60 * 60 * 7, // 1 week
+              },
+            },
+          },
         ],
-        skipWaiting: true
       },
     }),
     Compression({ algorithm: "brotliCompress" }),

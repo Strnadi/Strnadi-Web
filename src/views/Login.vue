@@ -6,14 +6,20 @@ import { postGoogleLogin, postLogin } from "@/api/account";
 import { accountStore } from "@/state/AccountStore";
 
 import LogoNoText from "@/assets/logo-no-text.svg";
-import { externalAuthStore } from "@/state/ExternalAuthStore";
-
-import * as jose from 'jose';
+import OAuth2Button from "@/components/oauth2-button/OAuth2Button.vue";
 
 const env = import.meta.env;
 
 const router = useRouter();
 const route = useRoute();
+
+const oauth2_url = "https://accounts.google.com/o/oauth2/v2/auth";
+const oauth2_clientId = env.VITE_GOOGLE_CLIENT_ID;
+const oauth2_redirectUri = env.VITE_PUBLIC_URL + "/ucet/prihlaseni";
+const oauth2_scope = "email profile";
+const oauth2_responseType = "token id_token";
+const oauth2_prompt = "select_account";
+
 
 const { mutate: googleLoginMutate, isPending: googleLoginPending, error: googleLoginError } = useMutation({
   mutationFn: (loginInfo: { idToken: string }) =>
@@ -43,27 +49,6 @@ const { mutate: loginMutate, isPending: loginPending, error: loginError } = useM
 const isPending = computed(() => loginPending.value || googleLoginPending.value)
 const error = computed(() => loginError.value || googleLoginError.value)
 
-onMounted(() => {
-  if(!route.hash) return;
-
-  const fragment = route.hash.substring(1);
-  const params = new URLSearchParams(fragment);
-  const idToken = params.get('id_token');
-
-  if (!idToken) {
-    return;
-  }
-
-  const decodedToken = jose.decodeJwt(idToken);
-
-  if(!decodedToken.nonce || decodedToken.nonce !== externalAuthStore.nonce) {
-    console.error("Nonce mismatch");
-    return;
-  }
-
-  googleLoginMutate({ idToken });
-});
-
 const email = ref("");
 const password = ref("");
 
@@ -71,26 +56,8 @@ const handleLogin = () => {
   loginMutate({ email: email.value, password: password.value });
 };
 
-const googleLogin = () => {
-  const clientId = env.VITE_GOOGLE_CLIENT_ID;
-  const redirectUri = encodeURIComponent(env.VITE_PUBLIC_URL + "/ucet/prihlaseni");
-  const scope = encodeURIComponent("email profile");
-  const responseType = "token id_token";
-  const prompt = "consent";
-
-  const nonce = Math.random().toString();
-
-  externalAuthStore.setNonce(nonce);
-
-  window.location.href = (
-    "https://accounts.google.com/o/oauth2/v2/auth" +
-    `?client_id=${clientId}` +
-    `&redirect_uri=${redirectUri}` +
-    `&scope=${scope}` +
-    `&response_type=${responseType}` +
-    `&prompt=${prompt}` +
-    `&nonce=${nonce}`
-  );
+const googleLogin = (idToken: string) => {
+  googleLoginMutate({ idToken })
 }
 </script>
 
@@ -144,14 +111,20 @@ const googleLogin = () => {
         >
           Přihlásit se
         </button>
-        <button
+        <OAuth2Button
           class="secondary p-2 max-lg:w-full w-full"
           type="submit"
           :disabled="isPending"
-          @click="googleLogin"
+          :oauth2_url="oauth2_url"
+          :client-id="oauth2_clientId"
+          :redirect-uri="oauth2_redirectUri"
+          :prompt="oauth2_prompt"
+          :response-type="oauth2_responseType"
+          :scope="oauth2_scope"
+          @success="googleLogin"
         >
           Přihlásit se přes Google
-        </button>
+        </OAuth2Button>
       </div>
       <PrefetchLink
         class="button-secondary p-2 max-lg:w-full w-[75%] text-center"

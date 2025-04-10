@@ -6,19 +6,19 @@ import { uploadStore } from '@/state/UploadStore';
   <h1>Přidání info</h1>
   <div class="flex flex-col gap-x-2 gap-y-4 w-full">
     <VueDatePicker
-      :inline="true"
       :flow="['calendar', 'time']"
       v-model="uploadStore.dateTime"
       auto-apply
       partial-flow
       model-type="iso"
     />
-    <div>
-      <label for="title" class="block text-sm font-medium">Titulek</label>
+    <div class="w-full">
+      <label for="title" class="block text-sm font-medium w-full">Titulek</label>
       <input
         v-model="uploadStore.title"
         type="text"
         id="title"
+        class="w-full"
       />
     </div>
     <div>
@@ -26,13 +26,16 @@ import { uploadStore } from '@/state/UploadStore';
       <textarea
         v-model="uploadStore.note"
         id="note"
+        class="w-full"
       />
     </div>
     <div>
       <label for="note" class="block text-sm font-medium">Nahrávací zařízení</label>
-      <textarea
+      <input
         v-model="uploadStore.device"
         id="note"
+        type="text"
+        class="w-full"
       />
     </div>
     <div>

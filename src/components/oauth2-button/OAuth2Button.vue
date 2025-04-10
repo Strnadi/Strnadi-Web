@@ -1,37 +1,11 @@
 <script setup lang="ts">
 import * as jose from 'jose';
-import { onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { onMounted, onUnmounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = useRouter();
 const route = useRoute();
-
-onMounted(() => {
-  if(!route.hash) return;
-
-  const fragment = route.hash.substring(1);
-  const params = new URLSearchParams(fragment);
-  const idToken = params.get('id_token');
-
-  if (!idToken) {
-    return;
-  }
-
-  const decodedToken = jose.decodeJwt(idToken);
-
-  if(!decodedToken.nonce || decodedToken.nonce !== externalAuthStore.nonce) {
-    console.error("Nonce mismatch");
-    return;
-  }
-
-  googleLoginMutate({ idToken });
-});
-
-router.addRoute({
-  path: '/oauth2',
-  name: 'OAuth2',
-  component: () => import('./OAuth2Component.vue')
-});
 
 const props = defineProps<{
   oauth2_url: string,
@@ -39,11 +13,42 @@ const props = defineProps<{
   redirectUri: string,
   scope: string,
   responseType: string,
-  prompt: string
+  prompt: string,
+  disabled?: boolean
 }>();
 
-const submitLogin = (url, clientId, redirectUri, scope, responseType, prompt) => {
-  const nonce = Math.random().toString();
+const emit = defineEmits<{
+  success: [idToken: string],
+  error: [error: Error]
+}>();
+
+onMounted(() => {
+  if(!route.hash) {
+    return;
+  };
+
+  const fragment = route.hash.substring(1);
+  const params = new URLSearchParams(fragment);
+  const idToken = params.get('id_token');
+  const state = params.get('state');
+
+  if (!idToken) {
+    emit('error', new Error("No token returned"))
+    return;
+  }
+
+  const decodedToken = jose.decodeJwt(idToken);
+
+  if(!decodedToken.nonce || decodedToken.nonce !== state) {
+    emit('error', new Error("Nonce mismatch"))
+    return;
+  }
+
+  emit('success', idToken);
+});
+
+const submitLogin = (url: string, clientId: string, redirectUri: string, scope: string, responseType: string, prompt: string) => {
+  const nonce = uuidv4();
 
   window.location.href = (
     url +
@@ -53,7 +58,7 @@ const submitLogin = (url, clientId, redirectUri, scope, responseType, prompt) =>
     `&response_type=${responseType}` +
     `&prompt=${prompt}` +
     `&nonce=${nonce}` +
-    `&state=${btoa(JSON.stringify({ nonce }))}`
+    `&state=${nonce}`
   );
 }
 
@@ -70,5 +75,12 @@ const login = () => {
 </script>
 
 <template>
-
+  <button
+    @click="login"
+    :disabled="disabled"
+    class="secondary p-2 max-lg:w-full w-full"
+    type="submit"
+  >
+    Přihlásit se přes Google
+  </button>
 </template>

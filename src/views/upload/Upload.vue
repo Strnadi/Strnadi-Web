@@ -7,10 +7,10 @@ import SegmentedProgress from '@/components/generic/SegmentedProgress.vue';
 
 const STAGE_MAPPING = [
   "File",
+  "Dialect",
   "Location",
   "Info",
   "Photos",
-  "Dialect",
   "FinalConfirm",
   "Submit"
 ];
@@ -30,13 +30,20 @@ const stages = Object.keys(STAGE_MAPPING).length - 1;
 </script>
 
 <template>
-  <template v-if="accountStore.user">
-    <Transition name="fade" mode="out-in">
-      <Component :key="uploadStore.stage" />
-    </Transition>
+  <template v-if="!accountStore.user">
+    <h1 class="text-2xl">Nahrát</h1>
+    <p class="font-medium">Je potřeba se nejdříve přihlásit.</p>
+  </template>
+
+  <template v-else-if="!accountStore.user.isEmailVerified">
+    <h1 class="text-2xl">Nahrát</h1>
+    <p class="font-medium">Je potřeba si nejdříve ověřit svůj e-mail.</p>
+  </template>
+
+  <template v-else>
+    <Component :key="uploadStore.stage" />
     <SegmentedProgress :progress="uploadStore.stage" :total-segments="stages" />
   </template>
-  <p v-else>Je potřeba se nejdříve přihlásit.</p>
 </template>
 
 <style scoped>

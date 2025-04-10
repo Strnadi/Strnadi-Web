@@ -23,6 +23,7 @@ import ExpandableImage from "@/components/generic/ExpandableImage.vue";
 import "@vuepic/vue-datepicker/dist/main.css";
 import "@/main/firebase";
 import "../styling/main.css";
+import { ApiError } from "@/api/types/api-error";
 
 const app = createApp(App);
 const router = createRouter({
@@ -44,6 +45,9 @@ if(import.meta.env.PROD) {
 }
 
 axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+axios.interceptors.response.use(response => response, error => {
+  throw new ApiError(error.code, error.response?.status, error.response?.data);
+});
 
 useGeographic();
 app.use(VueQueryPlugin);

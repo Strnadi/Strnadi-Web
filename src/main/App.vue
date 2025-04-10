@@ -9,8 +9,18 @@ import MapButtons from '@/components/map/MapButtons.vue';
 import { registerStore } from '@/state/RegisterStore';
 import { uploadStore } from '@/state/UploadStore';
 import { accountStore } from '@/state/AccountStore';
+import { firstLaunchStore } from '@/state/FirstLaunchStore';
 
 const router = useRouter();
+
+if(firstLaunchStore.firstLaunch) {
+
+  setTimeout(() => {
+    router.push('/vitejte');
+  })
+
+  firstLaunchStore.firstLaunch = false;
+}
 
 interface MultiStepStore {
   stage: number;
@@ -123,7 +133,7 @@ const closePopup = () => {
       v-if="accountStore.user && !accountStore.user.isEmailVerified"
       class="p-2 bg-red-300"
     >
-      <marquee behavior="alternate" scrollamount="4">Nemáte dosud ověřený e-mail. Dokud si e-mail neověříte, nemůžete nahrávat a funkcionalita aplikace bude omezená.</marquee>
+      <marquee behavior="alternate" scrollamount="2" direction="right">Nemáte dosud ověřený e-mail. Dokud si e-mail neověříte, nemůžete nahrávat a funkcionalita aplikace bude omezená.</marquee>
     </div>
   </main>
 </template>
@@ -188,7 +198,7 @@ const closePopup = () => {
 
   aside.small_popup > div {
     @apply w-fit;
-    @apply desktop:max-w-1/4 lg:max-w-1/3 md:max-w-1/2 sm:max-w-2/3;
+    @apply max-w-full sm:max-w-2/3 md:max-w-1/2 desktop:max-w-1/3;
   }
 
   aside > div > button {

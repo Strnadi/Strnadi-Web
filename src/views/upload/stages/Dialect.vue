@@ -19,7 +19,7 @@ const audioSrc = computed(() => {
 
 <template>
   <h1>Přidat předpokládaný dialekt</h1>
-  <Spectrogram :audioSrc="audioSrc" :minFrequency="0" :maxFrequency="12000"/>
+  <Spectrogram :audioUrl="audioSrc" :minFrequency="0" :maxFrequency="12000" />
   <button class="primary p-3 self-start m-2">Přidat dialekt</button>
   <button v-if="numberOfDialects == 0" @click="uploadStore.nextStage" class="secondary p-2 w-full">
     Pokračovat bez dialektu

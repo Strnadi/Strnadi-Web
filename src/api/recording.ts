@@ -1,5 +1,4 @@
-import axios, { AxiosError } from "axios";
-import { ApiError } from "./types/api-error";
+import axios from "axios";
 import type { RecordingModel, RecordingPartUploadParams, RecordingPartUploadReq, RecordingUploadReq } from "@/api/types/recording";
 import { postPhoto } from "./photos";
 
@@ -48,30 +47,20 @@ export const postRecording = async (
 }
 
 export const getRecording = async (id: number | string, audio = false): Promise<RecordingModel> => {
-	try {
-		const response = await axios.get(`/recordings/${id}?parts=true&sound=${audio}`);
-		return response.data as RecordingModel;
-	} catch (e) {
-		const error = e as AxiosError;
-		throw new ApiError(error.code, error.response?.status);
-	}
+	const response = await axios.get(`/recordings/${id}?parts=true&sound=${audio}`);
+	return response.data as RecordingModel;
 }
 
 export const getRecordings = async (
 	{ audio = false, email }: { audio?: boolean, email?: string } = {}
 ): Promise<RecordingModel[]> => {
-	try {
-		const response = await axios.get(
-			(email !== undefined)
-				? `/recordings?email=${email}&parts=true&sound=${audio ?? false}`
-				: `/recordings?parts=true&sound=${audio ?? false}`,
-		);
+	const response = await axios.get(
+		(email !== undefined)
+			? `/recordings?email=${email}&parts=true&sound=${audio ?? false}`
+			: `/recordings?parts=true&sound=${audio ?? false}`,
+	);
 
-		return response.data as RecordingModel[];
-	} catch (e) {
-		const error = e as AxiosError;
-		throw new ApiError(error.code, error.response?.status);
-	}
+	return response.data as RecordingModel[];
 }
 
 // export const getFilteredRecordings = async (token: string): Promise<RecordingModel[]> => {

@@ -1,19 +1,25 @@
 <script setup lang="ts">
+import * as jose from 'jose';
 import { onMounted, ref } from "vue";
 import { registerStore } from "@/state/RegisterStore"; // Adjust the import based on your store structure
 import { useMutation} from "@tanstack/vue-query";
 import { getUserExists, postGoogleLogin, postGoogleSignup } from "@/api/account";
-import { accountStore } from "@/state/AccountStore";
 import { useRoute, useRouter } from "vue-router";
-import { externalAuthStore } from "@/state/ExternalAuthStore";
-import * as jose from 'jose';
 import type { JWTObject } from "@/api/types/auth";
 import type { OAuth2SignUpResponse } from "@/api/types/oauth2";
+import OAuth2Button from "@/components/oauth2-button/OAuth2Button.vue";
 
+const env = import.meta.env;
 const router = useRouter();
 const route = useRoute();
-const env = import.meta.env;
 const agreement = ref(false);
+
+const oauth2_url = "https://accounts.google.com/o/oauth2/v2/auth";
+const oauth2_clientId = env.VITE_GOOGLE_CLIENT_ID;
+const oauth2_redirectUri = env.VITE_PUBLIC_URL + "/ucet/registrace";
+const oauth2_scope = "email profile";
+const oauth2_responseType = "token id_token";
+const oauth2_prompt = "consent";
 
 const { mutate: googleSignupMutate, isPending, isError, error } = useMutation({
   mutationFn: ({ idToken }: { idToken: string }) => postGoogleSignup({ idToken }),
@@ -38,47 +44,8 @@ const { mutate: googleSignupMutate, isPending, isError, error } = useMutation({
   },
 })
 
-onMounted(() => {
-  if(!route.hash) return;
-
-  const fragment = route.hash.substring(1);
-  const params = new URLSearchParams(fragment);
-  const idToken = params.get('id_token');
-
-  if (!idToken) {
-    return;
-  }
-
-  const decodedToken = jose.decodeJwt(idToken);
-
-  if(!decodedToken.nonce || decodedToken.nonce !== externalAuthStore.nonce) {
-    console.error("Nonce mismatch");
-    return;
-  }
-
-  googleSignupMutate({ idToken });
-});
-
-const googleSignup = () => {
-  const clientId = env.VITE_GOOGLE_CLIENT_ID;
-  const redirectUri = encodeURIComponent(env.VITE_PUBLIC_URL + "/ucet/registrace");
-  const scope = encodeURIComponent("email profile");
-  const responseType = "token id_token";
-  const prompt = "consent";
-
-  const nonce = Math.random().toString();
-
-  externalAuthStore.setNonce(nonce);
-
-  window.location.href = (
-    "https://accounts.google.com/o/oauth2/v2/auth" +
-    `?client_id=${clientId}` +
-    `&redirect_uri=${redirectUri}` +
-    `&scope=${scope}` +
-    `&response_type=${responseType}` +
-    `&prompt=${prompt}` +
-    `&nonce=${nonce}`
-  );
+const googleSignup = (idToken: string) => {
+  googleSignupMutate({ idToken })
 }
 
 const checkEmail = async () => {
@@ -108,13 +75,19 @@ const checkEmail = async () => {
       </div>
       <button class="primary p-2 m-2" :disabled="!agreement" type="submit">Pokračovat</button>
     </form>
-    <button
+    <OAuth2Button
       class="secondary p-2 max-lg:w-full w-full"
       type="submit"
       :disabled="isPending"
-      @click="googleSignup"
+      :oauth2_url="oauth2_url"
+      :client-id="oauth2_clientId"
+      :redirect-uri="oauth2_redirectUri"
+      :prompt="oauth2_prompt"
+      :response-type="oauth2_responseType"
+      :scope="oauth2_scope"
+      @success="googleSignup"
     >
       Registrovat se přes Google
-    </button>
+    </OAuth2Button>
   </div>
 </template>
