@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import * as jose from 'jose';
-import { onMounted, onUnmounted } from 'vue';
+import { onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -45,6 +45,7 @@ onMounted(() => {
   }
 
   emit('success', idToken);
+  router.replace({ hash: '' })
 });
 
 const submitLogin = (url: string, clientId: string, redirectUri: string, scope: string, responseType: string, prompt: string) => {

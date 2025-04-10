@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import * as jose from 'jose';
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import { registerStore } from "@/state/RegisterStore"; // Adjust the import based on your store structure
 import { useMutation} from "@tanstack/vue-query";
-import { getUserExists, postGoogleLogin, postGoogleSignup } from "@/api/account";
+import { getUserExists, postGoogleSignup } from "@/api/account";
 import { useRoute, useRouter } from "vue-router";
 import type { JWTObject } from "@/api/types/auth";
 import type { OAuth2SignUpResponse } from "@/api/types/oauth2";
@@ -25,11 +25,7 @@ const { mutate: googleSignupMutate, isPending, isError, error } = useMutation({
   mutationFn: ({ idToken }: { idToken: string }) => postGoogleSignup({ idToken }),
 
   onSuccess: (signupJWT: OAuth2SignUpResponse) => {
-    router.replace({
-      path: route.path,
-      query: route.query,
-      hash: ''
-    });
+    router.replace('/');
 
     const userJWT: JWTObject = jose.decodeJwt(signupJWT.jwt);
 

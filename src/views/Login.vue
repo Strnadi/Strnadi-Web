@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useMutation } from "@tanstack/vue-query";
 import { postGoogleLogin, postLogin } from "@/api/account";
@@ -11,7 +11,6 @@ import OAuth2Button from "@/components/oauth2-button/OAuth2Button.vue";
 const env = import.meta.env;
 
 const router = useRouter();
-const route = useRoute();
 
 const oauth2_url = "https://accounts.google.com/o/oauth2/v2/auth";
 const oauth2_clientId = env.VITE_GOOGLE_CLIENT_ID;
@@ -26,12 +25,7 @@ const { mutate: googleLoginMutate, isPending: googleLoginPending, error: googleL
     postGoogleLogin(loginInfo),
 
   onSuccess: (data) => {
-    router.replace({
-      path: '/',
-      query: route.query,
-      hash: ''
-    });
-
+    router.replace('/');
     accountStore.login(data);
   },
 });
