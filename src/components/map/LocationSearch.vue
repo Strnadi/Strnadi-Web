@@ -7,6 +7,10 @@ interface LocationSearchProps extends /* @vue-ignore */ InputHTMLAttributes {
   modelValue?: string;
 }
 
+defineOptions({
+  inheritAttrs: false
+});
+
 const props = defineProps<LocationSearchProps>();
 const emit = defineEmits(['update:modelValue']);
 
@@ -36,9 +40,11 @@ const update = () => {
 
 <template>
   <input
-    v-bind="{ ...props, type: 'text', list: 'places' }"
+    v-bind="$attrs"
     v-model="text"
     @change="update"
+    type='text'
+    list='places'
   />
   <datalist id="places">
     <option v-for="(suggestion, index) in suggestions" :key="index" :value="suggestion.name" />

@@ -7,7 +7,7 @@
     </div>
     <div class="flex flex-col gap-y-1">
       <label for="city" class="block text-sm font-medium">Město</label>
-      <LocationSearch id="city" v-model="registerStore.city" />
+      <LocationSearch id="city" v-model="selectedLocation" />
     </div>
     <p class="text-gray-600">Nepovinné. Tyto údaje budou použity k doručování novinek z vaší lokality.</p>
     <button class="primary p-2 m-2" @click="registerStore.nextStage">Pokračovat</button>
@@ -17,4 +17,13 @@
 <script setup lang="ts">
 import LocationSearch from '@/components/map/LocationSearch.vue';
 import { registerStore } from '@/state/RegisterStore'
+import { ref, watch } from 'vue';
+
+const selectedLocation = ref();
+
+watch(selectedLocation, (newLocation) => {
+  if (newLocation) {
+    registerStore.setCity(newLocation.name);
+  }
+});
 </script>

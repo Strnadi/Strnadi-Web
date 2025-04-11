@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { getRecording } from '@/api/recording';
 import { useQuery } from '@tanstack/vue-query';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 
 const props = defineProps<{
   recordingID: string | number,

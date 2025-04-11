@@ -10,6 +10,8 @@ import { useRouter } from 'vue-router';
 import LocationSearch from '@/components/map/LocationSearch.vue';
 import MapButtons from '@/components/map/MapButtons.vue';
 import { fromLonLat, toLonLat } from 'ol/proj';
+import { accountStore } from '@/state/AccountStore';
+import type { Coordinate } from 'ol/coordinate';
 const env = import.meta.env;
 
 const router = useRouter();
@@ -80,7 +82,7 @@ const selectedRecordingCoords = computed(() => {
   return fromLonLat([coords.lng, coords.lat]);
 });
 
-const searchQuery = ref({} as any);
+const searchQuery = ref();
 watch(searchQuery, (newValue) => {
   if (newValue) {
     console.log(newValue);
@@ -183,7 +185,8 @@ watch(searchQuery, (newValue) => {
     </ol-map>
 
     <div class="absolute bottom-2 right-2 z-[6] flex flex-row justify-end items-center">
-      <LocationSearch v-model="searchQuery" placeholder="Search..." />
+      <!-- Let's only allow authenticated users to search -->
+      <LocationSearch v-if="accountStore.user" v-model="searchQuery" placeholder="Hledat..." />
       <MapButtons />
     </div>
   </div>

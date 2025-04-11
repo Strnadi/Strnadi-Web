@@ -8,6 +8,7 @@ const router = useRouter();
 const route = useRoute();
 
 const props = defineProps<{
+  oauth2_url: string,
   clientId: string,
   redirectUri: string,
   scope: string,
@@ -63,13 +64,14 @@ const submitLogin = (url: string, clientId: string, redirectUri: string, scope: 
 }
 
 const login = () => {
+  const url = props.oauth2_url;
   const clientId = props.clientId;
-  const redirectUri = encodeURIComponent(props.redirectUri);
+  const redirectUri = encodeURIComponent(window.location.href);
   const scope = encodeURIComponent(props.scope);
-  const responseType = props.responseType;
-  const prompt = props.prompt;
+  const responseType = encodeURIComponent(props.responseType);
+  const prompt = encodeURIComponent(props.prompt);
 
-  submitLogin(window.location.href, clientId, redirectUri, scope, responseType, prompt);
+  submitLogin(url, clientId, redirectUri, scope, responseType, prompt);
 }
 
 </script>
