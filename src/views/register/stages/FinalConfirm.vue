@@ -1,59 +1,17 @@
-<template>
-  <template v-if="isPending">
-    <p>Vytváření účtu...</p>
-  </template>
-
-  <template v-else-if="isError">
-    <h1>Chyba</h1>
-    <p>{{ error!.message }}</p>
-    <button @click="register" class="secondary p-2 w-full">Zkusit znovu</button>
-  </template>
-
-  <template v-else>
-    <h1>Úspěch</h1>
-    <h2>Váš účet byl založen.</h2>
-    <button class="primary p-2 w-full" @click="onClick">Pokračovat</button>
-  </template>
-</template>
-
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useMutation } from '@tanstack/vue-query'
-import { postRegister } from '@/api/account'
-import { accountStore } from '@/state/AccountStore'
-import { registerStore } from '@/state/RegisterStore'
-import type { SignUpRequest } from '@/api/types/auth'
+import { registerStore } from '@/state/RegisterStore';
 
-const router = useRouter()
-
-const { mutate, isError, isPending, data, error } = useMutation({
-  mutationFn: (data: SignUpRequest) => postRegister(data)
-})
-
-// Function to call the registration mutation
-const register = () => {
-  mutate({
-    email: registerStore.email,
-    firstName: registerStore.name,
-    lastName: registerStore.surname,
-    nickname: registerStore.nickname,
-    password: registerStore.password,
-    postCode: registerStore.postalCode,
-    city: registerStore.city,
-    consent: true // the user can't reach this point without consenting
-  })
-}
-
-onMounted(() => {
-  register()
-})
-
-const onClick = () => {
-  router.replace('/');
-  registerStore.resetStage();
-  if (data.value) {
-    accountStore.login(data.value)
-  }
-}
 </script>
+
+<template>
+  <h1>Potvrzení</h1>
+  <h2>Je takto všechno správně?</h2>
+  <span>E-mail: {{ registerStore.email }}</span>
+  <span>Jméno: {{ registerStore.name }}</span>
+  <span>Příjmení: {{ registerStore.surname }}</span>
+  <span>Přezdívka: {{ registerStore.nickname }}</span>
+  <span>PSČ: {{ registerStore.postalCode }}</span>
+  <span>Město: {{ registerStore.city }}</span>
+  <span>S podmínkami použití souhlasím.</span>
+  <button class="primary p-2 m-2" @click="registerStore.nextStage">Pokračovat</button>
+</template>

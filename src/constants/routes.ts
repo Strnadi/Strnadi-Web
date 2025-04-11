@@ -1,11 +1,18 @@
+import { accountStore } from "@/state/AccountStore";
 import type { RouteRecordRaw } from "vue-router";
 
-const AccountRoutes: RouteRecordRaw[] = [
+const guarded = (routes: RouteRecordRaw[], guard: (to?: any, from?: any) => any): RouteRecordRaw[] =>
+  routes.map(route => ({
+    ...route,
+    beforeEnter: [guard]
+  }));
+
+const LoginRoutes: RouteRecordRaw[] = [
   {
-    path: '/ucet',
+    path: '/ucet/splash',
     components: {
-      side: () => import('@/views/profile/Profile.vue')
-    },
+      popup: () => import('@/views/AccountSplash.vue')
+  },
   },
   {
     path: '/ucet/prihlaseni',
@@ -18,6 +25,21 @@ const AccountRoutes: RouteRecordRaw[] = [
     components: {
       popup: () => import('@/views/register/Register.vue')
     }
+  },
+  {
+    path: '/ucet/zapomenute-heslo',
+    components: {
+      popup: () => import('@/views/ForgottenPassword.vue')
+    },
+  }
+];
+
+const AccountRoutes: RouteRecordRaw[] = [
+  {
+    path: '/ucet',
+    components: {
+      side: () => import('@/views/profile/Profile.vue')
+    },
   },
   {
     path: '/ucet/osobni-udaje',
@@ -41,12 +63,6 @@ const AccountRoutes: RouteRecordRaw[] = [
     path: '/ucet/email-neverifikovan',
     components: {
       popup: () => import('@/views/EmailNotVerified.vue')
-    },
-  },
-  {
-    path: '/ucet/zapomenute-heslo',
-    components: {
-      popup: () => import('@/views/ForgottenPassword.vue')
     },
   },
   {
@@ -109,7 +125,7 @@ const TextRoutes: RouteRecordRaw[] = [
   {
     path: '/aplikace',
     components: {
-      popup: () => import('@/texts/application.md')
+      popup: () => import('@/views/Application.md')
     }
   }
 ];
@@ -153,14 +169,22 @@ export const routes: readonly RouteRecordRaw[] = [
   },
 
   ...TextRoutes,
-  ...AccountRoutes,
   ...MapRoutes,
   ...UploadRoutes,
+  ...guarded(LoginRoutes, () => accountStore.user === null || '/ucet'),
+  ...guarded(AccountRoutes, () => accountStore.user !== null || '/ucet/splash'),
+
+  {
+    path: '/unauthorized',
+    components: {
+      popup: () => import('@/views/Unauthorized.md')
+    }
+  },
 
   {
     path: "/:pathMatch(.*)*",
     components: {
-      popup: () => import('@/texts/not-found.md')
+      popup: () => import('@/views/NotFound.md')
     }
   }
 ];

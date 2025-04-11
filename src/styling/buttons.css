@@ -1,6 +1,7 @@
 .button-primary, .button-secondary, button, input[type="button"], input[type="submit"] {
   cursor: pointer;
   @apply font-semibold;
+  text-align: center;
 }
 
 .button-primary, button.primary, input[type="button"].primary, input[type="submit"].primary {

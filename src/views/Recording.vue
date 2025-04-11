@@ -38,7 +38,7 @@ const {
 const queryClient = useQueryClient();
 
 onUnmounted(() => {
-  mapStore.selectedRecordingLocaition = null;
+  mapStore.selectedRecordingLocation = null;
 })
 
 onBeforeRouteUpdate(async (to) => {
@@ -57,7 +57,7 @@ onBeforeRouteUpdate(async (to) => {
   <template v-else>
     <div>
       <p>ID: {{ recordingId }}</p>
-      <p>Vytvořeno: {{ recording?.createdAt }}</p>
+      <p>Vytvořeno: {{ new Date(recording?.createdAt).toLocaleString() }}</p>
       <p>Zařízení: {{ recording?.device }} {{ recording?.byApp && '(přes aplikaci)' }}</p>
       <blockquote>{{ recording?.note }}</blockquote>
 
@@ -86,7 +86,11 @@ onBeforeRouteUpdate(async (to) => {
         <template v-if="isUploaderLoading">Načítání informací o uživateli...</template>
         <template v-else-if="isUploaderError">Chyba: Nelze získat informace o uživateli</template>
         <template v-else-if="uploader">
-          <p>{{ uploader.firstName }} {{ uploader.lastName }} - {{ uploader.email }}</p>
+          <span>
+            <template v-if="uploader.nickname">{{ uploader.nickname }}</template>
+            <template v-else>{{ uploader.firstName }} {{ uploader.lastName }}</template>
+            {{ uploader.city ? `(${uploader.city})` : '' }}
+          </span>
         </template>
       </div>
 

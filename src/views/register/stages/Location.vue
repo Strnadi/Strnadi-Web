@@ -7,7 +7,7 @@
     </div>
     <div class="flex flex-col gap-y-1">
       <label for="city" class="block text-sm font-medium">Město</label>
-      <input id="city" v-model="registerStore.city" name="city" type="text" />
+      <LocationSearch id="city" v-model="registerStore.city" />
     </div>
     <p class="text-gray-600">Nepovinné. Tyto údaje budou použity k doručování novinek z vaší lokality.</p>
     <button class="primary p-2 m-2" @click="registerStore.nextStage">Pokračovat</button>
@@ -15,5 +15,6 @@
 </template>
 
 <script setup lang="ts">
+import LocationSearch from '@/components/map/LocationSearch.vue';
 import { registerStore } from '@/state/RegisterStore'
 </script>

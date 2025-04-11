@@ -7,11 +7,22 @@ import type { RecordingPartModel } from '@/api/types/recording';
 import type { MapBrowserEvent } from 'ol';
 import { MapIcons } from './MapIcons';
 import { useRouter } from 'vue-router';
+import LocationSearch from '@/components/map/LocationSearch.vue';
+import MapButtons from '@/components/map/MapButtons.vue';
+import { fromLonLat, toLonLat } from 'ol/proj';
 const env = import.meta.env;
 
 const router = useRouter();
-const zoom = ref(8);
-const center = ref([15.5, 49.8]);
+const zoom = ref(8.25);
+
+const centerRef = ref(fromLonLat([15.5, 49.9]));
+
+const center = computed({
+  get: () => toLonLat(centerRef.value),
+  set: (value) => {
+    centerRef.value = fromLonLat(value);
+  }
+});
 
 const { data: recordings } = useQuery({
   queryKey: ["all-recordings"],
@@ -27,7 +38,7 @@ const partAverageCoords = (part: RecordingPartModel) => {
 
 function onMapClick(event: MapBrowserEvent<UIEvent>) {
   if (mapStore.selectEnabled) {
-    const coords = event.coordinate;
+    const coords = toLonLat(event.coordinate);
     mapStore.setSelectedLocation(coords[1], coords[0]);
 
     return true;
@@ -41,7 +52,7 @@ function onMapClick(event: MapBrowserEvent<UIEvent>) {
   const feature = featuresAtPixel[0];
 
   // @ts-expect-error
-  const coords = feature.getGeometry()!.getCoordinates();
+  const coords = toLonLat(feature.getGeometry()!.getCoordinates());
 
   for(const recording of recordings.value!) {
     for (const part of recording.parts || []) {
@@ -61,18 +72,27 @@ function onMapClick(event: MapBrowserEvent<UIEvent>) {
 
 const userSelectedCoords = computed(() => {
   const coords = mapStore.selectedLocation!;
-  return [coords.lng, coords.lat];
+  return fromLonLat([coords.lng, coords.lat]);
 });
 
 const selectedRecordingCoords = computed(() => {
-  const coords = mapStore.selectedRecordingLocaition!;
-  return [coords.lng, coords.lat];
+  const coords = mapStore.selectedRecordingLocation!;
+  return fromLonLat([coords.lng, coords.lat]);
+});
+
+const searchQuery = ref({} as any);
+watch(searchQuery, (newValue) => {
+  if (newValue) {
+    console.log(newValue);
+    center.value = [newValue.position.lon, newValue.position.lat];
+    zoom.value = 13;
+  }
 });
 
 </script>
 
 <template>
-  <div class="saturate-[1.15]">
+  <div class="saturate-[1.15] relative w-full h-full">
     <ol-map
       @click="onMapClick"
       :loadTilesWhileAnimating="true"
@@ -82,7 +102,9 @@ const selectedRecordingCoords = computed(() => {
       class="w-full h-full"
     >
       <ol-view
-        :center="center"
+        :projection="'EPSG:3857'"
+        :center="centerRef"
+        :enableRotation="false"
         :zoom="zoom"
       />
 
@@ -119,7 +141,7 @@ const selectedRecordingCoords = computed(() => {
         <ol-source-vector v-if="recordings">
           <template v-for="recording in recordings" :key="recording.id">
             <ol-feature v-for="part in recording.parts" :key="part.id">
-              <ol-geom-point :coordinates="partAverageCoords(part)" />
+              <ol-geom-point :coordinates="fromLonLat(partAverageCoords(part))" />
               <ol-style>
                 <ol-style-icon :src="MapIcons.Unknown.fileName" />
               </ol-style>
@@ -140,7 +162,7 @@ const selectedRecordingCoords = computed(() => {
       </ol-vector-layer>
 
       <ol-vector-layer>
-        <ol-source-vector v-if="mapStore.selectedRecordingLocaition">
+        <ol-source-vector v-if="mapStore.selectedRecordingLocation">
           <ol-feature>
             <ol-geom-point :coordinates="selectedRecordingCoords" />
             <ol-style>
@@ -159,6 +181,11 @@ const selectedRecordingCoords = computed(() => {
         </div>
       </v-ol-control>
     </ol-map>
+
+    <div class="absolute bottom-2 right-2 z-[6] flex flex-row justify-end items-center">
+      <LocationSearch v-model="searchQuery" placeholder="Search..." />
+      <MapButtons />
+    </div>
   </div>
 </template>
 

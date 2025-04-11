@@ -10,6 +10,10 @@ import { registerStore } from '@/state/RegisterStore';
 import { uploadStore } from '@/state/UploadStore';
 import { accountStore } from '@/state/AccountStore';
 import { firstLaunchStore } from '@/state/FirstLaunchStore';
+import Notification from '@/components/generic/Notification.vue';
+import { notificationStore } from '@/state/NotificationStore';
+import LocationSearch from '@/components/map/LocationSearch.vue';
+import { ref } from 'vue';
 
 const router = useRouter();
 
@@ -55,12 +59,52 @@ const maybeGoBack = (event: KeyboardEvent) => {
 const closePopup = () => {
   router.replace('/');
 }
+
+const searchQuery = ref("");
+
+// notificationStore.notifications.push({
+//   kind: 'info',
+//   title: 'Info',
+//   message: 'This is an info notification'
+// })
+
+// notificationStore.notifications.push({
+//   kind: 'info',
+//   title: 'Info',
+//   message: 'This is an info notification'
+// })
 </script>
 
 <template>
   <nav>
     <Navbar />
   </nav>
+
+  <aside class="notifications" v-if="notificationStore.notifications.length">
+    <ul class="flex flex-col-reverse gap-y-2">
+      <li
+        v-for="(notification, index) in notificationStore.notifications"
+        :key="index"
+      >
+        <Notification
+          :kind="notification.kind"
+          :title="notification.title"
+          :message="notification.message"
+          @dismiss="notificationStore.notifications.splice(index, 1)"
+        />
+      </li>
+    </ul>
+  </aside>
+
+  <main class="flex flex-col w-screen h-screen">
+    <Map />
+    <div
+      v-if="accountStore.user && !accountStore.user.isEmailVerified"
+      class="p-2 bg-red-300"
+    >
+      <marquee behavior="alternate" scrollamount="2" direction="right">Nemáte dosud ověřený e-mail. Dokud si e-mail neověříte, nemůžete nahrávat a funkcionalita aplikace bude omezená.</marquee>
+    </div>
+  </main>
 
   <router-view name="side" v-slot="{ Component }">
     <Transition>
@@ -121,21 +165,6 @@ const closePopup = () => {
       </aside>
     </Transition>
   </router-view>
-
-  <main class="flex flex-col w-screen h-screen">
-    <div class="w-full h-full relative">
-      <Map class="w-full h-full" />
-      <div class="absolute bottom-2 right-2 z-[6] flex flex-row justify-end">
-        <MapButtons />
-      </div>
-    </div>
-    <div
-      v-if="accountStore.user && !accountStore.user.isEmailVerified"
-      class="p-2 bg-red-300"
-    >
-      <marquee behavior="alternate" scrollamount="2" direction="right">Nemáte dosud ověřený e-mail. Dokud si e-mail neověříte, nemůžete nahrávat a funkcionalita aplikace bude omezená.</marquee>
-    </div>
-  </main>
 </template>
 
 <style scoped>
@@ -167,6 +196,7 @@ const closePopup = () => {
     @apply xl:w-1/3;
     @apply z-[7];
     @apply rounded-lg;
+    @apply backdrop-blur-3xl;
   }
 
   aside.center {
@@ -182,13 +212,22 @@ const closePopup = () => {
     @apply desktop:max-w-3/4;
     @apply z-[7];
     @apply rounded-lg;
+    @apply backdrop-blur-3xl;
+  }
+
+  aside.notifications {
+    @apply fixed;
+    @apply top-20;
+    @apply desktop:top-30;
+    @apply right-5;
+    @apply z-[6];
   }
 
   aside > div {
     @apply grid grid-cols-[auto_1fr] overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
     @apply rounded-4xl;
     @apply p-8;
-    @apply bg-white/95;
+    @apply bg-white/90;
   }
 
   aside.popup > div {
@@ -198,11 +237,11 @@ const closePopup = () => {
 
   aside.small_popup > div {
     @apply w-fit;
-    @apply max-w-full sm:max-w-2/3 md:max-w-1/2 desktop:max-w-1/3;
+    @apply max-w-full sm:max-w-2/3 md:max-w-1/2 lg:max-w-1/3 desktop:max-w-1/4;
   }
 
   aside > div > button {
-    @apply px-2 py-1 mx-2 self-start flex flex-row items-center border-none bg-transparent;
+    @apply py-1 -ml-3 mr-4 self-start flex flex-row items-center border-none bg-transparent;
   }
 
   aside > div :not(button:first-of-type, h1:first-of-type) {

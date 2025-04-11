@@ -7,6 +7,8 @@ import { accountStore } from "@/state/AccountStore";
 
 import LogoNoText from "@/assets/logo-no-text.svg";
 import OAuth2Button from "@/components/oauth2-button/OAuth2Button.vue";
+import HorizontalLineWithText from "@/components/generic/HorizontalLineWithText.vue";
+import RevealablePasswordInput from "@/components/generic/RevealablePasswordInput.vue";
 
 const env = import.meta.env;
 
@@ -56,10 +58,8 @@ const googleLogin = (idToken: string) => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-y-6 w-full">
-    <img :src="LogoNoText" />
-    <h1 class="text-center">Nářečí českých strnadů</h1>
-    <span class="text-xl text-center">Nahrávejte, mapujte, dobývejte</span>
+  <h1>Přihlášení</h1>
+  <div class="flex flex-col items-center gap-y-6 w-[20vw]">
 
     <div v-if="error">Chyba: {{ error }}</div>
     <div v-if="isPending">Načítání...</div>
@@ -87,11 +87,10 @@ const googleLogin = (idToken: string) => {
               <span>Heslo</span>
               <PrefetchLink to="/ucet/zapomenute-heslo">Zapomenuté heslo</PrefetchLink>
             </label>
-            <input
-              id="password"
+            <RevealablePasswordInput
               v-model="password"
+              id="password"
               name="pass"
-              type="password"
               placeholder="Heslo"
               class="w-full p-2 border rounded"
             />
@@ -120,12 +119,6 @@ const googleLogin = (idToken: string) => {
           Přihlásit se přes Google
         </OAuth2Button>
       </div>
-      <PrefetchLink
-        class="button-secondary p-2 max-lg:w-full w-[75%] text-center"
-        to="/ucet/registrace"
-      >
-        Založit účet
-      </PrefetchLink>
     </div>
   </div>
 </template>

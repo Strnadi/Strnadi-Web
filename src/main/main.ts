@@ -1,12 +1,11 @@
 import * as Sentry from "@sentry/vue";
 import App from "@/main/App.vue";
-import PrefetchPlugin from 'vue-route-prefetch'
+import Vue3RouterPrefetch from 'vue3-router-prefetch'
 import axios from "axios";
 import { routes } from "@/constants/routes";
 import { createApp } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
 import { VueQueryPlugin } from "@tanstack/vue-query";
-import { useGeographic } from "ol/proj";
 
 // TODO: Remove unused layers from bundle
 import {
@@ -49,9 +48,6 @@ axios.interceptors.response.use(response => response, error => {
   throw new ApiError(error.code, error.response?.status, error.response?.data);
 });
 
-useGeographic();
-app.use(VueQueryPlugin);
-
 app.use(OpenLayersMap);
 app.use(OpenLayersMapLayers);
 app.use(OpenLayersMapSources);
@@ -60,7 +56,8 @@ app.use(OpenLayersMapGeometries);
 app.use(OpenLayersMapStyles);
 
 app.use(router);
-app.use(PrefetchPlugin)
+app.use(VueQueryPlugin);
+app.use(Vue3RouterPrefetch, { type: "hover", name: "PrefetchLink" })
 app.component("VueDatePicker", VueDatePicker);
 app.component("ExpandableImage", ExpandableImage);
 app.mount("#app");

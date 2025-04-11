@@ -30,10 +30,10 @@ import { uploadStore } from '@/state/UploadStore';
       />
     </div>
     <div>
-      <label for="note" class="block text-sm font-medium">Nahrávací zařízení</label>
+      <label for="device" class="block text-sm font-medium">Nahrávací zařízení</label>
       <input
         v-model="uploadStore.device"
-        id="note"
+        id="device"
         type="text"
         class="w-full"
       />

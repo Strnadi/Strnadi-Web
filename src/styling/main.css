@@ -6,6 +6,7 @@
 @import "./checkbox.css";
 @import "./radio.css";
 @import "./text-input.css";
+@import "./hr.css";
 
 :root {
   font-family: 'Bricolage Grotesque', Arial, Helvetica, sans-serif;

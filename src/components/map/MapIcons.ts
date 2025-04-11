@@ -24,14 +24,14 @@ export const MapIcons = {
     friendlyName: "BlBH",
   },
 
-  Unknown: {
-    fileName: "/dialects/dialect-unknown.svg",
-    friendlyName: "Neznamý",
-  },
-
   Transition: {
     fileName: "/dialects/dialect-transition.svg",
     friendlyName: "Přechod",
+  },
+
+  Unknown: {
+    fileName: "/dialects/dialect-unknown.svg",
+    friendlyName: "Neznamý",
   },
 
   SelectedLocation: {

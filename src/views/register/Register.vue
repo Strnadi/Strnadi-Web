@@ -9,7 +9,8 @@ const STAGE_MAPPING: Record<number, string> = {
   1: "PersonalInfo",
   2: "Location",
   3: "Password",
-  4: "FinalConfirm"
+  4: "FinalConfirm",
+  5: "Done"
 };
 
 const loadComponent = (stage: number) => defineAsyncComponent({
