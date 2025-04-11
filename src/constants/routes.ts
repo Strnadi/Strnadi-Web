@@ -125,7 +125,7 @@ const TextRoutes: RouteRecordRaw[] = [
   {
     path: '/aplikace',
     components: {
-      popup: () => import('@/views/Application.md')
+      popup: () => import('@/views/Application.vue')
     }
   }
 ];

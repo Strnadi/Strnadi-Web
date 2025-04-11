@@ -4,7 +4,6 @@ import Map from '@/components/map/Map.vue';
 import Navbar from '@/components/nav/Navbar.vue';
 
 import Back from '@/assets/icon-back.svg';
-import MapButtons from '@/components/map/MapButtons.vue';
 
 import { registerStore } from '@/state/RegisterStore';
 import { uploadStore } from '@/state/UploadStore';
@@ -12,7 +11,6 @@ import { accountStore } from '@/state/AccountStore';
 import { firstLaunchStore } from '@/state/FirstLaunchStore';
 import Notification from '@/components/generic/Notification.vue';
 import { notificationStore } from '@/state/NotificationStore';
-import LocationSearch from '@/components/map/LocationSearch.vue';
 import { ref } from 'vue';
 
 const router = useRouter();
@@ -110,9 +108,8 @@ const searchQuery = ref("");
     <Transition>
       <aside v-if="Component" class="side">
         <div>
-          <button class="secondary" @click="goBack">
+          <button class="secondary small" @click="goBack">
             <img :src="Back" />
-            <span>Zpět</span>
           </button>
           <component :is="Component" />
         </div>
@@ -125,7 +122,7 @@ const searchQuery = ref("");
       <aside v-if="Component" class="popup" @click="closePopup">
         <Transition name="fade" mode="out-in">
           <div :key="`${route.path}-${formRegistry[route.path]?.stage}`" @click.stop>
-            <button class="secondary" @click="goBack" @keydown="maybeGoBack">
+            <button class="secondary big" @click="goBack" @keydown="maybeGoBack">
               <img :src="Back" />
               <span>Zpět</span>
             </button>
@@ -141,7 +138,7 @@ const searchQuery = ref("");
       <aside v-if="Component" class="small_popup" @click="closePopup">
         <Transition name="fade" mode="out-in">
           <div :key="`${route.path}`" @click.stop>
-            <button class="secondary" @click="goBack" @keydown="maybeGoBack">
+            <button class="secondary big" @click="goBack" @keydown="maybeGoBack">
               <img :src="Back" />
               <span>Zpět</span>
             </button>
@@ -156,9 +153,8 @@ const searchQuery = ref("");
     <Transition>
       <aside v-if="Component" class="center">
         <div>
-          <button class="secondary" @click="goBack">
+          <button class="secondary small" @click="goBack">
             <img :src="Back" />
-            <span>Zpět</span>
           </button>
           <component :is="Component" />
         </div>
@@ -240,7 +236,11 @@ const searchQuery = ref("");
     @apply max-w-full sm:max-w-2/3 md:max-w-1/2 lg:max-w-1/3 desktop:max-w-1/4;
   }
 
-  aside > div > button {
+  aside > div > button.small {
+    @apply py-1 mr-4 self-start flex flex-row items-center border-none bg-transparent;
+  }
+
+  aside > div > button.big {
     @apply py-1 -ml-3 mr-4 self-start flex flex-row items-center border-none bg-transparent;
   }
 
