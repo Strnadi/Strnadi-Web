@@ -11,7 +11,7 @@ import { accountStore } from '@/state/AccountStore';
 import { firstLaunchStore } from '@/state/FirstLaunchStore';
 import Notification from '@/components/generic/Notification.vue';
 import { notificationStore } from '@/state/NotificationStore';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 const router = useRouter();
 
@@ -58,19 +58,18 @@ const closePopup = () => {
   router.replace('/');
 }
 
-const searchQuery = ref("");
+watch(() => accountStore.user, (newValue) => {
+  if(!newValue) {
+    notificationStore.notifications = [];
+  } else {
+    notificationStore.notifications.push({
+      kind: 'info',
+      title: 'Ověření účtu',
+      message: 'Nemáte dosud ověřený e-mail. Dokud si e-mail neověříte, nemůžete nahrávat a funkcionalita aplikace bude omezená.'
+    });
+  }
+});
 
-// notificationStore.notifications.push({
-//   kind: 'info',
-//   title: 'Info',
-//   message: 'This is an info notification'
-// })
-
-// notificationStore.notifications.push({
-//   kind: 'info',
-//   title: 'Info',
-//   message: 'This is an info notification'
-// })
 </script>
 
 <template>
@@ -94,15 +93,7 @@ const searchQuery = ref("");
     </ul>
   </aside>
 
-  <main class="flex flex-col w-screen h-screen">
-    <Map />
-    <div
-      v-if="accountStore.user && !accountStore.user.isEmailVerified"
-      class="p-2 bg-red-300"
-    >
-      <marquee behavior="alternate" scrollamount="2" direction="right">Nemáte dosud ověřený e-mail. Dokud si e-mail neověříte, nemůžete nahrávat a funkcionalita aplikace bude omezená.</marquee>
-    </div>
-  </main>
+  <Map class="w-screen h-screen" />
 
   <router-view name="side" v-slot="{ Component }">
     <Transition>
@@ -188,6 +179,7 @@ const searchQuery = ref("");
     @apply sm:left-5;
     @apply sm:right-5;
     @apply min-w-0;
+    @apply w-full;
     @apply sm:w-1/2;
     @apply xl:w-1/3;
     @apply z-[7];
@@ -219,7 +211,7 @@ const searchQuery = ref("");
     @apply z-[6];
   }
 
-  aside > div {
+  aside > div, .notifications > ul {
     @apply grid grid-cols-[auto_1fr] overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
     @apply rounded-4xl;
     @apply p-8;

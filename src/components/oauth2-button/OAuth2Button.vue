@@ -19,7 +19,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   success: [idToken: string],
-  error: [error: Error]
+  error: [error: string]
 }>();
 
 onMounted(() => {
@@ -33,14 +33,14 @@ onMounted(() => {
   const state = params.get('state');
 
   if (!idToken) {
-    emit('error', new Error("No token returned"))
+    emit('error', "No token returned")
     return;
   }
 
   const decodedToken = jose.decodeJwt(idToken);
 
   if(!decodedToken.nonce || decodedToken.nonce !== state) {
-    emit('error', new Error("Nonce mismatch"))
+    emit('error', "Nonce mismatch")
     return;
   }
 
@@ -80,9 +80,9 @@ const login = () => {
   <button
     @click="login"
     :disabled="disabled"
-    class="secondary p-2 max-lg:w-full w-full"
-    type="submit"
+    class="secondary p-2 w-full"
+    type="button"
   >
-    Přihlásit se přes Google
+    <slot />
   </button>
 </template>

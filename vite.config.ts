@@ -13,6 +13,7 @@ import TailwindCSS from "@tailwindcss/vite";
 import TSConfigPaths from "vite-tsconfig-paths";
 import Compression from "vite-plugin-compression2";
 import Markdown from 'unplugin-vue-markdown/vite';
+import vueDevTools from 'vite-plugin-vue-devtools';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -98,6 +99,7 @@ export default defineConfig({
       project: "strnadi-web",
       telemetry: false,
     }),
+    vueDevTools(),
     Visualizer({
       gzipSize: true,
       open: false,

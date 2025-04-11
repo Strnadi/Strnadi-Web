@@ -31,3 +31,11 @@
 .button-secondary:hover, button.secondary:hover, input[type="button"].secondary:hover, input[type="submit"].secondary:hover {
   @apply border-[#cccccc];
 }
+
+.button-secondary:disabled, button.secondary:disabled, input[type="button"].secondary:disabled, input[type="submit"].secondary:disabled {
+  @apply bg-gray-200;
+}
+
+.button-secondary:disabled:hover, button.secondary:disabled:hover, input[type="button"].secondary:disabled:hover, input[type="submit"].secondary:disabled:hover {
+  @apply border-[#e5e7eb]; /* same border color as the disabled state */
+}

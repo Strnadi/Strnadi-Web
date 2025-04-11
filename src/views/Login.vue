@@ -21,8 +21,11 @@ const oauth2_scope = "email profile";
 const oauth2_responseType = "token id_token";
 const oauth2_prompt = "select_account";
 
+const email = ref("");
+const password = ref("");
+const oauth2_error = ref("");
 
-const { mutate: googleLoginMutate, isPending: googleLoginPending, error: googleLoginError } = useMutation({
+const { mutate: googleLoginMutate, isPending: googleLoginPending, error: googleLoginMutationError } = useMutation({
   mutationFn: (loginInfo: { idToken: string }) =>
     postGoogleLogin(loginInfo),
 
@@ -43,10 +46,7 @@ const { mutate: loginMutate, isPending: loginPending, error: loginError } = useM
 });
 
 const isPending = computed(() => loginPending.value || googleLoginPending.value)
-const error = computed(() => loginError.value || googleLoginError.value)
-
-const email = ref("");
-const password = ref("");
+const error = computed(() => loginError.value || googleLoginMutationError.value || oauth2_error.value)
 
 const handleLogin = () => {
   loginMutate({ email: email.value, password: password.value });
@@ -54,6 +54,10 @@ const handleLogin = () => {
 
 const googleLogin = (idToken: string) => {
   googleLoginMutate({ idToken })
+}
+
+const errorHandler = (error: string) => {
+  oauth2_error.value = error;
 }
 </script>
 
@@ -115,6 +119,7 @@ const googleLogin = (idToken: string) => {
           :response-type="oauth2_responseType"
           :scope="oauth2_scope"
           @success="googleLogin"
+          @error="errorHandler"
         >
           Přihlásit se přes Google
         </OAuth2Button>

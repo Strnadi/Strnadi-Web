@@ -7,8 +7,7 @@ import { accountStore } from "@/state/AccountStore";
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
-(async () => {
-
+async function initializePushNotifications() {
   const permission = await Notification.requestPermission();
   if (permission === "granted") {
     console.log("Notification permission granted.");
@@ -26,7 +25,6 @@ const messaging = getMessaging(app);
         serviceWorkerRegistration: registration,
       });
       if (token) {
-  
         postDevice({
           fcmToken: token,
           userEmail: accountStore.user.email,
@@ -44,6 +42,9 @@ const messaging = getMessaging(app);
     }
     
   }
+}
 
-})()
-
+// Mainly Apple stuff doesn't support these
+if ("Notification" in window && "serviceWorker" in navigator) {
+  initializePushNotifications();
+}
