@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import LogoNoText from "@/assets/logo-no-text.svg";
+import { useRoute } from 'vue-router';
+
+
+const route = useRoute();
 
 </script>
 
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
-    <img :src="LogoNoText" />
+    <img src="/logo-no-text.svg" />
     <h1 class="text-center">Nářečí českých strnadů</h1>
     <span class="text-md text-justify [text-align-last:center]">Projekt občanské vědy zaměřený na studium rozmanitosti ptačího zpěvu. Nahráváním zpěvu strnadů obecných po celém Česku můžete přispět k poznání, jak se v krajině udržují ptačí nářečí.</span>
 
-    <router-link to="/" class="button-primary px-2 py-4 w-full">Vstoupit</router-link>
+    <router-link :to="route.query.from ? route.query.from : '/'" class="button-primary px-2 py-4 w-full">Vstoupit</router-link>
 
     <!-- <div class="self-start">
       <h2 class="text-xl">Foto týdne</h2>

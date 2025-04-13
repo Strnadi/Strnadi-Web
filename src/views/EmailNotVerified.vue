@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import LogoNoText from '@/assets/logo-no-text.svg';
 </script>
 
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
     <div class="flex flex-col items-center gap-y-3">
-      <img :src="LogoNoText" />
+      <img src="/logo-no-text.svg" />
       <h2>Nářečí českých strnadů</h2>
     </div>
     <span class="text-xl text-center">E-Mail byl úspěšně ověřen.</span>

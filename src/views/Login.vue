@@ -5,7 +5,6 @@ import { useMutation } from "@tanstack/vue-query";
 import { postGoogleLogin, postLogin } from "@/api/account";
 import { accountStore } from "@/state/AccountStore";
 
-import LogoNoText from "@/assets/logo-no-text.svg";
 import OAuth2Button from "@/components/oauth2-button/OAuth2Button.vue";
 import HorizontalLineWithText from "@/components/generic/HorizontalLineWithText.vue";
 import RevealablePasswordInput from "@/components/generic/RevealablePasswordInput.vue";
@@ -63,16 +62,16 @@ const errorHandler = (error: string) => {
 
 <template>
   <h1>Přihlášení</h1>
-  <div class="flex flex-col items-center gap-y-6 w-[20vw]">
+  <div class="flex flex-col items-center gap-y-6">
 
     <div v-if="error">Chyba: {{ error }}</div>
     <div v-if="isPending">Načítání...</div>
     <div v-else class="flex flex-col items-center gap-y-6 w-full">
       <div
-        class="flex flex-col items-center gap-y-2 w-[75%] max-lg:w-full"
+        class="flex flex-col items-center gap-y-2 max-lg:w-full"
       >
         <div class="flex flex-col gap-x-2 gap-y-4 w-full">
-          <div>
+          <div class="w-full">
             <label for="email" class="block text-sm font-medium mb-1">E-Mail</label>
             <input
               id="email"
@@ -83,7 +82,7 @@ const errorHandler = (error: string) => {
               class="w-full p-2 border rounded"
             />
           </div>
-          <div>
+          <div class="w-full">
             <label
               for="password"
               class="text-sm font-medium mb-1 flex flex-row justify-between"

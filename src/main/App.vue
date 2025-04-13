@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import Map from '@/components/map/Map.vue';
 import Navbar from '@/components/nav/Navbar.vue';
 
@@ -8,21 +8,11 @@ import Back from '@/assets/icon-back.svg';
 import { registerStore } from '@/state/RegisterStore';
 import { uploadStore } from '@/state/UploadStore';
 import { accountStore } from '@/state/AccountStore';
-import { firstLaunchStore } from '@/state/FirstLaunchStore';
 import Notification from '@/components/generic/Notification.vue';
 import { notificationStore } from '@/state/NotificationStore';
 import { ref, watch } from 'vue';
 
 const router = useRouter();
-
-if(firstLaunchStore.firstLaunch) {
-
-  setTimeout(() => {
-    router.push('/vitejte');
-  })
-
-  firstLaunchStore.firstLaunch = false;
-}
 
 interface MultiStepStore {
   stage: number;
@@ -62,11 +52,13 @@ watch(() => accountStore.user, (newValue) => {
   if(!newValue) {
     notificationStore.notifications = [];
   } else {
-    notificationStore.notifications.push({
-      kind: 'info',
-      title: 'Ověření účtu',
-      message: 'Nemáte dosud ověřený e-mail. Dokud si e-mail neověříte, nemůžete nahrávat a funkcionalita aplikace bude omezená.'
-    });
+    if(!newValue.isEmailVerified) {
+      notificationStore.notifications.push({
+        kind: 'info',
+        title: 'Ověření účtu',
+        message: 'Nemáte dosud ověřený e-mail. Dokud si e-mail neověříte, nemůžete nahrávat a funkcionalita aplikace bude omezená.'
+      });
+    }
   }
 });
 

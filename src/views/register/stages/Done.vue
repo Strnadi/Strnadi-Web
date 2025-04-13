@@ -12,7 +12,7 @@
   <template v-else>
     <h1>Úspěch</h1>
     <h2>Gratulace! Váš účet byl založen.</h2>
-    <span class="font-medium">Na vaši e-mailovou adresu vám krátce přijde ověřovací odkaz, přes který si ověříte váš účet.</span>
+    <span class="font-medium">Na vaši e-mailovou adresu vám zakrátko přijde ověřovací odkaz, přes který si ověříte váš účet.</span>
     <button class="primary p-2 w-full" @click="onClick">Pokračovat</button>
   </template>
 </template>
@@ -40,7 +40,7 @@ const register = () => {
     lastName: registerStore.surname,
     nickname: registerStore.nickname,
     password: registerStore.password,
-    postCode: registerStore.postalCode,
+    postCode: registerStore.postCode,
     city: registerStore.city,
     consent: true // the user can't reach this point without consenting
   })

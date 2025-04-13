@@ -6,7 +6,6 @@ import { getRecording } from '@/api/recording';
 import { getUserInfo } from '@/api/account';
 import { ref, computed, type Ref, onMounted, onUnmounted } from 'vue';
 import { accountStore } from '@/state/AccountStore';
-import RecordingPartAudio from '@/components/generic/RecordingPartAudio.vue';
 import { mapStore } from '@/state/MapStore';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
@@ -15,7 +14,7 @@ const recordingId = useRouteParams('id') as Ref<string>;
 
 const { data: recording, isError, isLoading } = useQuery({
   queryKey: ['recording', recordingId.value],
-  queryFn: () => getRecording(recordingId.value)
+  queryFn: () => getRecording(recordingId.value, true)
 })
 
 const uploaderEmail = computed(() => recording.value?.userEmail);
@@ -68,10 +67,7 @@ onBeforeRouteUpdate(async (to) => {
       <div>
         <ul>
           <li v-for="part in recording?.parts" :key="part.id">
-            <RecordingPartAudio
-              :recordingID="recordingId"
-              :recordingPartID="part.id"
-            />
+            <audio controls autobuffer :src="`data:audio/wav;base64,${part.dataBase64}`" />
 
             <template v-if="accountStore.user?.role == 'admin'">
               <button class="primary p-2">Smazat část</button>

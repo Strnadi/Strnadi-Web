@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import LogoNoText from "@/assets/logo-no-text.svg";
 import HorizontalLineWithText from "@/components/generic/HorizontalLineWithText.vue";
 </script>
 
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
-    <img :src="LogoNoText" />
+    <img src="/logo-no-text.svg" />
     <h1 class="text-center">Nářečí českých strnadů</h1>
     <span class="text-xl text-center">Projekt občanské vědy</span>
 

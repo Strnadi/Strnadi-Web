@@ -28,11 +28,24 @@ const location = window.location.href;
 
   <h1>Stažení aplikace</h1>
 
-  <div class="flex flex-col w-full items-center">
-    <QrcodeSvg
-      :value="location"
-      :size="300"
-    />
+  <div class="flex flex-col items-center gap-y-4">
+    <div class="flex flex-col items-center gap-y-4">
+      <QrcodeSvg
+        :value="location"
+        :size="200"
+        class="w-fit"
+      />
+
+      <span class="font-medium text-justify [text-align-last:center] text-sm">
+        Toto je "chytrý" QR kód, který vás přesměruje přímo na ten správný obchod s aplikacemi pro vaši platformu.
+      </span>
+
+      <hr />
+
+      <span class="font-medium text-justify italic [text-align-last:center] text-sm">
+        Aplikace, stejně jako web, stále prochází velmi bouřlivým vývojem. Za chyby se omlouváme. Těšte se na časté aktualizace a vylepšování.
+      </span>
+    </div>
   </div>
 
 </template>

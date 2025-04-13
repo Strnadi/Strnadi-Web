@@ -15,7 +15,7 @@ export interface User {
   password: string;
   role: "user" | "admin";
   profilePicture: URL;
-  postalCode: string | null;
+  postCode: number | null;
   city: string | null;
 }
 
@@ -25,7 +25,7 @@ export interface LoginRequest {
 }
 
 export interface SignUpRequest {
-  postCode: string;
+  postCode: number;
   city: string;
   email: string;
   password: string;
@@ -33,6 +33,14 @@ export interface SignUpRequest {
   lastName: string;
   nickname: string | null;
   consent: true;
+}
+
+export interface UserUpdateRequest {
+  nickname: string;
+  firstName: string;
+  lastName: string;
+  city: string;
+  postCode: number;
 }
 
 export type Token = string;

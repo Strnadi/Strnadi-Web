@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import LogoNoText from "@/assets/logo-no-text.svg";
 import { ref } from "vue";
 
 const email = ref("");
@@ -8,7 +7,7 @@ const email = ref("");
 
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
-    <img :src="LogoNoText" />
+    <img src="/logo-no-text.svg" />
     <h1 class="text-center">Zapomenuté heslo</h1>
 
     <div class="flex flex-col items-center gap-y-6 w-full">

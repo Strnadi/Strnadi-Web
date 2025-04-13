@@ -43,4 +43,9 @@ export const MapIcons = {
     fileName: "/dialects/selected-recording-location.svg",
     friendlyName: "Vybraná nahrávka",
   },
+
+  CurrentLocation: {
+    fileName: "/dialects/current-location.svg",
+    friendlyName: "Moje poloha",
+  },
 };

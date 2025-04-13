@@ -10,7 +10,7 @@ import { registerStore } from '@/state/RegisterStore';
   <span>Jméno: {{ registerStore.name }}</span>
   <span>Příjmení: {{ registerStore.surname }}</span>
   <span>Přezdívka: {{ registerStore.nickname }}</span>
-  <span>PSČ: {{ registerStore.postalCode }}</span>
+  <span>PSČ: {{ registerStore.postCode }}</span>
   <span>Město: {{ registerStore.city }}</span>
   <span>S podmínkami použití souhlasím.</span>
   <button class="primary p-2 m-2" @click="registerStore.nextStage">Pokračovat</button>

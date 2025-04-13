@@ -44,24 +44,24 @@ export default defineConfig({
       devOptions: {
         enabled: true
       },
-      manifest: {
-        name: "Strnadi",
-        short_name: "Strnadi",
-        theme_color: "#ffd641",
-        background_color: "#ffffff",
-        lang: "cs-CZ",
-        display: "standalone",
-        start_url: "/",
-        id: "cz.delta-skola.strnadi",
-        icons: [
-          {
-            src: "/logo.svg",
-            sizes: "121x42",
-            type: "image/svg+xml",
-            purpose: "any maskable",
-          },
-        ],
-      },
+      // manifest: {
+      //   name: "Strnadi",
+      //   short_name: "Strnadi",
+      //   theme_color: "#ffd641",
+      //   background_color: "#ffffff",
+      //   lang: "cs-CZ",
+      //   display: "standalone",
+      //   start_url: "/",
+      //   id: "cz.delta-skola.strnadi",
+      //   icons: [
+      //     {
+      //       src: "/logo.svg",
+      //       sizes: "121x42",
+      //       type: "image/svg+xml",
+      //       purpose: "any maskable",
+      //     },
+      //   ],
+      // },
       workbox: {
         globPatterns: ['**/*.{js,css,ico,png,svg}'], // exclude HTML
         cleanupOutdatedCaches: true,

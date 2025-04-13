@@ -7,7 +7,7 @@ export const registerStore = reactive({
   nickname: "",
   email: "",
   password: "",
-  postalCode: "",
+  postCode: 0,
   city: "",
 
   nextStage() {
@@ -48,8 +48,8 @@ export const registerStore = reactive({
     this.password = password;
   },
   
-  setPostalCode(postalCode: string) {
-    this.postalCode = postalCode;
+  setPostalCode(postalCode: number) {
+    this.postCode = postalCode;
   },
   
   setCity(city: string) {

@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { JWTObject, User } from "./types/auth";
+import type { JWTObject, User, UserUpdateRequest } from "./types/auth";
 import type { LoginRequest, SignUpRequest, Token } from "@/api/types/auth";
 import type { OAuth2SignUpResponse } from "./types/oauth2";
 
@@ -39,6 +39,16 @@ export const getUserExists = async (email: string): Promise<boolean> => {
   });
 
   return response.status !== 200;
+}
+
+export const patchUser = async (token: string, email: string, data: UserUpdateRequest): Promise<User> => {
+  const response = await axios.patch(`/users/${email}`, data, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  return response.data;
 }
 
 export const deleteAccount = async (token: string, email: string): Promise<void> => {

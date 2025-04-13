@@ -27,8 +27,6 @@ const { mutate: googleSignupMutate, isPending, isError } = useMutation({
   mutationFn: ({ idToken }: { idToken: string }) => postGoogleSignup({ idToken }),
 
   onSuccess: (signupJWT: OAuth2SignUpResponse) => {
-    router.replace('/');
-
     const userJWT: JWTObject = jose.decodeJwt(signupJWT.jwt);
 
     registerStore.setName(signupJWT.firstName);

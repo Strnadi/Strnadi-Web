@@ -117,9 +117,7 @@ const isMenuOpen = ref(false);
             Oznámení
           </PrefetchLink>
         </li> -->
-        <li class='dropdown-item'>
-          <InfoDropdown />
-        </li>
+        <InfoDropdown />
       </div>
       <InfoDropdownItems v-else />
 

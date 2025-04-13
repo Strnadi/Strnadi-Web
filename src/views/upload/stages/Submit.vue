@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { onMounted, onUnmounted } from "vue";
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRouter } from "vue-router";
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
 import { accountStore } from "@/state/AccountStore";
 import { uploadStore } from "@/state/UploadStore";
@@ -15,10 +15,7 @@ const router = useRouter();
 const queryClient = useQueryClient();
 
 const onClick = () => {
-  queryClient.invalidateQueries({ queryKey: ["all-recordings"] });
-  mapStore.selectedLocation = null;
   router.back();
-  uploadStore.resetStage();
 };
 
 const {
@@ -38,6 +35,13 @@ const {
     photos?: File[];
   }) => postRecording(token, recording, parts, photos),
 });
+
+const beforeWindowUnmount = (event: BeforeUnloadEvent) => {
+  event.preventDefault();
+
+  // Included for legacy support, e.g. Chrome/Edge < 119
+  event.returnValue = true;
+};
 
 onMounted(() => {
   const recording = {
@@ -69,12 +73,35 @@ onMounted(() => {
     parts: recordingParts,
     photos: uploadStore.photos ?? []
   });
+
+  window.addEventListener("beforeunload", beforeWindowUnmount);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("beforeunload", beforeWindowUnmount);
+  mapStore.selectedLocation = null;
+  uploadStore.resetStage();
+  queryClient.invalidateQueries({ queryKey: ["all-recordings"] });
+});
+
+onBeforeRouteUpdate(() => {
+  if(isPending.value == true) {
+    alert("Nahrávání stále probíhá. Nezavírejte stránku.");
+    return false;
+  }
+});
+
+onBeforeRouteLeave(() => {
+  if(isPending.value == true) {
+    alert("Nahrávání stále probíhá. Nezavírejte stránku.");
+    return false;
+  }
 });
 </script>
 
 <template>
   <template v-if="isPending">
-    <p>Nahrávání vaší nahrávky...</p>
+    <p class="font-bold">Nahrávání vaší nahrávky. Nezavírejte stránku, jinak se nahrávka nepošle!</p>
   </template>
 
   <template v-else-if="error">

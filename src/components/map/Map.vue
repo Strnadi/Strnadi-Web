@@ -3,19 +3,49 @@ import { computed, ref, watch } from 'vue';
 import { mapStore } from '@/state/MapStore';
 import { useQuery } from '@tanstack/vue-query';
 import { getRecordings } from '@/api/recording';
-import type { RecordingPartModel } from '@/api/types/recording';
+import type { RecordingModel, RecordingPartModel } from '@/api/types/recording';
 import type { MapBrowserEvent } from 'ol';
 import { MapIcons } from './MapIcons';
 import { useRouter } from 'vue-router';
 import LocationSearch from '@/components/map/LocationSearch.vue';
-import MapButtons from '@/components/map/MapButtons.vue';
+import InfoIcon from '@/assets/icon-info.svg';
+import MapIcon from '@/assets/icon-map.svg';
+import PictureIcon from '@/assets/icon-picture.svg';
 import { fromLonLat, toLonLat } from 'ol/proj';
+import { useGeolocation } from '@vueuse/core';
 import { accountStore } from '@/state/AccountStore';
-import type { Coordinate } from 'ol/coordinate';
 const env = import.meta.env;
 
 const router = useRouter();
 const zoom = ref(8.25);
+const currentZoom = ref(zoom.value);
+
+const filter = ref("all");
+const { coords } = useGeolocation();
+
+const oldCutoff = new Date(2024, 12 - 1, 31);
+
+const filtered = (recordings: RecordingModel[]) => {
+  return recordings.filter((recording) => {
+    if (filter.value === "my") {
+      return recording.userEmail === accountStore.user?.email;
+    } else if (filter.value === "others") {
+      return recording.userEmail !== accountStore.user?.email;
+    } else if(filter.value == "old") {
+      return new Date(recording.createdAt) <= oldCutoff
+    }
+
+    return true;
+  });
+};
+
+const currentMapCoords = computed(() => {
+  if (!coords.value) {
+    return null;
+  }
+
+  return fromLonLat([coords.value.longitude, coords.value.latitude]);
+});
 
 const centerRef = ref(fromLonLat([15.5, 49.9]));
 
@@ -29,6 +59,67 @@ const center = computed({
 const { data: recordings } = useQuery({
   queryKey: ["all-recordings"],
   queryFn: () => getRecordings(),
+});
+
+// Function to generate KFME grid line coordinates
+const kfmeGridLines = computed(() => {
+  const lines: number[][][] = []; // Array of line coordinate pairs
+  const minLon = 12;
+  const maxLon = 19.5;
+  const minLat = 48.5;
+  const maxLat = 51.5;
+  const lonStep = 10 / 60; // 10 minutes
+  const latStep = 6 / 60;  // 6 minutes
+
+  // Vertical lines (Longitude lines)
+  for (let lon = minLon; lon <= maxLon; lon += lonStep) {
+    const lineCoords = [
+      fromLonLat([lon, minLat]),
+      fromLonLat([lon, maxLat])
+    ];
+    lines.push(lineCoords);
+  }
+
+  // Horizontal lines (Latitude lines)
+  for (let lat = minLat; lat <= maxLat; lat += latStep) {
+    const lineCoords = [
+      fromLonLat([minLon, lat]),
+      fromLonLat([maxLon, lat])
+    ];
+    lines.push(lineCoords);
+  }
+
+  return lines;
+});
+
+const smallKfmeGridLines = computed(() => {
+  const lines: number[][][] = []; // Array of line coordinate pairs
+  const minLon = 12;
+  const maxLon = 19.5;
+  const minLat = 48.5;
+  const maxLat = 51.5;
+  const lonStep = 10 / 2 / 60; // 10 minutes
+  const latStep = 6 / 2 / 60;  // 6 minutes
+
+  // Vertical lines (Longitude lines)
+  for (let lon = minLon; lon <= maxLon; lon += lonStep) {
+    const lineCoords = [
+      fromLonLat([lon, minLat]),
+      fromLonLat([lon, maxLat])
+    ];
+    lines.push(lineCoords);
+  }
+
+  // Horizontal lines (Latitude lines)
+  for (let lat = minLat; lat <= maxLat; lat += latStep) {
+    const lineCoords = [
+      fromLonLat([minLon, lat]),
+      fromLonLat([maxLon, lat])
+    ];
+    lines.push(lineCoords);
+  }
+
+  return lines;
 });
 
 const partAverageCoords = (part: RecordingPartModel) => {
@@ -82,13 +173,14 @@ const selectedRecordingCoords = computed(() => {
   return fromLonLat([coords.lng, coords.lat]);
 });
 
-const searchQuery = ref();
-watch(searchQuery, (newValue) => {
-  if (newValue) {
-    console.log(newValue);
-    center.value = [newValue.position.lon, newValue.position.lat];
-    zoom.value = 13;
-  }
+function resolutionChanged(event) {
+  currentZoom.value = event.target.getZoom();
+}
+
+const searchText = ref("");
+
+watch(center, () => {
+  zoom.value = 13;
 });
 
 </script>
@@ -105,9 +197,10 @@ watch(searchQuery, (newValue) => {
     >
       <ol-view
         :projection="'EPSG:3857'"
-        :center="centerRef"
         :enableRotation="false"
+        :center="centerRef"
         :zoom="zoom"
+        @change:resolution="resolutionChanged"
       />
 
       <ol-tile-layer>
@@ -139,9 +232,31 @@ watch(searchQuery, (newValue) => {
         />
       </ol-tile-layer>
 
+      <ol-vector-layer v-if="currentZoom > 10" :zIndex="3">
+        <ol-source-vector>
+          <ol-feature v-for="(lineCoords, index) in kfmeGridLines" :key="`kfme-line-${index}`">
+            <ol-geom-line-string :coordinates="lineCoords"></ol-geom-line-string>
+            <ol-style>
+              <ol-style-stroke color="rgba(0, 0, 0, 0.3)" :width="1"></ol-style-stroke>
+            </ol-style>
+          </ol-feature>
+        </ol-source-vector>
+      </ol-vector-layer>
+
+      <ol-vector-layer v-if="currentZoom >= 13" :zIndex="4">
+        <ol-source-vector>
+          <ol-feature v-for="(lineCoords, index) in smallKfmeGridLines" :key="`small-kfme-line-${index}`">
+            <ol-geom-line-string :coordinates="lineCoords"></ol-geom-line-string>
+            <ol-style>
+              <ol-style-stroke color="rgba(0, 0, 0, 0.3)" :width="1"></ol-style-stroke>
+            </ol-style>
+          </ol-feature>
+        </ol-source-vector>
+      </ol-vector-layer>
+
       <ol-vector-layer>
         <ol-source-vector v-if="recordings">
-          <template v-for="recording in recordings" :key="recording.id">
+          <template v-for="recording in filtered(recordings)" :key="recording.id">
             <ol-feature v-for="part in recording.parts" :key="part.id">
               <ol-geom-point :coordinates="fromLonLat(partAverageCoords(part))" />
               <ol-style>
@@ -152,8 +267,8 @@ watch(searchQuery, (newValue) => {
         </ol-source-vector>
       </ol-vector-layer>
 
-      <ol-vector-layer>
-        <ol-source-vector v-if="mapStore.selectedLocation">
+      <ol-vector-layer v-if="mapStore.selectedLocation">
+        <ol-source-vector>
           <ol-feature>
             <ol-geom-point :coordinates="userSelectedCoords" />
             <ol-style>
@@ -163,12 +278,23 @@ watch(searchQuery, (newValue) => {
         </ol-source-vector>
       </ol-vector-layer>
 
-      <ol-vector-layer>
-        <ol-source-vector v-if="mapStore.selectedRecordingLocation">
+      <ol-vector-layer v-if="mapStore.selectedRecordingLocation">
+        <ol-source-vector>
           <ol-feature>
             <ol-geom-point :coordinates="selectedRecordingCoords" />
             <ol-style>
               <ol-style-icon :src="MapIcons.RecordingLocation.fileName" />
+            </ol-style>
+          </ol-feature>
+        </ol-source-vector>
+      </ol-vector-layer>
+
+      <ol-vector-layer v-if="currentMapCoords">
+        <ol-source-vector>
+          <ol-feature>
+            <ol-geom-point :coordinates="currentMapCoords" />
+            <ol-style>
+              <ol-style-icon :src="MapIcons.CurrentLocation.fileName" />
             </ol-style>
           </ol-feature>
         </ol-source-vector>
@@ -184,10 +310,36 @@ watch(searchQuery, (newValue) => {
       </v-ol-control>
     </ol-map>
 
-    <div class="absolute bottom-2 right-2 z-[6] flex flex-row justify-end items-center">
+    <div class="absolute bottom-2 right-2 z-[6] flex sm:flex-row flex-col justify-end items-center">
       <!-- Let's only allow authenticated users to search -->
-      <LocationSearch v-if="accountStore.user" v-model="searchQuery" placeholder="Hledat..." />
-      <MapButtons />
+      <LocationSearch
+        v-model:text="searchText"
+        v-model:location="center"
+        placeholder="Hledat..."
+        class="drop-shadow-lg rounded-2xl m-2 p-4 w-full sm:w-auto"
+      />
+
+      <select v-model="filter" class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-5 w-full sm:w-auto bg-white" value="all">
+        <option value="my">Jen moje nahrávky</option>
+        <option value="others">Jen nahrávky ostatních</option>
+        <option value="old">Jen staré nahrávky</option>
+        <option value="all">Všechny nahrávky</option>
+      </select>
+
+      <div class="flex flex-row gap-x-2">
+        <PrefetchLink
+          to="/mapa/legenda"
+          class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
+        >
+          <img :src="InfoIcon" />
+        </PrefetchLink>
+        <button
+          class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
+          @click="mapStore.mode = mapStore.mode == 'aerial' ? 'outdoor' : 'aerial'"
+        >
+          <img :src="mapStore.mode == 'aerial' ? MapIcon : PictureIcon" />
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -201,6 +353,7 @@ watch(searchQuery, (newValue) => {
   position: absolute;
   bottom: 20px;
   left: 0px;
+  background-color: transparent !important;
 }
 
 :deep(.ol-attribution) {

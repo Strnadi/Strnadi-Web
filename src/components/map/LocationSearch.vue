@@ -4,7 +4,9 @@ import axios from 'axios';import { useQuery } from '@tanstack/vue-query';
 import { useDebounceFn } from '@vueuse/core';
 
 interface LocationSearchProps extends /* @vue-ignore */ InputHTMLAttributes {
-  modelValue?: string;
+  text: string;
+  location?: [number, number];
+  searchThreshold?: number;
 }
 
 defineOptions({
@@ -12,28 +14,48 @@ defineOptions({
 });
 
 const props = defineProps<LocationSearchProps>();
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:text', 'update:location']);
 
-const text = ref('');
+const text = computed({
+  get: () => props.text,
+  set: (value) => emit('update:text', value),
+});
 
-const inputValue = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value),
+const location = computed({
+  get: () => props.location,
+  set: (value) => emit('update:location', value),
 });
 
 
 const { data: suggestions } = useQuery({
   queryKey: ['places', text.value],
   queryFn: useDebounceFn(async () => {
-    const response = await axios.get(`https://api.mapy.cz/v1/suggest?query=${text.value}&apikey=${import.meta.env.VITE_MAPYCZ_API_KEY}`);
+    const response = await axios.get(
+      `https://api.mapy.cz/v1/suggest` +
+      `?query=${encodeURIComponent(text.value)}` +
+      `&limit=15` +
+      `&locality=cz` +
+      `&type=regional.municipality,regional.municipality_part,regional.street,regional.address,poi,coordinate`+
+      `&apikey=${import.meta.env.VITE_MAPYCZ_API_KEY}`
+    );
+
     return response.data.items;
   }, 250),
 
-  enabled: computed(() => text.value !== undefined && text.value.length >= 3),
+  enabled: computed(() => text.value !== undefined && text.value.length >= (props.searchThreshold || 3)),
 })
 
 const update = () => {
-  inputValue.value = suggestions.value.find((suggestion) => suggestion.name === text.value) || null;
+  if (!suggestions.value) {
+    return;
+  }
+
+  const selected = suggestions.value.find((suggestion) => suggestion.name === text.value) || null;
+  if (!selected) {
+    return;
+  }
+
+  location.value = [selected.position.lon, selected.position.lat];
 }
 
 </script>
@@ -42,9 +64,10 @@ const update = () => {
   <input
     v-bind="$attrs"
     v-model="text"
-    @change="update"
     type='text'
     list='places'
+    @change="update"
+    @keydown.enter="update"
   />
   <datalist id="places">
     <option v-for="(suggestion, index) in suggestions" :key="index" :value="suggestion.name" />

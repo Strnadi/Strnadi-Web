@@ -24,17 +24,18 @@ const isRevealed = ref(false);
 </script>
 
 <template>
-  <div class="flex flex-row gap-x-2">
-    <div class="relative flex-grow">
+  <div class="flex flex-row justify-end gap-x-2">
+    <div class="flex flex-col w-full">
+      <label v-if="props.label" class="block text-sm font-medium mb-1" for="password">
+        {{ props.label }}
+      </label>
       <input
         v-bind="$attrs"
         :type="isRevealed ? 'text' : 'password'"
+        id="password"
         v-model="inputValue"
         class="w-full pr-16"
       />
-      <span v-if="props.label" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
-        {{ props.label }}
-      </span>
     </div>
     <button class="text-xl" type="button" @click="isRevealed = !isRevealed">
       {{ isRevealed ? '🫣' : '👁️' }}
