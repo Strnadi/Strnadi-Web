@@ -54,6 +54,17 @@ export const registerStore = reactive({
   
   setCity(city: string) {
     this.city = city;
+  },
+
+  reset() {
+    this.stage = 0;
+    this.name = "";
+    this.surname = "";
+    this.nickname = "";
+    this.email = "";
+    this.password = "";
+    this.postCode = 0;
+    this.city = "";
   }
 
 });

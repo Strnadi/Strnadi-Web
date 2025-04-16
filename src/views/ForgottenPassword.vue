@@ -1,8 +1,15 @@
 <script setup lang="ts">
+import { getPasswordResetRequest } from "@/api/account";
+import { useMutation } from "@tanstack/vue-query";
 import { ref } from "vue";
 
 const email = ref("");
 
+const { mutate } = useMutation({
+  mutationFn: ({ email }: { email: string }) => getPasswordResetRequest(email)
+})
+
+const submit = () => mutate({ email: email.value })
 </script>
 
 <template>
@@ -20,7 +27,7 @@ const email = ref("");
           placeholder="E-Mail"
         />
       </div>
-      <button class="secondary p-2 w-full">
+      <button class="secondary p-2 w-full" @click="submit">
         Odeslat kód
       </button>
     </div>

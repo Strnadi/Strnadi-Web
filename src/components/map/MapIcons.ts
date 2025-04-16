@@ -48,4 +48,9 @@ export const MapIcons = {
     fileName: "/dialects/current-location.svg",
     friendlyName: "Moje poloha",
   },
+
+  CurrentLocationWithHeading: {
+    fileName: "/dialects/current-location-heading.svg",
+    friendlyName: "Moje poloha s orientací",
+  },
 };

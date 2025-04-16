@@ -28,6 +28,13 @@ export function routes(_router: Router) {
     return true;
   });
   
+  const missingToken = (tokenParam: string) => (to?: any) => {
+    if(!to.query[tokenParam]) {
+      return false;
+    }
+
+    return true;
+  }
   
   const LoginRoutes: RouteRecordRaw[] = [
     {
@@ -93,14 +100,18 @@ export function routes(_router: Router) {
     {
       path: '/ucet/email-neverifikovan',
       components: {
-        popup: () => import('@/views/EmailNotVerified.vue')
+        popup: () => import('@/views/EmailVerified.vue')
       },
+      props: {
+        notVerified: true
+      }
     },
     {
       path: '/ucet/reset-hesla',
       components: {
         popup: () => import('@/views/ResetPassword.vue')
-      }
+      },
+      beforeEnter: [missingToken("token")]
     }
   ];
   
@@ -170,6 +181,12 @@ export function routes(_router: Router) {
       components: {
         small_popup: () => import('@/views/MapLegend.vue')
       }
+    },
+    {
+      path: '/nahravka/:id',
+      components: {
+        side: () => import('@/views/Recording.vue')
+      },
     }
   ];
   
@@ -181,11 +198,23 @@ export function routes(_router: Router) {
       },
     },
     {
-      path: '/nahravka/:id',
+      path: '/nahrat/umisteni',
       components: {
-        side: () => import('@/views/Recording.vue')
+        center: () => import('@/views/upload/stages/Location.vue')
       },
-    }
+    },
+    {
+      path: '/nahrat/dialekt',
+      components: {
+        center: () => import('@/views/upload/stages/Dialect.vue')
+      },
+    },
+    {
+      path: '/nahrat/foto',
+      components: {
+        center: () => import('@/views/upload/stages/Photos.vue')
+      },
+    },
   ];
   
   const AdminRoutes: RouteRecordRaw[] = [
@@ -219,7 +248,7 @@ export function routes(_router: Router) {
     ...guarded(guarded(LoginRoutes, () => accountStore.user === null || '/ucet'), welcome),
     ...guarded(guarded(AccountRoutes, () => accountStore.user !== null || '/ucet/splash'), welcome),
     ...guarded(guarded(AdminRoutes, () => true), welcome), // accountStore.user?.role === 'admin' || '/',
-  
+
     {
       path: '/neautorizovano',
       components: {

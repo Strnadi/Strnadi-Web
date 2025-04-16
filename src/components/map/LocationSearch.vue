@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, type InputHTMLAttributes } from 'vue';
-import axios from 'axios';import { useQuery } from '@tanstack/vue-query';
+import { useQuery } from '@tanstack/vue-query';
 import { useDebounceFn } from '@vueuse/core';
+import { getGeocodeAutocomplete } from '@/api/maps';
 
 interface LocationSearchProps extends /* @vue-ignore */ InputHTMLAttributes {
   text: string;
@@ -30,16 +31,10 @@ const location = computed({
 const { data: suggestions } = useQuery({
   queryKey: ['places', text.value],
   queryFn: useDebounceFn(async () => {
-    const response = await axios.get(
-      `https://api.mapy.cz/v1/suggest` +
-      `?query=${encodeURIComponent(text.value)}` +
-      `&limit=15` +
-      `&locality=cz` +
-      `&type=regional.municipality,regional.municipality_part,regional.street,regional.address,poi,coordinate`+
-      `&apikey=${import.meta.env.VITE_MAPYCZ_API_KEY}`
+    return getGeocodeAutocomplete(
+      text.value,
+      ["regional.municipality","regional.municipality_part","regional.street","regional.address","poi","coordinate"]
     );
-
-    return response.data.items;
   }, 250),
 
   enabled: computed(() => text.value !== undefined && text.value.length >= (props.searchThreshold || 3)),

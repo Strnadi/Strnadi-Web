@@ -96,10 +96,12 @@ export default defineConfig({
     Compression({ algorithm: "brotliCompress" }),
     SentryVitePlugin({
       org: "delta-strnadi",
-      project: "strnadi-web",
-      telemetry: false,
+      project: process.env.MODE === 'production' ? "strnadi-web" : "strnadi-web-staging",
+      telemetry: false
     }),
-    vueDevTools(),
+    vueDevTools({
+      launchEditor: "code-insiders"
+    }),
     Visualizer({
       gzipSize: true,
       open: false,

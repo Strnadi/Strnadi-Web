@@ -51,6 +51,18 @@ export const patchUser = async (token: string, email: string, data: UserUpdateRe
   return response.data;
 }
 
+export const getPasswordResetRequest = async (email: string) => {
+  await axios.get(`/auth/${email}/reset-password`);
+}
+
+export const patchPasswordChange = async (token: string, email: string, newPassword: string) => {
+  await axios.patch(`/users/${email}/change-password`, { newPassword }, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+}
+
 export const deleteAccount = async (token: string, email: string): Promise<void> => {
   await axios.delete(`/users/${email}`, {
     headers: {

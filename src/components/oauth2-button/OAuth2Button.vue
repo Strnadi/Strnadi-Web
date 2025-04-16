@@ -10,7 +10,6 @@ const route = useRoute();
 const props = defineProps<{
   oauth2_url: string,
   clientId: string,
-  redirectUri: string,
   scope: string,
   responseType: string,
   prompt: string,

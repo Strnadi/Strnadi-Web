@@ -16,6 +16,7 @@ const queryClient = useQueryClient();
 
 const onClick = () => {
   router.back();
+  mapStore.selectedLocation = null;
 };
 
 const {
@@ -38,15 +39,13 @@ const {
 
 const beforeWindowUnmount = (event: BeforeUnloadEvent) => {
   event.preventDefault();
-
-  // Included for legacy support, e.g. Chrome/Edge < 119
   event.returnValue = true;
 };
 
 onMounted(() => {
   const recording = {
     createdAt: new Date().toISOString(),
-    estimatedBirdsCount: 0,
+    estimatedBirdsCount: uploadStore.birdCount,
     device: uploadStore.device || "",
     name: uploadStore.title,
     byApp: false,

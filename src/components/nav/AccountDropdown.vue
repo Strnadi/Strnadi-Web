@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ProfileIcon from "@/assets/icon-profile.svg"
 import { accountStore } from '@/state/AccountStore';
 import Dropdown from '../generic/Dropdown.vue';
 
@@ -8,17 +9,8 @@ const user = accountStore.user!;
 <template>
   <Dropdown>
     <template v-slot:title class='flex flex-row items-center'>
-      <svg
-        width="32px"
-        height="32px"
-        viewBox="0 0 16 16"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="#000000"
-        v-if="!user.isEmailVerified"
-      >
-        <title>Nemáte ověřený účet. Musíte si ověřit svůj e-mail.</title>
-        <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.553.553 0 0 1-1.1 0L7.1 4.995z"/>
-      </svg>
+      <img v-if="!user.profilePicture" :src="ProfileIcon" />
+      <img v-else :src="user.profilePicture" />
 
       {{ user.firstName }} {{ user.lastName }}
       <svg

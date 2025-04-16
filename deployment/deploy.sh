@@ -11,6 +11,17 @@ git submodule update --remote --init --merge --recursive
 
 # Port is the first and only argument to this script
 PORT=$1
+ENVIRONMENT=$2
+
+if [ -z "$PORT" ]; then
+  echo "Error: PORT argument is required."
+  exit 1
+fi
+
+if [ -z "$ENVIRONMENT" ]; then
+  echo "Error: ENVIRONMENT argument is required."
+  exit 1
+fi
 
 # Get the docker container ID that is bound to the specified port
 CONTAINER_ID=$(docker ps --filter "publish=$PORT" -q)
@@ -28,5 +39,5 @@ if [ -n "$CONTAINER_ID" ]; then
 fi
 
 docker build --build-arg ENABLED_MODULES="brotli" -t nginx:strnadi-custom -f ./docker/nginx.dockerfile .
-docker build -t strnadi-web -f ./docker/Dockerfile .
+docker build -t strnadi-web --build-arg ENVIRONMENT=$ENVIRONMENT -f ./docker/Dockerfile .
 docker run -d -p $PORT:80 strnadi-web

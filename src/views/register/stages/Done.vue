@@ -29,7 +29,11 @@ import type { SignUpRequest } from '@/api/types/auth'
 const router = useRouter()
 
 const { mutate, isError, isPending, data, error } = useMutation({
-  mutationFn: (data: SignUpRequest) => postRegister(data)
+  mutationFn: (data: SignUpRequest) => postRegister(data),
+
+  onSuccess: () => {
+    registerStore.reset();
+  },
 })
 
 // Function to call the registration mutation

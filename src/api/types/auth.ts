@@ -14,7 +14,7 @@ export interface User {
   isEmailVerified: boolean;
   password: string;
   role: "user" | "admin";
-  profilePicture: URL;
+  profilePicture: string | null;
   postCode: number | null;
   city: string | null;
 }

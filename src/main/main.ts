@@ -37,16 +37,27 @@ const router = createRouter({
 // This is ugly shit right here.
 routes(router).forEach((route) => router.addRoute(route))
 
-if(import.meta.env.PROD) {
-  Sentry.init({
-    app: app,
-    dsn: "https://e3caec48db03fc752eb60fcccceb5d7e@o4508834111291392.ingest.de.sentry.io/4509010454970448",
-    integrations: [
-      Sentry.browserTracingIntegration({ router }),
-    ],
-  });
+const sentryConfig = {
+  app: app,
+  integrations: [
+    Sentry.browserTracingIntegration({ router }),
+  ],
+};
 
+if(import.meta.env.MODE === 'production') {
   app.use(posthogPlugin);
+
+  Sentry.init({
+    ...sentryConfig,
+    dsn: "https://e3caec48db03fc752eb60fcccceb5d7e@o4508834111291392.ingest.de.sentry.io/4509010454970448",
+  });
+}
+
+if(import.meta.env.MODE === 'staging') {
+  Sentry.init({
+    ...sentryConfig,
+    dsn: "https://02fdb339d395fe6066c7d0d5b5d4d4d8@o4508834111291392.ingest.de.sentry.io/4509155946266704",
+  });
 }
 
 axios.defaults.baseURL = import.meta.env.VITE_API_URL;
@@ -54,17 +65,17 @@ axios.interceptors.response.use(response => response, error => {
   throw new ApiError(error.code, error.response?.status, error.response?.data);
 });
 
+/*
 axios.defaults.onUploadProgress = (progressEvent) => {
   const { loaded, total } = progressEvent;
   const percentCompleted = Math.round((loaded * 100) / (total || 1));
-  console.log(`Upload progress: ${percentCompleted}%`);
 };
 
 axios.defaults.onDownloadProgress = (progressEvent) => {
   const { loaded, total } = progressEvent;
   const percentCompleted = Math.round((loaded * 100) / (total || 1));
-  console.log(`Download progress: ${percentCompleted}%`);
 };
+*/
 
 app.use(OpenLayersMap);
 app.use(OpenLayersMapLayers);

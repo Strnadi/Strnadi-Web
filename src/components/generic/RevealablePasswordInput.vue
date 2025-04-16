@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, useSlots } from 'vue';
 import type { InputHTMLAttributes } from 'vue'
+
+const slots = useSlots();
 
 // Disable attribute inheritance on the root element
 defineOptions({
@@ -8,7 +10,6 @@ defineOptions({
 });
 
 interface RevealablePasswordInputProps extends /* @vue-ignore */ InputHTMLAttributes {
-  label?: string;
   modelValue?: string;
 }
 
@@ -26,8 +27,8 @@ const isRevealed = ref(false);
 <template>
   <div class="flex flex-row justify-end gap-x-2">
     <div class="flex flex-col w-full">
-      <label v-if="props.label" class="block text-sm font-medium mb-1" for="password">
-        {{ props.label }}
+      <label v-if="slots.default" class="block text-sm font-medium mb-1" for="password">
+        <slot />
       </label>
       <input
         v-bind="$attrs"

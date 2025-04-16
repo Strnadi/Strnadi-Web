@@ -58,9 +58,9 @@ const checkEmail = async () => {
 
 <template>
   <h1>Zadejte váš e-mail</h1>
+  <template v-if="error != ''"><span class="text-red-500">Chyba: {{ error }}</span></template>
   <template v-if="isPending">Načítání...</template>
   <template v-else>
-    <template v-if="isError"><span class="text-red-500">Chyba: {{ error }}</span></template>
     <div class="flex flex-col gap-y-4">
       <form class="flex flex-col gap-y-2" @submit.prevent="checkEmail">
         <input v-model="registerStore.email" name="email" type="email" required placeholder="E-Mail" />

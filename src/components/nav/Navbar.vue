@@ -128,7 +128,7 @@ const isMenuOpen = ref(false);
       </li>
       <li class="pt-2">
         <AccountDropdown v-if="accountStore.user"/>
-        <PrefetchLink v-else to="/ucet/prihlaseni" class="button-secondary py-2 px-4 block w-full text-center">Přihlásit se</PrefetchLink>
+        <PrefetchLink v-else to="/ucet/splash" class="button-secondary py-2 px-4 block w-full text-center">Přihlásit se</PrefetchLink>
       </li>
     </ul>
   </div>

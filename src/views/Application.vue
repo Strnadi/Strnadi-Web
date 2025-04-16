@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { QrcodeSvg } from 'qrcode.vue';
 import { onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 
 const isApple = (): boolean => {
   const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
