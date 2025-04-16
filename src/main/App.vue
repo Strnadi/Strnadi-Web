@@ -85,7 +85,7 @@ watch(() => accountStore.user, (newValue) => {
     </ul>
   </aside>
 
-  <Map class="w-screen h-screen" />
+  <Map class="w-svw h-svh" />
 
   <router-view name="side" v-slot="{ Component }">
     <Transition>
