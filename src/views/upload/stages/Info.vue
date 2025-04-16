@@ -5,7 +5,7 @@ import { computed, ref } from 'vue';
 const dialect = ref("");
 
 const partURLs = computed(() => {
-  return uploadStore.parts!.map((part) => URL.createObjectURL(part.recording));
+  return uploadStore.parts!.map((part) => URL.createObjectURL(part.file));
 });
 
 const addDialect = () => {

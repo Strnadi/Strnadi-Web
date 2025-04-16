@@ -32,7 +32,7 @@ import TextualCoords from "@/components/map/TextualCoords.vue";
 const currentPartIndex = ref(0);
 
 const partURLs = computed(() => {
-  return uploadStore.parts!.map((part) => URL.createObjectURL(part.recording));
+  return uploadStore.parts!.map((part) => URL.createObjectURL(part.file));
 });
 
 watch(() => mapStore.selectedLocation, (newLocation: LatLng | null) => {

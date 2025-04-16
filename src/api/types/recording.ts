@@ -52,5 +52,5 @@ export interface RecordingPartUploadParams {
   gpsLatitudeEnd: number;
   gpsLongitudeStart: number;
   gpsLongitudeEnd: number;
-  data: ArrayBuffer;
+  data: File;
 };

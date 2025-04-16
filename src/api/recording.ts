@@ -30,7 +30,7 @@ export const postRecording = async (
 			gpsLongitudeStart: part.gpsLongitudeStart,
 			gpsLongitudeEnd: part.gpsLongitudeEnd,
 			recordingId: uploadedRecordingId,
-			dataBase64: toBase64(part.data),
+			dataBase64: toBase64(await part.data.arrayBuffer()),
 		} as RecordingPartUploadReq,
 		{
 			headers: { "Authorization": `Bearer ${token}` }

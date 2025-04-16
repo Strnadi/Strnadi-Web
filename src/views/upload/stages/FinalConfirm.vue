@@ -4,7 +4,7 @@ import { uploadStore } from '@/state/UploadStore';
 import { computed } from 'vue';
 
 const partURLs = computed(() => {
-  return uploadStore.parts!.map((part) => URL.createObjectURL(part.recording));
+  return uploadStore.parts!.map((part) => URL.createObjectURL(part.file));
 });
 </script>
 

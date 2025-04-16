@@ -6,7 +6,7 @@ interface LatLng {
 };
 
 interface RecordingPart {
-  recording: File;
+  file: File;
   location: LatLng | null;
 };
 
@@ -57,14 +57,14 @@ export const uploadStore = reactive({
 
   async setRecordings(recordings: File[]) {
     this.parts = recordings.map((recording) => ({
-      recording,
+      file: recording,
       location: null
     })) as RecordingPart[];
   },
 
   removePart(recording: File) {
     if (this.parts) {
-      this.parts = this.parts.filter((part) => part.recording !== recording);
+      this.parts = this.parts.filter((part) => part.file !== recording);
     }
   },
 

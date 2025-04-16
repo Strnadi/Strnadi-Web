@@ -80,13 +80,24 @@ export default defineConfig({
             },
           },
           {
+            urlPattern: /^https:\/\/(dev)?api.strnadi.cz\/map\/.*$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'mapy-cache',
+              expiration: {
+                maxEntries: 10000,
+                maxAgeSeconds: 24 * 60 * 60 * 30, // 30 days
+              },
+            },
+          },
+          {
             urlPattern: /^https:\/\/api.mapy.cz\/.*$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'mapy-cache',
               expiration: {
                 maxEntries: 10000,
-                maxAgeSeconds: 24 * 60 * 60 * 7, // 1 week
+                maxAgeSeconds: 24 * 60 * 60 * 7, // 30 days
               },
             },
           },

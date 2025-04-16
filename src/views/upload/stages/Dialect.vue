@@ -10,7 +10,7 @@ const numberOfDialects = computed(() => dialects.value.length);
 // Todo multiple parts support
 const audioSrc = computed(() => {
   return uploadStore.parts && uploadStore.parts.length > 0
-    ? URL.createObjectURL(uploadStore.parts[0].recording)
+    ? URL.createObjectURL(uploadStore.parts[0].file)
     : '';
 });
 
