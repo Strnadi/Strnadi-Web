@@ -1,4 +1,17 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+
+const props = defineProps<{
+  notVerified?: boolean
+}>();
+
+console.log(props.notVerified)
+
+const isMobile = computed(() => {
+  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+  return /android|iPad|iPhone/i.test(userAgent);
+})
+
 </script>
 
 <template>
@@ -7,8 +20,10 @@
       <img src="/logo-no-text.svg" />
       <h2>Nářečí českých strnadů</h2>
     </div>
-    <span class="text-xl text-center">E-Mail byl úspěšně ověřen.</span>
-    <a class="button-primary p-2 w-full lg:hidden text-center" href="com.delta.strnadi://">Zpět do aplikace</a>
-    <PrefetchLink class="button-primary p-2 w-full max-lg:hidden text-center" :replace="true" to="/">Dokončit registraci</PrefetchLink>
+    <span class="text-xl text-center">
+      E-Mail <template v-if="props.notVerified">ne</template>byl úspěšně ověřen.
+    </span>
+    <a v-if="isMobile" class="button-primary p-2 w-full text-center" href="com.delta.strnadi://">Zpět do aplikace</a>
+    <PrefetchLink v-else class="button-primary p-2 w-full text-center" :replace="true" to="/">Dokončit registraci</PrefetchLink>
   </div>
 </template>

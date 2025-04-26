@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { shallowRef, watch } from 'vue'
+import { onUnmounted, shallowRef, watch } from 'vue'
 import { defineAsyncComponent } from 'vue'
 import { accountStore } from "@/state/AccountStore";
 import { uploadStore } from '@/state/UploadStore';
@@ -7,13 +7,15 @@ import SegmentedProgress from '@/components/generic/SegmentedProgress.vue';
 
 const STAGE_MAPPING = [
   "File",
-  "Dialect",
+  "Photos",
   "Location",
   "Info",
-  "Photos",
-  "FinalConfirm",
   "Submit"
 ];
+
+onUnmounted(() => {
+  uploadStore.reset();
+});
 
 const loadComponent = (stage: number) => defineAsyncComponent({
   loader: () => import(`./stages/${STAGE_MAPPING[stage]}.vue`)

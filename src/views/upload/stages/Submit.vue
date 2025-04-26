@@ -16,6 +16,7 @@ const queryClient = useQueryClient();
 
 const onClick = () => {
   router.back();
+  mapStore.selectedLocation = null;
 };
 
 const {
@@ -38,15 +39,13 @@ const {
 
 const beforeWindowUnmount = (event: BeforeUnloadEvent) => {
   event.preventDefault();
-
-  // Included for legacy support, e.g. Chrome/Edge < 119
   event.returnValue = true;
 };
 
 onMounted(() => {
   const recording = {
     createdAt: new Date().toISOString(),
-    estimatedBirdsCount: 0,
+    estimatedBirdsCount: uploadStore.birdCount,
     device: uploadStore.device || "",
     name: uploadStore.title,
     byApp: false,
@@ -55,15 +54,15 @@ onMounted(() => {
 
   // Each file is treated as a separate recording part
   const recordingParts = uploadStore.parts!.map(
-    ({ content }) =>
+    ({ file, location }) =>
       ({
         startDate: uploadStore.dateTime,
         endDate: uploadStore.dateTime,
-        gpsLatitudeStart: uploadStore.location!.lat,
-        gpsLatitudeEnd: uploadStore.location!.lat,
-        gpsLongitudeStart: uploadStore.location!.lng,
-        gpsLongitudeEnd: uploadStore.location!.lng,
-        data: content,
+        gpsLatitudeStart: location!.lat,
+        gpsLatitudeEnd: location!.lat,
+        gpsLongitudeStart: location!.lng,
+        gpsLongitudeEnd: location!.lng,
+        data: file,
       } as RecordingPartUploadParams)
   );
 

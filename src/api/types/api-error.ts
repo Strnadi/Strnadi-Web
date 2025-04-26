@@ -11,15 +11,18 @@ export class ApiError extends Error {
     this.stringCode = stringCode;
     this.responseCode = responseCode;
 
-    if (body.title !== undefined) {
+    if (body && body.title !== undefined && body.errors !== undefined) {
       this.body = body.title + Object.values(body.errors).map((error: any) => error.join('')).join(' ');
-    } else {
-      this.body = body || 'No additional information provided.';
+    } else if (body && body.title) {
+      this.body = body.title;
+    } else if(body) {
+      this.body = body;
     }
   }
 
+  // TODO: maybe google translate this, lmao
   get message() {
-    return this.body ? this.body : `${this.stringCode || ''} ${this.responseCode || ''}`;
+    return this.body ?? `${this.stringCode || ''} ${this.responseCode || ''}`;
   }
 
 };

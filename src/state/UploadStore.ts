@@ -1,15 +1,20 @@
 import { reactive } from 'vue'
 
-type LatLng = {
+interface LatLng {
   lat: number;
   lng: number;
 };
 
+interface RecordingPart {
+  file: File;
+  location: LatLng | null;
+};
+
 export const uploadStore = reactive({
   stage: 0 as number,
-  parts: null as { recording: File; content: ArrayBuffer }[] | null,
+  parts: null as RecordingPart[] | null,
   photos: null as File[] | null,
-  location: null as LatLng | null,
+  dialects: [] as string[],
   note: "" as string | null,
   title: "" as string,
   device: "" as string | null,
@@ -38,10 +43,6 @@ export const uploadStore = reactive({
     this.birdCount = count 
   },
 
-  setLocation(location: LatLng) {
-    this.location = location
-  },
-
   setNote(note: string) {
     this.note = note
   },
@@ -55,19 +56,15 @@ export const uploadStore = reactive({
   },
 
   async setRecordings(recordings: File[]) {
-    const recordingsWithContent = await Promise.all(
-      recordings.map(async (recording) => {
-        const content = await recording.arrayBuffer();
-        return { recording, content };
-      })
-    );
-
-    this.parts = recordingsWithContent;
+    this.parts = recordings.map((recording) => ({
+      file: recording,
+      location: null
+    })) as RecordingPart[];
   },
 
   removePart(recording: File) {
     if (this.parts) {
-      this.parts = this.parts.filter((part) => part.recording !== recording);
+      this.parts = this.parts.filter((part) => part.file !== recording);
     }
   },
 
@@ -75,6 +72,18 @@ export const uploadStore = reactive({
     if (this.parts) {
       this.parts.splice(index, 1);
     }
+  },
+
+  reset() {
+    this.stage = 0;
+    this.parts = null;
+    this.photos = null;
+    this.dialects = [];
+    this.note = null;
+    this.title = "";
+    this.device = null;
+    this.birdCount = 1;
+    this.dateTime = new Date().toISOString();
   }
 
 });

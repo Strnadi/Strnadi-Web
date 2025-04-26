@@ -3,12 +3,14 @@
   <p v-if="error" class="text-red-500">{{ error }}</p>
   <Dropzone @drop="onDrop" :accept="accept" :multiple="true">
     <template #dragging>
-      <div class="text-4xl mb-2 text-gray-500">↑</div>
-      <p>Uvolněte soubory pro nahrání</p>
+      <p>↑ Upusťte soubory sem pro nahrání</p>
     </template>
 
-    <div class="flex flex-col items-center">
-      <p>Klikněte nebo přetáhněte zvuk</p>
+    <div class="flex flex-col items-center gap-y-1">
+      <div>
+        <p>Přetáhněte nebo klikněte sem pro vybrání</p>
+        <p>jednoho nebo několika zvukových souborů</p>
+      </div>
       <p>(.wav, .mp3, .flac, .aac, .ogg)</p>
     </div>
   </Dropzone>

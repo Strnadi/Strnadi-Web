@@ -28,6 +28,13 @@ export function routes(_router: Router) {
     return true;
   });
   
+  const missingToken = (tokenParam: string) => (to?: any) => {
+    if(!to.query[tokenParam]) {
+      return false;
+    }
+
+    return true;
+  }
   
   const LoginRoutes: RouteRecordRaw[] = [
     {
@@ -80,6 +87,12 @@ export function routes(_router: Router) {
       components: {
         popup: () => import('@/views/profile/DeleteAccount.vue')
       },
+    },
+    {
+      path: '/ucet/overeni-emailu',
+      components: {
+        popup: () => import('@/views/ResendVerifyEmail.vue')
+      },
     }
   ];
   
@@ -93,14 +106,18 @@ export function routes(_router: Router) {
     {
       path: '/ucet/email-neverifikovan',
       components: {
-        popup: () => import('@/views/EmailNotVerified.vue')
+        popup: () => import('@/views/EmailVerified.vue')
       },
+      props: {
+        notVerified: true
+      }
     },
     {
       path: '/ucet/reset-hesla',
       components: {
         popup: () => import('@/views/ResetPassword.vue')
-      }
+      },
+      beforeEnter: [missingToken("token")]
     }
   ];
   
@@ -159,7 +176,7 @@ export function routes(_router: Router) {
     {
       path: '/aplikace',
       components: {
-        popup: () => import('@/views/Application.vue')
+        small_popup: () => import('@/views/Application.vue')
       }
     }
   ]
@@ -170,6 +187,18 @@ export function routes(_router: Router) {
       components: {
         small_popup: () => import('@/views/MapLegend.vue')
       }
+    },
+    {
+      path: '/nahravka/:id',
+      components: {
+        side: () => import('@/views/Recording.vue')
+      },
+    },
+    {
+      path: '/ctverec/:id',
+      components: {
+        side: () => import('@/views/Square.vue')
+      },
     }
   ];
   
@@ -181,20 +210,44 @@ export function routes(_router: Router) {
       },
     },
     {
-      path: '/nahravka/:id',
+      path: '/nahrat/umisteni',
       components: {
-        side: () => import('@/views/Recording.vue')
+        center: () => import('@/views/upload/stages/Location.vue')
       },
-    }
+    },
+    {
+      path: '/nahrat/dialekt',
+      components: {
+        center: () => import('@/views/upload/stages/Dialect.vue')
+      },
+    },
+    {
+      path: '/nahrat/foto',
+      components: {
+        center: () => import('@/views/upload/stages/Photos.vue')
+      },
+    },
   ];
   
   const AdminRoutes: RouteRecordRaw[] = [
     {
+      path: '/admin',
+      components: {
+        side: () => import('@/views/admin/Admin.vue')
+      }
+    },
+    {
       path: '/admin/vsechny-nahravky',
       components: {
-        center: () => import('@/views/admin/AllRecordings.vue')
+        side: () => import('@/views/admin/AllRecordings.vue')
       },
-    }
+    },
+    {
+      path: '/admin/uzivatele',
+      components: {
+        side: () => import('@/views/admin/Users.vue')
+      },
+    },
   ];
   
   return [
@@ -219,7 +272,7 @@ export function routes(_router: Router) {
     ...guarded(guarded(LoginRoutes, () => accountStore.user === null || '/ucet'), welcome),
     ...guarded(guarded(AccountRoutes, () => accountStore.user !== null || '/ucet/splash'), welcome),
     ...guarded(guarded(AdminRoutes, () => true), welcome), // accountStore.user?.role === 'admin' || '/',
-  
+
     {
       path: '/neautorizovano',
       components: {

@@ -83,20 +83,17 @@ const errorHandler = (error: string) => {
             />
           </div>
           <div class="w-full">
-            <label
-              for="password"
-              class="text-sm font-medium mb-1 flex flex-row justify-between"
-            >
-              <span>Heslo</span>
-              <PrefetchLink to="/ucet/zapomenute-heslo">Zapomenuté heslo</PrefetchLink>
-            </label>
             <RevealablePasswordInput
               v-model="password"
-              id="password"
               name="pass"
               placeholder="Heslo"
               class="w-full p-2 border rounded"
-            />
+            >
+              <div class="text-sm font-medium mb-1 flex flex-row justify-between">
+                <span>Heslo</span>
+                <PrefetchLink to="/ucet/zapomenute-heslo">Zapomenuté heslo?</PrefetchLink>
+              </div>
+            </RevealablePasswordInput>
           </div>
         </div>
         <button

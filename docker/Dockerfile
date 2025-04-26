@@ -1,3 +1,4 @@
+
 FROM oven/bun:alpine AS build
 WORKDIR /usr/src/app
 
@@ -8,8 +9,9 @@ COPY src src
 COPY public public
 COPY index.html tsconfig*.json vite.config.ts ./
 
-ENV NODE_ENV=production
-RUN bun run build
+ARG ENVIRONMENT="production"
+ENV NODE_ENV=${ENVIRONMENT}
+RUN bun run build --mode $NODE_ENV
 
 FROM nginx:strnadi-custom AS production
 COPY ./deployment/nginx.conf /etc/nginx/nginx.conf

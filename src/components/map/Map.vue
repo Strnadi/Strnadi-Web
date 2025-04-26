@@ -1,344 +1,317 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { ref, computed, watch, reactive } from 'vue';
+import { useRouter } from 'vue-router';
 import { mapStore } from '@/state/MapStore';
+import { accountStore } from '@/state/AccountStore';
 import { useQuery } from '@tanstack/vue-query';
 import { getRecordings } from '@/api/recording';
 import type { RecordingModel, RecordingPartModel } from '@/api/types/recording';
-import type { MapBrowserEvent } from 'ol';
+import { useGeolocation } from '@vueuse/core';
 import { MapIcons } from './MapIcons';
-import { useRouter } from 'vue-router';
 import LocationSearch from '@/components/map/LocationSearch.vue';
 import InfoIcon from '@/assets/icon-info.svg';
+import ListIcon from '@/assets/icon-list.svg';
 import MapIcon from '@/assets/icon-map.svg';
+import RulerIcon from '@/assets/icon-ruler.svg';
+import FilledRulerIcon from '@/assets/icon-ruler-fill.svg';
 import PictureIcon from '@/assets/icon-picture.svg';
-import { fromLonLat, toLonLat } from 'ol/proj';
-import { useGeolocation } from '@vueuse/core';
-import { accountStore } from '@/state/AccountStore';
+
+// @ts-expect-error
+import FilterIcon from '@/assets/icon-filter2.svg';
+
+import {
+  LMap,
+  LTileLayer,
+  LMarker,
+  LPolygon,
+  LControlScale,
+  LControl
+} from '@vue-leaflet/vue-leaflet';
+import 'leaflet/dist/leaflet.css';
+import { Icon, type LatLngExpression } from 'leaflet';
+
 const env = import.meta.env;
 
+// -- Map state --
 const router = useRouter();
 const zoom = ref(8.25);
-const currentZoom = ref(zoom.value);
-
-const filter = ref("all");
-const { coords } = useGeolocation();
-
-const oldCutoff = new Date(2024, 12 - 1, 31);
-
-const filtered = (recordings: RecordingModel[]) => {
-  return recordings.filter((recording) => {
-    if (filter.value === "my") {
-      return recording.userEmail === accountStore.user?.email;
-    } else if (filter.value === "others") {
-      return recording.userEmail !== accountStore.user?.email;
-    } else if(filter.value == "old") {
-      return new Date(recording.createdAt) <= oldCutoff
-    }
-
-    return true;
-  });
-};
-
-const currentMapCoords = computed(() => {
-  if (!coords.value) {
-    return null;
-  }
-
-  return fromLonLat([coords.value.longitude, coords.value.latitude]);
-});
-
-const centerRef = ref(fromLonLat([15.5, 49.9]));
-
-const center = computed({
-  get: () => toLonLat(centerRef.value),
-  set: (value) => {
-    centerRef.value = fromLonLat(value);
-  }
-});
-
-const { data: recordings } = useQuery({
-  queryKey: ["all-recordings"],
-  queryFn: () => getRecordings(),
-});
-
-// Function to generate KFME grid line coordinates
-const kfmeGridLines = computed(() => {
-  const lines: number[][][] = []; // Array of line coordinate pairs
-  const minLon = 12;
-  const maxLon = 19.5;
-  const minLat = 48.5;
-  const maxLat = 51.5;
-  const lonStep = 10 / 60; // 10 minutes
-  const latStep = 6 / 60;  // 6 minutes
-
-  // Vertical lines (Longitude lines)
-  for (let lon = minLon; lon <= maxLon; lon += lonStep) {
-    const lineCoords = [
-      fromLonLat([lon, minLat]),
-      fromLonLat([lon, maxLat])
-    ];
-    lines.push(lineCoords);
-  }
-
-  // Horizontal lines (Latitude lines)
-  for (let lat = minLat; lat <= maxLat; lat += latStep) {
-    const lineCoords = [
-      fromLonLat([minLon, lat]),
-      fromLonLat([maxLon, lat])
-    ];
-    lines.push(lineCoords);
-  }
-
-  return lines;
-});
-
-const smallKfmeGridLines = computed(() => {
-  const lines: number[][][] = []; // Array of line coordinate pairs
-  const minLon = 12;
-  const maxLon = 19.5;
-  const minLat = 48.5;
-  const maxLat = 51.5;
-  const lonStep = 10 / 2 / 60; // 10 minutes
-  const latStep = 6 / 2 / 60;  // 6 minutes
-
-  // Vertical lines (Longitude lines)
-  for (let lon = minLon; lon <= maxLon; lon += lonStep) {
-    const lineCoords = [
-      fromLonLat([lon, minLat]),
-      fromLonLat([lon, maxLat])
-    ];
-    lines.push(lineCoords);
-  }
-
-  // Horizontal lines (Latitude lines)
-  for (let lat = minLat; lat <= maxLat; lat += latStep) {
-    const lineCoords = [
-      fromLonLat([minLon, lat]),
-      fromLonLat([maxLon, lat])
-    ];
-    lines.push(lineCoords);
-  }
-
-  return lines;
-});
-
-const partAverageCoords = (part: RecordingPartModel) => {
-  return [
-    (part.gpsLongitudeStart + part.gpsLongitudeEnd) / 2,
-    (part.gpsLatitudeStart + part.gpsLatitudeEnd) / 2
-  ]
-}
-
-function onMapClick(event: MapBrowserEvent<UIEvent>) {
-  if (mapStore.selectEnabled) {
-    const coords = toLonLat(event.coordinate);
-    mapStore.setSelectedLocation(coords[1], coords[0]);
-
-    return true;
-  }
-
-  const featuresAtPixel = event.map.getFeaturesAtPixel(event.pixel);
-  if (!featuresAtPixel || featuresAtPixel.length === 0) {
-    return true;
-  }
-
-  const feature = featuresAtPixel[0];
-
-  // @ts-expect-error
-  const coords = toLonLat(feature.getGeometry()!.getCoordinates());
-
-  for(const recording of recordings.value!) {
-    for (const part of recording.parts || []) {
-      const partCoords = partAverageCoords(part);
-      if (coords[0] === partCoords[0] && coords[1] === partCoords[1]) {
-        mapStore.setSelectedRecordingLocation(coords[1], coords[0]);
-
-        router.push(`/nahravka/${recording.id}`);
-        return true;
-      }
-    }
-  }
-
-  // Don't block dragging event
-  return true;
-}
-
-const userSelectedCoords = computed(() => {
-  const coords = mapStore.selectedLocation!;
-  return fromLonLat([coords.lng, coords.lat]);
-});
-
-const selectedRecordingCoords = computed(() => {
-  const coords = mapStore.selectedRecordingLocation!;
-  return fromLonLat([coords.lng, coords.lat]);
-});
-
-function resolutionChanged(event) {
-  currentZoom.value = event.target.getZoom();
-}
+const center = ref<LatLngExpression>({ lat: 49.9, lng: 15.5 });
+const scaleEnabled = ref(true);
+let leafletMap: any = null;
 
 const searchText = ref("");
 
-watch(center, () => {
-  zoom.value = 13;
-});
+// Geolocation
+const { coords } = useGeolocation();
+const currentMapCoords = computed(() =>
+  coords.value
+    ? [coords.value.latitude, coords.value.longitude] as [number, number]
+    : null
+);
 
+// Recordings query
+const { data: recordings } = useQuery({ queryKey: ['all-recordings'], queryFn: getRecordings });
+
+// Filter
+const filter = ref<'new'|'old'|'my'|'others'|'all'|'dialect'>('new');
+const oldCutoff = new Date(2024, 11, 31);
+function filteredRecs(data: RecordingModel[] = []): RecordingModel[] {
+  return data.filter(r => {
+    switch (filter.value) {
+      case 'my': return r.userId === accountStore.user?.id;
+      case 'others': return r.userId !== accountStore.user?.id;
+      case 'old': return new Date(r.createdAt) <= oldCutoff;
+      case 'new': return new Date(r.createdAt) > oldCutoff;
+      default: return true;
+    }
+  });
+}
+
+// Bounds and grid extent
+const viewBounds = ref<[number, number, number, number] | null>(null);
+const fixed = reactive({ minLon: 12, maxLon: 19.5, minLat: 48.5, maxLat: 51.5 });
+
+function updateBounds() {
+  if (!leafletMap) return;
+  const b = leafletMap.getBounds();
+  viewBounds.value = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+}
+
+const mapRef = ref<any>(null);
+
+// watch zoom/center all the time
+watch([zoom, center], updateBounds);
+
+// Generate KFME grid polygons
+function makeGrid(stepLon: number, stepLat: number) {
+  if (!viewBounds.value) return [];
+  const [minLonView, minLatView, maxLonView, maxLatView] = viewBounds.value;
+  const bufLon = stepLon * 1.5;
+  const bufLat = stepLat * 1.5;
+  const minLon = Math.max(fixed.minLon, minLonView - bufLon);
+  const maxLon = Math.min(fixed.maxLon, maxLonView + bufLon);
+  const minLat = Math.max(fixed.minLat, minLatView - bufLat);
+  const maxLat = Math.min(fixed.maxLat, maxLatView + bufLat);
+  const startLon = fixed.minLon + Math.floor((minLon - fixed.minLon) / stepLon) * stepLon;
+  const startLat = fixed.minLat + Math.floor((minLat - fixed.minLat) / stepLat) * stepLat;
+  const polys: { id: string; coords: [number, number][] }[] = [];
+  for (let lon = startLon; lon < maxLon; lon += stepLon) {
+    for (let lat = startLat; lat < maxLat; lat += stepLat) {
+      const lon1 = lon, lat1 = lat;
+      const lon2 = lon + stepLon, lat2 = lat + stepLat;
+      if (lon2 <= fixed.minLon || lon1 >= fixed.maxLon || lat2 <= fixed.minLat || lat1 >= fixed.maxLat) continue;
+      const id = `${stepLon}-${lon1.toFixed(4)}-${lat1.toFixed(4)}`;
+      // Leaflet polygons expect [lat, lng]
+      const coordsLatLng: [number, number][] = [
+        [lat1, lon1],
+        [lat1, lon2],
+        [lat2, lon2],
+        [lat2, lon1],
+        [lat1, lon1]
+      ];
+      polys.push({ id, coords: coordsLatLng });
+    }
+  }
+  return polys;
+}
+
+const kfmeGrid = computed(() => makeGrid(10/60, 6/60));
+const smallGrid = computed(() => makeGrid(5/60, 3/60));
+const extraSmallGrid = computed(() => makeGrid(2.5/60, 1.5/60));
+
+// Hover state
+const hoveredCell = ref<string | null>(null);
+function onCellMouseOver(id: string) { hoveredCell.value = id; }
+function onCellMouseOut() { hoveredCell.value = null; }
+function onCellClick(p: { id: string; coords: [number, number][] }) {
+  const bounds = p.coords.map(c => [c[0], c[1]]);
+  // center of polygon
+  const lat = (p.coords[0][0] + p.coords[2][0]) / 2;
+  const lng = (p.coords[0][1] + p.coords[2][1]) / 2;
+
+  const y = Math.floor(560 - lat*10)
+  const x = Math.floor(lng*6 - 34)
+  router.push(`/ctverec/${y}${x}`);
+}
+
+// Marker icons
+function makeIcon(url: string) {
+  return new Icon({ iconUrl: url, iconSize: [24, 24], iconAnchor: [19, 19] });
+}
+const iconUnknown = makeIcon(MapIcons.Unknown.fileName);
+const iconSelected = makeIcon(MapIcons.SelectedLocation.fileName);
+const iconRec = makeIcon(MapIcons.RecordingLocation.fileName);
+const iconCurrent = makeIcon(MapIcons.CurrentLocation.fileName);
+const iconCurrentHeading = makeIcon(MapIcons.CurrentLocationWithHeading.fileName);
+
+// Handlers for recording click
+function onRecordingClick(rec: RecordingModel, part: RecordingPartModel) {
+  mapStore.setSelectedRecordingLocation(part.gpsLatitudeStart, part.gpsLongitudeStart);
+  router.push(`/nahravka/${rec.id}`);
+}
+
+// new: catch the LMap ready event
+function onMapReady(mapComp: any) {
+  // mapComp.mapObject is the actual Leaflet instance
+  leafletMap = mapComp.mapObject ?? mapComp;
+  console.log('Map ready:', leafletMap);
+  updateBounds();
+}
+
+const searchUpdateCenter = ([lat, lng]: [number, number]) => {
+  center.value = { lat, lng };
+  zoom.value = 13;
+};
 </script>
 
 <template>
-  <div class="saturate-[1.15] relative w-full h-full">
-    <ol-map
-      @click="onMapClick"
-      :loadTilesWhileAnimating="true"
-      :loadTilesWhileInteracting="true"
-      :controls="[]"
+  <div class="relative w-full h-full saturate-[1.15]">
+    <l-map
       ref="mapRef"
       class="w-full h-full"
+      v-model:zoom="zoom"
+      v-model:center="center"
+      @ready="onMapReady"
+      @moveend="updateBounds"
     >
-      <ol-view
-        :projection="'EPSG:3857'"
-        :enableRotation="false"
-        :center="centerRef"
-        :zoom="zoom"
-        @change:resolution="resolutionChanged"
+      <!-- Tile Layers -->
+      <l-tile-layer
+        url="/map-loading.png"
+        :z-index="0"
+      />
+      <l-tile-layer
+        :url="`${env.VITE_API_URL}/map/v1/maptiles/${mapStore.mode}/${mapStore.mode==='outdoor'? '256@2x':'256'}/{z}/{x}/{y}`"
+        :maxZoom="19"
+        :z-index="1"
+        attribution="<a href='https://api.mapy.cz/copyright' target='_blank'>&copy; Seznam.cz a.s. a další</a>"
+      />
+      <l-tile-layer
+        v-if="mapStore.mode==='aerial'"
+        :url="`${env.VITE_API_URL}/map/v1/maptiles/names-overlay/256/{z}/{x}/{y}`"
+        :maxZoom="19"
+        :z-index="2"
+        attribution="<a href='https://api.mapy.cz/copyright' target='_blank'>&copy; Seznam.cz a.s. a další</a>"
       />
 
-      <ol-tile-layer>
-        <ol-source-xyz
-          url="/map-loading.png"
-          z-index="0"
-          name="Loading"
-        />
-      </ol-tile-layer>
+      <!-- Grids -->
+      <l-polygon
+        v-if="zoom > 10 && zoom < 12"
+        v-for="cell in kfmeGrid"
+        :key="cell.id"
+        :lat-lngs="cell.coords"
+        :fill-opacity="hoveredCell === cell.id ? 0.1 : 0"
+        :color="'rgba(0,0,0,0.3)'"
+        :weight="2"
+        @mouseover="onCellMouseOver(cell.id)"
+        @mouseleave="onCellMouseOut"
+        @click="onCellClick(cell)"
+      />
 
-      <ol-tile-layer>
-        <ol-source-xyz
-          :url="`https://api.mapy.cz/v1/maptiles/${mapStore.mode}/${mapStore.mode == 'outdoor' ? '256@2x' : '256'}/{z}/{x}/{y}?apikey=${env.VITE_MAPYCZ_API_KEY}`"
-          :z-index="1"
-          name="Base"
-          :max-zoom="19"
-          attributions='<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>'
-        />
-      </ol-tile-layer>
+      <l-polygon
+        v-if="zoom >= 12 && zoom < 14"
+        v-for="cell in smallGrid"
+        :key="cell.id"
+        :lat-lngs="cell.coords"
+        :fill-opacity="hoveredCell === cell.id ? 0.1 : 0"
+        :color="'rgba(0,0,0,0.3)'"
+        :weight="1"
+        @mouseover="onCellMouseOver(cell.id)"
+        @mouseleave="onCellMouseOut"
+        @click="onCellClick(cell)"
+      />
 
-      <ol-tile-layer>
-        <ol-source-xyz
-          v-if="mapStore.mode === 'aerial'"
-          :url="`https://api.mapy.cz/v1/maptiles/names-overlay/256/{z}/{x}/{y}?apikey=${env.VITE_MAPYCZ_API_KEY}`"
-          :z-index="2"
-          :maxZoom="19"
-          name="AerialNames"
-          attributions='<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>'
-        />
-      </ol-tile-layer>
+      <l-polygon
+        v-if="zoom >= 14"
+        v-for="cell in extraSmallGrid"
+        :key="cell.id"
+        :lat-lngs="cell.coords"
+        :fill-opacity="hoveredCell === cell.id ? 0.1 : 0"
+        :color="'rgba(0,0,0,0.3)'"
+        :weight="1"
+        @mouseover="onCellMouseOver(cell.id)"
+        @mouseleave="onCellMouseOut"
+        @click="onCellClick(cell)"
+      />
 
-      <ol-vector-layer v-if="currentZoom > 10" :zIndex="3">
-        <ol-source-vector>
-          <ol-feature v-for="(lineCoords, index) in kfmeGridLines" :key="`kfme-line-${index}`">
-            <ol-geom-line-string :coordinates="lineCoords"></ol-geom-line-string>
-            <ol-style>
-              <ol-style-stroke color="rgba(0, 0, 0, 0.3)" :width="1"></ol-style-stroke>
-            </ol-style>
-          </ol-feature>
-        </ol-source-vector>
-      </ol-vector-layer>
+      <!-- Recordings -->
+      <l-marker
+        v-for="({ rec, part }) in filteredRecs(recordings)
+          .flatMap(r => r.parts.map(p => ({ rec: r, part: p })))"
+        :key="`${rec.id}-${part.id}`"
+        :lat-lng="[part.gpsLatitudeStart, part.gpsLongitudeStart]"
+        @click="onRecordingClick(rec, part)"
+        :icon="iconUnknown"
+      />
 
-      <ol-vector-layer v-if="currentZoom >= 13" :zIndex="4">
-        <ol-source-vector>
-          <ol-feature v-for="(lineCoords, index) in smallKfmeGridLines" :key="`small-kfme-line-${index}`">
-            <ol-geom-line-string :coordinates="lineCoords"></ol-geom-line-string>
-            <ol-style>
-              <ol-style-stroke color="rgba(0, 0, 0, 0.3)" :width="1"></ol-style-stroke>
-            </ol-style>
-          </ol-feature>
-        </ol-source-vector>
-      </ol-vector-layer>
+      <!-- Selected Location -->
+      <l-marker
+        v-if="mapStore.selectedLocation"
+        :lat-lng="[mapStore.selectedLocation.lat, mapStore.selectedLocation.lng]"
+        :icon="iconSelected"
+      />
 
-      <ol-vector-layer>
-        <ol-source-vector v-if="recordings">
-          <template v-for="recording in filtered(recordings)" :key="recording.id">
-            <ol-feature v-for="part in recording.parts" :key="part.id">
-              <ol-geom-point :coordinates="fromLonLat(partAverageCoords(part))" />
-              <ol-style>
-                <ol-style-icon :src="MapIcons.Unknown.fileName" />
-              </ol-style>
-            </ol-feature>
-          </template>
-        </ol-source-vector>
-      </ol-vector-layer>
+      <!-- Selected Recording Location -->
+      <l-marker
+        v-if="mapStore.selectedRecordingLocation"
+        :lat-lng="[mapStore.selectedRecordingLocation.lat, mapStore.selectedRecordingLocation.lng]"
+        :icon="iconRec"
+      />
 
-      <ol-vector-layer v-if="mapStore.selectedLocation">
-        <ol-source-vector>
-          <ol-feature>
-            <ol-geom-point :coordinates="userSelectedCoords" />
-            <ol-style>
-              <ol-style-icon :src="MapIcons.SelectedLocation.fileName" />
-            </ol-style>
-          </ol-feature>
-        </ol-source-vector>
-      </ol-vector-layer>
+      <!-- Current Location -->
+      <l-marker
+        v-if="currentMapCoords"
+        :lat-lng="currentMapCoords"
+        :icon="coords.value?.heading ? iconCurrentHeading : iconCurrent"
+        :rotation-angle="coords.value?.heading || 0"
+      />
 
-      <ol-vector-layer v-if="mapStore.selectedRecordingLocation">
-        <ol-source-vector>
-          <ol-feature>
-            <ol-geom-point :coordinates="selectedRecordingCoords" />
-            <ol-style>
-              <ol-style-icon :src="MapIcons.RecordingLocation.fileName" />
-            </ol-style>
-          </ol-feature>
-        </ol-source-vector>
-      </ol-vector-layer>
+      <!-- Controls -->
+      <l-control-scale v-if="scaleEnabled" />
 
-      <ol-vector-layer v-if="currentMapCoords">
-        <ol-source-vector>
-          <ol-feature>
-            <ol-geom-point :coordinates="currentMapCoords" />
-            <ol-style>
-              <ol-style-icon :src="MapIcons.CurrentLocation.fileName" />
-            </ol-style>
-          </ol-feature>
-        </ol-source-vector>
-      </ol-vector-layer>
-
-      <ol-attribution-control />
-      <v-ol-control position="bottom-left">
+      <!-- Mapy.cz Logo -->
+      <l-control position="bottomleft">
         <div class="logocontrol ol-control">
           <a href="http://mapy.cz/" target="_blank">
-            <img src="https://api.mapy.cz/img/api/logo.svg" class="bg-transparent" alt="Mapy.cz Logo" />
+            <img src="https://api.mapy.cz/img/api/logo.svg" alt="Mapy.cz Logo" />
           </a>
         </div>
-      </v-ol-control>
-    </ol-map>
+      </l-control>
 
-    <div class="absolute bottom-2 right-2 z-[6] flex sm:flex-row flex-col justify-end items-center">
-      <!-- Let's only allow authenticated users to search -->
-      <LocationSearch
-        v-model:text="searchText"
-        v-model:location="center"
-        placeholder="Hledat..."
-        class="drop-shadow-lg rounded-2xl m-2 p-4 w-full sm:w-auto"
-      />
+    </l-map>
 
-      <select v-model="filter" class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-5 w-full sm:w-auto bg-white" value="all">
-        <option value="my">Jen moje nahrávky</option>
-        <option value="others">Jen nahrávky ostatních</option>
-        <option value="old">Jen staré nahrávky</option>
-        <option value="all">Všechny nahrávky</option>
-      </select>
-
-      <div class="flex flex-row gap-x-2">
+    <!-- Search & Filter Controls -->
+    <div class="absolute bottom-2 right-2 z-[10000] flex sm:flex-row flex-col justify-end items-end">
+      <div :class="`flex flex-row ${!scaleEnabled ? 'max-md:hidden' : 'block'} gap-x-2 gap-y-2`">
+        <LocationSearch
+          v-model:text="searchText"
+          @update:location="searchUpdateCenter"
+          placeholder="Hledat..."
+          class="drop-shadow-lg rounded-2xl m-2 p-4 w-full sm:w-auto h-[70px]"
+        />
+        <select v-model="filter" class="filter-select drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100" aria-label="Filter recordings">
+          <option value="dialect">Jen nahrávky s dialektem</option>
+          <option value="new">Jen nové nahrávky</option>
+          <option value="old">Jen staré nahrávky</option>
+          <option v-if="accountStore.user" value="my">Jen moje nahrávky</option>
+          <option v-if="accountStore.user" value="others">Jen nahrávky ostatních</option>
+          <option value="all">Všechny nahrávky</option>
+        </select>
+      </div>
+      <div class="flex flex-row items-end">
         <PrefetchLink
+          class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
           to="/mapa/legenda"
-          class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
         >
-          <img :src="InfoIcon" />
+          <img :src="InfoIcon" width="38" height="38" />
         </PrefetchLink>
-        <button
-          class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
-          @click="mapStore.mode = mapStore.mode == 'aerial' ? 'outdoor' : 'aerial'"
-        >
-          <img :src="mapStore.mode == 'aerial' ? MapIcon : PictureIcon" />
-        </button>
+        <div class="flex max-md:flex-row-reverse flex-col-reverse gap-x-2">
+          <button @click="scaleEnabled = !scaleEnabled" class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4">
+            <img :src="scaleEnabled ? FilledRulerIcon : RulerIcon" width="38" height="38" />
+          </button>
+          <button @click="mapStore.mode = mapStore.mode==='aerial'?'outdoor':'aerial'" class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4">
+            <img :src="mapStore.mode==='aerial' ? MapIcon : PictureIcon" width="38" height="38" />
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -349,15 +322,23 @@ watch(center, () => {
   z-index: 10;
 }
 
-.ol-control {
+:deep(.ol-control) {
   position: absolute;
-  bottom: 20px;
-  left: 0px;
+  bottom: v-bind("scaleEnabled ? '40px':'20px'") !important;
+  left: 0;
   background-color: transparent !important;
 }
 
-:deep(.ol-attribution) {
-  left: 0 !important;
-  right: auto !important;
+.filter-select {
+  appearance: none;
+  background-image: v-bind("`url(\"${FilterIcon}\")`");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 38px 38px;
+  width: 70px;
+  height: 70px;
+  padding: 0;
+  text-indent: -9999px;
+  cursor: pointer;
 }
 </style>

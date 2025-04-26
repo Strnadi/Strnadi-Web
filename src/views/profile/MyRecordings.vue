@@ -7,7 +7,7 @@ import { computed } from 'vue';
 
 const { data: recordings, isError, isLoading } = useQuery({
   queryKey: ['my-recordings'],
-  queryFn: () => getRecordings({email: accountStore.user!.email})
+  queryFn: () => getRecordings({userId: accountStore.user!.id})
 })
 
 const recordingsLength = computed(() => recordings.value?.length || 0);
@@ -21,7 +21,7 @@ const recordingsLength = computed(() => recordings.value?.length || 0);
   <template v-else>
     <ul v-if="recordingsLength > 0" class="flex flex-col-reverse gap-y-3">
       <li v-for="rec in recordings" :key="rec.id">
-        <router-link :to="`/nahravka/${rec.id}`" class="flex flex-col justify-around p-2 bg-gray-200 hover:bg-gray-300 h-20 rounded-lg">
+        <router-link :to="`/nahravka/${rec.id}`" class="flex flex-col justify-around p-2 border-2 border-gray-200 hover:bg-gray-300 h-20 rounded-lg">
           <div class="flex flex-row justify-between">
             <span class="text-lg font-bold">{{ rec.name }}</span>
             <span class="text-lime-400">Nahráno</span>

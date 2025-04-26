@@ -85,7 +85,7 @@ watch(() => accountStore.user, (newValue) => {
     </ul>
   </aside>
 
-  <Map class="w-screen h-screen" />
+  <Map class="w-svw h-svh" />
 
   <router-view name="side" v-slot="{ Component }">
     <Transition>
@@ -102,10 +102,10 @@ watch(() => accountStore.user, (newValue) => {
 
   <router-view name="popup" v-slot="{ Component, route }">
     <Transition>
-      <aside v-if="Component" class="popup" @click="closePopup">
+      <aside v-if="Component" class="popup" @click="closePopup" @keydown="maybeGoBack">
         <Transition name="fade" mode="out-in">
           <div :key="`${route.path}-${formRegistry[route.path]?.stage}`" @click.stop>
-            <button class="secondary big" @click="goBack" @keydown="maybeGoBack">
+            <button class="secondary big" @click="goBack">
               <img :src="Back" />
               <span>Zpět</span>
             </button>
@@ -118,10 +118,10 @@ watch(() => accountStore.user, (newValue) => {
 
   <router-view name="small_popup" v-slot="{ Component, route }">
     <Transition>
-      <aside v-if="Component" class="small_popup" @click="closePopup">
+      <aside v-if="Component" class="small_popup" @click="closePopup" @keydown="maybeGoBack">
         <Transition name="fade" mode="out-in">
           <div :key="`${route.path}`" @click.stop>
-            <button class="secondary big" @click="goBack" @keydown="maybeGoBack">
+            <button class="secondary big" @click="goBack">
               <img :src="Back" />
               <span>Zpět</span>
             </button>
@@ -134,7 +134,7 @@ watch(() => accountStore.user, (newValue) => {
 
   <router-view name="center" v-slot="{ Component }">
     <Transition>
-      <aside v-if="Component" class="center">
+      <aside v-if="Component" class="center" @keydown="maybeGoBack">
         <div>
           <button class="secondary small" @click="goBack">
             <img :src="Back" />

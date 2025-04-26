@@ -1,50 +1,36 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, onUnmounted } from 'vue';
+import { useDebounceFn } from '@vueuse/core';
 
-interface SpectrogramOptions {
-  width?: number;
-  height?: number;
+const SMOOTHING = 0.0;
+const FFT_SIZE = 2048;
+const DECIBEL_RANGE = [-80.0, 80.0];
+
+interface Props {
+  audioUrl: string;
+  width?: number; // Keep for initial container size hint if needed, though ResizeObserver drives it
+  height?: number; // Keep for initial container size hint if needed
   margin?: { top: number; right: number; bottom: number; left: number };
   maxFrequency?: number;
-  minFrequency?: number;
   colorScheme?: string[];
   sampleSize?: number;
 }
 
-interface Props {
-  audioUrl: string;
-  options?: SpectrogramOptions;
-}
-
 const props = withDefaults(defineProps<Props>(), {
-  options: () => ({})
+  margin: () => ({ top: 20, right: 20, bottom: 30, left: 50 }),
+  maxFrequency: 12000,
+  colorScheme: () => ['#ffffff', '#f0f0f0', '#d9d9d9', '#bdbdbd', '#969696', '#737373', '#525252', '#252525', '#000000'],
+  sampleSize: 512,
 });
 
-// Constants
-const SMOOTHING = 0.0;
-const FFT_SIZE = 2048;
-const DEFAULT_WIDTH = 900;
-const DEFAULT_HEIGHT = 440;
-const DEFAULT_MARGIN = { top: 20, right: 20, bottom: 30, left: 50 };
-const DEFAULT_COLOR_SCHEME = ['#ffffff', '#f0f0f0', '#d9d9d9', '#bdbdbd', '#969696', '#737373', '#525252', '#252525', '#000000'];
-const DEFAULT_SAMPLE_SIZE = 512;
-const DECIBEL_RANGE = [-80.0, 80.0];
-
-// Reactive state
-const width = ref(props.options.width || DEFAULT_WIDTH);
-const height = ref(props.options.height || DEFAULT_HEIGHT);
-const margin = ref(props.options.margin || DEFAULT_MARGIN);
-const colorScheme = ref(props.options.colorScheme || DEFAULT_COLOR_SCHEME);
-const sampleSize = ref(props.options.sampleSize || DEFAULT_SAMPLE_SIZE);
+// Removed redundant reactive refs for width, height, margin, colorScheme, sampleSize
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const spectrogramContainer = ref<HTMLDivElement | null>(null);
-const audioContext = ref<AudioContext | null>(null);
-const analyser = ref<AnalyserNode | null>(null);
+const progressLineRef = ref<HTMLDivElement | null>(null); // Add ref for progress line
 const audioBuffer = ref<AudioBuffer | null>(null);
 const audioSource = ref<AudioBufferSourceNode | null>(null);
 const gainNode = ref<GainNode | null>(null);
-const scriptProcessor = ref<ScriptProcessorNode | null>(null);
 
 const isPlaying = ref(false);
 const isLoaded = ref(false);
@@ -53,34 +39,16 @@ const startTime = ref(0);
 const currentTime = ref(0);
 const audioDuration = ref(0);
 const spectrogramData = ref<Array<{ time: number, values: Uint8Array }>>([]);
-const selectedMaxFreq = ref<number>(22500);
 
-const freqOptions = computed(() => {
-  if (!analyser.value) return [];
-  
-  const options = [];
-  for (let i = 64; i < (analyser.value.frequencyBinCount || 0); i += 64) {
-    options.push(getBinFrequency(i).toFixed(4));
-  }
-  return options;
-});
+const liveAudioContext = ref<AudioContext | null>(null);
+const liveAnalyser = ref<AnalyserNode | null>(null);
+let offlineFrequencyBinCount = 0; // Store this from offline analyser
 
-// Add debounce function
-function debounce(fn: Function, delay: number) {
-  let timeoutId: number;
-  return function(...args: any[]) {
-    clearTimeout(timeoutId);
-    timeoutId = window.setTimeout(() => fn.apply(this, args), delay);
-  };
-}
-
-// Add responsive dimension handling
-const containerWidth = ref(props.options.width || DEFAULT_WIDTH);
-const containerHeight = ref(props.options.height || DEFAULT_HEIGHT);
+const containerWidth = ref(props.width || 0);
+const containerHeight = ref(props.height || 0);
 let resizeObserver: ResizeObserver | null = null;
 
-// Debounced render function
-const debouncedRender = debounce(() => {
+const debouncedRender = useDebounceFn(() => {
   if (isLoaded.value) {
     renderSpectrogram();
   }
@@ -89,444 +57,500 @@ const debouncedRender = debounce(() => {
 // Handle resize
 function handleResize() {
   if (!spectrogramContainer.value) return;
-  
-  // Get actual container dimensions
+
   const rect = spectrogramContainer.value.getBoundingClientRect();
-  containerWidth.value = rect.width;
-  containerHeight.value = rect.height;
-  
-  // Update canvas dimensions
+  if(!props.width) containerWidth.value = rect.width;
+  if(!props.height) containerHeight.value = rect.height;
+
   if (canvasRef.value) {
     canvasRef.value.width = containerWidth.value;
     canvasRef.value.height = containerHeight.value;
   }
-  
+
   debouncedRender();
 }
 
-// Initialize audio context and nodes
-function initAudio() {
-  audioContext.value = new AudioContext();
-  analyser.value = audioContext.value.createAnalyser();
-  analyser.value.minDecibels = DECIBEL_RANGE[0];
-  analyser.value.maxDecibels = DECIBEL_RANGE[1];
-  analyser.value.smoothingTimeConstant = SMOOTHING;
-  analyser.value.fftSize = FFT_SIZE;
-  
-  gainNode.value = audioContext.value.createGain();
+// Initialize only live audio context for playback
+function initLiveAudio() {
+  liveAudioContext.value = new AudioContext();
+  gainNode.value = liveAudioContext.value.createGain();
   gainNode.value.gain.value = 0; // Muted by default
-  
-  scriptProcessor.value = audioContext.value.createScriptProcessor(
-    sampleSize.value, 1, 1
-  );
-  
-  // Connect audio processing nodes
-  analyser.value.connect(gainNode.value);
-  gainNode.value.connect(audioContext.value.destination);
-  
-  loadAudio(props.audioUrl);
+  gainNode.value.connect(liveAudioContext.value.destination);
 }
 
-// Load audio file
+// Load audio file and trigger offline processing
 async function loadAudio(url: string) {
-  if (!audioContext.value) return;
-  
+  if (!liveAudioContext.value) {
+    initLiveAudio();
+  }
+
   try {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
-    audioBuffer.value = await audioContext.value.decodeAudioData(arrayBuffer);
+    audioBuffer.value = await liveAudioContext.value!.decodeAudioData(arrayBuffer);
     audioDuration.value = audioBuffer.value.duration;
-    
-    // Now generate the spectrogram data
-    generateSpectrogramData();
+
+    // Generate spectrogram data using OfflineAudioContext
+    await generateSpectrogramDataOffline();
+
   } catch (error) {
-    console.error('Error loading audio:', error);
+    console.error('Error loading or processing audio:', error);
+    isLoaded.value = false;
   }
 }
 
-// Process audio to generate spectrogram data
-function generateSpectrogramData() {
-  if (!audioContext.value || !audioBuffer.value || !analyser.value) return;
-  
-  // Set up the audio nodes for processing
-  const tempSource = audioContext.value.createBufferSource();
-  tempSource.buffer = audioBuffer.value;
-  
-  // Connect to analyzer for processing
-  tempSource.connect(analyser.value);
-  
-  const freqData = new Uint8Array(analyser.value.frequencyBinCount);
-  const maxSamples = Math.ceil((audioContext.value.sampleRate / sampleSize.value) * audioBuffer.value.duration);
-  
+// Process audio offline for speed
+async function generateSpectrogramDataOffline() {
+  if (!audioBuffer.value) return;
+
+  isLoaded.value = false;
+  spectrogramData.value = [];
+  const buffer = audioBuffer.value;
+  const offlineCtx = new OfflineAudioContext(
+    buffer.numberOfChannels,
+    buffer.length,
+    buffer.sampleRate
+  );
+
+  // Setup offline nodes
+  const offlineAnalyser = offlineCtx.createAnalyser();
+  offlineAnalyser.minDecibels = DECIBEL_RANGE[0];
+  offlineAnalyser.maxDecibels = DECIBEL_RANGE[1];
+  offlineAnalyser.smoothingTimeConstant = SMOOTHING;
+  offlineAnalyser.fftSize = FFT_SIZE;
+  offlineFrequencyBinCount = offlineAnalyser.frequencyBinCount;
+
+  // Use ScriptProcessor for frame-by-frame analysis in offline context
+  const offlineProcessor = offlineCtx.createScriptProcessor(props.sampleSize, 1, 1);
+
+  const offlineSource = offlineCtx.createBufferSource();
+  offlineSource.buffer = buffer;
+
+  // Connect nodes for offline processing
+  offlineSource.connect(offlineAnalyser);
+  offlineAnalyser.connect(offlineProcessor);
+  offlineProcessor.connect(offlineCtx.destination);
+
+  const freqData = new Uint8Array(offlineAnalyser.frequencyBinCount);
+  const tempSpectrogramData: Array<{ time: number, values: Uint8Array }> = [];
   let processCount = 0;
-  
-  // Use script processor to collect frequency data
-  scriptProcessor.value!.onaudioprocess = () => {
-    if (processCount >= maxSamples) {
-      tempSource.stop();
-      scriptProcessor.value!.disconnect();
-      isLoaded.value = true;
-      renderSpectrogram();
-      return;
-    }
-    
-    const currentSec = (sampleSize.value * processCount) / audioBuffer.value!.sampleRate;
-    analyser.value!.getByteFrequencyData(freqData);
-    
-    spectrogramData.value.push({
+
+  offlineProcessor.onaudioprocess = () => {
+    const currentSec = (props.sampleSize * processCount) / buffer.sampleRate;
+    offlineAnalyser.getByteFrequencyData(freqData);
+    tempSpectrogramData.push({
       time: currentSec,
-      values: new Uint8Array(freqData) // Clone the data
+      values: new Uint8Array(freqData)
     });
-    
     processCount++;
   };
-  
-  tempSource.connect(scriptProcessor.value!);
-  scriptProcessor.value!.connect(audioContext.value.destination);
-  
-  tempSource.start(0);
+
+  offlineSource.start(0);
+
+  await offlineCtx.startRendering();
+
+  spectrogramData.value = tempSpectrogramData;
+
+  // Initialize the LIVE analyser node now for playback/UI
+  if (liveAudioContext.value) {
+      liveAnalyser.value = liveAudioContext.value.createAnalyser();
+      liveAnalyser.value.fftSize = FFT_SIZE;
+      // Configure live analyser similarly if needed for visualization during playback (optional)
+      // liveAnalyser.value.minDecibels = DECIBEL_RANGE[0];
+      // liveAnalyser.value.maxDecibels = DECIBEL_RANGE[1];
+  }
+
+  isLoaded.value = true;
+  handleResize();
+  renderSpectrogram();
 }
+
 
 // Render the spectrogram on canvas
 function renderSpectrogram() {
-  if (!canvasRef.value || !spectrogramData.value.length) return;
-  
+  if (!canvasRef.value || !spectrogramData.value.length || !liveAudioContext.value) return;
+
   const ctx = canvasRef.value.getContext('2d');
   if (!ctx) return;
-  
-  // Clear the canvas using actual dimensions
+
+  // Calculate drawable area dimensions
+  const drawableWidth = containerWidth.value - props.margin.left - props.margin.right;
+  const drawableHeight = containerHeight.value - props.margin.top - props.margin.bottom;
+
+  // Ensure drawable dimensions are positive
+  if (drawableWidth <= 0 || drawableHeight <= 0) {
+    console.warn("Drawable area has zero or negative dimensions. Check margins and container size.");
+    return;
+  }
+
   ctx.clearRect(0, 0, containerWidth.value, containerHeight.value);
-  
-  // Get min and max values for color scaling
+
+  // Clear only the drawable area if needed, or keep full clear and redraw axes
+  // ctx.clearRect(props.margin.left, props.margin.top, drawableWidth, drawableHeight);
+
   let min = 255, max = 0;
   spectrogramData.value.forEach(data => {
-    const dataMin = Math.min(...Array.from(data.values));
-    const dataMax = Math.max(...Array.from(data.values));
-    if (dataMin < min) min = dataMin;
-    if (dataMax > max) max = dataMax;
-  });
-  
-  // Adjust the range to avoid extreme colors
-  min += 20;
-  max -= 20;
-  
-  // Calculate dot dimensions
-  const dotWidth = (containerWidth.value / spectrogramData.value.length) + 1;
-  const freqBinCount = analyser.value!.frequencyBinCount;
-  const dotHeight = (containerHeight.value / freqBinCount) * (audioContext.value!.sampleRate/2 / selectedMaxFreq.value) + 1;
-  
-  // Draw each time slice
-  spectrogramData.value.forEach((data, index) => {
-    const x = (index / spectrogramData.value.length) * containerWidth.value;
-    
-    for (let j = 0; j < data.values.length; j++) {
-      const freq = getBinFrequency(j);
-      
-      // Skip if frequency is higher than the selected maximum
-      if (freq > selectedMaxFreq.value) continue;
-      
-      const y = containerHeight.value - (freq / selectedMaxFreq.value * containerHeight.value);
-      const value = data.values[j];
-      
-      // Convert value to color
-      const normalizedValue = Math.max(0, Math.min(1, (value - min) / (max - min)));
-      const colorIndex = Math.floor(normalizedValue * (colorScheme.value.length - 1));
-      ctx.fillStyle = colorScheme.value[colorIndex];
-      
-      // Draw rectangle
-      ctx.fillRect(x, y, dotWidth, dotHeight);
+    // Consider only relevant frequency bins for min/max calculation
+    const nyquist = liveAudioContext.value!.sampleRate / 2;
+    // Use props.maxFrequency instead of selectedMaxFreq.value
+    const maxBinIndex = Math.min(data.values.length - 1, Math.floor(offlineFrequencyBinCount * props.maxFrequency / nyquist));
+    const relevantValues = Array.from(data.values.slice(0, maxBinIndex + 1));
+    if (relevantValues.length > 0) {
+        const dataMin = Math.min(...relevantValues);
+        const dataMax = Math.max(...relevantValues);
+        if (dataMin < min) min = dataMin;
+        if (dataMax > max) max = dataMax;
     }
   });
-  
-  // Draw axes after the spectrogram
+
+  // Adjust min/max slightly for better contrast if needed (optional)
+  // min = Math.min(255, min + 10);
+  // max = Math.max(0, max - 10);
+  const range = Math.max(1, max - min); // Avoid division by zero
+
+  // Calculate dot dimensions based on drawable area
+  const dotWidth = drawableWidth / spectrogramData.value.length;
+  // Calculate dotHeight based on the number of bins mapped to the drawable height
+  const nyquist = liveAudioContext.value.sampleRate / 2;
+  const freqPerBin = nyquist / offlineFrequencyBinCount;
+  // Use props.maxFrequency instead of selectedMaxFreq.value
+  const heightPerHz = drawableHeight / props.maxFrequency;
+  const dotHeight = Math.max(1, freqPerBin * heightPerHz); // Ensure at least 1 pixel height
+
+  spectrogramData.value.forEach((data, index) => {
+    // Map time index to x coordinate within the drawable area
+    const x = props.margin.left + (index / spectrogramData.value.length) * drawableWidth;
+
+    for (let j = 0; j < data.values.length; j++) {
+      const freq = getBinFrequency(j, offlineFrequencyBinCount);
+
+      // Skip frequencies above the selected maximum
+      // Use props.maxFrequency instead of selectedMaxFreq.value
+      if (freq > props.maxFrequency) continue;
+
+      // Map frequency to y coordinate within the drawable area
+      // y represents the *top* of the rectangle for this frequency bin
+      // Use props.maxFrequency instead of selectedMaxFreq.value
+      const y = (containerHeight.value - props.margin.bottom) - (freq / props.maxFrequency * drawableHeight);
+
+      const value = data.values[j];
+
+      // Normalize value within the calculated min/max range
+      const normalizedValue = Math.max(0, Math.min(1, (value - min) / range));
+      const colorIndex = Math.floor(normalizedValue * (props.colorScheme.length - 1));
+      ctx.fillStyle = props.colorScheme[colorIndex];
+
+      // Draw the rectangle, ensuring y coordinate doesn't go above the top margin
+      // Use Math.ceil for dotHeight to avoid gaps? Or Math.max(1, ...)
+      const rectY = Math.max(props.margin.top, y - dotHeight); // Adjust y to draw upwards correctly
+      const rectHeight = Math.min(dotHeight, (containerHeight.value - props.margin.bottom) - rectY); // Clamp height
+
+      // Use Math.ceil for width to avoid gaps? Or Math.max(1, ...)
+      ctx.fillRect(x, rectY, Math.max(1, dotWidth), rectHeight);
+    }
+  });
+
+  // Redraw axes on top of the spectrogram data
   drawAxes();
 }
 
 // Draw time and frequency axes
 function drawAxes() {
-  if (!canvasRef.value) return;
-  
+  if (!canvasRef.value || !liveAudioContext.value) return;
+
   const ctx = canvasRef.value.getContext('2d');
   if (!ctx) return;
-  
+
+  // Save context state
   ctx.save();
-  
-  // Set styles for axes
+
+  // Clear the margin areas explicitly before drawing axes (optional, depends if renderSpectrogram clears fully)
+  // ctx.clearRect(0, 0, containerWidth.value, props.margin.top); // Top margin
+  // ctx.clearRect(0, containerHeight.value - props.margin.bottom, containerWidth.value, props.margin.bottom); // Bottom margin
+  // ctx.clearRect(0, props.margin.top, props.margin.left, containerHeight.value - props.margin.top - props.margin.bottom); // Left margin
+  // ctx.clearRect(containerWidth.value - props.margin.right, props.margin.top, props.margin.right, containerHeight.value - props.margin.top - props.margin.bottom); // Right margin
+
+
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 1;
   ctx.font = '12px Arial';
   ctx.fillStyle = '#000';
-  
-  // Draw X-axis (time)
+
+  // --- X-axis (Time) ---
+  const xAxisY = containerHeight.value - props.margin.bottom;
   ctx.beginPath();
-  ctx.moveTo(margin.value.left, containerHeight.value - margin.value.bottom);
-  ctx.lineTo(containerWidth.value - margin.value.right, containerHeight.value - margin.value.bottom);
+  ctx.moveTo(props.margin.left, xAxisY);
+  ctx.lineTo(containerWidth.value - props.margin.right, xAxisY);
   ctx.stroke();
-  
+
   // X-axis ticks and labels
-  const timeSteps = 5; // Number of time labels
+  const timeSteps = 5;
+  const xAxisDrawableWidth = containerWidth.value - props.margin.left - props.margin.right;
   for (let i = 0; i <= timeSteps; i++) {
-    const x = margin.value.left + (containerWidth.value - margin.value.left - margin.value.right) * (i / timeSteps);
-    const time = (audioDuration.value * i / timeSteps).toFixed(2);
-    
-    // Draw tick
+    const x = props.margin.left + (xAxisDrawableWidth * (i / timeSteps));
+    const time = (audioDuration.value * i / timeSteps).toFixed(1); // Adjust precision if needed
+
+    // Tick mark
     ctx.beginPath();
-    ctx.moveTo(x, containerHeight.value - margin.value.bottom);
-    ctx.lineTo(x, containerHeight.value - margin.value.bottom + 5);
+    ctx.moveTo(x, xAxisY);
+    ctx.lineTo(x, xAxisY + 5); // Tick points downwards
     ctx.stroke();
-    
-    // Draw label
+
+    // Label
     ctx.textAlign = 'center';
-    ctx.fillText(`${time}s`, x, containerHeight.value - margin.value.bottom + 15);
-    
-    // Draw light grid line
-    ctx.beginPath();
-    ctx.strokeStyle = '#e0e0e0';
-    ctx.moveTo(x, margin.value.top);
-    ctx.lineTo(x, containerHeight.value - margin.value.bottom);
-    ctx.stroke();
-    ctx.strokeStyle = '#000';
+    ctx.fillText(`${time}s`, x, xAxisY + 15); // Position label below tick
+
+    // Vertical Grid Line (within drawable area)
+    if (i > 0 && i < timeSteps) { // Optionally skip first/last grid line
+        ctx.beginPath();
+        ctx.strokeStyle = '#e0e0e0'; // Light grey for grid
+        ctx.lineWidth = 0.5;
+        ctx.moveTo(x, props.margin.top); // Start from top margin
+        ctx.lineTo(x, xAxisY); // End at X-axis line
+        ctx.stroke();
+        ctx.strokeStyle = '#000'; // Reset for axes
+        ctx.lineWidth = 1;
+    }
   }
-  
-  // Draw Y-axis (frequency)
+
+  // --- Y-axis (Frequency) ---
+  const yAxisX = props.margin.left;
   ctx.beginPath();
-  ctx.moveTo(margin.value.left, margin.value.top);
-  ctx.lineTo(margin.value.left, containerHeight.value - margin.value.bottom);
+  ctx.moveTo(yAxisX, props.margin.top);
+  ctx.lineTo(yAxisX, containerHeight.value - props.margin.bottom);
   ctx.stroke();
-  
+
   // Y-axis ticks and labels
-  const freqSteps = 5; // Number of frequency labels
+  const freqSteps = 5;
+  const yAxisDrawableHeight = containerHeight.value - props.margin.top - props.margin.bottom;
   for (let i = 0; i <= freqSteps; i++) {
-    const y = containerHeight.value - margin.value.bottom - (containerHeight.value - margin.value.top - margin.value.bottom) * (i / freqSteps);
-    const freq = (selectedMaxFreq.value * i / freqSteps / 1000).toFixed(1);
-    
-    // Draw tick
+    // Calculate y position based on drawable height
+    const y = (containerHeight.value - props.margin.bottom) - (yAxisDrawableHeight * (i / freqSteps));
+    // Use props.maxFrequency instead of selectedMaxFreq.value
+    const freq = (props.maxFrequency * i / freqSteps / 1000).toFixed(1); // Freq in kHz
+
+    // Tick mark
     ctx.beginPath();
-    ctx.moveTo(margin.value.left, y);
-    ctx.lineTo(margin.value.left - 5, y);
+    ctx.moveTo(yAxisX, y);
+    ctx.lineTo(yAxisX - 5, y); // Tick points leftwards
     ctx.stroke();
-    
-    // Draw label
+
+    // Label
     ctx.textAlign = 'right';
-    ctx.fillText(`${freq}k`, margin.value.left - 10, y + 4);
-    
-    // Draw light grid line
-    ctx.beginPath();
-    ctx.strokeStyle = '#e0e0e0';
-    ctx.moveTo(margin.value.left, y);
-    ctx.lineTo(containerWidth.value - margin.value.right, y);
-    ctx.stroke();
-    ctx.strokeStyle = '#000';
+    ctx.textBaseline = 'middle'; // Align text vertically
+    ctx.fillText(`${freq}k`, yAxisX - 8, y); // Position label left of tick
+
+    // Horizontal Grid Line (within drawable area)
+     if (i > 0 && i < freqSteps) { // Optionally skip first/last grid line
+        ctx.beginPath();
+        ctx.strokeStyle = '#e0e0e0'; // Light grey for grid
+        ctx.lineWidth = 0.5;
+        ctx.moveTo(yAxisX, y); // Start from Y-axis line
+        ctx.lineTo(containerWidth.value - props.margin.right, y); // End at right margin
+        ctx.stroke();
+        ctx.strokeStyle = '#000'; // Reset for axes
+        ctx.lineWidth = 1;
+     }
   }
-  
+
+  // Restore context state
   ctx.restore();
 }
 
-// Play the audio
+
+// Play the audio using the live context
 function playAudio() {
-  if (!audioContext.value || !audioBuffer.value || isPlaying.value) return;
-  
-  // Resume audio context if it was suspended
-  if (audioContext.value.state === 'suspended') {
-    audioContext.value.resume();
+  if (!liveAudioContext.value || !audioBuffer.value || isPlaying.value || !liveAnalyser.value) return;
+
+  if (liveAudioContext.value.state === 'suspended') {
+    liveAudioContext.value.resume();
   }
-  
-  // Create a new source node
-  audioSource.value = audioContext.value.createBufferSource();
+
+  audioSource.value = liveAudioContext.value.createBufferSource();
   audioSource.value.buffer = audioBuffer.value;
-  
-  // Connect nodes
-  audioSource.value.connect(analyser.value!);
-  
-  // Set volume
+
+  audioSource.value.connect(liveAnalyser.value);
+  liveAnalyser.value.connect(gainNode.value!);
+
   gainNode.value!.gain.value = 1;
-  
-  // Start playback
-  startTime.value = audioContext.value.currentTime;
+
+  startTime.value = liveAudioContext.value.currentTime - (isPaused.value ? currentTime.value : 0);
   audioSource.value.start(0, isPaused.value ? currentTime.value : 0);
-  
+
   isPlaying.value = true;
   isPaused.value = false;
-  
-  // Start rendering progress
+
   requestAnimationFrame(updateProgress);
 }
 
-// Pause audio playback
+// Pause audio playback using the live context
 function pauseAudio() {
-  if (!audioContext.value || !isPlaying.value) return;
-  
-  // Store current playback position
-  currentTime.value = audioContext.value.currentTime - startTime.value;
-  
-  // Suspend the audio context
-  audioContext.value.suspend();
-  
+  if (!liveAudioContext.value || !isPlaying.value || !audioSource.value) return;
+
+  currentTime.value = liveAudioContext.value.currentTime - startTime.value;
+
+  audioSource.value.stop();
+  audioSource.value.disconnect();
+  audioSource.value = null;
+
+  liveAudioContext.value.suspend();
+
+
   isPlaying.value = false;
   isPaused.value = true;
-  
-  // Stop the source
-  if (audioSource.value) {
-    audioSource.value.stop();
-  }
 }
 
-// Stop audio playback
+// Stop audio playback using the live context
 function stopAudio() {
-  if (!audioContext.value) return;
-  
-  // Resume if paused
-  if (audioContext.value.state === 'suspended') {
-    audioContext.value.resume();
-  }
-  
-  // Stop the source
+  if (!liveAudioContext.value) return;
+
   if (audioSource.value) {
-    audioSource.value.stop();
+      try {
+          audioSource.value.stop();
+          audioSource.value.disconnect();
+      } catch (e) {
+          console.warn("Error stopping audio source:", e);
+      }
+      audioSource.value = null;
   }
-  
+
+  if (liveAudioContext.value.state === 'suspended') {
+    liveAudioContext.value.resume();
+  }
+
   isPlaying.value = false;
   isPaused.value = false;
   currentTime.value = 0;
-  
-  // Reset progress line
-  const progressLineElement = document.getElementById('progress-line');
-  if (progressLineElement) {
-    progressLineElement.style.left = '0px';
+  startTime.value = 0;
+
+  // Use the ref to reset the progress line
+  if (progressLineRef.value) {
+    // Reset position considering the left margin
+    progressLineRef.value.style.left = `${props.margin.left}px`;
   }
 }
 
-// Update progress line
+
+// Update progress line based on live context time
 function updateProgress() {
-  if (!isPlaying.value || !audioContext.value) return;
-  
-  const elapsed = audioContext.value.currentTime - startTime.value;
-  const progress = elapsed / audioDuration.value;
-  
-  // Update progress line
-  const progressLineElement = document.getElementById('progress-line');
-  if (progressLineElement && spectrogramContainer.value) {
-    const containerWidth = spectrogramContainer.value.clientWidth;
-    progressLineElement.style.left = `${progress * containerWidth}px`;
+  if (!isPlaying.value || !liveAudioContext.value) return;
+
+  const elapsed = liveAudioContext.value.currentTime - startTime.value;
+  const currentProgressTime = Math.min(elapsed, audioDuration.value);
+  // Check for audioDuration being 0 to prevent division by zero
+  const progress = audioDuration.value > 0 ? currentProgressTime / audioDuration.value : 0;
+
+  // Use the ref to update the progress line
+   if (progressLineRef.value && spectrogramContainer.value) {
+    // Calculate position relative to the drawable area
+    const drawableWidth = containerWidth.value - props.margin.left - props.margin.right;
+    const lineLeft = props.margin.left + (progress * drawableWidth);
+    progressLineRef.value.style.left = `${lineLeft}px`;
   }
-  
-  // Check if playback has ended
-  if (elapsed >= audioDuration.value) {
+
+
+  if (currentProgressTime >= audioDuration.value) {
     stopAudio();
     return;
   }
-  
+
   requestAnimationFrame(updateProgress);
 }
 
-// Utility to get frequency from bin index
-function getBinFrequency(index: number): number {
-  if (!audioContext.value || !analyser.value) return 0;
-  const nyquist = audioContext.value.sampleRate / 2;
-  return index / analyser.value.frequencyBinCount * nyquist;
+
+// Utility to get frequency from bin index - requires sample rate and bin count
+function getBinFrequency(index: number, binCount: number): number {
+  if (!liveAudioContext.value || !binCount) return 0;
+  const nyquist = liveAudioContext.value.sampleRate / 2;
+  return index / binCount * nyquist;
 }
 
-// Handle frequency select change
-function onFrequencyChange(event: Event) {
-  const select = event.target as HTMLSelectElement;
-  selectedMaxFreq.value = parseFloat(select.value);
-  renderSpectrogram();
-}
 
 // Initialize component
 onMounted(() => {
-  initAudio();
-  
-  // Initialize ResizeObserver for responsive behavior
+  initLiveAudio();
+  loadAudio(props.audioUrl);
+
   if (spectrogramContainer.value) {
     resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(spectrogramContainer.value);
-    
-    // Initial size calculation
-    handleResize();
   }
-
   window.addEventListener('resize', handleResize);
 });
 
 // Clean up when component is unmounted
 onUnmounted(() => {
+  stopAudio();
+
   if (resizeObserver) {
     resizeObserver.disconnect();
   }
-  
-  if (audioSource.value) {
-    audioSource.value.stop();
-  }
-  
-  if (audioContext.value) {
-    audioContext.value.close();
+  window.removeEventListener('resize', handleResize);
+
+  if (liveAudioContext.value) {
+    liveAudioContext.value.close().catch(e => console.warn("Error closing AudioContext:", e));
   }
 });
 
-// Watch for changes that require re-rendering
-watch(selectedMaxFreq, () => {
-  renderSpectrogram();
+// Watch for audioUrl changes to reload
+watch(() => props.audioUrl, (newUrl) => {
+    if (newUrl) {
+        stopAudio();
+        isLoaded.value = false;
+        spectrogramData.value = [];
+        loadAudio(newUrl);
+    }
 });
+
 </script>
 
 <template>
   <div class="spectrogram-wrapper">
     <div ref="spectrogramContainer" class="spectrogram-container">
-      <canvas 
-        ref="canvasRef" 
+      <canvas
+        ref="canvasRef"
         class="spectrogram-canvas"
-      ></canvas>
-      
-      <div 
-        id="progress-line" 
+        :width="containerWidth"
+        :height="containerHeight"
+      />
+
+      <div
+        ref="progressLineRef"  
         class="progress-line"
-      ></div>
-      
+        v-show="isLoaded"
+        :style="{ left: `${props.margin.left}px` }"
+      />
+
       <div v-if="!isLoaded" class="loading-spinner">
-        <div class="spinner"></div>
-        <span>Loading...</span>
+        <div class="spinner" />
+        <span>Loading Spectrogram...</span>
       </div>
     </div>
-    
+
     <div class="controls-container">
-      <button 
-        @click="playAudio" 
+       <button
+        @click="playAudio"
         :disabled="isPlaying || !isLoaded"
         class="control-button"
       >
-        Play
+        {{ isPaused ? 'Resume' : 'Play' }}
       </button>
-      
-      <button 
-        @click="isPaused ? playAudio() : pauseAudio()" 
-        :disabled="!isLoaded || (!isPlaying && !isPaused)"
+
+      <button
+        @click="pauseAudio"
+        :disabled="!isPlaying || !isLoaded"
         class="control-button"
       >
-        {{ isPaused ? 'Resume' : 'Pause' }}
+       Pause
       </button>
-      
-      <button 
-        @click="stopAudio" 
+
+      <button
+        @click="stopAudio"
         :disabled="!isPlaying && !isPaused"
         class="control-button"
       >
         Stop
       </button>
-      
-      <select 
-        v-model="selectedMaxFreq" 
-        @change="onFrequencyChange($event)"
-        class="freq-select"
-      >
-        <option 
-          v-for="freq in freqOptions" 
-          :key="freq" 
-          :value="parseFloat(freq)"
-        >
-          {{ (parseFloat(freq) / 1000).toFixed(1) }}k
-        </option>
-      </select>
     </div>
   </div>
 </template>
@@ -542,12 +566,14 @@ watch(selectedMaxFreq, () => {
 
 .spectrogram-container {
   position: relative;
-  width: 100%; /* Make it responsive */
-  height: 440px; /* Can be percentage-based if parent has height */
+  width: 100%;
+  height: v-bind("`${containerHeight}px`");
   border: 1px solid #e0e0e0;
+  overflow: hidden;
 }
 
 .spectrogram-canvas {
+  display: block;
   position: absolute;
   top: 0;
   left: 0;
@@ -577,12 +603,6 @@ watch(selectedMaxFreq, () => {
 .control-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.freq-select {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
 }
 
 .progress-line {

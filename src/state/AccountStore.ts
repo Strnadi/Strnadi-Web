@@ -1,8 +1,8 @@
-
+import * as jose from 'jose'
 import { reactive } from 'vue'
 import type { User, JWTObject } from '@/api/types/auth'
-import * as jose from 'jose'
 import { getCurrentUserInfo } from '@/api/account';
+import { posthogInstance } from '@/plugins/posthog'; // Import posthog
 
 /* @ts-ignore */
 import persist from "vue-reactive-persisted";
@@ -18,18 +18,32 @@ export const accountStore = reactive({
     }
 
     const decoded = jose.decodeJwt<JWTObject>(jwt);
+    const user = await getCurrentUserInfo(jwt);
 
-    const user = await getCurrentUserInfo(jwt, decoded);
+    if(user) {
+      this.user = user;
+      this.token = jwt;
+      this.token_object = decoded;
 
-    this.user = user;
-    this.token = jwt;
-    this.token_object = decoded;
+      posthogInstance.identify(
+        `${user.id}`,
+        {
+          email: user.email,
+          name: user.firstName,
+          surname: user.lastName
+        }
+      );  
+    }
   },
 
   logout() {
     this.user = null;
     this.token = null;
     this.token_object = null;
+
+    if (posthogInstance) {
+      posthogInstance.reset();
+    }
   }
 });
 

@@ -80,13 +80,24 @@ export default defineConfig({
             },
           },
           {
+            urlPattern: /^https:\/\/(dev)?api.strnadi.cz\/map\/.*$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'mapy-cache',
+              expiration: {
+                maxEntries: 10000,
+                maxAgeSeconds: 24 * 60 * 60 * 30, // 30 days
+              },
+            },
+          },
+          {
             urlPattern: /^https:\/\/api.mapy.cz\/.*$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'mapy-cache',
               expiration: {
                 maxEntries: 10000,
-                maxAgeSeconds: 24 * 60 * 60 * 7, // 1 week
+                maxAgeSeconds: 24 * 60 * 60 * 7, // 30 days
               },
             },
           },
@@ -96,10 +107,12 @@ export default defineConfig({
     Compression({ algorithm: "brotliCompress" }),
     SentryVitePlugin({
       org: "delta-strnadi",
-      project: "strnadi-web",
-      telemetry: false,
+      project: process.env.MODE === 'production' ? "strnadi-web" : "strnadi-web-staging",
+      telemetry: false
     }),
-    vueDevTools(),
+    vueDevTools({
+      launchEditor: "code-insiders"
+    }),
     Visualizer({
       gzipSize: true,
       open: false,
@@ -112,7 +125,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if(id.includes("vue3-openlayers") || id.includes("/ol") || id.includes("geojson") || id.includes("geotiff")) {
+          if(id.includes("maplibre") || id.includes("geojson") || id.includes("geotiff")) {
             return "maps";
           }
 
