@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { JWTObject, User, UserUpdateRequest } from "./types/auth";
+import type { User, UserUpdateRequest } from "./types/auth";
 import type { LoginRequest, SignUpRequest, Token } from "@/api/types/auth";
 import type { OAuth2SignUpResponse } from "./types/oauth2";
 
@@ -8,8 +8,18 @@ const genericPost = async<T> (path: string, data: T) => {
   return response.data;
 }
 
-export const getUserInfo = async (token: string, email: string): Promise<User> => {
-  const response = await axios.get(`/users/${email}`, {
+export const getUsers = async (token: string): Promise<User[]> => {
+  const response = await axios.get(`/users`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  return response.data as User[];  
+}
+
+export const getUserInfo = async (token: string, id: number): Promise<User> => {
+  const response = await axios.get(`/users/${id}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },
@@ -18,8 +28,20 @@ export const getUserInfo = async (token: string, email: string): Promise<User> =
   return response.data as User;  
 }
 
-export const getCurrentUserInfo = async (token: string, token_object: JWTObject): Promise<User> =>
-  getUserInfo(token, token_object.sub!);
+export const getUserId = async (token: string): Promise<number> => {
+  const response = await axios.get(`/users/get-id`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  return response.data as number;  
+}
+
+export const getCurrentUserInfo = async (token: string): Promise<User> => {
+  const userId = await getUserId(token);
+  return getUserInfo(token, userId);
+}
 
 export const postLogin = async (loginData: LoginRequest): Promise<Token> =>
   genericPost("login", loginData);
@@ -52,6 +74,10 @@ export const patchUser = async (token: string, email: string, data: UserUpdateRe
 }
 
 export const getPasswordResetRequest = async (email: string) => {
+  await axios.get(`/auth/${email}/reset-password`);
+}
+
+export const getResendVerifyEmail = async (email: string) => {
   await axios.get(`/auth/${email}/reset-password`);
 }
 

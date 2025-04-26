@@ -125,7 +125,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if(id.includes("vue3-openlayers") || id.includes("/ol") || id.includes("geojson") || id.includes("geotiff")) {
+          if(id.includes("maplibre") || id.includes("geojson") || id.includes("geotiff")) {
             return "maps";
           }
 

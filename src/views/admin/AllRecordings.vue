@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { getRecordings } from '@/api/recording';
 import { useQuery } from '@tanstack/vue-query';
+
 import JSZip from '@progress/jszip-esm';
+import { mapStore } from '@/state/MapStore';
+import { onMounted } from 'vue';
 
 const zip = new JSZip();
 const zipFileName = "nahravky.zip";
 
 const { data: recordings, isLoading, isError } = useQuery({
   queryKey: ["all-recordings"],
-  queryFn: async () => getRecordings({ audio: true})
+  queryFn: async () => getRecordings({})
 });
 
 </script>
@@ -33,13 +36,12 @@ const { data: recordings, isLoading, isError } = useQuery({
 
     <button class="primary p-2">Stáhnout vybrané</button>
 
-    <ul class="flex flex-row-reverse flex-wrap gap-x-3 gap-y-3">
+    <ul class="flex flex-col-reverse flex-wrap gap-x-3 gap-y-3">
       <li class="flex flex-col" v-for="recording in recordings" :key="recording.id">
         {{ recording.name }}
         <ul>
           <li v-for="part in recording.parts" :key="part.id" class="flex flex-row gap-x-1 items-center">
-            <input type="checkbox" />
-            <audio controls autobuffer :src="`data:audio/wav;base64,${part.dataBase64}`" />
+            {{ part.gpsLatitudeStart }} {{ part.gpsLongitudeStart }}
           </li>
         </ul>
       </li>

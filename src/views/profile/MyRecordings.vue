@@ -7,7 +7,7 @@ import { computed } from 'vue';
 
 const { data: recordings, isError, isLoading } = useQuery({
   queryKey: ['my-recordings'],
-  queryFn: () => getRecordings({email: accountStore.user!.email})
+  queryFn: () => getRecordings({userId: accountStore.user!.id})
 })
 
 const recordingsLength = computed(() => recordings.value?.length || 0);

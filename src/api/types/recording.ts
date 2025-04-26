@@ -14,7 +14,7 @@ export interface RecordingPartModel {
 
 export interface RecordingModel {
   id: number;
-  userEmail: string;
+  userId: number;
   name: string;
   createdAt: string; // ISO date-time
   estimatedBirdsCount: number;

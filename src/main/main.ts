@@ -8,22 +8,13 @@ import { createApp } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
 import { VueQueryPlugin } from "@tanstack/vue-query";
 
-// TODO: Remove unused layers from bundle
-import {
-  Map as OpenLayersMap,
-  Layers as OpenLayersMapLayers,
-  Sources as OpenLayersMapSources,
-  MapControls as OpenLayersMapControls,
-  Geometries as OpenLayersMapGeometries,
-  Styles as OpenLayersMapStyles,
-} from "vue3-openlayers";
-
 import VueDatePicker from "@vuepic/vue-datepicker";
 import ExpandableImage from "@/components/generic/ExpandableImage.vue";
 import "@vuepic/vue-datepicker/dist/main.css";
 import "@/main/firebase";
 import "../styling/main.css";
 import { ApiError } from "@/api/types/api-error";
+
 
 const app = createApp(App);
 const router = createRouter({
@@ -76,13 +67,6 @@ axios.defaults.onDownloadProgress = (progressEvent) => {
   const percentCompleted = Math.round((loaded * 100) / (total || 1));
 };
 */
-
-app.use(OpenLayersMap);
-app.use(OpenLayersMapLayers);
-app.use(OpenLayersMapSources);
-app.use(OpenLayersMapControls);
-app.use(OpenLayersMapGeometries);
-app.use(OpenLayersMapStyles);
 
 app.use(router);
 app.use(VueQueryPlugin);

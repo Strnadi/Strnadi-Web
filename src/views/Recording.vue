@@ -13,13 +13,14 @@ import Spectrogram from '@/components/spectrogram/Spectrogram.vue';
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
 const recordingId = useRouteParams('id') as Ref<string>;
 
+const editing = ref(false);
+
 const { data: recording, isError, isLoading } = useQuery({
   queryKey: ['recording', recordingId.value],
   queryFn: () => getRecording(recordingId.value, true)
 })
 
-const uploaderEmail = computed(() => recording.value?.userEmail);
-const enabled = computed(() => !!uploaderEmail.value);
+const enabled = computed(() => !!recording.value?.userId);
 
 
 // todo select location in the map
@@ -30,8 +31,8 @@ const {
   isLoading: isUploaderLoading, 
   isError: isUploaderError
 } = useQuery({
-  queryKey: ['user', uploaderEmail.value],
-  queryFn: () => getUserInfo(accountStore.token!, uploaderEmail.value!),
+  queryKey: ['user', recording.value?.userId],
+  queryFn: () => getUserInfo(accountStore.token!, recording.value?.userId!),
   enabled, // Use the computed enabled value
 })
 
@@ -92,10 +93,22 @@ onBeforeRouteUpdate(async (to) => {
         </template>
       </div>
 
-      <button v-if="accountStore.user?.role == 'admin'" class="primary p-2">
+      <button
+        v-if="accountStore.user?.role == 'admin' || accountStore.user?.email == recording?.userEmail"
+        class="secondary p-2"
+      >
+        Upravit nahrávku
+      </button>
+      <button
+        v-if="accountStore.user?.role == 'admin'"
+        class="primary p-2"
+      >
         Smazat nahrávku
       </button>
-      <button v-else-if="accountStore.user?.role == 'user' && accountStore.user?.email == recording?.userEmail" class="secondary p-2">
+      <button
+        v-else-if="accountStore.user?.role == 'user' && accountStore.user?.email == recording?.userEmail"
+        class="secondary p-2"
+      >
         Požádat o smazání nahrávky
       </button>
     </div>

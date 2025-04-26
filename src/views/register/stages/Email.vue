@@ -8,6 +8,7 @@ import { useRoute, useRouter } from "vue-router";
 import type { JWTObject } from "@/api/types/auth";
 import type { OAuth2SignUpResponse } from "@/api/types/oauth2";
 import OAuth2Button from "@/components/oauth2-button/OAuth2Button.vue";
+import HorizontalLineWithText from '@/components/generic/HorizontalLineWithText.vue';
 
 const env = import.meta.env;
 const router = useRouter();
@@ -64,14 +65,11 @@ const checkEmail = async () => {
     <div class="flex flex-col gap-y-4">
       <form class="flex flex-col gap-y-2" @submit.prevent="checkEmail">
         <input v-model="registerStore.email" name="email" type="email" required placeholder="E-Mail" />
-        <div class="flex flex-row items-center gap-x-2">
-          <input type="checkbox" id="agreement" v-model="agreement" />
-          <label for="agreement">
-            <span class="text-sm">Zapojením do projektu občanské vědy Nářečí českých strnadů <PrefetchLink to="/podminky-pouziti" class="underline">souhlasím s podmínkami</PrefetchLink></span>
-          </label>
-        </div>
         <button class="primary p-2" :disabled="!agreement" type="submit">Pokračovat</button>
       </form>
+      <HorizontalLineWithText>
+        Nebo
+      </HorizontalLineWithText>
       <OAuth2Button
         class="secondary p-2 max-lg:w-full w-full"
         type="submit"
@@ -86,6 +84,13 @@ const checkEmail = async () => {
       >
         Registrovat se přes Google
       </OAuth2Button>
+
+      <div class="flex flex-row items-center gap-x-2 m-4">
+        <input type="checkbox" id="agreement" v-model="agreement" />
+        <label for="agreement">
+          <span class="text-sm">Zapojením do projektu občanské vědy Nářečí českých strnadů <PrefetchLink to="/podminky-pouziti" class="underline">souhlasím s podmínkami</PrefetchLink></span>
+        </label>
+      </div>
     </div>
   </template>
 </template>

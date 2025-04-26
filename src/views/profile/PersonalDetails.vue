@@ -141,9 +141,4 @@ const submit = () => {
     </RevealablePasswordInput>
     <button class="primary p-2 w-full" :disabled="!passwordAgain || passwordAgain !== password" @click="submitPasswordChange">Změnit heslo</button>
   </div>
-
-  <hr class="m-4" />
-  <prefetch-link to="/ucet/smazat" class="button-secondary p-2">
-    <span class="text-red-500">Smazat účet</span>
-  </prefetch-link>
 </template>

@@ -50,7 +50,7 @@ const update = () => {
     return;
   }
 
-  location.value = [selected.position.lon, selected.position.lat];
+  location.value = [selected.position.lat, selected.position.lon];
 }
 
 </script>

@@ -52,13 +52,19 @@ export const getRecording = async (id: number | string, audio = false): Promise<
 }
 
 export const getRecordings = async (
-	{ audio = false, email }: { audio?: boolean, email?: string } = {}
+	{ audio = false, userId }: { audio?: boolean, userId?: number } = {}
 ): Promise<RecordingModel[]> => {
 	const response = await axios.get(
-		(email !== undefined)
-			? `/recordings?email=${email}&parts=true&sound=${audio ?? false}`
-			: `/recordings?parts=true&sound=${audio ?? false}`,
+		(userId !== undefined)
+			? `/recordings?userId=${userId}&parts=true&sound=${audio}`
+			: `/recordings?parts=true&sound=${audio}`,
 	);
+
+	return response.data as RecordingModel[];
+}
+
+export const getFilteredRecordings = async (): Promise<RecordingModel[]> => {
+	const response = await axios.get(`/recordings/filtered`)
 
 	return response.data as RecordingModel[];
 }

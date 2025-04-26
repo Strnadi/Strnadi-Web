@@ -26,6 +26,11 @@ const user = accountStore.user!;
         <div class="dropdown-item">Profil</div>
       </PrefetchLink>
     </li>
+    <li v-if="accountStore.user?.role === 'admin'">
+      <PrefetchLink to="/admin">
+        <div class="dropdown-item">Admin</div>
+      </PrefetchLink>
+    </li>
     <li class="cursor-pointer" @click="accountStore.logout">
       <div class="dropdown-item">Odhlásit se</div>
     </li>

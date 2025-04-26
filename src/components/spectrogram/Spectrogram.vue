@@ -27,6 +27,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const spectrogramContainer = ref<HTMLDivElement | null>(null);
+const progressLineRef = ref<HTMLDivElement | null>(null); // Add ref for progress line
 const audioBuffer = ref<AudioBuffer | null>(null);
 const audioSource = ref<AudioBufferSourceNode | null>(null);
 const gainNode = ref<GainNode | null>(null);
@@ -422,11 +423,10 @@ function stopAudio() {
   currentTime.value = 0;
   startTime.value = 0;
 
-
-  const progressLineElement = document.getElementById('progress-line');
-  if (progressLineElement) {
+  // Use the ref to reset the progress line
+  if (progressLineRef.value) {
     // Reset position considering the left margin
-    progressLineElement.style.left = `${props.margin.left}px`;
+    progressLineRef.value.style.left = `${props.margin.left}px`;
   }
 }
 
@@ -437,14 +437,15 @@ function updateProgress() {
 
   const elapsed = liveAudioContext.value.currentTime - startTime.value;
   const currentProgressTime = Math.min(elapsed, audioDuration.value);
-  const progress = currentProgressTime / audioDuration.value;
+  // Check for audioDuration being 0 to prevent division by zero
+  const progress = audioDuration.value > 0 ? currentProgressTime / audioDuration.value : 0;
 
-  const progressLineElement = document.getElementById('progress-line');
-   if (progressLineElement && spectrogramContainer.value) {
+  // Use the ref to update the progress line
+   if (progressLineRef.value && spectrogramContainer.value) {
     // Calculate position relative to the drawable area
     const drawableWidth = containerWidth.value - props.margin.left - props.margin.right;
     const lineLeft = props.margin.left + (progress * drawableWidth);
-    progressLineElement.style.left = `${lineLeft}px`;
+    progressLineRef.value.style.left = `${lineLeft}px`;
   }
 
 
@@ -514,7 +515,7 @@ watch(() => props.audioUrl, (newUrl) => {
       />
 
       <div
-        id="progress-line"
+        ref="progressLineRef"  
         class="progress-line"
         v-show="isLoaded"
         :style="{ left: `${props.margin.left}px` }"

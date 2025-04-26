@@ -87,6 +87,12 @@ export function routes(_router: Router) {
       components: {
         popup: () => import('@/views/profile/DeleteAccount.vue')
       },
+    },
+    {
+      path: '/ucet/overeni-emailu',
+      components: {
+        popup: () => import('@/views/ResendVerifyEmail.vue')
+      },
     }
   ];
   
@@ -170,7 +176,7 @@ export function routes(_router: Router) {
     {
       path: '/aplikace',
       components: {
-        popup: () => import('@/views/Application.vue')
+        small_popup: () => import('@/views/Application.vue')
       }
     }
   ]
@@ -186,6 +192,12 @@ export function routes(_router: Router) {
       path: '/nahravka/:id',
       components: {
         side: () => import('@/views/Recording.vue')
+      },
+    },
+    {
+      path: '/ctverec/:id',
+      components: {
+        side: () => import('@/views/Square.vue')
       },
     }
   ];
@@ -219,11 +231,23 @@ export function routes(_router: Router) {
   
   const AdminRoutes: RouteRecordRaw[] = [
     {
+      path: '/admin',
+      components: {
+        side: () => import('@/views/admin/Admin.vue')
+      }
+    },
+    {
       path: '/admin/vsechny-nahravky',
       components: {
-        center: () => import('@/views/admin/AllRecordings.vue')
+        side: () => import('@/views/admin/AllRecordings.vue')
       },
-    }
+    },
+    {
+      path: '/admin/uzivatele',
+      components: {
+        side: () => import('@/views/admin/Users.vue')
+      },
+    },
   ];
   
   return [
