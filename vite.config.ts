@@ -28,14 +28,27 @@ export default defineConfig({
         linkify: true,
       },
       markdownItSetup(md) {
+        // Keep the existing image renderer customization
         md.renderer.rules.image = (tokens, idx) => {
           const token = tokens[idx];
           const srcIndex = token.attrIndex('src');
           const altIndex = token.attrIndex('alt');
           const src = srcIndex >= 0 ? token.attrs![srcIndex][1] : '';
           const alt = altIndex >= 0 ? token.attrs![altIndex][1] : '';
-
+      
           return `<ExpandableImage src="${src}" alt="${alt}" />`;
+        };
+        
+        // Override the renderer to add a back-to-top button after content
+        const originalRender = md.renderer.render;
+        md.renderer.render = function() {
+          const result = originalRender.apply(this, arguments as any);
+          return result + 
+            '<div class="back-to-top-container">' +
+              '<button class="back-to-top-button" onclick="window.scrollTo({top: 0, behavior: \'smooth\'})">' +
+                'Back to Top' +
+              '</button>' +
+            '</div>';
         };
       }
     }),
@@ -125,10 +138,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if(id.includes("maplibre") || id.includes("geojson") || id.includes("geotiff")) {
-            return "maps";
-          }
-
           if (id.includes("node_modules") || id.includes("src/vendor/")) {
             return "vendor";
           }
@@ -142,6 +151,15 @@ export default defineConfig({
 
   dev: {
     sourcemap: true,
+  },
+
+  resolve: {
+    alias: [
+      {
+        find: /leaflet\/dist\/leaflet-src\.js(\?commonjs-es-import)?$/,
+        replacement: 'leaflet/dist/leaflet-src.esm.js'
+      }
+    ],
   },
 
   server: {
