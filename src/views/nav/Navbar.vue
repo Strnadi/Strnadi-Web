@@ -1,0 +1,126 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import { accountStore } from '@/state/AccountStore';
+
+import { useQuery } from '@tanstack/vue-query';
+
+import { getArticles, type ArticleCategory, type Article } from '@/api/articles'
+
+import Dropdown from '@/components/Dropdown.vue'
+import AccountDropdown from '@/views/dropdown/account/AccountDropdown.vue';
+
+import Upload from '@/icons/interface/icon-upload.svg';
+import Notifications from '@/icons/interface/icon-notifications-empty.svg';
+import List from '@/icons/interface/icon-list.svg';
+
+import DropdownIcon from '@/icons/interface/dropdown.svg'
+import MapIcon from '@/icons/interface/icon-map.svg'
+
+const isMenuOpen = ref(false);
+
+const { data: articles } = useQuery({
+  queryKey: ["all-articles"],
+  queryFn: async () => getArticles()
+})
+
+const categories = computed(() => {
+  return articles.value?.reduce(
+    (acc, curr) => {
+      curr.categories.forEach(category => {
+        if(!(category in acc)) {
+          acc[category] = [];
+        }
+
+        acc[category].push(curr)
+      })
+
+      return acc;
+    },
+    new Map<ArticleCategory, Article[]>()
+  ) ?? {};
+})
+
+</script>
+
+<template>
+  <nav class="w-full">
+    <div class="flex justify-between gap-x-4 items-center h-16 bg-white rounded-4xl m-2 desktop:m-5 pr-4">
+      <!-- Logo -->
+      <div class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc]">
+        <PrefetchLink to="/vitejte">
+          <img src="/logo.svg" alt="Logo" />
+        </PrefetchLink>
+      </div>
+
+      <!-- Desktop navigation -->
+      <div class="hidden desktop:flex justify-between items-center w-full">
+        <ul class='flex flex-row gap-x-4 items-center'>
+          <li>
+            <PrefetchLink to="/" class='dropdown-item'>
+              <img :src="MapIcon" alt="Upload" />
+              Mapa
+            </PrefetchLink>
+          </li>
+
+          <template v-if="accountStore.user">
+            <li>
+              <PrefetchLink to="/nahrat" class='dropdown-item'>
+                <img :src="Upload" alt="Upload" />
+                Nahrát
+              </PrefetchLink>
+            </li>
+            <li>
+              <PrefetchLink to="/ucet/sprava/moje-nahravky" class='dropdown-item'>
+                <img :src="List" alt="List" />
+                Moje záznamy
+              </PrefetchLink>
+            </li>
+          </template>
+
+          <Dropdown v-for="(categoryArticles, category) in categories">
+            <template v-slot:title class="flex flex-row items-center">
+              {{ category.label }}
+              <img :src="DropdownIcon" width="16" />
+            </template>
+            <li
+              v-for="article in categoryArticles"
+            >
+              <prefetch-link :to="`/informace/${article.slug}`" class="dropdown-item">
+                {{ article.title }}
+                <span v-if="article.description">
+                  {{ article.description }}
+                </span>
+              </prefetch-link>
+            </li>
+          </Dropdown>
+        </ul>
+
+        <ul class="flex flex-row gap-x-4 items-center">
+          <PrefetchLink to="/aplikace" class='button-primary py-2 px-4 max-sm:text-sm'>
+            Stáhnout aplikaci
+          </PrefetchLink>
+          <li>
+            <AccountDropdown v-if="accountStore.user" />
+            <PrefetchLink v-else to="/ucet/vitejte" class="button-secondary py-2 px-4">
+              Přihlásit se
+            </PrefetchLink>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+</template>
+
+<style scoped>
+
+@reference "../../styles/main.css";
+
+:deep(.dropdown-item) {
+  @apply font-semibold flex flex-row items-center gap-x-1 px-5 py-2 hover:bg-gray-100 hover:border-0 rounded-xl;
+}
+
+nav {
+  @apply fixed z-[9] drop-shadow-xl min-w-0 w-full;
+}
+
+</style>

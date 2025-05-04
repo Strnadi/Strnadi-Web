@@ -7,11 +7,12 @@
 @import "./radio.css";
 @import "./text-input.css";
 @import "./hr.css";
+@import "./links.css";
 
 :root {
   font-family: 'Bricolage Grotesque', Arial, Helvetica, sans-serif;
 }
 
 @theme {
-  --breakpoint-desktop: 85rem; /*var(--breakpoint-xl);*/
+  --breakpoint-desktop: 40rem; /*var(--breakpoint-xl);*/
 }

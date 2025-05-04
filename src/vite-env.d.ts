@@ -1,11 +1,6 @@
 /// <reference types="vite/client" />
-
-declare module '*.md' {
-  import type { ComponentOptions } from 'vue'
-
-  const Component: ComponentOptions
-  export default Component
-}
+/// <reference types="unplugin-vue-router/client" />
+/// <reference types="vite-plugin-vue-meta-layouts/client" />
 
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'

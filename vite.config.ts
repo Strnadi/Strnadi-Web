@@ -8,49 +8,32 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { sentryVitePlugin as SentryVitePlugin } from "@sentry/vite-plugin";
 import { visualizer as Visualizer } from "rollup-plugin-visualizer";
+import { purgePolyfills } from 'unplugin-purge-polyfills'
 import Vue from "@vitejs/plugin-vue";
 import TailwindCSS from "@tailwindcss/vite";
 import TSConfigPaths from "vite-tsconfig-paths";
 import Compression from "vite-plugin-compression2";
-import Markdown from 'unplugin-vue-markdown/vite';
 import vueDevTools from 'vite-plugin-vue-devtools';
+import VueRouter from 'unplugin-vue-router/vite';
+import MetaLayouts from "vite-plugin-vue-meta-layouts";
+import Terminal from 'vite-plugin-terminal';
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
+    purgePolyfills.rollup({  }),
     TSConfigPaths({ loose: true }),
     TailwindCSS(),
+    VueRouter({  }),
     Vue({ include: [/\.vue$/, /\.md$/] }),
-    Markdown({
-      wrapperDiv: false,
-      markdownItOptions: {
-        html: true,
-        linkify: true,
-      },
-      markdownItSetup(md) {
-        // Keep the existing image renderer customization
-        md.renderer.rules.image = (tokens, idx) => {
-          const token = tokens[idx];
-          const srcIndex = token.attrIndex('src');
-          const altIndex = token.attrIndex('alt');
-          const src = srcIndex >= 0 ? token.attrs![srcIndex][1] : '';
-          const alt = altIndex >= 0 ? token.attrs![altIndex][1] : '';
-      
-          return `<ExpandableImage src="${src}" alt="${alt}" />`;
-        };
-        
-        // Override the renderer to add a back-to-top button after content
-        const originalRender = md.renderer.render;
-        md.renderer.render = function() {
-          const result = originalRender.apply(this, arguments as any);
-          return result + 
-            '<div class="back-to-top-container">' +
-              '<button class="back-to-top-button" onclick="window.scrollTo({top: 0, behavior: \'smooth\'})">' +
-                'Back to Top' +
-              '</button>' +
-            '</div>';
-        };
-      }
+    Terminal({
+      output: ['terminal', 'console']
+    }),
+    MetaLayouts({
+      importMode: "async",
+      target: 'src/layouts',
+      defaultLayout: "default",
+      skipTopLevelRouteLayout: false
     }),
     VitePWA({
       registerType: 'autoUpdate',
@@ -82,23 +65,23 @@ export default defineConfig({
         clientsClaim: true,
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/(?:new\.)?strnadi\.cz\/.*$/,
+            urlPattern: /^https:\/\/(?:(new|dev|staging)\.)?strnadi\.cz\/.*$/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'strnadi-cache',
               expiration: {
-                maxEntries: 10000,
+                maxEntries: 100000,
                 maxAgeSeconds: 24 * 60 * 60 * 7, // 1 week
               },
             },
           },
           {
-            urlPattern: /^https:\/\/(dev)?api.strnadi.cz\/map\/.*$/,
+            urlPattern: /^https:\/\/(dev|new|old)?api.strnadi.cz\/map\/.*$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'mapy-cache',
               expiration: {
-                maxEntries: 10000,
+                maxEntries: 100000,
                 maxAgeSeconds: 24 * 60 * 60 * 30, // 30 days
               },
             },
@@ -109,7 +92,7 @@ export default defineConfig({
             options: {
               cacheName: 'mapy-cache',
               expiration: {
-                maxEntries: 10000,
+                maxEntries: 100000,
                 maxAgeSeconds: 24 * 60 * 60 * 7, // 30 days
               },
             },
@@ -124,7 +107,7 @@ export default defineConfig({
       telemetry: false
     }),
     vueDevTools({
-      launchEditor: "code-insiders"
+      launchEditor: "subl4"
     }),
     Visualizer({
       gzipSize: true,

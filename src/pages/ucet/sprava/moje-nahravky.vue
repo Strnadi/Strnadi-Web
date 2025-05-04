@@ -1,0 +1,48 @@
+<route lang="yaml">
+meta:
+  layout: desktop/side
+</route>
+
+<script lang="ts" setup>
+
+import { useQuery } from '@tanstack/vue-query';
+import { getRecordings } from '@/api/recordings';
+import { accountStore } from '@/state/AccountStore';
+import { computed } from 'vue';
+
+const { data: recordings, isError, isLoading } = useQuery({
+  queryKey: ['my-recordings'],
+  queryFn: () => getRecordings({userId: accountStore.user!.id})
+})
+
+const recordingsLength = computed(() => recordings.value?.length || 0);
+
+console.log("Here");
+
+</script>
+
+<template>
+  <h1>Moje nahrávky</h1>
+  <template v-if="isLoading">Loading...</template>
+  <template v-if="isError">Error loading recordings.</template>
+  <template v-else>
+    <ul v-if="recordingsLength > 0" class="flex flex-col-reverse gap-y-3">
+      <li v-for="rec in recordings" :key="rec.id">
+        <router-link
+          :to="`/nahravka/${rec.id}`"
+          class="flex flex-col justify-around p-2 border-2 border-gray-200 hover:bg-gray-300 h-20 rounded-lg"
+        >
+          <div class="flex flex-row justify-between">
+            <span class="text-lg font-bold">{{ rec.name }}</span>
+            <span class="text-lime-400">Nahráno</span>
+          </div>
+          <div class="flex flex-row justify-between">
+            <span></span>
+            <span>{{ new Date(rec.createdAt).toLocaleString() }} </span>
+          </div>
+        </router-link>
+      </li>
+    </ul>
+    <p v-else>Zatím zde nic není.</p>
+  </template>
+</template>

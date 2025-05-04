@@ -1,0 +1,106 @@
+import { watch, type Reactive } from "vue";
+import { get, set } from "dotly";
+
+const DEFAULT_KEY = "reactive_persisted";
+
+export interface PersistOptions<T> {
+  key: string;
+  paths: string[];
+  storage: Storage;
+  syncCallback: (store: T) => void;
+};
+
+/* Persists a Vue reactive object */
+export const persist = <T>(object: T, options?: Partial<PersistOptions<T>>) => {
+  if (!object) {
+    throw new Error("Please provide a reactive object");
+  }
+
+  const _storage = options?.storage ?? window.localStorage;
+  const _key = options?.key ?? DEFAULT_KEY;
+  const _paths = options?.paths ?? null;
+  const _store = assertStore(_storage, _key);
+
+  syncReactiveWithLocal(object, _store, _paths);
+  options?.syncCallback?.(object);
+
+  watch(
+    object,
+    newObject => {
+      syncLocalWithReactive(newObject, _storage, _key, _paths);
+    },
+    { deep: true }
+  );
+
+  return object;
+};
+
+/**
+ * Asserts store
+ */
+const assertStore = (storage: object, key: string): object => {
+  let _store = storage.getItem(key);
+
+  if (!_store) {
+    storage.setItem(key, JSON.stringify({}));
+  }
+
+  return getStore(storage, key);
+};
+
+/**
+ * Gets store
+ */
+const getStore = (storage: object, key: string): object => {
+  let _store = storage.getItem(key);
+
+  try {
+    if (typeof _store === "string") {
+      _store = JSON.parse(_store);
+
+      if (typeof _store === "object") {
+        return _store;
+      }
+    }
+  } catch (error) {
+    // Ignore
+  }
+
+  return undefined;
+};
+
+/**
+ * Syncs reactive object with local store
+ */
+const syncReactiveWithLocal = (object: object, store: object, paths: object = null): undefined => {
+  if (paths) {
+    paths.forEach(path => {
+      let _value = get(store, path);
+
+      if (_value !== undefined) {
+        set(object, path, _value);
+      }
+    });
+  } else {
+    object = Object.assign(object, store);
+  }
+};
+
+/**
+ * Syncs local store with reactive object
+ */
+const syncLocalWithReactive = (object: object, storage: object, key: string, paths: object = null): undefined => {
+  let _store = {};
+
+  if (paths) {
+    paths.forEach(path => {
+      set(_store, path, get(object, path));
+    });
+  } else {
+    _store = Object.assign({}, object);
+  }
+
+  storage.setItem(key, JSON.stringify(_store));
+};
+
+export default persist;

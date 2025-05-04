@@ -1,0 +1,42 @@
+<script setup lang="ts">
+import { getResendVerifyEmail } from '@/api/account';
+import SegmentedProgress from '@/components/SegmentedProgress.vue';
+import { accountStore } from '@/state/AccountStore';
+import { useMutation } from '@tanstack/vue-query';
+import { useCountdown } from '@vueuse/core'
+import { shallowRef } from 'vue';
+
+const countdownMaxSeconds = 30;
+const countdownSeconds = shallowRef(countdownMaxSeconds);
+
+const { isActive, remaining, start, stop, reset } = useCountdown(countdownSeconds, {
+  onComplete() {
+    stop();
+    reset();
+  }
+})
+
+const { mutate } = useMutation({
+  mutationFn: ({ email }: { email: string}) => getResendVerifyEmail(email)
+})
+
+const resendEmail = () => {
+  mutate({ email: accountStore.user!.email })
+  start();
+}
+
+</script>
+
+<template>
+  <h1>Znovuodeslání ověřovacího e-mailu</h1>
+  <button :disabled="isActive" @click="resendEmail" class="button-primary p-2 w-full text-center">
+    Odeslat ověřovací e-mail
+  </button>
+  <div class="flex flex-row" v-if="isActive">
+    <p>{{ remaining }}s</p>
+    <SegmentedProgress
+      :progress="remaining"
+      :total-segments="countdownMaxSeconds"
+    />
+  </div>
+</template>

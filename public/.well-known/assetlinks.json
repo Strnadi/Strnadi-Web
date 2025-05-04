@@ -1,12 +1,14 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.delta.strnadi",
       "sha256_cert_fingerprints": [
-"FA:B3:9A:75:35:91:BA:7C:5C:BF:33:39:DF:76:4A:1A:2F:3B:06:9C:8C:2E:EC:FA:D3:11:FB:72:67:E9:B5:43",
-"97:7C:51:4A:23:9B:B0:B6:BA:A9:DE:7D:F0:29:E9:04:15:A1:BB:96:7E:D3:19:C5:B2:82:4F:7E:69:F2:07:17"
+        "FA:B3:9A:75:35:91:BA:7C:5C:BF:33:39:DF:76:4A:1A:2F:3B:06:9C:8C:2E:EC:FA:D3:11:FB:72:67:E9:B5:43",
+        "97:7C:51:4A:23:9B:B0:B6:BA:A9:DE:7D:F0:29:E9:04:15:A1:BB:96:7E:D3:19:C5:B2:82:4F:7E:69:F2:07:17"
       ]
     }
   }
