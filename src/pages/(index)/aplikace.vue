@@ -49,13 +49,13 @@ const location = window.location.href;
 
       <div class="flex flex-col gap-y-1">
         <div class="flex flex-row gap-x-4 items-center">
-          <img :src="AndroidIcon" />
+          <AndroidIcon />
           <span>
             Na obchodě Google Play se aplikace jmenuje Strnadi a je v předběžném přístupu.
           </span>
         </div>
         <div class="flex flex-row gap-x-4 items-center">
-          <img :src="AppleIcon" />
+          <AppleIcon />
           <span>
             Vlastníci telefonů značky Apple si musí aplikaci stáhnout přes beta testovací aplikaci
             <a href="https://developer.apple.com/testflight" external="true">TestFlight</a>.

@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { type AxiosRequestConfig } from "axios";
 
 export const genericGet = async<T>(endpoint: string): Promise<T> => {
   const response = await axios.get(endpoint);
@@ -20,10 +20,12 @@ export const genericPost = async<T, U = undefined>(endpoint: string, data?: U): 
   return response.data as T;
 }
 
-export const authorizedPost = async<T, U = undefined>(endpoint: string, token: string, data?: U): Promise<T> => {
+export const authorizedPost = async<T, U = undefined>(endpoint: string, token: string, data?: U, additionalOptions?: AxiosRequestConfig): Promise<T> => {
   const response = await axios.post(endpoint, data, {
+    ...additionalOptions,
     headers: {
-      'Authorization': token
+      ...additionalOptions?.headers,
+      'Authorization': `Bearer ${token}`
     }
   });
 
@@ -38,7 +40,7 @@ export const genericPut = async<T, U = undefined>(endpoint: string, data?: U): P
 export const authorizedPut = async<T, U = undefined>(endpoint: string, token: string, data?: U): Promise<T> => {
   const response = await axios.put(endpoint, data, {
     headers: {
-      'Authorization': token
+      'Authorization': `Bearer ${token}`
     }
   });
 
@@ -53,7 +55,7 @@ export const genericPatch = async<T, U = undefined>(endpoint: string, data?: U):
 export const authorizedPatch = async<T, U = undefined>(endpoint: string, token: string, data?: U): Promise<T> => {
   const response = await axios.patch(endpoint, data, {
     headers: {
-      'Authorization': token
+      'Authorization': `Bearer ${token}`
     }
   });
 
@@ -68,7 +70,7 @@ export const genericDelete = async<T>(endpoint: string): Promise<T> => {
 export const authorizedDelete = async<T>(endpoint: string, token: string): Promise<T> => {
   const response = await axios.delete(endpoint, {
     headers: {
-      'Authorization': token
+      'Authorization': `Bearer ${token}`
     }
   });
 

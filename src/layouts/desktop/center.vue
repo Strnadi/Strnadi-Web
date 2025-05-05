@@ -11,7 +11,7 @@ import Back from '@/icons/interface/icon-back.svg';
         <div>
           <div>
             <button class="secondary small" @click="goBack">
-              <img :src="Back" />
+              <Back />
             </button>
           </div>
           <component :is="Component" />

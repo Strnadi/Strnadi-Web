@@ -10,6 +10,9 @@ meta:
     <router-link to="/sprava/uzivatele" class="button-secondary p-2 w-full">
       Seznam uživatelů
     </router-link>
+    <router-link to="/sprava/prispevky" class="button-secondary p-2 w-full">
+      Správa příspěvků
+    </router-link>
     <router-link to="/sprava/vsechny-nahravky" class="button-secondary p-2 w-full">
       Všechny nahrávky
     </router-link>

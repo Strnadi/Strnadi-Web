@@ -17,11 +17,11 @@ const { isActive, remaining, start, stop, reset } = useCountdown(countdownSecond
 })
 
 const { mutate } = useMutation({
-  mutationFn: ({ email }: { email: string}) => getResendVerifyEmail(email)
+  mutationFn: ({ userId }: { userId: number}) => getResendVerifyEmail(userId)
 })
 
 const resendEmail = () => {
-  mutate({ email: accountStore.user!.email })
+  mutate({ userId: accountStore.user!.id })
   start();
 }
 

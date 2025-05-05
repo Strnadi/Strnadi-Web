@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, onUnmounted } from 'vue';
+import { ref, onMounted, watch, onUnmounted } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
 
 const SMOOTHING = 0.0;

@@ -17,7 +17,7 @@ import FilledRulerIcon from '@/icons/interface/icon-ruler-fill.svg';
 import PictureIcon from '@/icons/interface/icon-picture.svg';
 
 // @ts-expect-error
-import FilterIcon from '@/icons/interface/icon-filter2.svg';
+import FilterIcon from '@/icons/interface/icon-filter2.svg?url';
 
 import {
   LMap,
@@ -197,9 +197,16 @@ function onRecordingClick(event: LeafletMouseEvent, rec: RecordingModel, part: R
   const lat = part.gpsLatitudeStart
   const lng = part.gpsLongitudeStart
 
-  leafletMap?.flyTo([lat, lng], 15, {
+  const targetZoom = 15;
+  const originalZoom = 8.25;
+
+  // Duration, in seconds, of the animation that goes from the default zoom to the
+  // target zoom.
+  const duration = 1;
+
+  leafletMap?.flyTo([lat, lng], targetZoom, {
     animate: true,
-    duration: 1.0  // seconds
+    duration: (targetZoom - zoom.value) / (duration * (targetZoom - originalZoom))
   })
 
   mapStore.setSelectedRecordingLocation(part.gpsLatitudeStart, part.gpsLongitudeStart);
@@ -218,10 +225,10 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
 </script>
 
 <template>
-  <div class="relative flex-1 saturate-[1.15]">
+  <div class="relative flex flex-1 saturate-[1.15]">
     <l-map
       ref="mapRef"
-      class="w-full h-full"
+      class="flex-1"
       v-model:zoom="zoom"
       v-model:center="center"
       :options="{ zoomControl: false }"
@@ -376,23 +383,25 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
           class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
           to="/mapa/legenda"
         >
-          <img :src="InfoIcon" width="38" height="38" />
+          <InfoIcon width="38" height="38" />
         </PrefetchLink>
 
         <div class="flex flex-row-reverse items-end">
           <div class="flex flex-col">
             <div v-if="toolsShown" class="flex flex-col-reverse gap-x-2">
               <button @click="scaleEnabled = !scaleEnabled" class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4">
-                <img :src="scaleEnabled ? FilledRulerIcon : RulerIcon" width="38" height="38" />
+                <FilledRulerIcon v-if="scaleEnabled" />
+                <RulerIcon v-else />
               </button>
 
               <button @click="mapStore.mode = mapStore.mode==='aerial'?'outdoor':'aerial'" class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4">
-                <img :src="mapStore.mode==='aerial' ? MapIcon : PictureIcon" width="38" height="38" />
+                <MapIcon v-if="mapStore.mode==='aerial'" />
+                <PictureIcon v-else />
               </button>
             </div>
 
             <button @click="toolsShown = !toolsShown" class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4">
-              <img :src="ListIcon" width="38" height="38" />
+              <ListIcon width="38" height="38" />
             </button>
           </div>
 

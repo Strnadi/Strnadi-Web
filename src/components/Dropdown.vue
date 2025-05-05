@@ -36,10 +36,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <!-- Mobile / smaller screens: dropdown -->
   <div
     ref="dropdownRef"
-    class="relative p-4 -m-4 desktop:hidden"
+    class="relative p-4 -m-4 max-desktop:hidden"
     @mouseleave="close"
   >
     <button
@@ -57,8 +56,7 @@ onBeforeUnmount(() => {
     </ul>
   </div>
 
-  <!-- Desktop / max-desktop views: accordion -->
-  <div class="hidden desktop:block p-4 -m-4">
+  <div class="hidden max-desktop:block p-4 -m-4">
     <details class="w-full">
       <summary
         class="flex items-center justify-between cursor-pointer focus:outline-none hover:bg-gray-100 rounded-xl px-5 py-2"

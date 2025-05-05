@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, type InputHTMLAttributes } from 'vue';
+import { computed, type InputHTMLAttributes } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { useDebounceFn } from '@vueuse/core';
 import { getGeocodeAutocomplete } from '@/api/maps';

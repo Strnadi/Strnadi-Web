@@ -4,7 +4,7 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { onBeforeRouteUpdate, onBeforeRouteLeave } from 'vue-router';
 import { accountStore } from "@/state/AccountStore";
 import { uploadStore } from '@/state/UploadStore';
@@ -87,13 +87,13 @@ const {
 
   onMutate() {
     window.addEventListener("beforeunload", beforeWindowUnmount);
-    queryClient.invalidateQueries({ queryKey: ["all-recordings"] });
-    stepper.goTo("file");
-    mapStore.selectedLocation = null;
   },
 
   onSettled() {
     window.removeEventListener("beforeunload", beforeWindowUnmount)
+    queryClient.invalidateQueries({ queryKey: ["all-recordings"] });
+    stepper.goTo("file");
+    mapStore.selectedLocation = null;
   }
 });
 
@@ -141,10 +141,6 @@ onBeforeRouteLeave(() => {
     alert("Nahrávání stále probíhá. Nezavírejte stránku.");
     return false;
   }
-});
-
-onUnmounted(() => {
-  stepper.goTo('file');
 });
 
 function submitOrNext() {

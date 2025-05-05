@@ -2,7 +2,7 @@ import * as jose from 'jose'
 import { reactive } from 'vue'
 import type { User, JWTObject } from '@/api/account'
 import { getCurrentUserInfo } from '@/api/account';
-import { posthogInstance } from '@/plugins/posthog'; // Import posthog
+import { posthogInstance } from '@/plugins/vue/posthog'; // Import posthog
 import persist from "@/utils/persist";
 
 export const accountStore = reactive({

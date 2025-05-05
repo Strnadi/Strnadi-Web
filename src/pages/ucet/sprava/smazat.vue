@@ -1,3 +1,8 @@
+<route lang="yaml">
+meta:
+  layout: desktop/small-popup
+</route>
+
 <template>
   <h1>Smazání účtu</h1>
   <h2>Opravdu si chcete smazat účet? Tuto akci nelze vrátit zpět.</h2>

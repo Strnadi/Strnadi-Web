@@ -18,8 +18,8 @@ const password = ref("");
 const passwordAgain = ref("");
 
 const { mutate, isPending, error } = useMutation({
-  mutationFn: ({ userInfo, token, email }: { userInfo: UserUpdateRequest; token: string; email: string }) =>
-    patchUser(token, email, userInfo),
+  mutationFn: ({ userInfo, token, userId }: { userInfo: UserUpdateRequest; token: string; userId: string }) =>
+    patchUser(token, userId, userInfo),
 
   onSuccess: (data) => {
     accountStore.user!.firstName = name.value;
@@ -31,8 +31,8 @@ const { mutate, isPending, error } = useMutation({
 });
 
 const { mutate: passwordChangeMutate } = useMutation({
-  mutationFn: ({ token, email, newPassword }: {token: string, email: string, newPassword: string}) =>
-    patchPasswordChange(token, email, newPassword)
+  mutationFn: ({ token, userId, newPassword }: {token: string, userId: string, newPassword: string}) =>
+    patchPasswordChange(token, userId, newPassword)
 })
 
 const submitPasswordChange = () => {
@@ -52,7 +52,7 @@ const submit = () => {
         city: town.value
       },
       token,
-      email
+      userId: accountStore.user!.id
     }
   );
 }
@@ -60,7 +60,7 @@ const submit = () => {
 </script>
 
 <template>
-  <h1 class="flex flex-row justify-between">
+  <h1>
     Osobní údaje
   </h1>
   <template v-if="isPending">
@@ -128,7 +128,7 @@ const submit = () => {
     <button class="secondary py-1 px-2 text-sm">Uložit</button>
   </form>
 
-  <hr class="m-4" />
+  <hr class="my-4 px-8" />
 
   <h2>Heslo</h2>
   <div class="flex flex-col gap-y-2">

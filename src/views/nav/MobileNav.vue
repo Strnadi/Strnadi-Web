@@ -1,45 +1,62 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
 import { accountStore } from '@/state/AccountStore';
 
 import MapIcon from '@/icons/interface/icon-map.svg';
 import AccountIcon from '@/icons/interface/icon-profile.svg';
 import UploadIcon from '@/icons/interface/icon-upload.svg';
 import ListIcon from '@/icons/interface/icon-list.svg';
-
-const isMenuOpen = ref(false);
+import InfoIcon from '@/icons/interface/icon-info.svg';
 
 </script>
 
 <template>
-  <nav class="flex flex-row w-full h-16 bg-white">
+  <nav class="sticky bottom-0 flex flex-row justify-evenly w-full h-16 bg-white">
+
     <prefetch-link
       v-wave
       to="/"
-      class="flex justify-center flex-1 h-full"
+      class="flex flex-1 justify-center items-center"
+      :class="{ 'bg-gray-100': $route.path === '/' }"
     >
-      <img :src="MapIcon" />
+      <MapIcon />
+    </prefetch-link>
+
+    <prefetch-link
+      v-wave
+      v-if="accountStore.user"
+      to="/informace"
+      class="flex flex-1 justify-center items-center"
+      :class="{ 'bg-gray-100': $route.path.startsWith('/informace') }"
+    >
+      <InfoIcon />
     </prefetch-link>
 
     <prefetch-link
       v-wave
       v-if="accountStore.user"
       to="/ucet/sprava/moje-nahravky"
-      class="flex justify-center flex-1 h-full"
+      class="flex flex-1 justify-center items-center"
+      :class="{ 'bg-gray-100': $route.path.startsWith('/ucet/sprava/moje-nahravky') }"
     >
-      <img :src="ListIcon" />
+      <ListIcon />
     </prefetch-link>
 
     <prefetch-link
       v-wave
       to="/nahrat"
-      class="flex justify-center flex-1 h-full"
+      class="flex flex-1 justify-center items-center"
+      :class="{ 'bg-gray-100': $route.path.startsWith('/nahrat') }"
     >
-      <img :src="UploadIcon" />
+      <UploadIcon />
     </prefetch-link>
 
-    <prefetch-link v-wave class="flex justify-center flex-1 h-full">
-      <img :src="AccountIcon" />
+    <prefetch-link
+      v-wave
+      :to="accountStore.user ? '/ucet/sprava/osobni-udaje' : '/ucet/vitejte'"
+      class="flex flex-1 justify-center items-center"
+      :class="{ 'bg-gray-100': $route.path.startsWith('/ucet') }"
+    >
+      <AccountIcon />
     </prefetch-link>
   </nav>
 </template>

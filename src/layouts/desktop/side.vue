@@ -19,12 +19,12 @@ const closePopup = () => {
   <router-view v-slot="{ Component }">
     <aside class="side">
       <div>
-        <div class="flex flex-row gap-x-1 items-center mr-2 relative">
+        <div class="sticky flex flex-row justify-between top-0">
           <button class="small" @click="goBack">
-            <img :src="Back" />
+            <Back />
           </button>
-          <button class="small sticky top-8" @click="closePopup">
-            <img :src="Close" />
+          <button class="small bg-yellow-300 rounded-2xl" @click="closePopup">
+            <Close />
           </button>
         </div>
 

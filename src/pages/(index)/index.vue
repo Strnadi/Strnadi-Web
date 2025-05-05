@@ -10,5 +10,5 @@ const isDesktop = useMediaQuery(
 </script>
 
 <template>
-  <Map v-if="!isDesktop" />
+  <div class="flex flex-1" v-if="!isDesktop"><Map /></div>
 </template>

@@ -18,7 +18,7 @@ export const persist = <T>(object: T, options?: Partial<PersistOptions<T>>) => {
 
   const _storage = options?.storage ?? window.localStorage;
   const _key = options?.key ?? DEFAULT_KEY;
-  const _paths = options?.paths ?? null;
+  const _paths = options?.paths;
   const _store = assertStore(_storage, _key);
 
   syncReactiveWithLocal(object, _store, _paths);
@@ -38,20 +38,20 @@ export const persist = <T>(object: T, options?: Partial<PersistOptions<T>>) => {
 /**
  * Asserts store
  */
-const assertStore = (storage: object, key: string): object => {
+const assertStore = (storage: Storage, key: string): object | null => {
   let _store = storage.getItem(key);
 
   if (!_store) {
     storage.setItem(key, JSON.stringify({}));
   }
 
-  return getStore(storage, key);
+  return getStore(storage, key)!;
 };
 
 /**
  * Gets store
  */
-const getStore = (storage: object, key: string): object => {
+const getStore = (storage: Storage, key: string): object | null => {
   let _store = storage.getItem(key);
 
   try {
@@ -66,13 +66,13 @@ const getStore = (storage: object, key: string): object => {
     // Ignore
   }
 
-  return undefined;
+  return null;
 };
 
 /**
  * Syncs reactive object with local store
  */
-const syncReactiveWithLocal = (object: object, store: object, paths: object = null): undefined => {
+const syncReactiveWithLocal = (object: object, store: object, paths?: Array<string>): void => {
   if (paths) {
     paths.forEach(path => {
       let _value = get(store, path);
@@ -89,7 +89,7 @@ const syncReactiveWithLocal = (object: object, store: object, paths: object = nu
 /**
  * Syncs local store with reactive object
  */
-const syncLocalWithReactive = (object: object, storage: object, key: string, paths: object = null): undefined => {
+const syncLocalWithReactive = (object: object, storage: Storage, key: string, paths?: Array<string>): void => {
   let _store = {};
 
   if (paths) {

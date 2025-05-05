@@ -8,6 +8,7 @@
 @import "./text-input.css";
 @import "./hr.css";
 @import "./links.css";
+@import "./forms.css";
 
 :root {
   font-family: 'Bricolage Grotesque', Arial, Helvetica, sans-serif;

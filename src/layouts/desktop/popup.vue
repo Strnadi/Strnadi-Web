@@ -16,7 +16,7 @@ const closePopup = () => {
       <div @click.stop>
         <div>
           <button class="secondary big" @click="goBack">
-            <img :src="Back" />
+            <Back />
             <span>Zpět</span>
           </button>
         </div>

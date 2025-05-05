@@ -15,7 +15,7 @@ const closePopup = () => {
       <div :key="`${route.path}`" @click.stop>
         <div>
           <button class="secondary big" @click="closePopup">
-            <img :src="Back" />
+            <Back />
             <span>Zpět</span>
           </button>
         </div>

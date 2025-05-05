@@ -17,6 +17,7 @@ import vueDevTools from 'vite-plugin-vue-devtools';
 import VueRouter from 'unplugin-vue-router/vite';
 import MetaLayouts from "vite-plugin-vue-meta-layouts";
 import Terminal from 'vite-plugin-terminal';
+import SVGLoader from 'vite-svg-loader'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -24,13 +25,16 @@ export default defineConfig({
     purgePolyfills.rollup({  }),
     TSConfigPaths({ loose: true }),
     TailwindCSS(),
-    VueRouter({  }),
+    VueRouter({ importMode: "sync" }),
     Vue({ include: [/\.vue$/, /\.md$/] }),
+    SVGLoader({
+      defaultImport: 'component'
+    }),
     Terminal({
       output: ['terminal', 'console']
     }),
     MetaLayouts({
-      importMode: "async",
+      importMode: "sync",
       target: 'src/layouts',
       defaultLayout: "default",
       skipTopLevelRouteLayout: false
@@ -63,6 +67,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/(?:(new|dev|staging)\.)?strnadi\.cz\/.*$/,
@@ -121,9 +126,25 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if (id.includes("node_modules") || id.includes("src/vendor/")) {
+          console.log(id)
+
+          if (id.includes("vue") && id.includes("node_modules")) {
+            return "vue";
+          }
+
+          else if (id.includes("leaflet")) {
+            return "maps";
+          }
+
+          else if (id.includes("@codemirror") || id.includes("@lezer") || id.includes("md-editor")) {
+            return "article-editor";
+          }
+
+          else if (id.includes("node_modules") || id.includes("src/vendor/")) {
             return "vendor";
           }
+
+          // return "index";
         },
       },
     },

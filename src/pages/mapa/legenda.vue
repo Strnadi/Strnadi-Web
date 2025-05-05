@@ -1,6 +1,6 @@
 <route lang="yaml">
 meta:
-  layout: desktop/popup
+  layout: desktop/small-popup
 </route>
 
 <script setup lang="ts">
@@ -8,7 +8,7 @@ import { MapIcons } from '@/constants/MapIcons';
 </script>
 
 <template>
-  <h1>Legenda mapy</h1>
+  <h1>Nápověda k mapě</h1>
 
   <div
     class="flex flex-row gap-x-2 gap-y-2 flex-wrap"

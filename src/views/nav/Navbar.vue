@@ -19,26 +19,26 @@ import MapIcon from '@/icons/interface/icon-map.svg'
 const isMenuOpen = ref(false);
 
 const { data: articles } = useQuery({
-  queryKey: ["all-articles"],
+  queryKey: ["articles"],
   queryFn: async () => getArticles()
 })
 
-const categories = computed(() => {
-  return articles.value?.reduce(
-    (acc, curr) => {
-      curr.categories.forEach(category => {
-        if(!(category in acc)) {
-          acc[category] = [];
-        }
+// const categories = computed(() => {
+//   return articles.value?.reduce(
+//     (acc, curr) => {
+//       curr.categories.forEach(category => {
+//         if(!(category in acc)) {
+//           acc[category] = [];
+//         }
 
-        acc[category].push(curr)
-      })
+//         acc[category].push(curr)
+//       })
 
-      return acc;
-    },
-    new Map<ArticleCategory, Article[]>()
-  ) ?? {};
-})
+//       return acc;
+//     },
+//     new Map<ArticleCategory, Article[]>()
+//   ) ?? {};
+// })
 
 </script>
 
@@ -57,7 +57,7 @@ const categories = computed(() => {
         <ul class='flex flex-row gap-x-4 items-center'>
           <li>
             <PrefetchLink to="/" class='dropdown-item'>
-              <img :src="MapIcon" alt="Upload" />
+              <MapIcon />
               Mapa
             </PrefetchLink>
           </li>
@@ -65,22 +65,40 @@ const categories = computed(() => {
           <template v-if="accountStore.user">
             <li>
               <PrefetchLink to="/nahrat" class='dropdown-item'>
-                <img :src="Upload" alt="Upload" />
+                <Upload />
                 Nahrát
               </PrefetchLink>
             </li>
             <li>
               <PrefetchLink to="/ucet/sprava/moje-nahravky" class='dropdown-item'>
-                <img :src="List" alt="List" />
+                <List />
                 Moje záznamy
               </PrefetchLink>
             </li>
           </template>
 
-          <Dropdown v-for="(categoryArticles, category) in categories">
+          <Dropdown>
+            <template #title>
+              Informace
+              <DropdownIcon />
+            </template>
+
+            <li
+              v-for="article in articles"
+            >
+              <prefetch-link :to="`/informace/${article.id}`" class="dropdown-item">
+                {{ article.name }}
+                <span v-if="article.description">
+                  {{ article.description }}
+                </span>
+              </prefetch-link>
+            </li>
+          </Dropdown>
+
+          <!-- <Dropdown v-for="(categoryArticles, category) in categories">
             <template v-slot:title class="flex flex-row items-center">
               {{ category.label }}
-              <img :src="DropdownIcon" width="16" />
+              <DropdownIcon />
             </template>
             <li
               v-for="article in categoryArticles"
@@ -92,7 +110,7 @@ const categories = computed(() => {
                 </span>
               </prefetch-link>
             </li>
-          </Dropdown>
+          </Dropdown> -->
         </ul>
 
         <ul class="flex flex-row gap-x-4 items-center">

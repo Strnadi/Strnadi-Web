@@ -1,10 +1,10 @@
 import * as Sentry from "@sentry/vue";
 import App from "@/App.vue";
-import posthogPlugin from "@/plugins/posthog";
-import firebasePlugin from "@/plugins/firebase";
+import posthogPlugin from "@/plugins/vue/posthog";
+import firebasePlugin from "@/plugins/vue/firebase";
 import Vue3RouterPrefetch from 'vue3-router-prefetch'
 import axios from "axios";
-import { createApp } from "vue";
+import { createApp, defineCustomElement } from "vue";
 import { createRouter, createWebHistory, type RouteLocationRaw, type RouteRecordRaw } from "vue-router";
 import { VueQueryPlugin } from "@tanstack/vue-query";
 import { routes as generatedRoutes } from 'vue-router/auto-routes'
@@ -14,9 +14,10 @@ import { setupLayouts } from 'virtual:meta-layouts';
 import VWave from 'v-wave'
 import VueDatePicker from "@vuepic/vue-datepicker";
 import { ApiError } from "@/classes/api-error";
+import ExpandableImage from '@/components/ExpandableImage.vue';
 import "./styles/main.css";
-import { accountStore } from "./state/AccountStore";
 
+import mermaid from 'mermaid';
 
 declare global {
   interface Array<T> {
@@ -156,7 +157,7 @@ routes = setupLayouts(routes);
 // routes = routes.guarded(authGuard);
 routes = routes.guarded(welcomeGuard);
 
-console.log(routes)
+// console.log(routes)
 
 const app = createApp(App);
 const router = createRouter({
@@ -228,4 +229,12 @@ app.use(VWave, {
   duration: 0.2
 });
 app.component("VueDatePicker", VueDatePicker);
+
+customElements.define('expandable-image', defineCustomElement(ExpandableImage, { shadowRoot: false }));
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme:       'default'
+});
+
 app.mount("#app");

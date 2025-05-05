@@ -114,8 +114,8 @@ export const getUserExists = async (email: string): Promise<boolean> => {
   return response.status !== 200;
 }
 
-export const patchUser = async (token: string, email: string, data: UserUpdateRequest): Promise<User> => {
-  const response = await axios.patch(`/users/${email}`, data, {
+export const patchUser = async (token: string, id: number | string, data: UserUpdateRequest): Promise<User> => {
+  const response = await axios.patch(`/users/${id}`, data, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -128,11 +128,11 @@ export const getPasswordResetRequest = async (email: string) => {
   await axios.get(`/auth/${email}/reset-password`);
 }
 
-export const getResendVerifyEmail = async (email: string) => {
-  await axios.get(`/auth/${email}/reset-password`);
+export const getResendVerifyEmail = async (userId: number) => {
+  await axios.get(`/auth/${userId}/reset-password`);
 }
 
-export const patchPasswordChange = async (token: string, id: string, newPassword: string) => {
+export const patchPasswordChange = async (token: string, id: number | string, newPassword: string) => {
   await axios.patch(`/users/${id}/change-password`, { newPassword }, {
     headers: {
       'Authorization': `Bearer ${token}`

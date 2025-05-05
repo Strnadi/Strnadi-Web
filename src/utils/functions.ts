@@ -9,3 +9,15 @@ export function wrap<
   fn(...args);
   return wrapper(...args);
 }
+
+const makeLogged = (type: "log"|"info"|"warn"|"error") => 
+  (...args: any[]) => {
+    console[type](...args);
+    return args;
+  }
+
+export const logged = makeLogged("log");
+export const informed = makeLogged("info");
+export const warned = makeLogged("warn");
+export const errored = makeLogged("error");
+
