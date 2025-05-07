@@ -1,4 +1,4 @@
-import { watch, type Reactive } from "vue";
+import { watch } from "vue";
 import { get, set } from "dotly";
 
 const DEFAULT_KEY = "reactive_persisted";

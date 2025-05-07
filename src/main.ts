@@ -11,13 +11,12 @@ import { routes as generatedRoutes } from 'vue-router/auto-routes'
 
 import { setupLayouts } from 'virtual:meta-layouts';
 
-import VWave from 'v-wave'
+import VWave from 'v-wave';
+import vSelect from 'vue-select';
 import VueDatePicker from "@vuepic/vue-datepicker";
 import { ApiError } from "@/classes/api-error";
 import ExpandableImage from '@/components/ExpandableImage.vue';
 import "./styles/main.css";
-
-import mermaid from 'mermaid';
 
 declare global {
   interface Array<T> {
@@ -68,6 +67,25 @@ const handleResize = () => {
 };
 
 desktopQuery.addEventListener('change', handleResize);
+
+const removeUnlayoutedRoutes = (routes: RouteRecordRaw[]): RouteRecordRaw[] => {
+  return routes.map(route => {
+    let processedRoute = { ...route };
+
+    if (processedRoute.children && processedRoute.children.length > 0) {
+      processedRoute.children = removeUnlayoutedRoutes(processedRoute.children);
+    }
+
+    if (!processedRoute.meta?.layout) {
+      processedRoute.meta = {
+        ...processedRoute.meta,
+        layout: false
+      };
+    }
+
+    return processedRoute;
+  });
+};
 
 
 const removeLayoutsRecursively = (routes: RouteRecordRaw[], isDesktop: boolean): RouteRecordRaw[] => {
@@ -149,6 +167,7 @@ const welcomeGuard = (to: RouteRecordRaw, _from: RouteRecordRaw): boolean | Rout
 
 let routes: RouteRecordRaw[];
 routes = generatedRoutes;
+// routes = removeUnlayoutedRoutes(routes);
 routes = removeLayoutsRecursively(routes, initialIsDesktop);
 routes = setupLayouts(routes);
 // routes = nameRoutes(routes, "guest", route => route.meta?.auth === false);
@@ -157,7 +176,7 @@ routes = setupLayouts(routes);
 // routes = routes.guarded(authGuard);
 routes = routes.guarded(welcomeGuard);
 
-// console.log(routes)
+console.log(routes)
 
 const app = createApp(App);
 const router = createRouter({
@@ -228,13 +247,10 @@ app.use(Vue3RouterPrefetch, { type: "hover", name: "PrefetchLink" });
 app.use(VWave, {
   duration: 0.2
 });
+
+app.component('vSelect', vSelect);
 app.component("VueDatePicker", VueDatePicker);
 
 customElements.define('expandable-image', defineCustomElement(ExpandableImage, { shadowRoot: false }));
-
-mermaid.initialize({
-  startOnLoad: false,
-  theme:       'default'
-});
 
 app.mount("#app");

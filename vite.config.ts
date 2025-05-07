@@ -25,7 +25,7 @@ export default defineConfig({
     purgePolyfills.rollup({  }),
     TSConfigPaths({ loose: true }),
     TailwindCSS(),
-    VueRouter({ importMode: "sync" }),
+    VueRouter({ importMode: "sync", routeBlockLang: 'yaml' }),
     Vue({ include: [/\.vue$/, /\.md$/] }),
     SVGLoader({
       defaultImport: 'component'
@@ -90,18 +90,7 @@ export default defineConfig({
                 maxAgeSeconds: 24 * 60 * 60 * 30, // 30 days
               },
             },
-          },
-          {
-            urlPattern: /^https:\/\/api.mapy.cz\/.*$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'mapy-cache',
-              expiration: {
-                maxEntries: 100000,
-                maxAgeSeconds: 24 * 60 * 60 * 7, // 30 days
-              },
-            },
-          },
+          }
         ],
       },
     }),
@@ -126,8 +115,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          console.log(id)
-
           if (id.includes("vue") && id.includes("node_modules")) {
             return "vue";
           }

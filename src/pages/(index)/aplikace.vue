@@ -1,4 +1,4 @@
-<route lang="yaml">
+<route>
 meta:
   layout: desktop/small-popup
 </route>
@@ -37,15 +37,17 @@ const location = window.location.href;
 
   <div class="flex flex-col items-center gap-y-4">
     <div class="flex flex-col items-center gap-y-4">
-      <QrcodeSvg
-        :value="location"
-        :size="200"
-        class="w-fit"
-      />
+      <div class="flex flex-row items-center gap-x-4">
+        <QrcodeSvg
+          :value="location"
+          :size="200"
+          class="w-fit"
+        />
 
-      <span class="font-medium text-justify [text-align-last:center] text-sm">
-        Toto je "chytrý" QR kód, který vás přesměruje přímo na ten správný obchod s aplikacemi pro vaši platformu.
-      </span>
+        <span class="font-medium text-justify [text-align-last:center] text-sm w-1/2">
+          Toto je "chytrý" QR kód, který vás přesměruje přímo na ten správný obchod s aplikacemi pro vaši platformu.
+        </span>
+      </div>
 
       <div class="flex flex-col gap-y-1">
         <div class="flex flex-row gap-x-4 items-center">

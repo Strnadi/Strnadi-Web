@@ -1,4 +1,4 @@
-<route lang="yaml">
+<route>
 meta:
   layout: desktop/side
 </route>
@@ -10,7 +10,7 @@ meta:
     <router-link to="/sprava/uzivatele" class="button-secondary p-2 w-full">
       Seznam uživatelů
     </router-link>
-    <router-link to="/sprava/prispevky" class="button-secondary p-2 w-full">
+    <router-link to="/sprava/informace" class="button-secondary p-2 w-full">
       Správa příspěvků
     </router-link>
     <router-link to="/sprava/vsechny-nahravky" class="button-secondary p-2 w-full">
