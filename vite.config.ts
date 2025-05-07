@@ -115,23 +115,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if (id.includes("vue") && id.includes("node_modules")) {
-            return "vue";
-          }
-
-          else if (id.includes("leaflet")) {
-            return "maps";
-          }
-
-          else if (id.includes("@codemirror") || id.includes("@lezer") || id.includes("md-editor")) {
-            return "article-editor";
-          }
-
-          else if (id.includes("node_modules") || id.includes("src/vendor/")) {
+          if (id.includes("node_modules")) {
             return "vendor";
           }
-
-          // return "index";
         },
       },
     },
