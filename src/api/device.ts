@@ -1,5 +1,11 @@
 import axios from "axios";
-import type { AddDeviceRequest } from "./types/device";
+
+export interface AddDeviceRequest {
+  userId: number,
+  fcmToken: string,
+  devicePlatform: string,
+  deviceModel: string
+};
 
 export const postDevice = async (addRequest: AddDeviceRequest, token: string): Promise<void> => {
 	await axios.post(`/devices/add`, addRequest, {

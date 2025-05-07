@@ -20,6 +20,7 @@ export const uploadStore = reactive({
   device: "" as string | null,
   birdCount: 1,
   dateTime: new Date().toISOString(),
+  confirmUpload: false,
 
   resetStage() {
     this.stage = 0

@@ -1,11 +1,9 @@
 import * as jose from 'jose'
 import { reactive } from 'vue'
-import type { User, JWTObject } from '@/api/types/auth'
+import type { User, JWTObject } from '@/api/account'
 import { getCurrentUserInfo } from '@/api/account';
-import { posthogInstance } from '@/plugins/posthog'; // Import posthog
-
-/* @ts-ignore */
-import persist from "vue-reactive-persisted";
+import { posthogInstance } from '@/plugins/vue/posthog'; // Import posthog
+import persist from "@/utils/persist";
 
 export const accountStore = reactive({
   token: null as string | null,
@@ -47,4 +45,15 @@ export const accountStore = reactive({
   }
 });
 
-persist(accountStore);
+persist(accountStore, {
+  syncCallback: (store) => {
+    if (store.token_object) {
+      const now = Math.floor(Date.now() / 1000);
+      const exp = store.token_object.exp;
+
+      if (exp < now) {
+        store.logout();
+      }
+    }
+  }
+});

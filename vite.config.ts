@@ -8,36 +8,36 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { sentryVitePlugin as SentryVitePlugin } from "@sentry/vite-plugin";
 import { visualizer as Visualizer } from "rollup-plugin-visualizer";
+import { purgePolyfills } from 'unplugin-purge-polyfills'
 import Vue from "@vitejs/plugin-vue";
 import TailwindCSS from "@tailwindcss/vite";
 import TSConfigPaths from "vite-tsconfig-paths";
 import Compression from "vite-plugin-compression2";
-import Markdown from 'unplugin-vue-markdown/vite';
 import vueDevTools from 'vite-plugin-vue-devtools';
+import VueRouter from 'unplugin-vue-router/vite';
+import MetaLayouts from "vite-plugin-vue-meta-layouts";
+import Terminal from 'vite-plugin-terminal';
+import SVGLoader from 'vite-svg-loader'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
+    purgePolyfills.rollup({  }),
     TSConfigPaths({ loose: true }),
     TailwindCSS(),
+    VueRouter({ importMode: "sync", routeBlockLang: 'yaml' }),
     Vue({ include: [/\.vue$/, /\.md$/] }),
-    Markdown({
-      wrapperDiv: false,
-      markdownItOptions: {
-        html: true,
-        linkify: true,
-      },
-      markdownItSetup(md) {
-        md.renderer.rules.image = (tokens, idx) => {
-          const token = tokens[idx];
-          const srcIndex = token.attrIndex('src');
-          const altIndex = token.attrIndex('alt');
-          const src = srcIndex >= 0 ? token.attrs![srcIndex][1] : '';
-          const alt = altIndex >= 0 ? token.attrs![altIndex][1] : '';
-
-          return `<ExpandableImage src="${src}" alt="${alt}" />`;
-        };
-      }
+    SVGLoader({
+      defaultImport: 'component'
+    }),
+    Terminal({
+      output: ['terminal', 'console']
+    }),
+    MetaLayouts({
+      importMode: "sync",
+      target: 'src/layouts',
+      defaultLayout: "default",
+      skipTopLevelRouteLayout: false
     }),
     VitePWA({
       registerType: 'autoUpdate',
@@ -67,40 +67,30 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/(?:new\.)?strnadi\.cz\/.*$/,
+            urlPattern: /^https:\/\/(?:(new|dev|staging)\.)?strnadi\.cz\/.*$/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'strnadi-cache',
               expiration: {
-                maxEntries: 10000,
+                maxEntries: 100000,
                 maxAgeSeconds: 24 * 60 * 60 * 7, // 1 week
               },
             },
           },
           {
-            urlPattern: /^https:\/\/(dev)?api.strnadi.cz\/map\/.*$/,
+            urlPattern: /^https:\/\/(dev|new|old)?api.strnadi.cz\/map\/.*$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'mapy-cache',
               expiration: {
-                maxEntries: 10000,
+                maxEntries: 100000,
                 maxAgeSeconds: 24 * 60 * 60 * 30, // 30 days
               },
             },
-          },
-          {
-            urlPattern: /^https:\/\/api.mapy.cz\/.*$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'mapy-cache',
-              expiration: {
-                maxEntries: 10000,
-                maxAgeSeconds: 24 * 60 * 60 * 7, // 30 days
-              },
-            },
-          },
+          }
         ],
       },
     }),
@@ -111,7 +101,7 @@ export default defineConfig({
       telemetry: false
     }),
     vueDevTools({
-      launchEditor: "code-insiders"
+      launchEditor: "subl4"
     }),
     Visualizer({
       gzipSize: true,
@@ -125,13 +115,23 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if(id.includes("maplibre") || id.includes("geojson") || id.includes("geotiff")) {
+          if (id.includes("vue") && id.includes("node_modules")) {
+            return "vue";
+          }
+
+          else if (id.includes("leaflet")) {
             return "maps";
           }
 
-          if (id.includes("node_modules") || id.includes("src/vendor/")) {
+          else if (id.includes("@codemirror") || id.includes("@lezer") || id.includes("md-editor")) {
+            return "article-editor";
+          }
+
+          else if (id.includes("node_modules") || id.includes("src/vendor/")) {
             return "vendor";
           }
+
+          // return "index";
         },
       },
     },
@@ -142,6 +142,15 @@ export default defineConfig({
 
   dev: {
     sourcemap: true,
+  },
+
+  resolve: {
+    alias: [
+      {
+        find: /leaflet\/dist\/leaflet-src\.js(\?commonjs-es-import)?$/,
+        replacement: 'leaflet/dist/leaflet-src.esm.js'
+      }
+    ],
   },
 
   server: {

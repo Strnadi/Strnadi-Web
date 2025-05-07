@@ -7,8 +7,11 @@ export const registerStore = reactive({
   nickname: "",
   email: "",
   password: "",
+  passwordConfirm: "",
   postCode: 0,
   city: "",
+  dataAgreement: false,
+  marketingAgreement: false,
 
   nextStage() {
     this.stage++;

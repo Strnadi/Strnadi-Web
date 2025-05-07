@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, type InputHTMLAttributes } from 'vue';
+import { computed, type InputHTMLAttributes } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { useDebounceFn } from '@vueuse/core';
 import { getGeocodeAutocomplete } from '@/api/maps';
@@ -29,13 +29,13 @@ const location = computed({
 
 
 const { data: suggestions } = useQuery({
-  queryKey: ['places', text.value],
+  queryKey: ['places', text],
   queryFn: useDebounceFn(async () => {
     return getGeocodeAutocomplete(
       text.value,
-      ["regional.municipality","regional.municipality_part","regional.street","regional.address","poi","coordinate"]
+      ["coordinate", "regional.address", "regional.street", "poi", "regional.municipality_part", "regional.municipality"]
     );
-  }, 250),
+  }, 500),
 
   enabled: computed(() => text.value !== undefined && text.value.length >= (props.searchThreshold || 3)),
 })
@@ -61,10 +61,15 @@ const update = () => {
     v-model="text"
     type='text'
     list='places'
-    @change="update"
-    @keydown.enter="update"
+    @input="update"
   />
   <datalist id="places">
-    <option v-for="(suggestion, index) in suggestions" :key="index" :value="suggestion.name" />
+    <option
+      v-for="(suggestion, index) in suggestions"
+      :key="index"
+      :value="suggestion.name"
+    >
+      {{ suggestion.name }} ({{ suggestion.location }})
+    </option>
   </datalist>
 </template>
