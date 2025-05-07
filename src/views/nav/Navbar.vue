@@ -4,7 +4,7 @@ import { accountStore } from '@/state/AccountStore';
 
 import { useQuery } from '@tanstack/vue-query';
 
-import { getArticles, type ArticleCategory, type Article } from '@/api/articles'
+import { getArticleCategories, type ArticleCategory, type Article } from '@/api/articles'
 
 import Dropdown from '@/components/Dropdown.vue'
 import AccountDropdown from '@/views/dropdown/account/AccountDropdown.vue';
@@ -18,27 +18,10 @@ import MapIcon from '@/icons/interface/icon-map.svg'
 
 const isMenuOpen = ref(false);
 
-const { data: articles } = useQuery({
-  queryKey: ["articles"],
-  queryFn: async () => getArticles()
+const { data: categories } = useQuery({
+  queryKey: ["categories"],
+  queryFn: async () => getArticleCategories()
 })
-
-// const categories = computed(() => {
-//   return articles.value?.reduce(
-//     (acc, curr) => {
-//       curr.categories.forEach(category => {
-//         if(!(category in acc)) {
-//           acc[category] = [];
-//         }
-
-//         acc[category].push(curr)
-//       })
-
-//       return acc;
-//     },
-//     new Map<ArticleCategory, Article[]>()
-//   ) ?? {};
-// })
 
 </script>
 
@@ -77,40 +60,23 @@ const { data: articles } = useQuery({
             </li>
           </template>
 
-          <Dropdown>
-            <template #title>
-              Informace
-              <DropdownIcon />
-            </template>
-
-            <li
-              v-for="article in articles"
-            >
-              <prefetch-link :to="`/informace/${article.id}`" class="dropdown-item">
-                {{ article.name }}
-                <span v-if="article.description">
-                  {{ article.description }}
-                </span>
-              </prefetch-link>
-            </li>
-          </Dropdown>
-
-          <!-- <Dropdown v-for="(categoryArticles, category) in categories">
-            <template v-slot:title class="flex flex-row items-center">
+          <Dropdown v-for="category in categories">
+            <template #title class="flex flex-row items-center">
               {{ category.label }}
               <DropdownIcon />
             </template>
+
             <li
-              v-for="article in categoryArticles"
+              v-for="article in category.articles"
             >
-              <prefetch-link :to="`/informace/${article.slug}`" class="dropdown-item">
+              <prefetch-link :to="`/informace/${article.id}`" class="dropdown-item">
                 {{ article.title }}
                 <span v-if="article.description">
                   {{ article.description }}
                 </span>
               </prefetch-link>
             </li>
-          </Dropdown> -->
+          </Dropdown>
         </ul>
 
         <ul class="flex flex-row gap-x-4 items-center">

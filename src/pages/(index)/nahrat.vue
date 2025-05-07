@@ -1,4 +1,4 @@
-<route lang="yaml">
+<route>
 meta:
   layout: desktop/center
 </route>
@@ -33,10 +33,12 @@ const stepper = useStepper({
     title: 'Soubory',
     isValid: () => (uploadStore.parts?.length ?? 0) > 0 && uploadStore.parts?.every(part => part.file),
   },
+
   'photos': {
     title: 'Fotky',
     isValid: () => true,
   },
+
   'location': {
     title: 'Poloha',
     isValid: () => uploadStore.parts?.every(part => part.location),
@@ -49,19 +51,31 @@ const stepper = useStepper({
       mapStore.selectEnabled = false;
     }
   },
+
   'info': {
     title: 'Informace o nahrávce',
     isValid: () => uploadStore.dateTime,
   },
+
   'final-confirm': {
     title: 'Konečné potvrzení',
     isValid: () => true
   },
+
   'submit': {
     title: 'Odeslat',
     isValid: () => true, // Final step, always valid to view
   }
 });
+
+watch(
+  () => stepper.current.value,
+  (oldStep, newStep) => {
+    oldStep?.endCallback?.();
+    newStep?.beforeCallback?.();
+  }
+);
+
 
 const beforeWindowUnmount = (event: BeforeUnloadEvent) => {
   event.preventDefault();
@@ -160,7 +174,6 @@ const onSoundDrop = (acceptedFiles: any[]) => {
   }
 
   uploadStore.setRecordings(acceptedFiles);
-  stepper.goToNext();
 };
 
 const onPhotoDrop = (acceptedFiles: File[]) => {
@@ -268,7 +281,7 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
       <template v-if="stepper.isCurrent('location')">
         <ul>
           <li v-for="(part, index) in uploadStore.parts" :key="index">
-            <audio :src="partURLs[index]" controls />
+            <!-- <audio :src="partURLs[index]" controls /> -->
             <p>
               <TextualCoords
                 v-if="part.location"
@@ -426,6 +439,6 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
     </div>
 
     <!-- Progress Bar -->
-    <SegmentedProgress :progress="stepper.currentIndex.value" :total-segments="totalSteps" class="mt-4" />
+    <!-- <SegmentedProgress :progress="stepper.currentIndex.value" :total-segments="totalSteps" class="mt-4" /> -->
   </template>
 </template>

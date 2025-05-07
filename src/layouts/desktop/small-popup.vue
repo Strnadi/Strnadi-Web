@@ -14,7 +14,7 @@ const closePopup = () => {
     <aside class="small_popup" @click="closePopup" @keydown.escape="closePopup">
       <div :key="`${route.path}`" @click.stop>
         <div>
-          <button class="secondary big" @click="closePopup">
+          <button class="secondary big max-w-fit" @click="closePopup">
             <Back />
             <span>Zpět</span>
           </button>
@@ -54,7 +54,7 @@ const closePopup = () => {
     @apply py-1 -ml-3 mr-4 self-start flex flex-row items-center border-none bg-transparent;
   }
 
-  aside > div > div :not(button:first-of-type, h1:first-of-type) {
+  aside > div :not(div:first-of-type, h1:first-of-type) {
     @apply col-span-2;
   }
 </style>
