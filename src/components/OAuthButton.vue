@@ -2,7 +2,6 @@
 import * as jose from 'jose';
 import { onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { v4 as uuidv4 } from 'uuid';
 
 const router = useRouter();
 const route = useRoute();
@@ -48,7 +47,7 @@ onMounted(() => {
 });
 
 const submitLogin = (url: string, clientId: string, redirectUri: string, scope: string, responseType: string, prompt: string) => {
-  const nonce = uuidv4();
+  const nonce = Math.random().toString();
 
   window.location.href = (
     url +

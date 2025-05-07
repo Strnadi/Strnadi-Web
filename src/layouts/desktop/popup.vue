@@ -14,8 +14,8 @@ const closePopup = () => {
   <router-view v-slot="{ Component, route }">
     <aside class="popup" @click="closePopup" @keydown.escape="closePopup">
       <div @click.stop>
-        <div>
-          <button class="secondary big" @click="goBack">
+        <div class="max-w-fit">
+          <button class="secondary big max-w-fit" @click="goBack">
             <Back />
             <span>Zpět</span>
           </button>

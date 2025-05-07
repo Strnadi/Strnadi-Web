@@ -1,4 +1,4 @@
-<route lang="yaml">
+<route>
 meta:
   layout: desktop/center
 </route>
@@ -10,12 +10,9 @@ import { postArticle, postArticleFile } from '@/api/articles';
 import { accountStore } from '@/state/AccountStore';
 import { useRouter } from 'vue-router';
 import { ARTICLE_TEXT_FILENAME } from '@/constants/Articles'
-import Dropzone from '@/components/Dropzone.vue';
 import MaterialIcon from '@/components/MaterialIcon.vue';
 import { MdEditor } from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
-import 'highlight.js/styles/atom-one-dark.min.css';
-import 'katex/dist/katex.min.css';
 
 
 const router = useRouter();
@@ -52,7 +49,7 @@ const { mutate: submitArticle } = useMutation({
   },
 
   onSuccess() {
-    router.replace("/sprava/prispevky");
+    router.replace("/sprava/informace");
   }
 })
 
@@ -67,6 +64,11 @@ const { mutate: submitArticle } = useMutation({
     language="en-US"
     @upload-img="(newFiles) => files.push(...newFiles)"
     @save="(content) => submitArticle({ content })"
+    :no-mermaid="true"
+    :no-katex="true"
+    :no-highlight="true"
+    :no-prettier="true"
+    :no-img-zoom-in="true"
   />
 
   <ul class="flex flex-col w-full" @click.stop>
@@ -79,5 +81,4 @@ const { mutate: submitArticle } = useMutation({
       <button class="text-red-500" @click="files.splice(files.indexOf(file), 1)">Smazat</button>
     </li>
   </ul>
-
 </template>
