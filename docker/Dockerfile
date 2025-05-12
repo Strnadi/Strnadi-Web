@@ -7,6 +7,7 @@ RUN bun install
 
 COPY src src
 COPY public public
+COPY plugins plugins
 COPY index.html tsconfig*.json vite.config.ts ./
 
 ARG ENVIRONMENT="production"

@@ -8,15 +8,15 @@ import { getRecordings } from '@/api/recordings';
 import { useQuery } from '@tanstack/vue-query';
 
 import JSZip from '@progress/jszip-esm';
-import { mapStore } from '@/state/MapStore';
 import { onMounted } from 'vue';
+import TextualCoords from '@/components/map/TextualCoords.vue';
 
 const zip = new JSZip();
 const zipFileName = "nahravky.zip";
 
 const { data: recordings, isLoading, isError } = useQuery({
   queryKey: ["all-recordings"],
-  queryFn: async () => getRecordings({})
+  queryFn: async () => getRecordings({ parts: true })
 });
 
 </script>
@@ -46,7 +46,8 @@ const { data: recordings, isLoading, isError } = useQuery({
         {{ recording.name }}
         <ul>
           <li v-for="part in recording.parts" :key="part.id" class="flex flex-row gap-x-1 items-center">
-            {{ part.gpsLatitudeStart }} {{ part.gpsLongitudeStart }}
+            <input type="checkbox" />
+            <TextualCoords :lat="part.gpsLatitudeStart" :lng="part.gpsLongitudeStart" type="municipality_part" />
           </li>
         </ul>
       </li>

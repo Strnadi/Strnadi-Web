@@ -5,14 +5,16 @@ meta:
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { useMutation } from '@tanstack/vue-query';
-import { postArticle, postArticleFile } from '@/api/articles';
+import { useQuery, useMutation } from '@tanstack/vue-query';
+import { getArticleCategories, postArticle, postArticleFile, patchAssignArticleCategory } from '@/api/articles';
 import { accountStore } from '@/state/AccountStore';
 import { useRouter } from 'vue-router';
 import { ARTICLE_TEXT_FILENAME } from '@/constants/Articles'
 import MaterialIcon from '@/components/MaterialIcon.vue';
 import { MdEditor } from 'md-editor-v3';
+import ListDeselect from '@/components/ListDeselect.vue';
 import 'md-editor-v3/lib/style.css';
+import 'vue-select/dist/vue-select.css';
 
 
 const router = useRouter();
@@ -21,6 +23,12 @@ const files = ref([] as File[]);
 const name = ref("");
 const description = ref("");
 const editorContent = ref("");
+const categories = ref<string[]>();
+
+const { data: availableCategories } = useQuery({
+  queryKey: ["categories"],
+  queryFn: () => getArticleCategories()
+})
 
 const { mutate: submitArticle } = useMutation({
   mutationFn: async ({ content }: { content: string }) => {
@@ -46,6 +54,13 @@ const { mutate: submitArticle } = useMutation({
     for (const file of [textFile, ...files.value]) {
       postArticleFile(accountStore.token!, id, file)
     }
+
+    for (const category of categories?.value ?? []) {
+      patchAssignArticleCategory(accountStore.token!, category, {
+        articleId: id,
+        order: 0
+      })
+    }
   },
 
   onSuccess() {
@@ -59,6 +74,12 @@ const { mutate: submitArticle } = useMutation({
   <h1>Nový příspěvek</h1>
   <input v-model="name" type="text" placeholder="Nadpis" />
   <input v-model="description" type="text" placeholder="Popisek" />
+
+  <div>
+    <h2>Vyberte kategorie</h2>
+    <v-select multiple v-model="categories" :options="availableCategories?.map(category => category.name)" :components="{ ListDeselect }" />
+  </div>
+
   <MdEditor
     v-model="editorContent"
     language="en-US"
@@ -72,13 +93,13 @@ const { mutate: submitArticle } = useMutation({
   />
 
   <ul class="flex flex-col w-full" @click.stop>
-    <li v-for="file in files" :key="file.name" class="flex flex-row w-full items-center justify-between">
+    <li v-for="(file, index) in files" :key="file.name" class="flex flex-row w-full items-center justify-between">
       <MaterialIcon class="h-10" :filename="file.name" />
       <div class="flex flex-col">
         <p>{{ file.name }}</p>
         <p>{{ file.size / 1_000_000 }} MB</p>
       </div>
-      <button class="text-red-500" @click="files.splice(files.indexOf(file), 1)">Smazat</button>
+      <button class="text-red-500" @click="files.splice(index, 1)">Smazat</button>
     </li>
   </ul>
 </template>
