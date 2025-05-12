@@ -1,13 +1,99 @@
+<script lang="ts">
+import mitt from '@/vendor/mitt';
+import { type LeafletMouseEvent } from 'leaflet';
+
+export const DialectIcons = {
+  BC: {
+    fileName: "/dialects/dialect-bc.svg",
+    friendlyName: "BC",
+  },
+
+  BE: {
+    fileName: "/dialects/dialect-be.svg",
+    friendlyName: "BE",
+  },
+
+  XB: {
+    fileName: "/dialects/dialect-xb.svg",
+    friendlyName: "XB",
+  },
+
+  BhBl: {
+    fileName: "/dialects/dialect-bhbl.svg",
+    friendlyName: "BhBl",
+  },
+
+  BlBH: {
+    fileName: "/dialects/dialect-blbh.svg",
+    friendlyName: "BlBH",
+  },
+
+  Transition: {
+    fileName: "/dialects/dialect-transition.svg",
+    friendlyName: "Přechod",
+  },
+
+  Unknown: {
+    fileName: "/dialects/dialect-unknown.svg",
+    friendlyName: "Neznamý",
+  }
+};
+
+export const MapIcons = {
+  SelectedLocation: {
+    fileName: "/dialects/selected-location.svg",
+    friendlyName: "Vybraný bod",
+  },
+
+  RecordingLocation: {
+    fileName: "/dialects/selected-recording-location.svg",
+    friendlyName: "Vybraná nahrávka",
+  },
+
+  CurrentLocation: {
+    fileName: "/dialects/current-location.svg",
+    friendlyName: "Moje poloha",
+  },
+
+  CurrentLocationWithHeading: {
+    fileName: "/dialects/current-location-heading.svg",
+    friendlyName: "Moje poloha s orientací",
+  }
+};
+
+export const MapMarkers = reactive<{
+  icons: Record<string, { location: LatLngExpression, icon: Icon }>
+  addMarker(key: string, location: LatLngExpression, icon: Icon): void
+  removeMarker(key: string): void
+}>({
+  icons: {},
+  addMarker(key: string, location: LatLngExpression, icon: Icon) {
+    this.icons[key] = { location, icon };
+  },
+  removeMarker(key) {
+    delete this.icons[key];
+  },
+})
+
+export const MapEvents = mitt<{
+  'map-click': LeafletMouseEvent,
+  'part-click': {
+    event: LeafletMouseEvent,
+    rec: RecordingModel,
+    part: RecordingPartModel
+  }
+}>();
+
+</script>
+
 <script setup lang="ts">
 import { ref, computed, watch, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import { mapStore } from '@/state/MapStore';
 import { accountStore } from '@/state/AccountStore';
 import { useQuery } from '@tanstack/vue-query';
 import { getFilteredRecordings, getRecordings } from '@/api/recordings';
-import type { RecordingModel, RecordingPartModel } from '@/api/types/recording';
+import type { RecordingModel, RecordingPartModel, FilteredPartModel } from '@/api/recordings';
 import { useGeolocation } from '@vueuse/core';
-import { MapIcons } from '../constants/MapIcons';
 import LocationSearch from '@/components/map/LocationSearch.vue';
 import InfoIcon from '@/icons/interface/icon-info.svg';
 import ListIcon from '@/icons/interface/icon-list.svg';
@@ -15,6 +101,7 @@ import MapIcon from '@/icons/interface/icon-map.svg';
 import RulerIcon from '@/icons/interface/icon-ruler.svg';
 import FilledRulerIcon from '@/icons/interface/icon-ruler-fill.svg';
 import PictureIcon from '@/icons/interface/icon-picture.svg';
+import { useRoute } from 'vue-router';
 
 // @ts-expect-error
 import FilterIcon from '@/icons/interface/icon-filter2.svg?url';
@@ -28,17 +115,38 @@ import {
   LControl
 } from '@vue-leaflet/vue-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { icon, Icon, type LatLngExpression, LeafletMouseEvent } from 'leaflet';
+import { Icon, type LatLngExpression, type Map as LeafletMap } from 'leaflet';
 
 const env = import.meta.env;
 
 // -- Map state --
 const router = useRouter();
+const route = useRoute();
 const toolsShown = ref(false);
-const zoom = ref(8.25);
+
 const center = ref<LatLngExpression>({ lat: 49.9, lng: 15.5 });
 const scaleEnabled = ref(true);
-let leafletMap: any = null;
+let leafletMap: (LeafletMap | null) = null;
+
+// Maybe preserve this
+const mode = ref<"basic" | "outdoor" | "aerial">("outdoor");
+
+const zoomStack = ref([8.25]);
+const zoom = computed<number>({
+  get: () => zoomStack.value[zoomStack.value.length - 1],
+  set: (newZoom: number) => {
+    const duration = 1;
+    const targetZoom = 15;
+    const originalZoom = 8.25;
+
+    leafletMap?.flyTo(leafletMap.getCenter(), newZoom, {
+      animate: true,
+      duration: (newZoom - zoom.value) / (duration * (targetZoom - originalZoom))
+    });
+
+    zoomStack.value.push(newZoom);
+  }
+})
 
 const searchText = ref("");
 
@@ -51,7 +159,7 @@ const currentMapCoords = computed(() =>
 );
 
 // Recordings query
-const { data: recordings } = useQuery({ queryKey: ['all-recordings'], queryFn: () => getRecordings() });
+const { data: recordings } = useQuery({ queryKey: ['all-recordings'], queryFn: () => getRecordings({ parts: true }) });
 
 const { data: filteredRecordings, isFetched } = useQuery({ queryKey: ['filtered-parts'], queryFn: () => getFilteredRecordings() });
 
@@ -90,8 +198,6 @@ function updateBounds() {
   const b = leafletMap.getBounds();
   viewBounds.value = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
 }
-
-const mapRef = ref<any>(null);
 
 // watch zoom/center all the time
 watch([zoom, center], updateBounds);
@@ -154,64 +260,39 @@ function makeIcon(url: string): Icon {
   return new Icon({ iconUrl: url, iconSize: [24, 24], iconAnchor: [19, 19] });
 }
 
-const iconMaker = {
+const dialectIconMaker = {
   cache: {} as Record<string, Icon>,
 
-  makeMapIcon(name: keyof typeof MapIcons): Icon {
+  makeMapIcon(name: keyof typeof DialectIcons): Icon {
     console.log("Making icon: ", name)
 
     if (this.cache[name]) return this.cache[name];
 
-    if (!MapIcons[name]) {
+    if (!DialectIcons[name]) {
       console.error(`Icon ${name} not found`);
       return this.makeMapIcon('Unknown');
     }
 
-    const icon = makeIcon(MapIcons[name].fileName);
+    const icon = makeIcon(DialectIcons[name].fileName);
     this.cache[name] = icon;
     return icon;
   }
 }
 
-const onMapClick = (evt: LeafletMouseEvent) => {
-  const { lat, lng } = evt.latlng
+// @ts-expect-error
+const onMapClick = MapEvents.emit.bind(null, 'map-click');
 
-  if(mapStore.selectEnabled) {
-    mapStore.setSelectedLocation(lat, lng)
-  } else {
-    router.replace("/");
-  }
-
-}
-
-
-const iconSelected = iconMaker.makeMapIcon('SelectedLocation');
-const iconRec = iconMaker.makeMapIcon('RecordingLocation');
-const iconCurrent = iconMaker.makeMapIcon('CurrentLocation');
-const iconCurrentHeading = iconMaker.makeMapIcon('CurrentLocationWithHeading');
-
-// Handlers for recording click
-function onRecordingClick(event: LeafletMouseEvent, rec: RecordingModel, part: RecordingPartModel) {
+const onRecClick = (
+  { event, rec, part }: { event: LeafletMouseEvent; rec: RecordingModel; part: RecordingPartModel }
+) => {
   event.originalEvent.stopPropagation();
-
-  const lat = part.gpsLatitudeStart
-  const lng = part.gpsLongitudeStart
-
-  const targetZoom = 15;
-  const originalZoom = 8.25;
-
-  // Duration, in seconds, of the animation that goes from the default zoom to the
-  // target zoom.
-  const duration = 1;
-
-  leafletMap?.flyTo([lat, lng], targetZoom, {
-    animate: true,
-    duration: (targetZoom - zoom.value) / (duration * (targetZoom - originalZoom))
-  })
-
-  mapStore.setSelectedRecordingLocation(part.gpsLatitudeStart, part.gpsLongitudeStart);
-  router.push(`/nahravka/${rec.id}`);
+  MapEvents.emit('part-click', { event, rec, part });
 }
+
+const iconSelected = dialectIconMaker.makeMapIcon('SelectedLocation');
+const iconRec = dialectIconMaker.makeMapIcon('RecordingLocation');
+const iconCurrent = dialectIconMaker.makeMapIcon('CurrentLocation');
+const iconCurrentHeading = dialectIconMaker.makeMapIcon('CurrentLocationWithHeading');
 
 function onMapReady(mapComp: any) {
   leafletMap = mapComp.mapObject ?? mapComp;
@@ -225,11 +306,13 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
 </script>
 
 <template>
-  <div class="relative flex flex-1 saturate-[1.15]">
+  <div class="relative flex flex-1 saturate-[1.2]">
     <l-map
-      ref="mapRef"
       class="flex-1"
-      v-model:zoom="zoom"
+      :zoom="zoom"
+      @update:zoom="(newZoom: number) => {
+        zoomStack.push(newZoom);
+      }"
       v-model:center="center"
       :options="{ zoomControl: false }"
       @ready="onMapReady"
@@ -242,13 +325,13 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
         :z-index="0"
       />
       <l-tile-layer
-        :url="`${env.VITE_API_URL}/map/v1/maptiles/${mapStore.mode}/${mapStore.mode==='outdoor'? '256@2x':'256'}/{z}/{x}/{y}`"
+        :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode==='outdoor'? '256@2x':'256'}/{z}/{x}/{y}`"
         :maxZoom="19"
         :z-index="1"
         attribution="<a href='https://api.mapy.cz/copyright' target='_blank'>&copy; Seznam.cz a.s. a další</a>"
       />
       <l-tile-layer
-        v-if="mapStore.mode==='aerial'"
+        v-if="mode==='aerial'"
         :url="`${env.VITE_API_URL}/map/v1/maptiles/names-overlay/256/{z}/{x}/{y}`"
         :maxZoom="19"
         :z-index="2"
@@ -300,41 +383,57 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
         v-if="isFetched"
         v-for="({ rec, part, filteredPart }) in recordingsFilter(recordings)
           .flatMap(r =>
-            r.parts?.map(p => ({
+            r.parts?.map((p: RecordingPartModel) => ({
               rec: r,
               part: p,
               // pick any filtered‑part whose time window overlaps this part
               filteredPart: filteredRecordings
-                ?.find(fr =>
-                  fr.recordingId === r.id
-                  && new Date(p.start) <= new Date(fr.endDate)
-                  && new Date(p.end)   >= new Date(fr.startDate)
+                ?.find((fr: FilteredPartModel) => {
+                  const afterStart = new Date(fr.startDate) >= new Date(p.startDate);
+                  const beforeEnd = new Date(fr.endDate) <= new Date(p.endDate);
+
+                  return (fr.recordingId === r.id) && afterStart && beforeEnd;
+                }
                 )
             }))
           )"
         :key="`${rec.id}-${part.id}`"
         :lat-lng="[part.gpsLatitudeStart, part.gpsLongitudeStart]"
-        :icon="iconMaker.makeMapIcon(
+        :icon="dialectIconMaker.makeMapIcon(
           filteredPart
             ?.detectedDialects.find(d => d.confirmedDialect != null)
             ?.confirmedDialect
+          ?? filteredPart
+            ?.detectedDialects.find(d => d.userGuessDialect != null)
+            ?.userGuessDialect
           ?? 'Unknown'
         )"
-        @click="event => onRecordingClick(event, rec, part)"
+        @click="event => onRecClick({ event, rec, part })"
+        @mouseover="event => {
+        }"
+        @mouseout="event => {
+        }"
       />
 
       <!-- Selected Location -->
-      <l-marker
+      <!-- <l-marker
         v-if="mapStore.selectedLocation"
         :lat-lng="[mapStore.selectedLocation.lat, mapStore.selectedLocation.lng]"
         :icon="iconSelected"
-      />
+      /> -->
 
       <!-- Selected Recording Location -->
-      <l-marker
+      <!-- <l-marker
         v-if="mapStore.selectedRecordingLocation"
         :lat-lng="[mapStore.selectedRecordingLocation.lat, mapStore.selectedRecordingLocation.lng]"
         :icon="iconRec"
+      /> -->
+
+      <l-marker
+        v-for="(icon, key) in MapMarkers.icons"
+        :key="key"
+        :lat-lng="icon.location"
+        :icon="icon.icon"
       />
 
       <!-- Current Location -->
@@ -394,8 +493,8 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
                 <RulerIcon v-else />
               </button>
 
-              <button @click="mapStore.mode = mapStore.mode==='aerial'?'outdoor':'aerial'" class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4">
-                <MapIcon v-if="mapStore.mode==='aerial'" />
+              <button @click="mode = mode==='aerial'?'outdoor':'aerial'" class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4">
+                <MapIcon v-if="mode==='aerial'" />
                 <PictureIcon v-else />
               </button>
             </div>
@@ -417,14 +516,7 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
 
 <style scoped>
 .logocontrol {
-  z-index: 10;
-}
-
-:deep(.ol-control) {
-  position: absolute;
-  bottom: v-bind("scaleEnabled ? '40px':'20px'") !important;
-  left: 0;
-  background-color: transparent !important;
+  z-index: 10e9;
 }
 
 .filter-select {
@@ -436,7 +528,7 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
   width: 70px;
   height: 70px;
   padding: 0;
-  text-indent: -9999px;
+  text-indent: 9999px;
   cursor: pointer;
 }
 </style>

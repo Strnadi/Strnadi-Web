@@ -69,9 +69,9 @@ const { data: categories } = useQuery({
             <li
               v-for="article in category.articles"
             >
-              <prefetch-link :to="`/informace/${article.id}`" class="dropdown-item">
-                {{ article.title }}
-                <span v-if="article.description">
+              <prefetch-link :to="`/informace/${article.id}`" class="dropdown-item !flex !flex-col">
+                {{ article.name }}
+                <span class="italic" v-if="article.description">
                   {{ article.description }}
                 </span>
               </prefetch-link>

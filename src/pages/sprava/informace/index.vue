@@ -1,6 +1,6 @@
 <route>
 meta:
-  layout: desktop/side
+  layout: desktop/center
 </route>
 
 <script setup lang="ts">

@@ -58,6 +58,7 @@ const closePopup = () => {
     @apply rounded-4xl;
     @apply p-8;
     @apply bg-white/90;
+    @apply gap-y-2;
   }
 
   aside > div > button.small {

@@ -1,5 +1,7 @@
 import axios from "axios";
 import { postPhoto } from "./photos";
+import { genericGet, authorizedPost, authorizedPatch, authorizedDelete } from "./utils";
+import type { NumericString } from "@/types/basic";
 
 export interface RecordingPartModel {
   id: number;
@@ -92,12 +94,12 @@ export const postRecording = async (
 	photos?: File[]
 ): Promise<void> => {
 
-	const uploadedRecordingId = (await axios.post(`/recordings/upload`, recording, {
+	const uploadedRecordingId = (await axios.post(`/recordings`, recording, {
 		headers: { "Authorization": `Bearer ${token}` }
 	})).data;
 
 	for await (const part of recordingParts) {
-		await axios.post(`/recordings/upload-part`, {
+		await axios.post(`/recordings/part`, {
 			startDate: part.startDate,
 			endDate: part.endDate,
 			gpsLatitudeStart: part.gpsLatitudeStart,
@@ -121,18 +123,21 @@ export const postRecording = async (
 	}
 }
 
-export const getRecording = async (id: number | string, audio = false): Promise<RecordingModel> => {
+export const getRecording = async (id: NumericString, audio = false): Promise<RecordingModel> => {
 	const response = await axios.get(`/recordings/${id}?parts=true&sound=${audio}`);
 	return response.data as RecordingModel;
 }
 
+export const patchRecording = async (token: string, id: NumericString, patchedRec: Omit<RecordingUploadReq, "createdAt">): Promise<void> =>
+  authorizedPatch(`/recordings/${id}`, token, patchedRec);
+
 export const getRecordings = async (
-	{ audio = false, userId }: { audio?: boolean, userId?: number } = {}
+	{ audio = false, parts = false, userId }: { audio?: boolean, parts?: boolean, userId?: number } = {}
 ): Promise<RecordingModel[]> => {
 	const response = await axios.get(
 		(userId !== undefined)
-			? `/recordings?userId=${userId}&parts=true&sound=${audio}`
-			: `/recordings?parts=true&sound=${audio}`,
+			? `/recordings?userId=${userId}&parts=${parts}&sound=${audio}`
+			: `/recordings?parts=${parts}&sound=${audio}`,
 	);
 
 	return response.data as RecordingModel[];

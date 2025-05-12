@@ -12,7 +12,11 @@ export function wrap<
 
 const makeLogged = (type: "log"|"info"|"warn"|"error") => 
   (...args: any[]) => {
-    console[type](...args);
+
+    void Promise
+      .all(args)
+      .then(resolved => { console[type](...resolved) })
+
     return args;
   }
 
@@ -20,4 +24,3 @@ export const logged = makeLogged("log");
 export const informed = makeLogged("info");
 export const warned = makeLogged("warn");
 export const errored = makeLogged("error");
-

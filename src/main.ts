@@ -8,14 +8,14 @@ import { createApp, defineCustomElement } from "vue";
 import { createRouter, createWebHistory, type RouteLocationRaw, type RouteRecordRaw } from "vue-router";
 import { VueQueryPlugin } from "@tanstack/vue-query";
 import { routes as generatedRoutes } from 'vue-router/auto-routes'
-
 import { setupLayouts } from 'virtual:meta-layouts';
 
+import VueClickAway from "vue3-click-away";
 import VWave from 'v-wave';
 import vSelect from 'vue-select';
 import VueDatePicker from "@vuepic/vue-datepicker";
-import { ApiError } from "@/classes/api-error";
 import ExpandableImage from '@/components/ExpandableImage.vue';
+import { ApiError } from "@/classes/api-error";
 import "./styles/main.css";
 
 declare global {
@@ -68,18 +68,18 @@ const handleResize = () => {
 
 desktopQuery.addEventListener('change', handleResize);
 
-const removeUnlayoutedRoutes = (routes: RouteRecordRaw[]): RouteRecordRaw[] => {
+const removeUnlayoutedRoutes = (routes: RouteRecordRaw[], isDesktop: boolean): RouteRecordRaw[] => {
   return routes.map(route => {
     let processedRoute = { ...route };
 
     if (processedRoute.children && processedRoute.children.length > 0) {
-      processedRoute.children = removeUnlayoutedRoutes(processedRoute.children);
+      processedRoute.children = removeUnlayoutedRoutes(processedRoute.children, isDesktop);
     }
 
-    if (!processedRoute.meta?.layout) {
-      processedRoute.meta = {
-        ...processedRoute.meta,
-        layout: false
+    if (isDesktop && !processedRoute.meta?.layout) {
+      processedRoute = {
+        ...processedRoute,
+        // component: 
       };
     }
 
@@ -140,6 +140,17 @@ const welcomeGuard = (to: RouteRecordRaw, _from: RouteRecordRaw): boolean | Rout
   return true;
 };
 
+const serverGuard = (to: RouteRecordRaw, _from: RouteRecordRaw): boolean | RouteLocationRaw => {
+  console.log(to.path)
+
+  if (to.path.startsWith("/__")) {
+    window.location.pathname = to.path;
+    return false;
+  }
+
+  return true;
+};
+
 // const authGuard = (to: RouteRecordRaw, _from: RouteRecordRaw): boolean | RouteLocationRaw => {
 //   const user = accountStore.user;
 
@@ -167,13 +178,18 @@ const welcomeGuard = (to: RouteRecordRaw, _from: RouteRecordRaw): boolean | Rout
 
 let routes: RouteRecordRaw[];
 routes = generatedRoutes;
-// routes = removeUnlayoutedRoutes(routes);
+// routes = removeUnlayoutedRoutes(routes, initialIsDesktop);
 routes = removeLayoutsRecursively(routes, initialIsDesktop);
 routes = setupLayouts(routes);
 // routes = nameRoutes(routes, "guest", route => route.meta?.auth === false);
 // routes = nameRoutes(routes, "auth", route => !!route.meta?.auth);
 // routes = nameRoutes(routes, "admin", route => !!route.meta?.admin);
 // routes = routes.guarded(authGuard);
+
+if (!import.meta.env.MODE) {
+  routes = routes.guarded(serverGuard);
+}
+
 routes = routes.guarded(welcomeGuard);
 
 console.log(routes)
@@ -247,6 +263,7 @@ app.use(Vue3RouterPrefetch, { type: "hover", name: "PrefetchLink" });
 app.use(VWave, {
   duration: 0.2
 });
+app.use(VueClickAway);
 
 app.component('vSelect', vSelect);
 app.component("VueDatePicker", VueDatePicker);

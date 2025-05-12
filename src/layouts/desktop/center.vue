@@ -1,5 +1,17 @@
 <script setup lang="ts">
 import Back from '@/icons/interface/icon-back.svg';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+const goBack = () => {
+  router.back();
+}
+
+const closePopup = () => {
+  router.replace("/");
+}
+
 </script>
 
 
@@ -7,7 +19,7 @@ import Back from '@/icons/interface/icon-back.svg';
 
   <router-view v-slot="{ Component }">
     <Transition>
-      <aside class="center" @keydown="maybeGoBack">
+      <aside class="center" @keydown.escape="closePopup">
         <div>
           <div>
             <button class="secondary small" @click="goBack">

@@ -12,7 +12,7 @@ export const authorizedGet = async<T>(endpoint: string, token: string): Promise<
     }
   });
 
-  return response.data as T;  
+  return response.data as T;
 }
 
 export const genericPost = async<T, U = undefined>(endpoint: string, data?: U): Promise<T> => {

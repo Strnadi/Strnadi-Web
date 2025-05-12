@@ -4,19 +4,77 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed, onMounted, onUnmounted, reactive } from 'vue';
 import { onBeforeRouteUpdate, onBeforeRouteLeave } from 'vue-router';
 import { accountStore } from "@/state/AccountStore";
-import { uploadStore } from '@/state/UploadStore';
-import { mapStore } from '@/state/MapStore';
+import { MapEvents, MapMarkers } from '@/views/Map.vue';
 import { useStepper } from '@vueuse/core';
 import { postRecording, type RecordingUploadReq, type RecordingPartUploadParams } from '@/api/recordings';
-import { useMutation } from '@tanstack/vue-query';
-import SegmentedProgress from '@/components/SegmentedProgress.vue';
+import { useQueryClient, useMutation, useMutationState } from '@tanstack/vue-query';
+import { Icon, type LeafletMouseEvent, divIcon } from 'leaflet';
 import Dropzone from '@/components/Dropzone.vue';
+import MaterialIcon from '@/components/MaterialIcon.vue';
+import TextualCoords from '@/components/map/TextualCoords.vue';
 
 import "@vuepic/vue-datepicker/dist/main.css";
 
+
+interface LatLng {
+  lat: number;
+  lng: number;
+};
+
+interface RecordingPart {
+  file: File;
+  location: LatLng | null;
+};
+
+const uploadStore = reactive({
+  parts: null as RecordingPart[] | null,
+  photos: null as File[] | null,
+  dialects: [] as string[],
+  note: "" as string | null,
+  title: "" as string,
+  device: "" as string | null,
+  birdCount: 1,
+  dateTime: new Date().toISOString(),
+  confirmUpload: false,
+
+  async setRecordings(recordings: File[]) {
+    this.parts = recordings.map((recording) => ({
+      file: recording,
+      location: null
+    })) as RecordingPart[];
+  },
+
+  removePart(recording: File) {
+    if (this.parts) {
+      this.parts = this.parts.filter((part) => part.file !== recording);
+    }
+  },
+
+  removePartByIndex(index: number) {
+    if (this.parts) {
+      this.parts.splice(index, 1);
+    }
+  },
+
+  reset() {
+    this.parts = null;
+    this.photos = null;
+    this.dialects = [];
+    this.note = null;
+    this.title = "";
+    this.device = null;
+    this.birdCount = 1;
+    this.dateTime = new Date().toISOString();
+  }
+
+});
+
+const queryClient = useQueryClient();
+
+const dialect = ref("");
 const error = ref<string | null>(null);
 
 const soundAccept = [
@@ -27,11 +85,56 @@ const soundAccept = [
 
 const photoAccept = "image/*";
 
+type StepIdentifier = 'file' | 'photos' | 'location' | 'info' | 'submit';
+
+interface Step {
+  title: string;
+  isValid: () => boolean;
+  before?: () => void;
+  after?: () => void;
+};
+
+const colors = computed(() => Array.from(
+  {length: uploadStore.parts?.length ?? 0},
+  () => '#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0')
+));
+
+const makeSelectedIcon = (partIndex: number) =>
+  divIcon({
+    className: "my-custom-pin",
+    iconSize: [24, 24],
+    html: `<span style="
+  background-color: ${colors.value[partIndex]};
+  width: 3rem;
+  height: 3rem;
+  display: block;
+  left: -1.5rem;
+  top: -1.5rem;
+  position: relative;
+  border-radius: 3rem 3rem 0;
+  transform: rotate(45deg);
+  border: 1px solid #FFFFFF;" />`
+  });
+
+const handleMapClick = (event: LeafletMouseEvent) => {
+  MapMarkers.addMarker(
+    `selected-part-${currentPartIndex.value}`,
+    event.latlng,
+    makeSelectedIcon(currentPartIndex.value)
+  );
+
+  uploadStore.parts![currentPartIndex.value].location = event.latlng;
+  currentPartIndex.value = (currentPartIndex.value + 1) % (uploadStore.parts?.length ?? 0);
+
+
+  return false;
+}
+
 // Define the steps for the upload process
-const stepper = useStepper({
+const stepper = useStepper<Record<StepIdentifier, Step>>({
   'file': {
     title: 'Soubory',
-    isValid: () => (uploadStore.parts?.length ?? 0) > 0 && uploadStore.parts?.every(part => part.file),
+    isValid: () => (uploadStore.parts?.length ?? 0) > 0 && (uploadStore.parts?.every(part => part.file) ?? false),
   },
 
   'photos': {
@@ -41,25 +144,18 @@ const stepper = useStepper({
 
   'location': {
     title: 'Poloha',
-    isValid: () => uploadStore.parts?.every(part => part.location),
-    beforeCallback: () => {
-      mapStore.selectedLocation = null;
-      mapStore.selectEnabled = true;
+    isValid: () => (uploadStore.parts?.every(part => part.location) ?? false),
+    before: () => {
+      MapEvents.on("map-click", handleMapClick);
     },
-    endCallback: () => {
-      mapStore.selectedLocation = null;
-      mapStore.selectEnabled = false;
+    after: () => {
+      MapEvents.off("map-click", handleMapClick);
     }
   },
 
   'info': {
     title: 'Informace o nahrávce',
-    isValid: () => uploadStore.dateTime,
-  },
-
-  'final-confirm': {
-    title: 'Konečné potvrzení',
-    isValid: () => true
+    isValid: () => !!uploadStore.dateTime && uploadStore.confirmUpload,
   },
 
   'submit': {
@@ -70,14 +166,14 @@ const stepper = useStepper({
 
 watch(
   () => stepper.current.value,
-  (oldStep, newStep) => {
-    oldStep?.endCallback?.();
-    newStep?.beforeCallback?.();
+  (newStep, oldStep) => {
+    if ("after" in oldStep) oldStep.after();
+    if ("before" in newStep) newStep.before();
   }
 );
 
 
-const beforeWindowUnmount = (event: BeforeUnloadEvent) => {
+const beforeWindowUnload = (event: BeforeUnloadEvent) => {
   event.preventDefault();
   event.returnValue = true;
 };
@@ -100,16 +196,23 @@ const {
   }) => postRecording(token, recording, parts, photos),
 
   onMutate() {
-    window.addEventListener("beforeunload", beforeWindowUnmount);
+    window.addEventListener("beforeunload", beforeWindowUnload);
   },
 
   onSettled() {
-    window.removeEventListener("beforeunload", beforeWindowUnmount)
+    window.removeEventListener("beforeunload", beforeWindowUnload)
     queryClient.invalidateQueries({ queryKey: ["all-recordings"] });
     stepper.goTo("file");
-    mapStore.selectedLocation = null;
+
+    for(let i = 0; i < (uploadStore.parts?.length ?? 0); i++) {
+      MapMarkers.removeMarker(`selected-part-${i}`);
+    }
   }
 });
+
+// useMutationState({
+//   select: (mutation) => mutation.state.status
+// })
 
 const submit = () => {
   const recording = {
@@ -143,19 +246,16 @@ const submit = () => {
   });
 };
 
-onBeforeRouteUpdate(() => {
+const stillUploading = () => {
   if(isPending.value == true) {
     alert("Nahrávání stále probíhá. Nezavírejte stránku.");
     return false;
   }
-});
+}
 
-onBeforeRouteLeave(() => {
-  if(isPending.value == true) {
-    alert("Nahrávání stále probíhá. Nezavírejte stránku.");
-    return false;
-  }
-});
+onBeforeRouteUpdate(stillUploading);
+onBeforeRouteLeave(stillUploading);
+
 
 function submitOrNext() {
   if (stepper.current.value.isValid()) {
@@ -207,12 +307,6 @@ const addDialect = () => {
 
 const currentPartIndex = ref(0);
 
-watch(() => mapStore.selectedLocation, (newLocation: LatLng | null) => {
-  if (newLocation) {
-    uploadStore.parts![currentPartIndex.value].location = newLocation;
-    currentPartIndex.value++;
-  }
-});
 
 const totalSteps = Object.keys(stepper.steps.value).length -1;
 
@@ -253,6 +347,17 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
               <p>jednoho nebo několika zvukových souborů</p>
             </div>
             <p>(.wav, .mp3, .flac, .aac, .ogg)</p>
+
+            <ul class="flex flex-col w-full" @click.stop>
+              <li v-for="(file, index) in uploadStore.parts?.map(p => p.file)" :key="file.name" class="flex flex-row w-full items-center justify-between">
+                <MaterialIcon class="h-10" :filename="file.name" />
+                <div class="flex flex-col">
+                  <p>{{ file.name }}</p>
+                  <p>{{ file.size / 1_000_000 }} MB</p>
+                </div>
+                <button class="text-red-500" @click="uploadStore.parts?.splice(index, 1)">Smazat</button>
+              </li>
+            </ul>
           </div>
         </Dropzone>
       </template>
@@ -280,16 +385,27 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
       <!-- Location Stage -->
       <template v-if="stepper.isCurrent('location')">
         <ul>
-          <li v-for="(part, index) in uploadStore.parts" :key="index">
+          <li
+            v-for="(part, index) in uploadStore.parts"
+            :key="index" class="flex flex-row gap-x-2"
+            :class="{
+              'font-bold': index == currentPartIndex
+            }"
+            :style="{
+              color: colors[index],
+            }"
+          >
             <!-- <audio :src="partURLs[index]" controls /> -->
-            <p>
+            <span>{{ part.file.name }}</span>
+            <span>
               <TextualCoords
                 v-if="part.location"
                 :lat="part.location.lat"
                 :lng="part.location.lng"
                 type="municipality_part"
               />
-            </p>
+              <template v-else>Poloha zatím neurčena.</template>
+            </span>
           </li>
         </ul>
       </template>
@@ -344,61 +460,55 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
           </div>
           <div>
             <select
-              class="filter-select drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 bg-white"
+              class="!bg-transparent drop-shadow-sm m-2 hover:bg-gray-100 bg-white p-2"
               v-model="dialect"
             >
-              <option value="none" selected disabled hidden>Vyberte dialekt</option>
+              <option value="none">Bez dialektu</option>
               <option value="BC">BC</option>
               <option value="BE">BE</option>
               <option value="BlBh">BlBh</option>
               <option value="BhBl">BhBl</option>
               <option value="XB">XB</option>
             </select>
-            <button @click="addDialect" class="button-secondary">Přidat dialekt</button>
-            <ul class="flex flex-col gap-y-2">
+            <button @click="addDialect" class="secondary p-2" :disabled="!dialect || dialect == 'none'">Přidat dialekt</button>
+          </div>
+
+          <div v-if="uploadStore.dialects.length > 0" class="flex flex-col gap-y-2">
+            <h2>Nářečí</h2>
+            <ul class="flex flex-row gap-x-4">
               <li v-for="(addedDialect, index) in uploadStore.dialects" :key="index" class="flex flex-row gap-x-2">
                 <p>{{ addedDialect }}</p>
               </li>
             </ul>
           </div>
-          <p class="flex flex-col text-gray-500 max-w-96">
-            <span>Před tím, než nahrávku odešlete, zkontrolujte, zda je vše v pořádku. Pokud je vše v pořádku, klikněte na tlačítko "Nahrát". Pokud chcete nahrávku upravit, klikněte na šipku Zpět v horní části tohoto okna a vraťte se k předchozímu kroku.</span>
-          </p>
+
+
+          <h2>Části nahrávky</h2>
+          <ul class="flex flex-col gap-y-2">
+            <li v-for="(part, index) in uploadStore.parts" :key="index" class="flex flex-row gap-x-2 items-center">
+              <TextualCoords
+                v-if="part.location"
+                :lat="part.location.lat"
+                :lng="part.location.lng"
+                type="municipality_part"
+              />
+              <!-- <audio :src="partURLs[index]" controls class="w-1/2"></audio> -->
+              <button @click="uploadStore.removePartByIndex(index)" class="secondary px-2 py-1">Odebrat</button>
+            </li>
+          </ul>
+
+          <div class="flex flex-row items-center gap-x-2">
+            <input class="h-full" type="checkbox" v-model="uploadStore.confirmUpload" />
+            <p class="text-gray-500">
+              Nahrávku jsem zkontroloval(a) a chci ji odeslat do<br /> databáze. Jsem si vědom(a) tím, že v ní zůstane
+              i po smazání mého<br /> účtu a že smazána bude jen ve vyjimečných případech.
+            </p>
+          </div>
         </div>
-      </template>
-
-      <template v-if="stepper.isCurrent('info')">
-        <h2>Informace o nahrávce</h2>
-        <p>Název nahrávky: {{ uploadStore.title }}</p>
-        <p>Popis nahrávky: {{ uploadStore.note }}</p>
-        <p>Počet strnadů: {{ uploadStore.birdCount }}</p>
-        <p>GPS souřadnice: {{ uploadStore.location?.lat }}, {{ uploadStore.location?.lng }}</p>
-        <p>Datum a čas nahrávky: {{ uploadStore.dateTime }}</p>
-
-        <h2>Části nahrávky</h2>
-        <ul class="flex flex-col gap-y-2">
-          <li v-for="(_, index) in uploadStore.parts" :key="index" class="flex flex-row gap-x-2">
-            <audio :src="partURLs[index]" controls class="w-1/2"></audio>
-            <button @click="uploadStore.removePartByIndex(index)" class="button-secondary">Odebrat</button>
-            <button @click="" class="button-secondary">Přidat dialekt</button>
-          </li>
-        </ul>
-
-        <div class="flex flex-row">
-          <input type="checkbox" />
-          <p class="text-gray-500">
-            Nahrávku chci odeslat do databáze. Jsem si vědom(a), že v ní zůstane <br />
-            i po smazání mého účtu a že smazána bude jen ve vyjimečných případech.
-          </p>
-        </div>
-      </template>
-
-      <template v-if="stepper.isCurrent('final-confirm')">
-        <p>Zkontrolujte prosím zadané údaje před odesláním.</p>
       </template>
 
       <template v-if="stepper.isCurrent('submit')">
-        <p>Zkontrolujte prosím zadané údaje před odesláním.</p>
+        <p>Odesílání vaší nahrávky do databáze...</p>
       </template>
 
       <!-- Navigation Buttons -->
@@ -413,10 +523,10 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
         </button>
         <button
           type="submit"
-          :disabled="!stepper.current.value.isValid()"
+          :disabled="!(stepper.current.value.isValid() && allStepsBeforeAreValid(stepper.index.value))"
           class="primary p-2"
         >
-          {{ stepper.isLast.value ? 'Odeslat' : 'Další' }}
+          Další
         </button>
       </div>
     </form>
@@ -430,15 +540,12 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
           :class="{
             'text-gray-900 font-bold': stepper.isCurrent(id),
             'text-green-600': stepper.isAfter(id) && step.isValid(), // Mark completed steps
-            'text-red-600': stepper.isAfter(id) && !step.isValid(), // Mark invalid past steps (optional)
+            'text-red-600': stepper.isAfter(id) && !step.isValid(), // Mark invalid past steps
           }"
           @click="stepper.goTo(id)"
           v-text="step.title"
         />
       </div>
     </div>
-
-    <!-- Progress Bar -->
-    <!-- <SegmentedProgress :progress="stepper.currentIndex.value" :total-segments="totalSteps" class="mt-4" /> -->
   </template>
 </template>

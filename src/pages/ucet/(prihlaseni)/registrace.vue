@@ -5,19 +5,42 @@ meta:
 
 <script setup lang="ts">
 import * as jose from 'jose';
-import { onMounted } from 'vue'
+import { onMounted, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMutation } from '@tanstack/vue-query'
 import { postRegister, type SignUpRequest } from '@/api/account'
 import { accountStore } from '@/state/AccountStore'
-import { registerStore } from '@/state/RegisterStore';
 import { postGoogleSignup, type JWTObject, type OAuth2SignUpResponse } from '@/api/account';
 import { useStepper } from '@vueuse/core';
-import OAuthButton from '@/components/OAuthButton.vue';
+import AuthButtons from '@/views/AuthButtons.vue';
 import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue'
-import HorizontalLineWithText from '@/components/HorizontalLineWithText.vue';
 
-const env = import.meta.env;
+
+const registerStore = reactive({
+  name: "",
+  surname: "",
+  nickname: "",
+  email: "",
+  password: "",
+  passwordConfirm: "",
+  postCode: 0,
+  city: "",
+  dataAgreement: false,
+  marketingAgreement: false,
+  isExternalSignup: false,
+
+  reset() {
+    this.name = "";
+    this.surname = "";
+    this.nickname = "";
+    this.email = "";
+    this.password = "";
+    this.postCode = 0;
+    this.city = "";
+  }
+
+});
+
 
 const stepper = useStepper({
   'email': {
@@ -66,9 +89,12 @@ const { mutate: googleSignupMutate, isPending, isError } = useMutation({
   onSuccess: (signupJWT: OAuth2SignUpResponse) => {
     const userJWT: JWTObject = jose.decodeJwt(signupJWT.jwt);
 
-    registerStore.setName(signupJWT.firstName ?? "");
-    registerStore.setSurname(signupJWT.lastName ?? "");
-    registerStore.setEmail(userJWT.sub!);
+    if(!userJWT.sub) return;
+
+    if(signupJWT.firstName) registerStore.name = signupJWT.firstName;
+    if(signupJWT.lastName) registerStore.surname = signupJWT.lastName;
+    registerStore.email = userJWT.sub;
+    registerStore.isExternalSignup = true;
     stepper.goToNext();
   },
 
@@ -91,7 +117,6 @@ function submit() {
 
   if(stepper.isLast.value) {
     router.replace('/')
-    registerStore.resetStage()
     accountStore.login(regData.value)
   }
 
@@ -104,13 +129,6 @@ function allStepsBeforeAreValid(index: number): boolean {
       .some((_, i) => !stepper.at(i)?.isValid())
   )
 }
-
-const oauth2_url = "https://accounts.google.com/o/oauth2/v2/auth";
-const oauth2_clientId = env.VITE_GOOGLE_CLIENT_ID;
-const oauth2_redirectUri = env.VITE_PUBLIC_URL + "/ucet/registrace";
-const oauth2_scope = "email profile";
-const oauth2_responseType = "token id_token";
-const oauth2_prompt = "consent";
 
 // set up the final registration mutation
 const router = useRouter()
@@ -126,7 +144,7 @@ const register = () => {
     email: registerStore.email,
     firstName: registerStore.name,
     lastName: registerStore.surname,
-    nickname: registerStore.nickname,
+    nickname: (registerStore.nickname && registerStore.nickname != '') ? registerStore.nickname : null,
     password: registerStore.password,
     postCode: registerStore.postCode,
     city: registerStore.city,
@@ -134,12 +152,20 @@ const register = () => {
   })
 }
 
+watch(() => stepper.current.value, (newValue) => {
+  if (registerStore.isExternalSignup &&
+      newValue === stepper.steps.value['password']
+  ) {
+    stepper.goToNext();
+  }
+})
+
 </script>
 
 <template>
   <h1 class="text-lg font-bold" v-text="stepper.current.value.title" />
 
-  <form class="mt-10" @submit.prevent="submit">
+  <form @submit.prevent="submit">
 
     <div class="flex flex-col justify-center gap-2 mt-2">
       <div>
@@ -152,20 +178,10 @@ const register = () => {
                 <span class="text-sm">Zapojením do projektu občanské vědy Nářečí českých strnadů <PrefetchLink to="/podminky-pouziti" class="underline">souhlasím s podmínkami</PrefetchLink></span>
               </label>
             </div>
-            <OAuthButton
-              class="secondary p-2 w-full"
-              type="submit"
-              :disabled="isPending || !registerStore.dataAgreement"
-              :oauth2_url="oauth2_url"
-              :client-id="oauth2_clientId"
-              :redirect-uri="oauth2_redirectUri"
-              :prompt="oauth2_prompt"
-              :response-type="oauth2_responseType"
-              :scope="oauth2_scope"
+            <AuthButtons
               @success="googleSignup"
-            >
-              Registrovat se přes Google
-            </OAuthButton>
+              :disabled="isPending || !registerStore.dataAgreement"
+            />
           </div>
         </div>
 

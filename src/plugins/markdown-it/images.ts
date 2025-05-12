@@ -22,22 +22,3 @@ export const changeImage = (base: string): PluginSimple =>
       return originalImageRenderer(tokens, idx, options, env, self);
     };
   }
-
-export const changeLinkTarget = (target: HTMLAnchorElement["target"]): PluginSimple =>
-  (markdownIt) => {
-    const originalLinkRender = markdownIt.renderer.rules.link_open || function(tokens, idx, options, env, self) {
-      return self.renderToken(tokens, idx, options);
-    };
-
-    markdownIt.renderer.rules.link_open = (tokens, idx, options, env, self) => {
-      const token = tokens[idx];
-      const aIndex = token.attrIndex('target');
-      if (aIndex < 0) {
-        token.attrPush(['target', target]);
-      } else {
-        token.attrs[aIndex][1] = target;
-      }
-
-      return originalLinkRender(tokens, idx, options, env, self);
-    };
-  }

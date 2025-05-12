@@ -54,7 +54,7 @@ const closePopup = () => {
     @apply py-1 -ml-3 mr-4 self-start flex flex-row items-center border-none bg-transparent;
   }
 
-  aside > div > div :not(button:first-of-type, h1:first-of-type) {
+  aside > div :not(div:first-of-type, h1:first-of-type, div:first-of-type) {
     @apply col-span-2;
   }
 </style>

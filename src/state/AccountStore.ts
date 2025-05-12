@@ -2,8 +2,8 @@ import * as jose from 'jose'
 import { reactive } from 'vue'
 import type { User, JWTObject } from '@/api/account'
 import { getCurrentUserInfo } from '@/api/account';
-import { posthogInstance } from '@/plugins/vue/posthog'; // Import posthog
-import persist from "@/utils/persist";
+import { posthogInstance } from '@/plugins/vue/posthog';
+import persist from "@/vendor/persist";
 
 export const accountStore = reactive({
   token: null as string | null,
@@ -39,9 +39,7 @@ export const accountStore = reactive({
     this.token = null;
     this.token_object = null;
 
-    if (posthogInstance) {
-      posthogInstance.reset();
-    }
+    posthogInstance.reset();
   }
 });
 
@@ -51,7 +49,7 @@ persist(accountStore, {
       const now = Math.floor(Date.now() / 1000);
       const exp = store.token_object.exp;
 
-      if (exp < now) {
+      if (exp && exp < now) {
         store.logout();
       }
     }

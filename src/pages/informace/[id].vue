@@ -8,7 +8,8 @@ import VueMarkdown from 'vue-markdown-render';
 import { useQuery } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router'
 import { computed } from 'vue';
-import { changeImage, changeLinkTarget } from '@/plugins/markdown-it/image-base';
+import { changeImage } from '@/plugins/markdown-it/images';
+import { changeLink } from '@/plugins/markdown-it/links';
 import { getArticleFile } from '@/api/articles';
 
 const env = import.meta.env;
@@ -20,9 +21,11 @@ const { data: markdown } = useQuery({
   queryFn: () => getArticleFile(id.value, "Text.md")
 })
 
+const fileBase = computed(() => `${env.VITE_API_URL}/articles/${id.value}`);
+
 const plugins = computed(() => [
-  changeImage(`${env.VITE_API_URL}/articles/${id.value}`),
-  changeLinkTarget("_blank")
+  changeImage(fileBase.value),
+  changeLink("_blank", fileBase.value)
 ]);
 
 const options = {
