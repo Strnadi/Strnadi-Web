@@ -6,9 +6,10 @@ meta:
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useQuery, useMutation } from '@tanstack/vue-query';
-import { getArticles, getArticleCategories, postArticleCategory, patchArticleCategory } from '@/api/articles';
+import { getArticles, getArticleCategories, postArticleCategory, patchAssignArticleCategory, type Article } from '@/api/articles';
 import { accountStore } from '@/state/AccountStore';
 import { useRouter } from 'vue-router';
+ import ListDeselect from '@/components/ListDeselect.vue';
 
 const router = useRouter();
 
@@ -16,7 +17,7 @@ const name = ref("");
 const label = ref("");
 
 // Id's
-const categoryArticles = ref<string[]>([]);
+const categoryArticles = ref<number[]>([]);
 
 const { data: articles } = useQuery({
   queryKey: ['articles'],
@@ -36,9 +37,9 @@ const { mutate: submitCategory } = useMutation({
     });
 
     for (let index = 0; index < categoryArticles.value.length; index++) {
-      const article = categoryArticles.value[index];
-      patchArticleCategory(accountStore.token!, name.value, {
-        articleId: article.id,
+      const articleId = categoryArticles.value[index];
+      patchAssignArticleCategory(accountStore.token!, name.value, {
+        articleId,
         order: index
       });
     }
@@ -56,27 +57,18 @@ const { mutate: submitCategory } = useMutation({
   <input v-model="name" type="text" placeholder="Název" />
   <input v-model="label" type="text" placeholder="Popis" />
 
-  <h2>Zahrnuté příspěvky</h2>
 
-  <label for="articleAdd">Přidat příspěvek</label>
-  <select name="articleAdd" @change="event => categoryArticles.push((event.target as HTMLSelectElement).value)">
-    <optgroup v-for="category in categories" :label="category.name">
-      <option
-        v-for="article in category.articles"
-        v-if="!categoryArticles.includes(article.id)"
-        :key="article.id"
-        :value="article.id"
-      >
-        {{ article.name }} - {{ article.description }}
-      </option>
-    </optgroup>
-  </select>
-
-  <ul>
-    <li v-for="article in categoryArticles">
-      {{ articles?.find(originalArticle => originalArticle.id == article)?.name }}
-    </li>
-  </ul>
+  <div>
+    <h2>Zahrnuté příspěvky</h2>
+    <v-select
+      v-model="categoryArticles"
+      :options="articles"
+      :reduce="(article: Article) => article.id"
+      :components="{ ListDeselect }"
+      label="name"
+      multiple
+    />
+  </div>
 
   <button @click="submitCategory">
     Přidat

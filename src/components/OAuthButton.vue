@@ -1,3 +1,23 @@
+<script lang="ts">
+
+export interface OAuthPopupResult {
+  message: string;
+  data: string;
+};
+
+export interface OAuthButtonProps {
+  url: string;
+  clientId: string;
+  scope: string;
+  responseType: string;
+  prompt: string;
+  callback?: string; // If specified, the login will be done in a popup
+  disabled?: boolean;
+};
+
+</script>
+
+
 <script setup lang="ts">
 import * as jose from 'jose';
 import { onMounted } from 'vue';
@@ -6,14 +26,7 @@ import { useRouter, useRoute } from 'vue-router';
 const router = useRouter();
 const route = useRoute();
 
-const props = defineProps<{
-  oauth2_url: string,
-  clientId: string,
-  scope: string,
-  responseType: string,
-  prompt: string,
-  disabled?: boolean
-}>();
+const props = defineProps<OAuthButtonProps>();
 
 const emit = defineEmits<{
   success: [idToken: string],
@@ -21,7 +34,7 @@ const emit = defineEmits<{
 }>();
 
 onMounted(() => {
-  if(!route.hash) {
+  if(props.callback || !route.hash) {
     return;
   };
 
@@ -49,7 +62,7 @@ onMounted(() => {
 const submitLogin = (url: string, clientId: string, redirectUri: string, scope: string, responseType: string, prompt: string) => {
   const nonce = Math.random().toString();
 
-  window.location.href = (
+  const oauthUrl = (
     url +
     `?client_id=${clientId}` +
     `&redirect_uri=${redirectUri}` +
@@ -59,12 +72,38 @@ const submitLogin = (url: string, clientId: string, redirectUri: string, scope: 
     `&nonce=${nonce}` +
     `&state=${nonce}`
   );
-}
+
+  if(!props.callback) {
+    window.location.href = oauthUrl;
+  } else {
+    const popup = window.open(oauthUrl, '_blank', 'width=600,height=600');
+
+    if (!popup) {
+      console.error("Failed to open popup");
+      return;
+    }
+
+    popup.addEventListener('message', (event: MessageEvent<OAuthPopupResult>) => {
+      if (event.data.message === 'success') {
+        const idToken = event.data.data;
+        emit('success', idToken);
+        popup.close();
+      } else if (event.data.message === 'error') {
+        emit('error', event.data.data);
+        popup.close();
+      }
+    })
+
+    popup.addEventListener('close', () => {
+      console.error("Popup closed before completing the login flow");
+    })
+  }
+};
 
 const login = () => {
-  const url = props.oauth2_url;
+  const url = props.url;
   const clientId = props.clientId;
-  const redirectUri = encodeURIComponent(window.location.href);
+  const redirectUri = encodeURIComponent(props.callback ?? window.location.href);
   const scope = encodeURIComponent(props.scope);
   const responseType = encodeURIComponent(props.responseType);
   const prompt = encodeURIComponent(props.prompt);
@@ -78,7 +117,6 @@ const login = () => {
   <button
     @click="login"
     :disabled="disabled"
-    class="secondary p-2 w-full"
     type="button"
   >
     <slot />

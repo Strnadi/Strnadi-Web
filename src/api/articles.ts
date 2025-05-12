@@ -1,5 +1,6 @@
 import { fileToBase64NoPrefix } from "@/utils/base64";
 import { genericGet, authorizedPost, authorizedPatch, authorizedDelete } from "./utils";
+import { type NumericString } from "@/types/basic";
 
 export interface ArticleFile {
   id: number;
@@ -14,6 +15,11 @@ export interface Article {
   files?: ArticleFile[];
 };
 
+export interface ArticleCategoryAssignment {
+  articleId: number,
+  order: number
+};
+
 export interface ArticleCategory {
   label: string;
   name: string;
@@ -25,7 +31,7 @@ export const getArticles = async () => genericGet<Article[]>("/articles");
 
 export const getArticleCategories = async () => genericGet<ArticleCategory[]>("/articles/categories");
 export const getArticleByCategory = async (category: string) =>
-  genericGet<Article[]>(`/articles/category/${category}`);
+  genericGet<Article[]>(`/articles/${category}`);
 
 export const postArticle = async (token: string, article: Article) =>
   authorizedPost<string, Article>("/articles", token, article);
@@ -59,8 +65,11 @@ export const postArticleCategory = async (token: string, category: Partial<Artic
 export const patchArticleCategory = async (token: string, categoryName: string, updatedCategory: Partial<ArticleCategory>) =>
   authorizedPatch<string, Partial<ArticleCategory>>(`/articles/categories/${categoryName}`, token, updatedCategory);
 
+export const patchAssignArticleCategory = async (token: string, categoryName: string, assignment: ArticleCategoryAssignment) =>
+  authorizedPatch<string, Partial<ArticleCategoryAssignment>>(`/articles/${categoryName}`, token, assignment);
+
 export const deleteArticleCategory = async (token: string, categoryName: string) =>
-  authorizedDelete(`/articles/${categoryName}`, token);
+  authorizedDelete(`/articles/categories/${categoryName}`, token);
 
 export const deleteArticleFromCategory = async (token: string, categoryName: string, articleID: string) =>
   authorizedDelete(`/articles/${categoryName}/${articleID}`, token);

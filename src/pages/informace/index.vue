@@ -5,11 +5,11 @@ meta:
 
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { getArticles } from '@/api/articles';
+import { getArticleCategories } from '@/api/articles';
 
-const { data: articles } = useQuery({
+const { data: categories } = useQuery({
   queryKey: ["articles"],
-  queryFn: () => getArticles()
+  queryFn: () => getArticleCategories()
 })
 
 </script>
@@ -17,11 +17,16 @@ const { data: articles } = useQuery({
 <template>
   <h1>Informace</h1>
 
-  <ul class="flex flex-col">
-    <li v-for="article in articles">
-      <router-link :to="`/informace/${article.id}`">
-        {{ article.name }}
-      </router-link>
+  <ul class="flex flex-row flex-wrap">
+    <li v-for="category in categories">
+      <h2>{{ category.label }}</h2>
+      <ul class="flex flex-col">
+        <li v-for="article in category.articles">
+          <router-link :to="`/informace/${article.id}`">
+            {{ article.name }}
+          </router-link>
+        </li>
+      </ul>
     </li>
   </ul>
 </template>

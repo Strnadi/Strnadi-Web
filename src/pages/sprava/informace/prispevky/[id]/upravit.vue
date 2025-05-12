@@ -28,7 +28,8 @@ const { data: article } = useQuery({
 const deleteFiles = ref([] as string[]);
 const name = ref("");
 const description = ref("");
-const editorContent = ref("");
+// const editorContent = ref(article.value);
+const editorContent = ref('');
 
 const { mutate: submitArticle } = useMutation({
   mutationFn: async ({ content }: { content: string }) => {
@@ -67,6 +68,12 @@ const { mutate: submitArticle } = useMutation({
   <h1>Úprava příspěvku</h1>
   <input v-model="name" type="text" placeholder="Nadpis" />
   <input v-model="description" type="text" placeholder="Popisek" />
+
+  <div>
+    <h2>Vyberte kategorie</h2>
+    <v-select multiple v-model="categories" :options="availableCategories?.map(category => category.name)" :components="{ ListDeselect }" />
+  </div>
+
   <MdEditor
     v-model="editorContent"
     language="en-US"

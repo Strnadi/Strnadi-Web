@@ -17,14 +17,18 @@ import vueDevTools from 'vite-plugin-vue-devtools';
 import VueRouter from 'unplugin-vue-router/vite';
 import MetaLayouts from "vite-plugin-vue-meta-layouts";
 import Terminal from 'vite-plugin-terminal';
-import SVGLoader from 'vite-svg-loader'
+import SVGLoader from 'vite-svg-loader';
+import DocsPlugin from './plugins/docs';
+import Inspect from 'vite-plugin-inspect';
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
+    Inspect(),
     purgePolyfills.rollup({  }),
     TSConfigPaths({ loose: true }),
     TailwindCSS(),
+    DocsPlugin(),
     VueRouter({ importMode: "sync", routeBlockLang: 'yaml' }),
     Vue({ include: [/\.vue$/, /\.md$/] }),
     SVGLoader({
@@ -142,7 +146,9 @@ export default defineConfig({
   server: {
     headers: {
       "content-security-policy":
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:;",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'script-src-elem' blob:;",
+      // "cross-origin-embedder-policy": "require-corp",
+      // "cross-origin-opener-policy": "same-origin"
     }
   },
 });

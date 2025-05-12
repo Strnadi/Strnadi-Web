@@ -7,11 +7,15 @@ import { computed } from 'vue';
 const props = defineProps<{
   lat: number;
   lng: number;
-  type: string;
+  type: 'country' | 'region' | 'municipality' | 'municipality_part' | 'street' | 'address';
 }>();
 
 const { data: queryResult, isLoading, isError } = useQuery({
-  queryKey: ['textual-coords', props.lat, props.lng],
+  queryKey: [
+    'textual-coords',
+    () => props.lat,
+    () => props.lng
+  ],
   queryFn: () => getReverseGeocode(props.lat, props.lng)
 });
 

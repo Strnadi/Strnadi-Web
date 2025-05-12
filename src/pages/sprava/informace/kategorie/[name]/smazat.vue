@@ -24,7 +24,7 @@ const { mutate: del } = useMutation({
 
 <template>
   <h1>Smazání kategorie</h1>
-  <span class="font-medium">Opravdu si přejete tento příspěvek smazat? Tuto akci nelze vrátit zpět.</span>
+  <span class="font-medium">Opravdu si přejete tuto kategorii smazat? Tuto akci nelze vrátit zpět.</span>
 
   <button @click="del" class="danger">
     Smazat
