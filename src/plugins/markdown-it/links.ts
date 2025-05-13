@@ -32,6 +32,8 @@ export const changeLink = (target: HTMLAnchorElement["target"], base: string): P
         token.attrs[hrefIndex][1] = `${base}/${token.attrs[hrefIndex][1]}`;
       }
 
+      token.attrPush(["external", "true"]);
+
       return originalLinkRender(tokens, idx, options, env, self);
     };
   }

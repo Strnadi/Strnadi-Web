@@ -7,16 +7,17 @@ meta:
 import { onBeforeRouteUpdate } from 'vue-router';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router'
-import { getRecording, patchRecording } from '@/api/recordings';
+import { getRecording, getFilteredRecording, patchRecording } from '@/api/recordings';
 import { getUserInfo } from '@/api/account';
 import { ref, computed, type Ref, onUnmounted, watch } from 'vue';
 import { accountStore } from '@/state/AccountStore';
+import type { NumericString } from '@/types/basic';
 import Spectrogram from '@/components/Spectrogram.vue';
 import ToggleShow from '@/components/ToggleShow.vue';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
-const recordingId = useRouteParams('id') as Ref<string>;
+const recordingId = useRouteParams<NumericString>('id');
 
 const env = import.meta.env;
 
@@ -25,8 +26,13 @@ const editedName = ref('');
 const editedNote = ref('');
 
 const { data: recording, isError, isLoading } = useQuery({
-  queryKey: ['recording', recordingId.value],
+  queryKey: ['recordings', recordingId.value],
   queryFn: () => getRecording(recordingId.value, false)
+})
+
+const { data: filteredRec } = useQuery({
+  queryKey: ['filtered-recordings', recordingId.value],
+  queryFn: () => getFilteredRecording(recordingId.value)
 })
 
 const enabled = computed(() => !!recording.value?.userId);
@@ -104,6 +110,14 @@ const cancelEdit = () => {
     <template v-if="editing">Upravování: </template>
     Nahrávka {{ recording?.name }}
   </h1>
+
+  <div v-if="filteredRec">
+    <ul>
+      <li v-for="dialect in filteredRec[0].detectedDialects" :key="dialect.id">
+        {{ dialect.userGuessDialect }} {{ dialect.confirmedDialect }}
+      </li>
+    </ul>
+  </div>
 
   <div v-if="editing" class="space-y-2">
     <div>

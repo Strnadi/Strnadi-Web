@@ -1,3 +1,7 @@
 a[external=true]:hover {
-  color: blue;
+  text-decoration: underline;
+}
+
+a[external=true] {
+  color: black;
 }

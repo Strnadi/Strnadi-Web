@@ -177,17 +177,25 @@ const availableMapModes = computed(() => ({
 // Filter
 const filter = ref<keyof typeof availableMapModes.value>('new');
 const oldCutoff = new Date(2024, 11, 31);
-function recordingsFilter(data: RecordingModel[] = []): RecordingModel[] {
-  return data.filter(r => {
+
+const recordingsFilter = computed(() => {
+  return recordings.value?.filter(r => {
     switch (filter.value) {
       case 'my': return r.userId === accountStore.user?.id;
       case 'others': return r.userId !== accountStore.user?.id;
       case 'old': return new Date(r.createdAt) <= oldCutoff;
       case 'new': return new Date(r.createdAt) > oldCutoff;
+      case 'dialect': {
+
+        return filteredRecordings.value?.some(
+          fp => fp.recordingId === r.id && fp.detectedDialects !== null
+        ) ?? false;
+
+      }
       default: return true;
     }
-  });
-}
+  }) ?? [];
+});
 
 // Bounds and grid extent
 const viewBounds = ref<[number, number, number, number] | null>(null);
@@ -381,7 +389,7 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
       <!-- Recordings -->
       <l-marker
         v-if="isFetched"
-        v-for="({ rec, part, filteredPart }) in recordingsFilter(recordings)
+        v-for="({ rec, part, filteredPart }) in recordingsFilter
           .flatMap(r =>
             r.parts?.map((p: RecordingPartModel) => ({
               rec: r,
@@ -505,7 +513,13 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
           </div>
 
           <select v-model="filter" class="filter-select drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100" aria-label="Filter recordings">
-            <option v-for="(value, key) in availableMapModes" :key="key">{{ value }}</option>
+            <option
+              v-for="(value, key) in availableMapModes"
+              :key="key"
+              :value="key"
+            >
+              {{ value }}
+            </option>
           </select>
 
         </div>

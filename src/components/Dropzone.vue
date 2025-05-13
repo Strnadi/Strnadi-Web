@@ -44,7 +44,7 @@ const dropZoneRef = ref<HTMLElement | null>(null);
 const inputRef = ref<HTMLInputElement | null>(null);
 
 function validateFiles(files: File[]) {
-  if (!props.accept || !props.accept.length) {
+  if (!props.accept?.length) {
     return { valid: files, invalid: [] };
   }
 

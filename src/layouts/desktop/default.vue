@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { notificationStore } from '@/state/NotificationStore';
-import Map, { MapEvents } from '@/views/Map.vue';
+import Map, { MapMarkers, MapEvents } from '@/views/Map.vue';
 import Navbar from '@/views/nav/Navbar.vue';
 import Notification from '@/views/Notification.vue';
 import { useEvent, useEventLast } from '@/utils/events';
@@ -15,6 +15,9 @@ const goHome = () => {
 useEventLast(MapEvents, 'map-click', goHome);
 useEvent(MapEvents, 'part-click', ({ rec }) => {
   // zoom.value = 15;
+
+  // MapMarkers.addMarker
+
   router.push(`/mapa/nahravka/${rec.id}`);
 });
 

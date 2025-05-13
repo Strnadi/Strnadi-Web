@@ -73,7 +73,7 @@ export const getUsers = async (token: string): Promise<User[]> => {
 export const getUserInfo = async (token: string, id: NumericString): Promise<User> => {
   const response = await axios.get(`/users/${id}`, {
     headers: {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${token ?? ''}`,
     },
   });
 

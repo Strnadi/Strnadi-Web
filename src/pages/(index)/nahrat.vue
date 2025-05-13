@@ -40,11 +40,15 @@ const uploadStore = reactive({
   dateTime: new Date().toISOString(),
   confirmUpload: false,
 
-  async setRecordings(recordings: File[]) {
-    this.parts = recordings.map((recording) => ({
-      file: recording,
-      location: null
-    })) as RecordingPart[];
+  setRecordings(recordings: File[]) {
+    this.parts ??= [];
+
+    this.parts?.push(
+      ...recordings.map((recording) => ({
+        file: recording,
+        location: null
+      })) as RecordingPart[]
+    );
   },
 
   removePart(recording: File) {
@@ -178,6 +182,12 @@ const beforeWindowUnload = (event: BeforeUnloadEvent) => {
   event.returnValue = true;
 };
 
+const removeMarkers = () => {
+  for(let i = 0; i < (uploadStore.parts?.length ?? 0); i++) {
+    MapMarkers.removeMarker(`selected-part-${i}`);
+  }
+}
+
 const {
   mutate: submitRecording,
   error: uploadError,
@@ -204,11 +214,11 @@ const {
     queryClient.invalidateQueries({ queryKey: ["all-recordings"] });
     stepper.goTo("file");
 
-    for(let i = 0; i < (uploadStore.parts?.length ?? 0); i++) {
-      MapMarkers.removeMarker(`selected-part-${i}`);
-    }
+    removeMarkers();
   }
 });
+
+onUnmounted(removeMarkers);
 
 // useMutationState({
 //   select: (mutation) => mutation.state.status
@@ -267,7 +277,7 @@ function submitOrNext() {
   }
 }
 
-const onSoundDrop = (acceptedFiles: any[]) => {
+const onSoundDrop = (acceptedFiles: File[]) => {
   if (acceptedFiles.length === 0) {
     error.value = "Žádné validní soubory nebyly vybrány.";
     return;
@@ -277,10 +287,9 @@ const onSoundDrop = (acceptedFiles: any[]) => {
 };
 
 const onPhotoDrop = (acceptedFiles: File[]) => {
-  if(!Array.isArray(uploadStore.photos))
-    uploadStore.photos = [];
+  uploadStore.photos ??= [];
 
-  uploadStore.photos?.push(...acceptedFiles);
+  uploadStore.photos.push(...acceptedFiles);
   error.value = null;
 };
 
@@ -364,21 +373,21 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
 
       <!-- Photos Stage -->
       <template v-if="stepper.isCurrent('photos')">
-        <ul>
-          <li v-for="(photo, index) in uploadStore.photos" :key="index" class="flex flex-row gap-x-2">
-            <img :src="makeURL(photo)" class="h-[200px]" />
-            <button @click="uploadStore.photos?.splice(index, 1)" class="secondary">Odebrat</button>
-          </li>
-        </ul>
-
-        <Dropzone :accept="photoAccept" @drop="onPhotoDrop">
+        <Dropzone :multiple="true" :accept="photoAccept" @drop="onPhotoDrop">
           <template #dragging>
             <p>Upusťte soubory sem pro nahrání</p>
           </template>
 
-          <p>
-            Klikněte nebo přetáhněte fotky z místa dění
-          </p>
+          <div class="flex flex-col items-center gap-y-1">
+            <p>Klikněte nebo přetáhněte fotky z místa dění</p>
+
+            <ul class="flex flex-col w-full" @click.stop>
+              <li v-for="(file, index) in uploadStore.photos" :key="file.name" class="flex flex-row w-full items-center justify-between">
+                <img :src="makeURL(file)" class="h-[200px]" />
+                <button @click="uploadStore.photos?.splice(index, 1)" class="danger">Odebrat</button>
+              </li>
+            </ul>
+          </div>
         </Dropzone>
       </template>
 

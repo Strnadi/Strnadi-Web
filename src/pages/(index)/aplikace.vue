@@ -32,7 +32,6 @@ const location = window.location.href;
 </script>
 
 <template>
-
   <h1>Stažení aplikace</h1>
 
   <div class="flex flex-col items-center gap-y-4">
@@ -49,22 +48,27 @@ const location = window.location.href;
         </span>
       </div>
 
-      <div class="flex flex-col gap-y-1">
-        <div class="flex flex-row gap-x-4 items-center">
-          <AndroidIcon />
-          <span>
-            Na obchodě Google Play se aplikace jmenuje Strnadi a je v předběžném přístupu.
-          </span>
-        </div>
-        <div class="flex flex-row gap-x-4 items-center">
-          <AppleIcon />
-          <span>
-            Vlastníci telefonů značky Apple si musí aplikaci stáhnout přes beta testovací aplikaci
-            <a href="https://developer.apple.com/testflight" external="true">TestFlight</a>.
-          </span>
-        </div>
-
-      </div>
+      <table>
+        <tbody>
+          <tr>
+            <td><AndroidIcon /></td>
+            <td>
+              <span>
+                Na obchodě Google Play se aplikace jmenuje Strnadi a je v předběžném přístupu.
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td><AppleIcon /></td>
+            <td>
+              <span>
+                Vlastníci telefonů značky Apple si musí aplikaci stáhnout přes beta testovací aplikaci
+                <a href="https://developer.apple.com/testflight" external="true">TestFlight</a>.
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
       <hr />
 
