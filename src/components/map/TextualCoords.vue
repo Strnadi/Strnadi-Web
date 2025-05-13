@@ -36,7 +36,13 @@ const name = computed(() => {
 </script>
 
 <template>
-  <template v-if="isError">Chyba při načítání lokace.</template>
-  <template v-else-if="isLoading">Načítání...</template>
-  <template v-else-if="name">{{ name }}</template>
+  <template v-if="isError">
+    Chyba při načítání lokace.
+  </template>
+  <template v-else-if="isLoading">
+    Načítání...
+  </template>
+  <template v-else-if="name">
+    {{ name }}
+  </template>
 </template>

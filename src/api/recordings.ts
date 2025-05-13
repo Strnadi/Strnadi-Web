@@ -149,6 +149,11 @@ export const getFilteredRecordings = async (): Promise<FilteredPartModel[]> => {
 	return response.data as FilteredPartModel[];
 }
 
+export const getFilteredRecording = async (id: NumericString): Promise<FilteredPartModel> => {
+  const response = await axios.get(`/recordings/filtered?recordingId=${id}`);
+  return response.data as FilteredPartModel;
+}
+
 // export const getFilteredRecordings = async (token: string): Promise<RecordingModel[]> => {
 // 	try {
 // 		const response = await axios.get(`/recordings/filtered`, {

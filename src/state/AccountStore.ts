@@ -1,7 +1,7 @@
 import * as jose from 'jose'
 import { reactive } from 'vue'
 import type { User, JWTObject } from '@/api/account'
-import { getCurrentUserInfo } from '@/api/account';
+import { getCurrentUserInfo, getRenewedJWT } from '@/api/account';
 import { posthogInstance } from '@/plugins/vue/posthog';
 import persist from "@/vendor/persist";
 
@@ -44,12 +44,17 @@ export const accountStore = reactive({
 });
 
 persist(accountStore, {
-  syncCallback: (store) => {
-    if (store.token_object) {
+  syncCallback: async (store) => {
+    if (store.token && store.token_object) {
       const now = Math.floor(Date.now() / 1000);
       const exp = store.token_object.exp;
 
-      if (exp && exp < now) {
+      if (exp && now > exp) {
+        
+        const newJWT = await getRenewedJWT(store.token);
+        store.login(newJWT);
+
+      } else {
         store.logout();
       }
     }

@@ -103,7 +103,7 @@ import FilledRulerIcon from '@/icons/interface/icon-ruler-fill.svg';
 import PictureIcon from '@/icons/interface/icon-picture.svg';
 import { useRoute } from 'vue-router';
 
-// @ts-expect-error
+// @ts-expect-error FilterIcon is bound through CSS at the bottom of this SFC.
 import FilterIcon from '@/icons/interface/icon-filter2.svg?url';
 
 import {
@@ -177,17 +177,25 @@ const availableMapModes = computed(() => ({
 // Filter
 const filter = ref<keyof typeof availableMapModes.value>('new');
 const oldCutoff = new Date(2024, 11, 31);
-function recordingsFilter(data: RecordingModel[] = []): RecordingModel[] {
-  return data.filter(r => {
+
+const recordingsFilter = computed(() => {
+  return recordings.value?.filter(r => {
     switch (filter.value) {
       case 'my': return r.userId === accountStore.user?.id;
       case 'others': return r.userId !== accountStore.user?.id;
       case 'old': return new Date(r.createdAt) <= oldCutoff;
       case 'new': return new Date(r.createdAt) > oldCutoff;
+      case 'dialect': {
+
+        return filteredRecordings.value?.some(
+          fp => fp.recordingId === r.id && fp.detectedDialects !== null
+        ) ?? false;
+
+      }
       default: return true;
     }
-  });
-}
+  }) ?? [];
+});
 
 // Bounds and grid extent
 const viewBounds = ref<[number, number, number, number] | null>(null);
@@ -303,18 +311,19 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
   center.value = { lat, lng };
   zoom.value = 13;
 };
+
 </script>
 
 <template>
   <div class="relative flex flex-1 saturate-[1.2]">
     <l-map
+      v-model:center="center"
       class="flex-1"
       :zoom="zoom"
+      :options="{ zoomControl: false }"
       @update:zoom="(newZoom: number) => {
         zoomStack.push(newZoom);
       }"
-      v-model:center="center"
-      :options="{ zoomControl: false }"
       @ready="onMapReady"
       @moveend="updateBounds"
       @click="onMapClick"
@@ -326,22 +335,22 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
       />
       <l-tile-layer
         :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode==='outdoor'? '256@2x':'256'}/{z}/{x}/{y}`"
-        :maxZoom="19"
+        :max-zoom="19"
         :z-index="1"
         attribution="<a href='https://api.mapy.cz/copyright' target='_blank'>&copy; Seznam.cz a.s. a další</a>"
       />
       <l-tile-layer
         v-if="mode==='aerial'"
         :url="`${env.VITE_API_URL}/map/v1/maptiles/names-overlay/256/{z}/{x}/{y}`"
-        :maxZoom="19"
+        :max-zoom="19"
         :z-index="2"
         attribution="<a href='https://api.mapy.cz/copyright' target='_blank'>&copy; Seznam.cz a.s. a další</a>"
       />
 
       <!-- Grids -->
       <l-polygon
-        v-if="zoom > 10 && zoom < 12"
         v-for="cell in kfmeGrid"
+        v-if="zoom > 10 && zoom < 12"
         :key="cell.id"
         :lat-lngs="cell.coords"
         :fill-opacity="hoveredCell === cell.id ? 0.1 : 0"
@@ -353,8 +362,8 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
       />
 
       <l-polygon
-        v-if="zoom >= 12 && zoom < 14"
         v-for="cell in smallGrid"
+        v-if="zoom >= 12 && zoom < 14"
         :key="cell.id"
         :lat-lngs="cell.coords"
         :fill-opacity="hoveredCell === cell.id ? 0.1 : 0"
@@ -366,8 +375,8 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
       />
 
       <l-polygon
-        v-if="zoom >= 14"
         v-for="cell in extraSmallGrid"
+        v-if="zoom >= 14"
         :key="cell.id"
         :lat-lngs="cell.coords"
         :fill-opacity="hoveredCell === cell.id ? 0.1 : 0"
@@ -380,8 +389,7 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
 
       <!-- Recordings -->
       <l-marker
-        v-if="isFetched"
-        v-for="({ rec, part, filteredPart }) in recordingsFilter(recordings)
+        v-for="({ rec, part, filteredPart }) in recordingsFilter
           .flatMap(r =>
             r.parts?.map((p: RecordingPartModel) => ({
               rec: r,
@@ -397,16 +405,17 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
                 )
             }))
           )"
+        v-if="isFetched"
         :key="`${rec.id}-${part.id}`"
         :lat-lng="[part.gpsLatitudeStart, part.gpsLongitudeStart]"
         :icon="dialectIconMaker.makeMapIcon(
           filteredPart
             ?.detectedDialects.find(d => d.confirmedDialect != null)
             ?.confirmedDialect
-          ?? filteredPart
-            ?.detectedDialects.find(d => d.userGuessDialect != null)
-            ?.userGuessDialect
-          ?? 'Unknown'
+            ?? filteredPart
+              ?.detectedDialects.find(d => d.userGuessDialect != null)
+              ?.userGuessDialect
+            ?? 'Unknown'
         )"
         @click="event => onRecClick({ event, rec, part })"
         @mouseover="event => {
@@ -445,25 +454,33 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
       />
 
       <!-- Controls -->
-      <l-control-scale v-if="scaleEnabled" :imperial="false" />
+      <l-control-scale
+        v-if="scaleEnabled"
+        :imperial="false"
+      />
 
       <!-- Mapy.cz Logo -->
       <l-control position="bottomleft">
         <div class="logocontrol ol-control">
-          <a href="http://mapy.cz/" target="_blank">
-            <img src="https://api.mapy.cz/img/api/logo.svg" alt="Mapy.cz Logo" />
+          <a
+            href="http://mapy.cz/"
+            target="_blank"
+          >
+            <img
+              src="https://api.mapy.cz/img/api/logo.svg"
+              alt="Mapy.cz Logo"
+            >
           </a>
         </div>
       </l-control>
-
     </l-map>
 
     <div class="absolute top-0 left-0 w-full z-[10000] hidden max-desktop:flex max-desktop:flex-row flex-col justify-around items-center">
       <LocationSearch
         v-model:text="searchText"
-        @update:location="searchUpdateCenter"
         placeholder="Hledat..."
         class="drop-shadow-lg rounded-2xl m-2 p-4 w-full h-[40px]"
+        @update:location="searchUpdateCenter"
       />
     </div>
 
@@ -472,9 +489,9 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
       <div :class="`max-desktop:hidden`">
         <LocationSearch
           v-model:text="searchText"
-          @update:location="searchUpdateCenter"
           placeholder="Hledat..."
           class="drop-shadow-lg rounded-2xl m-2 p-4 w-full sm:w-auto h-[70px]"
+          @update:location="searchUpdateCenter"
         />
       </div>
       <div class="flex flex-row items-end">
@@ -482,32 +499,59 @@ const searchUpdateCenter = ([lat, lng]: [number, number]) => {
           class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
           to="/mapa/legenda"
         >
-          <InfoIcon width="38" height="38" />
+          <InfoIcon
+            width="38"
+            height="38"
+          />
         </PrefetchLink>
 
         <div class="flex flex-row-reverse items-end">
           <div class="flex flex-col">
-            <div v-if="toolsShown" class="flex flex-col-reverse gap-x-2">
-              <button @click="scaleEnabled = !scaleEnabled" class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4">
+            <div
+              v-if="toolsShown"
+              class="flex flex-col-reverse gap-x-2"
+            >
+              <button
+                class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
+                @click="scaleEnabled = !scaleEnabled"
+              >
                 <FilledRulerIcon v-if="scaleEnabled" />
                 <RulerIcon v-else />
               </button>
 
-              <button @click="mode = mode==='aerial'?'outdoor':'aerial'" class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4">
+              <button
+                class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
+                @click="mode = mode==='aerial'?'outdoor':'aerial'"
+              >
                 <MapIcon v-if="mode==='aerial'" />
                 <PictureIcon v-else />
               </button>
             </div>
 
-            <button @click="toolsShown = !toolsShown" class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4">
-              <ListIcon width="38" height="38" />
+            <button
+              class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
+              @click="toolsShown = !toolsShown"
+            >
+              <ListIcon
+                width="38"
+                height="38"
+              />
             </button>
           </div>
 
-          <select v-model="filter" class="filter-select drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100" aria-label="Filter recordings">
-            <option v-for="(value, key) in availableMapModes" :key="key">{{ value }}</option>
+          <select
+            v-model="filter"
+            class="filter-select drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100"
+            aria-label="Filter recordings"
+          >
+            <option
+              v-for="(value, key) in availableMapModes"
+              :key="key"
+              :value="key"
+            >
+              {{ value }}
+            </option>
           </select>
-
         </div>
       </div>
     </div>

@@ -17,7 +17,9 @@ const { data: users, isLoading } = useQuery({
 <template>
   <h1>Seznam uživatelů</h1>
 
-  <template v-if="isLoading">Načítání...</template>
+  <template v-if="isLoading">
+    Načítání...
+  </template>
   <template v-else>
     <ul class="flex flex-col-reverse gap-y-3">
       <PrefetchLink
@@ -43,5 +45,4 @@ const { data: users, isLoading } = useQuery({
       </PrefetchLink>
     </ul>
   </template>
-
 </template>

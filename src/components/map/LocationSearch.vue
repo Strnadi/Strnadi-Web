@@ -19,12 +19,12 @@ const emit = defineEmits(['update:text', 'update:location']);
 
 const text = computed({
   get: () => props.text,
-  set: (value) => emit('update:text', value),
+  set: (value) => { emit('update:text', value); },
 });
 
 const location = computed({
   get: () => props.location,
-  set: (value) => emit('update:location', value),
+  set: (value) => { emit('update:location', value); },
 });
 
 
@@ -59,10 +59,10 @@ const update = () => {
   <input
     v-bind="$attrs"
     v-model="text"
-    type='text'
-    list='places'
+    type="text"
+    list="places"
     @input="update"
-  />
+  >
   <datalist id="places">
     <option
       v-for="(suggestion, index) in suggestions"

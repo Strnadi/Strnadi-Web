@@ -12,13 +12,22 @@ import { accountStore } from '@/state/AccountStore';
   <h1>Můj profil</h1>
   <span class="text-xl font-medium">{{ accountStore.user!.firstName }} {{ accountStore.user!.lastName }}</span>
   <span class="text-lg">{{ accountStore.user!.email }}</span>
-  <prefetch-link to="/ucet/moje-nahravky" class="link">
+  <prefetch-link
+    to="/ucet/moje-nahravky"
+    class="link"
+  >
     Moje nahrávky
   </prefetch-link>
-  <prefetch-link to="/ucet/osobni-udaje" class="link">
+  <prefetch-link
+    to="/ucet/osobni-udaje"
+    class="link"
+  >
     Osobní údaje
   </prefetch-link>
-  <prefetch-link to="/ucet/oznameni" class="link">
+  <prefetch-link
+    to="/ucet/oznameni"
+    class="link"
+  >
     Oznámení
   </prefetch-link>
 
@@ -28,7 +37,10 @@ import { accountStore } from '@/state/AccountStore';
     </prefetch-link>
   </template>
 
-  <prefetch-link to="/ucet/sprava/smazat" class="p-2">
+  <prefetch-link
+    to="/ucet/sprava/smazat"
+    class="p-2"
+  >
     <span class="text-red-500">Smazat účet</span>
   </prefetch-link>
 </template>

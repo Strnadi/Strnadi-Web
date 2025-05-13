@@ -7,7 +7,7 @@ export interface PersistOptions<T> {
   key: string;
   paths: string[];
   storage: Storage;
-  syncCallback: (store: T) => void;
+  syncCallback: (store: T) => void | Promise<void>;
 };
 
 /* Persists a Vue reactive object */
@@ -39,7 +39,7 @@ export const persist = <T>(object: T, options?: Partial<PersistOptions<T>>) => {
  * Asserts store
  */
 const assertStore = (storage: Storage, key: string): object | null => {
-  let _store = storage.getItem(key);
+  const _store = storage.getItem(key);
 
   if (!_store) {
     storage.setItem(key, JSON.stringify({}));
@@ -72,10 +72,10 @@ const getStore = (storage: Storage, key: string): object | null => {
 /**
  * Syncs reactive object with local store
  */
-const syncReactiveWithLocal = (object: object, store: object, paths?: Array<string>): void => {
+const syncReactiveWithLocal = (object: object, store: object, paths?: string[]): void => {
   if (paths) {
     paths.forEach(path => {
-      let _value = get(store, path);
+      const _value = get(store, path);
 
       if (_value !== undefined) {
         set(object, path, _value);
@@ -89,7 +89,7 @@ const syncReactiveWithLocal = (object: object, store: object, paths?: Array<stri
 /**
  * Syncs local store with reactive object
  */
-const syncLocalWithReactive = (object: object, storage: Storage, key: string, paths?: Array<string>): void => {
+const syncLocalWithReactive = (object: object, storage: Storage, key: string, paths?: string[]): void => {
   let _store = {};
 
   if (paths) {

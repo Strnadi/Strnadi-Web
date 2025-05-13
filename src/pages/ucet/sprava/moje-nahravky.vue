@@ -23,11 +23,21 @@ console.log("Here");
 
 <template>
   <h1>Moje nahrávky</h1>
-  <template v-if="isLoading">Loading...</template>
-  <template v-if="isError">Error loading recordings.</template>
+  <template v-if="isLoading">
+    Loading...
+  </template>
+  <template v-if="isError">
+    Error loading recordings.
+  </template>
   <template v-else>
-    <ul v-if="recordingsLength > 0" class="flex flex-col-reverse gap-y-3">
-      <li v-for="rec in recordings" :key="rec.id">
+    <ul
+      v-if="recordingsLength > 0"
+      class="flex flex-col-reverse gap-y-3"
+    >
+      <li
+        v-for="rec in recordings"
+        :key="rec.id"
+      >
         <router-link
           :to="`/nahravka/${rec.id}`"
           class="flex flex-col justify-around p-2 border-2 border-gray-200 hover:bg-gray-300 h-20 rounded-lg"
@@ -37,12 +47,14 @@ console.log("Here");
             <span class="text-lime-400">Nahráno</span>
           </div>
           <div class="flex flex-row justify-between">
-            <span></span>
+            <span />
             <span>{{ new Date(rec.createdAt).toLocaleString() }} </span>
           </div>
         </router-link>
       </li>
     </ul>
-    <p v-else>Zatím zde nic není.</p>
+    <p v-else>
+      Zatím zde nic není.
+    </p>
   </template>
 </template>

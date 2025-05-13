@@ -113,7 +113,7 @@ function submit() {
     stepper.goToNext()
   }
 
-  if (stepper.current.value === stepper.steps.value['done']) register()
+  if (stepper.current.value === stepper.steps.value.done) register()
 
   if(stepper.isLast.value) {
     router.replace('/')
@@ -154,7 +154,7 @@ const register = () => {
 
 watch(() => stepper.current.value, (newValue) => {
   if (registerStore.isExternalSignup &&
-      newValue === stepper.steps.value['password']
+      newValue === stepper.steps.value.password
   ) {
     stepper.goToNext();
   }
@@ -163,67 +163,129 @@ watch(() => stepper.current.value, (newValue) => {
 </script>
 
 <template>
-  <h1 class="text-lg font-bold" v-text="stepper.current.value.title" />
+  <h1
+    class="text-lg font-bold"
+    v-text="stepper.current.value.title"
+  />
 
   <form @submit.prevent="submit">
-
     <div class="flex flex-col justify-center gap-2 mt-2">
       <div>
         <div v-if="stepper.isCurrent('email')">
           <div class="flex flex-col gap-y-4">
-            <input v-model="registerStore.email" name="email" type="email" required placeholder="E-Mail" />
+            <input
+              v-model="registerStore.email"
+              name="email"
+              type="email"
+              required
+              placeholder="E-Mail"
+            >
             <div class="flex flex-row items-center gap-x-2 m-4">
-              <input type="checkbox" id="agreement" v-model="registerStore.dataAgreement" />
+              <input
+                id="agreement"
+                v-model="registerStore.dataAgreement"
+                type="checkbox"
+              >
               <label for="agreement">
-                <span class="text-sm">Zapojením do projektu občanské vědy Nářečí českých strnadů <PrefetchLink to="/podminky-pouziti" class="underline">souhlasím s podmínkami</PrefetchLink></span>
+                <span class="text-sm">Zapojením do projektu občanské vědy Nářečí českých strnadů <PrefetchLink
+                  to="/podminky-pouziti"
+                  class="underline"
+                >souhlasím s podmínkami</PrefetchLink></span>
               </label>
             </div>
             <AuthButtons
-              @success="googleSignup"
               :disabled="isPending || !registerStore.dataAgreement"
+              @success="googleSignup"
             />
           </div>
         </div>
 
         <!-- personal-info -->
-        <div v-if="stepper.isCurrent('personal-info')" class="flex flex-col gap-y-4">
+        <div
+          v-if="stepper.isCurrent('personal-info')"
+          class="flex flex-col gap-y-4"
+        >
           <div class="flex flex-col gap-y-1">
             <label for="name">Jméno</label>
-            <input id="name" v-model="registerStore.name" type="text" required />
+            <input
+              id="name"
+              v-model="registerStore.name"
+              type="text"
+              required
+            >
           </div>
           <div class="flex flex-col gap-y-1">
             <label for="surname">Příjmení</label>
-            <input id="surname" v-model="registerStore.surname" type="text" required />
+            <input
+              id="surname"
+              v-model="registerStore.surname"
+              type="text"
+              required
+            >
           </div>
           <div class="flex flex-col gap-y-1">
             <label for="nickname">Přezdívka (nepovinné)</label>
-            <input id="nickname" v-model="registerStore.nickname" type="text" />
-            <p class="text-gray-600 text-sm">Pokud nevyplníte … zobrazováno Vaše celé jméno.</p>
+            <input
+              id="nickname"
+              v-model="registerStore.nickname"
+              type="text"
+            >
+            <p class="text-gray-600 text-sm">
+              Pokud nevyplníte … zobrazováno Vaše celé jméno.
+            </p>
           </div>
         </div>
 
         <!-- location -->
-        <div v-if="stepper.isCurrent('location')" class="flex flex-col gap-y-4">
+        <div
+          v-if="stepper.isCurrent('location')"
+          class="flex flex-col gap-y-4"
+        >
           <div class="flex flex-col gap-y-1">
             <label for="postalCode">PSČ</label>
-            <input id="postalCode" v-model="registerStore.postCode" type="number" min="0" max="99999" />
-            <p class="text-gray-600">Nepovinné … z vaší lokality.</p>
+            <input
+              id="postalCode"
+              v-model="registerStore.postCode"
+              type="number"
+              min="0"
+              max="99999"
+            >
+            <p class="text-gray-600">
+              Nepovinné … z vaší lokality.
+            </p>
           </div>
           <div class="flex flex-col gap-y-1">
             <label for="city">Město</label>
-            <LocationSearch id="city" v-model:text="registerStore.city" />
-            <p class="text-gray-600">Nepovinné … na vašem profilu.</p>
+            <LocationSearch
+              id="city"
+              v-model:text="registerStore.city"
+            />
+            <p class="text-gray-600">
+              Nepovinné … na vašem profilu.
+            </p>
           </div>
         </div>
 
         <!-- password -->
-        <div v-if="stepper.isCurrent('password')" class="flex flex-col gap-y-4">
-          <RevealablePasswordInput v-model="registerStore.password" label="Heslo" />
-          <RevealablePasswordInput v-model="registerStore.passwordConfirm" label="Heslo znovu" />
+        <div
+          v-if="stepper.isCurrent('password')"
+          class="flex flex-col gap-y-4"
+        >
+          <RevealablePasswordInput
+            v-model="registerStore.password"
+            label="Heslo"
+          />
+          <RevealablePasswordInput
+            v-model="registerStore.passwordConfirm"
+            label="Heslo znovu"
+          />
         </div>
 
         <!-- final-confirm -->
-        <div v-if="stepper.isCurrent('final-confirm')" class="flex flex-col gap-y-2">
+        <div
+          v-if="stepper.isCurrent('final-confirm')"
+          class="flex flex-col gap-y-2"
+        >
           <h2>Je takto všechno správně?</h2>
           <span>E-mail: {{ registerStore.email }}</span>
           <span>Jméno: {{ registerStore.name }}</span>
@@ -235,17 +297,25 @@ watch(() => stepper.current.value, (newValue) => {
         </div>
 
         <!-- done -->
-        <div v-if="stepper.isCurrent('done')" class="flex flex-col gap-y-4">
+        <div
+          v-if="stepper.isCurrent('done')"
+          class="flex flex-col gap-y-4"
+        >
           <template v-if="isRegPending">
             <p>Vytváření účtu…</p>
           </template>
           <template v-else-if="isRegError">
             <p>{{ regError!.message }}</p>
-            <button @click="register" class="secondary p-2 w-full">Zkusit znovu</button>
+            <button
+              class="secondary p-2 w-full"
+              @click="register"
+            >
+              Zkusit znovu
+            </button>
           </template>
           <template v-else>
             <h2>Gratulace! Váš účet byl založen.</h2>
-            <span class="font-medium">Na vaši e-mailovou adresu vám krátce přijde odkaz, pomocí kterého<br/> si ověříte váš účet.</span>
+            <span class="font-medium">Na vaši e-mailovou adresu vám krátce přijde odkaz, pomocí kterého<br> si ověříte váš účet.</span>
           </template>
         </div>
       </div>
@@ -256,15 +326,23 @@ watch(() => stepper.current.value, (newValue) => {
           class="primary p-2 my-2 w-full"
           type="submit"
         >
-          <template v-if="!stepper.isLast.value">Další</template>
-          <template v-else>Zavřít</template>
+          <template v-if="!stepper.isLast.value">
+            Další
+          </template>
+          <template v-else>
+            Zavřít
+          </template>
         </button>
       </div>
     </div>
   </form>
 
   <div class="flex gap-2 my-4 justify-center">
-    <div v-for="(step, id, i) in stepper.steps.value" :key="id" class="">
+    <div
+      v-for="(step, id, i) in stepper.steps.value"
+      :key="id"
+      class=""
+    >
       <button
         :disabled="!allStepsBeforeAreValid(i) && stepper.isBefore(id)"
         class="text-sm text-gray-500 hover:text-gray-900 disabled:cursor-not-allowed"

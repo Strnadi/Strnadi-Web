@@ -1,0 +1,26 @@
+::-webkit-scrollbar {
+  width: 12px;
+  background: transparent !important;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-track {
+  margin: 30px 0;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  opacity: 0;
+  transform: translateX(6px);
+  width: 8px;
+  border-radius: 6px;
+  transition:
+    opacity 0.3s ease-out,
+    transform 0.3s ease-out;
+}
+
+[data-auto-scrollbar].scrolling::-webkit-scrollbar-thumb {
+  background: #888;
+  opacity: 1;
+  transform: translateX(0);
+}

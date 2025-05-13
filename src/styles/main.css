@@ -9,6 +9,7 @@
 @import "./hr.css";
 @import "./links.css";
 @import "./forms.css";
+@import "./scrollbar.css";
 
 :root {
   font-family: 'Bricolage Grotesque', Arial, Helvetica, sans-serif;

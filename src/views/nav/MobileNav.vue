@@ -11,7 +11,6 @@ import InfoIcon from '@/icons/interface/icon-info.svg';
 
 <template>
   <nav class="sticky bottom-0 flex flex-row justify-evenly w-full h-16 bg-white">
-
     <prefetch-link
       v-wave
       to="/"
@@ -22,8 +21,8 @@ import InfoIcon from '@/icons/interface/icon-info.svg';
     </prefetch-link>
 
     <prefetch-link
-      v-wave
       v-if="accountStore.user"
+      v-wave
       to="/informace"
       class="flex flex-1 justify-center items-center"
       :class="{ 'bg-gray-100': $route.path.startsWith('/informace') }"
@@ -32,8 +31,8 @@ import InfoIcon from '@/icons/interface/icon-info.svg';
     </prefetch-link>
 
     <prefetch-link
-      v-wave
       v-if="accountStore.user"
+      v-wave
       to="/ucet/sprava/moje-nahravky"
       class="flex flex-1 justify-center items-center"
       :class="{ 'bg-gray-100': $route.path.startsWith('/ucet/sprava/moje-nahravky') }"

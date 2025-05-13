@@ -33,25 +33,40 @@ const { data: recordings, isLoading, isError } = useQuery({
     <p>Nelze načíst nahrávky.</p>
   </template>
 
-  <p v-if="recordings?.length == 0">Zatím zde nic není.</p>
+  <p v-if="recordings?.length == 0">
+    Zatím zde nic není.
+  </p>
 
   <template v-else>
     <p>Celkový počet nahrávek: {{ recordings?.length }}</p>
     <p>Celkový počet částí: {{ recordings?.reduce((acc, recording) => acc + (recording.parts?.length || 0), 0) }}</p>
 
-    <button class="primary p-2">Stáhnout vybrané</button>
+    <button class="primary p-2">
+      Stáhnout vybrané
+    </button>
 
     <ul class="flex flex-col-reverse flex-wrap gap-x-3 gap-y-3">
-      <li class="flex flex-col" v-for="recording in recordings" :key="recording.id">
+      <li
+        v-for="recording in recordings"
+        :key="recording.id"
+        class="flex flex-col"
+      >
         {{ recording.name }}
         <ul>
-          <li v-for="part in recording.parts" :key="part.id" class="flex flex-row gap-x-1 items-center">
-            <input type="checkbox" />
-            <TextualCoords :lat="part.gpsLatitudeStart" :lng="part.gpsLongitudeStart" type="municipality_part" />
+          <li
+            v-for="part in recording.parts"
+            :key="part.id"
+            class="flex flex-row gap-x-1 items-center"
+          >
+            <input type="checkbox">
+            <TextualCoords
+              :lat="part.gpsLatitudeStart"
+              :lng="part.gpsLongitudeStart"
+              type="municipality_part"
+            />
           </li>
         </ul>
       </li>
     </ul>
   </template>
-
 </template>

@@ -8,13 +8,23 @@ meta:
   <h2>Opravdu si chcete smazat účet? Tuto akci nelze vrátit zpět.</h2>
 
   <div class="flex flex-row items-center gap-x-2">
-    <input type="checkbox" id="agreement" v-model="enabled" />
+    <input
+      id="agreement"
+      v-model="enabled"
+      type="checkbox"
+    >
     <label for="agreement">
       <span class="text-sm">Opravdu si chci smazat účet. Nahrávky zůstávají v databázi.</span>
     </label>
   </div>
 
-  <button class="primary p-2" @click="() => mutate()" :disabled="!enabled">Smazat účet</button>
+  <button
+    class="primary p-2"
+    :disabled="!enabled"
+    @click="() => mutate()"
+  >
+    Smazat účet
+  </button>
 </template>
 
 <script setup lang="ts">

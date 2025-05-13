@@ -40,11 +40,15 @@ const uploadStore = reactive({
   dateTime: new Date().toISOString(),
   confirmUpload: false,
 
-  async setRecordings(recordings: File[]) {
-    this.parts = recordings.map((recording) => ({
-      file: recording,
-      location: null
-    })) as RecordingPart[];
+  setRecordings(recordings: File[]) {
+    this.parts ??= [];
+
+    this.parts?.push(
+      ...recordings.map((recording) => ({
+        file: recording,
+        location: null
+      })) as RecordingPart[]
+    );
   },
 
   removePart(recording: File) {
@@ -105,8 +109,8 @@ const makeSelectedIcon = (partIndex: number) =>
     iconSize: [24, 24],
     html: `<span style="
   background-color: ${colors.value[partIndex]};
-  width: 3rem;
-  height: 3rem;
+  width: 2rem;
+  height: 2rem;
   display: block;
   left: -1.5rem;
   top: -1.5rem;
@@ -178,6 +182,12 @@ const beforeWindowUnload = (event: BeforeUnloadEvent) => {
   event.returnValue = true;
 };
 
+const removeMarkers = () => {
+  for(let i = 0; i < (uploadStore.parts?.length ?? 0); i++) {
+    MapMarkers.removeMarker(`selected-part-${i}`);
+  }
+}
+
 const {
   mutate: submitRecording,
   error: uploadError,
@@ -204,11 +214,11 @@ const {
     queryClient.invalidateQueries({ queryKey: ["all-recordings"] });
     stepper.goTo("file");
 
-    for(let i = 0; i < (uploadStore.parts?.length ?? 0); i++) {
-      MapMarkers.removeMarker(`selected-part-${i}`);
-    }
+    removeMarkers();
   }
 });
+
+onUnmounted(removeMarkers);
 
 // useMutationState({
 //   select: (mutation) => mutation.state.status
@@ -247,7 +257,7 @@ const submit = () => {
 };
 
 const stillUploading = () => {
-  if(isPending.value == true) {
+  if(isPending.value) {
     alert("Nahrávání stále probíhá. Nezavírejte stránku.");
     return false;
   }
@@ -267,7 +277,7 @@ function submitOrNext() {
   }
 }
 
-const onSoundDrop = (acceptedFiles: any[]) => {
+const onSoundDrop = (acceptedFiles: File[]) => {
   if (acceptedFiles.length === 0) {
     error.value = "Žádné validní soubory nebyly vybrány.";
     return;
@@ -277,10 +287,9 @@ const onSoundDrop = (acceptedFiles: any[]) => {
 };
 
 const onPhotoDrop = (acceptedFiles: File[]) => {
-  if(!Array.isArray(uploadStore.photos))
-    uploadStore.photos = [];
+  uploadStore.photos ??= [];
 
-  uploadStore.photos?.push(...acceptedFiles);
+  uploadStore.photos.push(...acceptedFiles);
   error.value = null;
 };
 
@@ -314,17 +323,28 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
 
 <template>
   <template v-if="!accountStore.user">
-    <h1 class="text-2xl">Nahrát</h1>
-    <p class="font-medium">Je potřeba se nejdříve přihlásit.</p>
+    <h1 class="text-2xl">
+      Nahrát
+    </h1>
+    <p class="font-medium">
+      Je potřeba se nejdříve přihlásit.
+    </p>
   </template>
 
   <template v-else-if="!accountStore.user.isEmailVerified">
-    <h1 class="text-2xl">Nahrát</h1>
-    <p class="font-medium">Je potřeba si nejdříve ověřit svůj e-mail.</p>
+    <h1 class="text-2xl">
+      Nahrát
+    </h1>
+    <p class="font-medium">
+      Je potřeba si nejdříve ověřit svůj e-mail.
+    </p>
   </template>
 
   <template v-else>
-    <h1 class="text-lg font-bold mb-4" v-text="stepper.current.value.title" />
+    <h1
+      class="text-lg font-bold mb-4"
+      v-text="stepper.current.value.title"
+    />
 
     <template v-if="uploadError">
       <span>{{ uploadError }}</span>
@@ -333,9 +353,9 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
     <form @submit.prevent="submitOrNext">
       <template v-if="stepper.isCurrent('file')">
         <Dropzone
-          @drop="onSoundDrop"
           :accept="soundAccept"
           :multiple="true"
+          @drop="onSoundDrop"
         >
           <template #dragging>
             <p>Upusťte soubory sem pro nahrání</p>
@@ -348,14 +368,29 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
             </div>
             <p>(.wav, .mp3, .flac, .aac, .ogg)</p>
 
-            <ul class="flex flex-col w-full" @click.stop>
-              <li v-for="(file, index) in uploadStore.parts?.map(p => p.file)" :key="file.name" class="flex flex-row w-full items-center justify-between">
-                <MaterialIcon class="h-10" :filename="file.name" />
+            <ul
+              class="flex flex-col w-full"
+              @click.stop
+            >
+              <li
+                v-for="(file, index) in uploadStore.parts?.map(p => p.file)"
+                :key="file.name"
+                class="flex flex-row w-full items-center justify-between"
+              >
+                <MaterialIcon
+                  class="h-10"
+                  :filename="file.name"
+                />
                 <div class="flex flex-col">
                   <p>{{ file.name }}</p>
                   <p>{{ file.size / 1_000_000 }} MB</p>
                 </div>
-                <button class="text-red-500" @click="uploadStore.parts?.splice(index, 1)">Smazat</button>
+                <button
+                  class="text-red-500"
+                  @click="uploadStore.parts?.splice(index, 1)"
+                >
+                  Smazat
+                </button>
               </li>
             </ul>
           </div>
@@ -364,21 +399,40 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
 
       <!-- Photos Stage -->
       <template v-if="stepper.isCurrent('photos')">
-        <ul>
-          <li v-for="(photo, index) in uploadStore.photos" :key="index" class="flex flex-row gap-x-2">
-            <img :src="makeURL(photo)" class="h-[200px]" />
-            <button @click="uploadStore.photos?.splice(index, 1)" class="secondary">Odebrat</button>
-          </li>
-        </ul>
-
-        <Dropzone :accept="photoAccept" @drop="onPhotoDrop">
+        <Dropzone
+          :multiple="true"
+          :accept="photoAccept"
+          @drop="onPhotoDrop"
+        >
           <template #dragging>
             <p>Upusťte soubory sem pro nahrání</p>
           </template>
 
-          <p>
-            Klikněte nebo přetáhněte fotky z místa dění
-          </p>
+          <div class="flex flex-col items-center gap-y-1">
+            <p>Klikněte nebo přetáhněte fotky z místa dění</p>
+
+            <ul
+              class="flex flex-col w-full"
+              @click.stop
+            >
+              <li
+                v-for="(file, index) in uploadStore.photos"
+                :key="file.name"
+                class="flex flex-row w-full items-center justify-between"
+              >
+                <img
+                  :src="makeURL(file)"
+                  class="h-[200px]"
+                >
+                <button
+                  class="danger"
+                  @click="uploadStore.photos?.splice(index, 1)"
+                >
+                  Odebrat
+                </button>
+              </li>
+            </ul>
+          </div>
         </Dropzone>
       </template>
 
@@ -387,7 +441,8 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
         <ul>
           <li
             v-for="(part, index) in uploadStore.parts"
-            :key="index" class="flex flex-row gap-x-2"
+            :key="index"
+            class="flex flex-row gap-x-2"
             :class="{
               'font-bold': index == currentPartIndex
             }"
@@ -415,68 +470,105 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
         <div class="flex flex-col w-full">
           <div class="flex flex-col gap-x-2 gap-y-4 w-full">
             <VueDatePicker
-              :flow="['calendar', 'time']"
               v-model="uploadStore.dateTime"
+              :flow="['calendar', 'time']"
               auto-apply
               partial-flow
               model-type="iso"
             />
             <div class="w-full">
-              <label for="title" class="block text-sm font-medium w-full">Titulek</label>
+              <label
+                for="title"
+                class="block text-sm font-medium w-full"
+              >Titulek</label>
               <input
+                id="title"
                 v-model="uploadStore.title"
                 type="text"
-                id="title"
                 class="w-full"
-              />
+              >
             </div>
             <div>
-              <label for="note" class="block text-sm font-medium">Poznámka</label>
+              <label
+                for="note"
+                class="block text-sm font-medium"
+              >Poznámka</label>
               <textarea
-                v-model="uploadStore.note"
                 id="note"
+                v-model="uploadStore.note"
                 class="w-full"
               />
             </div>
             <div>
-              <label for="device" class="block text-sm font-medium">Nahrávací zařízení</label>
+              <label
+                for="device"
+                class="block text-sm font-medium"
+              >Nahrávací zařízení</label>
               <input
-                v-model="uploadStore.device"
                 id="device"
+                v-model="uploadStore.device"
                 type="text"
                 class="w-full"
-              />
+              >
             </div>
             <div>
-              <label for="birdCount" class="block text-sm font-medium">Počet strnadů ({{ uploadStore.birdCount }})</label>
+              <label
+                for="birdCount"
+                class="block text-sm font-medium"
+              >Počet strnadů ({{ uploadStore.birdCount }})</label>
               <input
+                id="birdCount"
                 v-model="uploadStore.birdCount"
                 min="1"
                 max="2"
                 type="range"
-                id="birdCount"
-              />
+              >
             </div>
           </div>
           <div>
             <select
-              class="!bg-transparent drop-shadow-sm m-2 hover:bg-gray-100 bg-white p-2"
               v-model="dialect"
+              class="!bg-transparent drop-shadow-sm m-2 hover:bg-gray-100 bg-white p-2"
             >
-              <option value="none">Bez dialektu</option>
-              <option value="BC">BC</option>
-              <option value="BE">BE</option>
-              <option value="BlBh">BlBh</option>
-              <option value="BhBl">BhBl</option>
-              <option value="XB">XB</option>
+              <option value="none">
+                Bez dialektu
+              </option>
+              <option value="BC">
+                BC
+              </option>
+              <option value="BE">
+                BE
+              </option>
+              <option value="BlBh">
+                BlBh
+              </option>
+              <option value="BhBl">
+                BhBl
+              </option>
+              <option value="XB">
+                XB
+              </option>
             </select>
-            <button @click="addDialect" class="secondary p-2" :disabled="!dialect || dialect == 'none'">Přidat dialekt</button>
+            <button
+              class="secondary p-2"
+              :disabled="!dialect || dialect == 'none'"
+              @click="addDialect"
+            >
+              Přidat dialekt
+            </button>
           </div>
 
-          <div v-if="uploadStore.dialects.length > 0" class="flex flex-col gap-y-2">
+          <div
+            v-if="uploadStore.dialects.length > 0"
+            class="flex flex-col gap-y-2"
+          >
             <h2>Nářečí</h2>
             <ul class="flex flex-row gap-x-4">
-              <li v-for="(addedDialect, index) in uploadStore.dialects" :key="index" class="flex flex-row gap-x-2">
+              <li
+                v-for="(addedDialect, index) in uploadStore.dialects"
+                :key="index"
+                class="flex flex-row gap-x-2"
+              >
                 <p>{{ addedDialect }}</p>
               </li>
             </ul>
@@ -485,7 +577,11 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
 
           <h2>Části nahrávky</h2>
           <ul class="flex flex-col gap-y-2">
-            <li v-for="(part, index) in uploadStore.parts" :key="index" class="flex flex-row gap-x-2 items-center">
+            <li
+              v-for="(part, index) in uploadStore.parts"
+              :key="index"
+              class="flex flex-row gap-x-2 items-center"
+            >
               <TextualCoords
                 v-if="part.location"
                 :lat="part.location.lat"
@@ -493,15 +589,24 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
                 type="municipality_part"
               />
               <!-- <audio :src="partURLs[index]" controls class="w-1/2"></audio> -->
-              <button @click="uploadStore.removePartByIndex(index)" class="secondary px-2 py-1">Odebrat</button>
+              <button
+                class="secondary px-2 py-1"
+                @click="uploadStore.removePartByIndex(index)"
+              >
+                Odebrat
+              </button>
             </li>
           </ul>
 
           <div class="flex flex-row items-center gap-x-2">
-            <input class="h-full" type="checkbox" v-model="uploadStore.confirmUpload" />
+            <input
+              v-model="uploadStore.confirmUpload"
+              class="h-full"
+              type="checkbox"
+            >
             <p class="text-gray-500">
-              Nahrávku jsem zkontroloval(a) a chci ji odeslat do<br /> databáze. Jsem si vědom(a) tím, že v ní zůstane
-              i po smazání mého<br /> účtu a že smazána bude jen ve vyjimečných případech.
+              Nahrávku jsem zkontroloval(a) a chci ji odeslat do<br> databáze. Jsem si vědom(a) tím, že v ní zůstane
+              i po smazání mého<br> účtu a že smazána bude jen ve vyjimečných případech.
             </p>
           </div>
         </div>
@@ -515,9 +620,9 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
       <div class="flex justify-between mt-4">
         <button
           type="button"
-          @click="stepper.goToPrevious()"
           :disabled="stepper.isFirst.value"
           class="secondary p-2"
+          @click="stepper.goToPrevious()"
         >
           Zpět
         </button>
@@ -533,7 +638,10 @@ const totalSteps = Object.keys(stepper.steps.value).length -1;
 
     <!-- Step Indicators -->
     <div class="flex gap-2 my-4 justify-center">
-      <div v-for="(step, id, i) in stepper.steps.value" :key="id">
+      <div
+        v-for="(step, id, i) in stepper.steps.value"
+        :key="id"
+      >
         <button
           :disabled="!allStepsBeforeAreValid(i) && stepper.isBefore(id)"
           class="text-sm text-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"

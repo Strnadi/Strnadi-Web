@@ -66,12 +66,25 @@ const { mutate: submitArticle } = useMutation({
 
 <template>
   <h1>Úprava příspěvku</h1>
-  <input v-model="name" type="text" placeholder="Nadpis" />
-  <input v-model="description" type="text" placeholder="Popisek" />
+  <input
+    v-model="name"
+    type="text"
+    placeholder="Nadpis"
+  >
+  <input
+    v-model="description"
+    type="text"
+    placeholder="Popisek"
+  >
 
   <div>
     <h2>Vyberte kategorie</h2>
-    <v-select multiple v-model="categories" :options="availableCategories?.map(category => category.name)" :components="{ ListDeselect }" />
+    <v-select
+      v-model="categories"
+      multiple
+      :options="availableCategories?.map(category => category.name)"
+      :components="{ ListDeselect }"
+    />
   </div>
 
   <MdEditor
@@ -86,29 +99,42 @@ const { mutate: submitArticle } = useMutation({
     @save="(content) => submitArticle({ content })"
   />
 
-  <ul class="flex flex-col w-full" @click.stop>
-    <li v-for="file in article?.files" :key="file.filename" class="flex flex-row w-full items-center justify-between">
-      <MaterialIcon class="h-10" :filename="file.filename" />
+  <ul
+    class="flex flex-col w-full"
+    @click.stop
+  >
+    <li
+      v-for="file in article?.files"
+      :key="file.filename"
+      class="flex flex-row w-full items-center justify-between"
+    >
+      <MaterialIcon
+        class="h-10"
+        :filename="file.filename"
+      />
       <div class="flex flex-col">
-        <p :class="{
-          'line-through': deleteFiles.includes(file.filename)
-        }">{{ file.filename }}</p>
+        <p
+          :class="{
+            'line-through': deleteFiles.includes(file.filename)
+          }"
+        >
+          {{ file.filename }}
+        </p>
       </div>
       <button
         v-if="!deleteFiles.includes(file.filename)"
-        @click="deleteFiles.push(file.filename)"
         class="text-red-500"
+        @click="deleteFiles.push(file.filename)"
       >
         Smazat
       </button>
       <button
         v-else
-        @click="deleteFiles.splice(deleteFiles.indexOf(file.filename), 1)"
         class="text-red-500"
+        @click="deleteFiles.splice(deleteFiles.indexOf(file.filename), 1)"
       >
         Obnovit
       </button>
     </li>
   </ul>
-
 </template>

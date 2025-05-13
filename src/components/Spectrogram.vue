@@ -38,7 +38,7 @@ const isPaused = ref(false);
 const startTime = ref(0);
 const currentTime = ref(0);
 const audioDuration = ref(0);
-const spectrogramData = ref<Array<{ time: number, values: Uint8Array }>>([]);
+const spectrogramData = ref<{ time: number, values: Uint8Array }[]>([]);
 
 const liveAudioContext = ref<AudioContext | null>(null);
 const liveAnalyser = ref<AnalyserNode | null>(null);
@@ -132,7 +132,7 @@ async function generateSpectrogramDataOffline() {
   offlineProcessor.connect(offlineCtx.destination);
 
   const freqData = new Uint8Array(offlineAnalyser.frequencyBinCount);
-  const tempSpectrogramData: Array<{ time: number, values: Uint8Array }> = [];
+  const tempSpectrogramData: { time: number, values: Uint8Array }[] = [];
   let processCount = 0;
 
   offlineProcessor.onaudioprocess = () => {
@@ -488,7 +488,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 
   if (liveAudioContext.value) {
-    liveAudioContext.value.close().catch(e => console.warn("Error closing AudioContext:", e));
+    liveAudioContext.value.close().catch(e => { console.warn("Error closing AudioContext:", e); });
   }
 });
 
@@ -506,7 +506,10 @@ watch(() => props.audioUrl, (newUrl) => {
 
 <template>
   <div class="spectrogram-wrapper">
-    <div ref="spectrogramContainer" class="spectrogram-container">
+    <div
+      ref="spectrogramContainer"
+      class="spectrogram-container"
+    >
       <canvas
         ref="canvasRef"
         class="spectrogram-canvas"
@@ -515,39 +518,42 @@ watch(() => props.audioUrl, (newUrl) => {
       />
 
       <div
-        ref="progressLineRef"  
+        v-show="isLoaded"  
+        ref="progressLineRef"
         class="progress-line"
-        v-show="isLoaded"
         :style="{ left: `${props.margin.left}px` }"
       />
 
-      <div v-if="!isLoaded" class="loading-spinner">
+      <div
+        v-if="!isLoaded"
+        class="loading-spinner"
+      >
         <div class="spinner" />
         <span>Loading Spectrogram...</span>
       </div>
     </div>
 
     <div class="controls-container">
-       <button
-        @click="playAudio"
+      <button
         :disabled="isPlaying || !isLoaded"
         class="control-button"
+        @click="playAudio"
       >
         {{ isPaused ? 'Resume' : 'Play' }}
       </button>
 
       <button
-        @click="pauseAudio"
         :disabled="!isPlaying || !isLoaded"
         class="control-button"
+        @click="pauseAudio"
       >
-       Pause
+        Pause
       </button>
 
       <button
-        @click="stopAudio"
         :disabled="!isPlaying && !isPaused"
         class="control-button"
+        @click="stopAudio"
       >
         Stop
       </button>

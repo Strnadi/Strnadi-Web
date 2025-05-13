@@ -7,6 +7,6 @@ export const fileToBase64NoPrefix = async (file: File) => {
       const result = (reader.result as string).split(',')[1];
       resolve(result);
     };
-    reader.onerror = error => reject(error);
+    reader.onerror = error => { reject(error); };
   });
 }

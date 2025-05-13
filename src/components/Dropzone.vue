@@ -44,7 +44,7 @@ const dropZoneRef = ref<HTMLElement | null>(null);
 const inputRef = ref<HTMLInputElement | null>(null);
 
 function validateFiles(files: File[]) {
-  if (!props.accept || !props.accept.length) {
+  if (!props.accept?.length) {
     return { valid: files, invalid: [] };
   }
 
@@ -353,8 +353,12 @@ const acceptString = computed(() => {
       :accept="acceptString"
       :multiple="multiple"
       @change="onInputChange"
-    />
-    <div v-if="isOverDropZone"><slot name="dragging" /></div>
-    <div v-else><slot /></div>
+    >
+    <div v-if="isOverDropZone">
+      <slot name="dragging" />
+    </div>
+    <div v-else>
+      <slot />
+    </div>
   </div>
 </template>

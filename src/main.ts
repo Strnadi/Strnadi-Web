@@ -9,6 +9,7 @@ import { createRouter, createWebHistory, type RouteLocationRaw, type RouteRecord
 import { VueQueryPlugin } from "@tanstack/vue-query";
 import { routes as generatedRoutes } from 'vue-router/auto-routes'
 import { setupLayouts } from 'virtual:meta-layouts';
+import { useTimeoutFn, useEventListener } from '@vueuse/core';
 
 import VueClickAway from "vue3-click-away";
 import VWave from 'v-wave';
@@ -42,7 +43,7 @@ Array.prototype.guarded = function(
     };
     // recurse into children if any
     if (route.children) {
-      guardedRoute.children = (route.children as RouteRecordRaw[]).guarded(guard);
+      guardedRoute.children = (route.children).guarded(guard);
     }
     return guardedRoute;
   });
@@ -57,7 +58,7 @@ const desktopQuery = window.matchMedia(`(min-width: ${desktopBp})`);
 // Mobile Firefox users (yes, all two of you), tough luck
 // Y'all will just recieve the desktop site :^)
 const initialIsDesktop =
-  (navigator.userAgent.indexOf("Firefox") != -1) || desktopQuery.matches;
+  (navigator.userAgent.includes("Firefox")) || desktopQuery.matches;
 
 const handleResize = () => {
   const currentIsDesktop = desktopQuery.matches;
@@ -90,7 +91,7 @@ const removeUnlayoutedRoutes = (routes: RouteRecordRaw[], isDesktop: boolean): R
 
 const removeLayoutsRecursively = (routes: RouteRecordRaw[], isDesktop: boolean): RouteRecordRaw[] => {
   return routes.map(route => {
-    let processedRoute = { ...route };
+    const processedRoute = { ...route };
 
     if (processedRoute.children && processedRoute.children.length > 0) {
       processedRoute.children = removeLayoutsRecursively(processedRoute.children, isDesktop);
@@ -109,7 +110,7 @@ const removeLayoutsRecursively = (routes: RouteRecordRaw[], isDesktop: boolean):
 
 const nameRoutes = (routes: RouteRecordRaw[], suffix: string, predicate: (route: RouteRecordRaw) => boolean): RouteRecordRaw[] => {
   return routes.map(route => {
-    let processedRoute = { ...route };
+    const processedRoute = { ...route };
 
     if (processedRoute.children && processedRoute.children.length > 0) {
       processedRoute.children = nameRoutes(processedRoute.children, suffix, predicate);
@@ -243,6 +244,26 @@ axios.interceptors.response.use(response => response, error => {
   throw new ApiError(error.code, error.response?.status, error.response?.data);
 });
 
+// Directive definition
+const autoScrollbar = {
+  mounted(el: HTMLElement) {
+    el.setAttribute('data-auto-scrollbar', '')
+
+    const { start: hideScrollbar } = useTimeoutFn(
+      () => {
+        el.classList.remove('scrolling')
+      },
+      800
+    )
+
+    useEventListener(el, 'scroll', () => {
+      el.classList.add('scrolling')
+      hideScrollbar()
+    }, { passive: true })
+  }
+}
+
+
 /*
 axios.defaults.onUploadProgress = (progressEvent) => {
   const { loaded, total } = progressEvent;
@@ -265,8 +286,9 @@ app.use(VWave, {
 });
 app.use(VueClickAway);
 
-app.component('vSelect', vSelect);
+app.component('VSelect', vSelect);
 app.component("VueDatePicker", VueDatePicker);
+app.directive('auto-scrollbar', autoScrollbar)
 
 customElements.define('expandable-image', defineCustomElement(ExpandableImage, { shadowRoot: false }));
 

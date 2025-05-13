@@ -60,16 +60,25 @@ const errorHandler = (error: string) => {
 <template>
   <h1>Přihlášení</h1>
   <div class="flex flex-col items-center gap-y-6">
-
-    <div v-if="error">Chyba: {{ error }}</div>
-    <div v-if="isPending">Načítání...</div>
-    <div v-else class="flex flex-col items-center gap-y-6 w-full">
+    <div v-if="error">
+      Chyba: {{ error }}
+    </div>
+    <div v-if="isPending">
+      Načítání...
+    </div>
+    <div
+      v-else
+      class="flex flex-col items-center gap-y-6 w-full"
+    >
       <div
         class="flex flex-col items-center gap-y-2 max-lg:w-full"
       >
         <div class="flex flex-col gap-x-2 gap-y-4 w-full">
           <div class="w-full">
-            <label for="email" class="block text-sm font-medium mb-1">E-Mail</label>
+            <label
+              for="email"
+              class="block text-sm font-medium mb-1"
+            >E-Mail</label>
             <input
               id="email"
               v-model="email"
@@ -77,7 +86,7 @@ const errorHandler = (error: string) => {
               type="email"
               placeholder="E-Mail"
               class="w-full p-2 border rounded"
-            />
+            >
           </div>
           <div class="w-full">
             <RevealablePasswordInput
@@ -88,7 +97,9 @@ const errorHandler = (error: string) => {
             >
               <div class="text-sm font-medium mb-1 flex flex-row justify-between">
                 <span>Heslo</span>
-                <PrefetchLink to="/ucet/zapomenute-heslo">Zapomenuté heslo?</PrefetchLink>
+                <PrefetchLink to="/ucet/zapomenute-heslo">
+                  Zapomenuté heslo?
+                </PrefetchLink>
               </div>
             </RevealablePasswordInput>
           </div>

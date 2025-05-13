@@ -73,7 +73,7 @@ export const getUsers = async (token: string): Promise<User[]> => {
 export const getUserInfo = async (token: string, id: NumericString): Promise<User> => {
   const response = await axios.get(`/users/${id}`, {
     headers: {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${token ?? ''}`,
     },
   });
 
@@ -131,6 +131,16 @@ export const getPasswordResetRequest = async (email: string) => {
 
 export const getResendVerifyEmail = async (userId: number) => {
   await axios.get(`/auth/${userId}/reset-password`);
+}
+
+export const getRenewedJWT = async (oldJWT: string) => {
+  const response = await axios.get(`/auth/renew-jwt`, {
+    headers: {
+      'Authorization': `Bearer ${oldJWT}`
+    }
+  });
+
+  return response.data as string;
 }
 
 export const patchPasswordChange = async (token: string, id: number | string, newPassword: string) => {

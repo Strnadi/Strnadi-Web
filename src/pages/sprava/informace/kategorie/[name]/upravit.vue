@@ -62,28 +62,38 @@ const art = ref([
 
 <template>
   <h1>Úprava kategorie {{ name }}</h1>
-  <input v-model="name" type="text" placeholder="Nadpis" />
-  <input v-model="description" type="text" placeholder="Popisek" />
+  <input
+    v-model="name"
+    type="text"
+    placeholder="Nadpis"
+  >
+  <input
+    v-model="description"
+    type="text"
+    placeholder="Popisek"
+  >
 
-  <draggable v-model="art" item-key="id">
+  <draggable
+    v-model="art"
+    item-key="id"
+  >
     <template #item="{ element: article }">
       <div> {{ article.name }} </div>
     </template>
     <template #footer>
-
-    <div>
-      <v-select
-        v-model="categoryArticles"
-        :components="{ ListDeselect }"
-        :options="articles"
-        label="title"
-        multiple
-      />
-    </div>
-
+      <div>
+        <v-select
+          v-model="categoryArticles"
+          :components="{ ListDeselect }"
+          :options="articles"
+          label="title"
+          multiple
+        />
+      </div>
     </template>
   </draggable>
 
-  <button class="primary">Uložit</button>
-
+  <button class="primary">
+    Uložit
+  </button>
 </template>

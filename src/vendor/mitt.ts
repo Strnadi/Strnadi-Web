@@ -9,10 +9,8 @@ export type WildcardHandler<T = Record<string, unknown>> = (
 ) => boolean | void;
 
 // An array of all currently registered event handlers for a type
-export type EventHandlerList<T = unknown> = Array<Handler<T>>;
-export type WildCardEventHandlerList<T = Record<string, unknown>> = Array<
-	WildcardHandler<T>
->;
+export type EventHandlerList<T = unknown> = Handler<T>[];
+export type WildCardEventHandlerList<T = Record<string, unknown>> = WildcardHandler<T>[];
 
 // A map of event types and their corresponding event handlers.
 export type EventHandlerMap<Events extends Record<EventType, unknown>> = Map<
@@ -71,11 +69,11 @@ export default function mitt<Events extends Record<EventType, unknown>>(
 		 * @memberOf mitt
 		 */
     on(type: keyof Events | '*', handler: GenericEventHandler): void {
-      const handlers = all!.get(type);
+      const handlers = all.get(type);
       if (handlers) {
         handlers.push(handler);
       } else {
-        all!.set(type, [handler] as any);
+        all.set(type, [handler] as any);
       }
     },
 
@@ -87,12 +85,12 @@ export default function mitt<Events extends Record<EventType, unknown>>(
 		 * @memberOf mitt
 		 */
 		off<Key extends keyof Events>(type: Key, handler?: GenericEventHandler) {
-			const handlers: Array<GenericEventHandler> | undefined = all!.get(type);
+			const handlers: GenericEventHandler[] | undefined = all.get(type);
 			if (handlers) {
 				if (handler) {
 					handlers.splice(handlers.indexOf(handler) >>> 0, 1);
 				} else {
-					all!.set(type, []);
+					all.set(type, []);
 				}
 			}
 		},
@@ -124,7 +122,7 @@ export default function mitt<Events extends Record<EventType, unknown>>(
 		 */
 		emit<Key extends keyof Events>(type: Key, evt?: Events[Key]) {
 			let cancelled = false;
-			let handlers = all!.get(type);
+			let handlers = all.get(type);
 			if (handlers) {
 				for (const h of (handlers as EventHandlerList<Events[keyof Events]>).slice()) {
 					if (h(evt!) === false) {
@@ -135,7 +133,7 @@ export default function mitt<Events extends Record<EventType, unknown>>(
 			}
 
 			if (!cancelled) {
-				handlers = all!.get('*');
+				handlers = all.get('*');
 				if (handlers) {
 					for (const h of (handlers as WildCardEventHandlerList<Events>).slice()) {
 						if (h(type, evt!) === false) {
