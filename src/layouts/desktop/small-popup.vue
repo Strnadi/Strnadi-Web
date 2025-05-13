@@ -9,12 +9,21 @@ const closePopup = () => {
 </script>
 
 <template>
-
   <router-view v-slot="{ Component, route }">
-    <aside class="small_popup" @click="closePopup" @keydown.escape="closePopup">
-      <div :key="`${route.path}`" @click.stop>
+    <aside
+      class="small_popup"
+      @click="closePopup"
+      @keydown.escape="closePopup"
+    >
+      <div
+        :key="`${route.path}`"
+        @click.stop
+      >
         <div>
-          <button class="secondary big max-w-fit" @click="closePopup">
+          <button
+            class="secondary big max-w-fit"
+            @click="closePopup"
+          >
             <Back />
             <span>Zpět</span>
           </button>
@@ -23,7 +32,6 @@ const closePopup = () => {
       </div>
     </aside>
   </router-view>
-
 </template>
 
 <style scoped>

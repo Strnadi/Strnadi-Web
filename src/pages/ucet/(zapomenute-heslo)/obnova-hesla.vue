@@ -32,20 +32,36 @@ const submitPasswordChange = () => {
 </script>
 
 <template>
-  <h1 class="text-center">Reset hesla</h1>
+  <h1 class="text-center">
+    Reset hesla
+  </h1>
   <div class="flex flex-col items-center gap-y-6 w-full">
-
     <template v-if="isError">
       Chyba: {{ error!.message }}
     </template>
 
     <div class="flex flex-col items-center gap-y-6 w-full">
-      <RevealablePasswordInput v-model="password">Heslo</RevealablePasswordInput>
-      <RevealablePasswordInput v-model="passwordConfirm">Heslo znovu</RevealablePasswordInput>
-      <button v-if="!(isPending || isSuccess)" class="secondary p-2 w-full" @click="submitPasswordChange" :disabled="!(passwordConfirm && passwordConfirm === password && token && isIdle)">
+      <RevealablePasswordInput v-model="password">
+        Heslo
+      </RevealablePasswordInput>
+      <RevealablePasswordInput v-model="passwordConfirm">
+        Heslo znovu
+      </RevealablePasswordInput>
+      <button
+        v-if="!(isPending || isSuccess)"
+        class="secondary p-2 w-full"
+        :disabled="!(passwordConfirm && passwordConfirm === password && token && isIdle)"
+        @click="submitPasswordChange"
+      >
         Změnit heslo
       </button>
-      <prefetch-link to="/" v-else-if="isSuccess" class="button-secondary p-2 w-full">Přejít domů</prefetch-link>
+      <prefetch-link
+        v-else-if="isSuccess"
+        to="/"
+        class="button-secondary p-2 w-full"
+      >
+        Přejít domů
+      </prefetch-link>
     </div>
   </div>
 </template>

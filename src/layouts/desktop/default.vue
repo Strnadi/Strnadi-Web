@@ -24,9 +24,15 @@ useEvent(MapEvents, 'part-click', ({ rec }) => {
 </script>
 
 <template>
-  <div @keyup.escape="goHome" class="flex min-w-svw min-h-svh">
+  <div
+    class="flex min-w-svw min-h-svh"
+    @keyup.escape="goHome"
+  >
     <Navbar />
-    <aside class="notifications" v-if="notificationStore.notifications.length">
+    <aside
+      v-if="notificationStore.notifications.length"
+      class="notifications"
+    >
       <ul class="flex flex-col-reverse gap-y-2">
         <li
           v-for="(notification, index) in notificationStore.notifications"
@@ -41,7 +47,9 @@ useEvent(MapEvents, 'part-click', ({ rec }) => {
         </li>
       </ul>
     </aside>
-    <div class="flex flex-1"><Map /></div>
+    <div class="flex flex-1">
+      <Map />
+    </div>
   </div>
 
   <router-view />

@@ -133,6 +133,16 @@ export const getResendVerifyEmail = async (userId: number) => {
   await axios.get(`/auth/${userId}/reset-password`);
 }
 
+export const getRenewedJWT = async (oldJWT: string) => {
+  const response = await axios.get(`/auth/renew-jwt`, {
+    headers: {
+      'Authorization': `Bearer ${oldJWT}`
+    }
+  });
+
+  return response.data as string;
+}
+
 export const patchPasswordChange = async (token: string, id: number | string, newPassword: string) => {
   await axios.patch(`/users/${id}/change-password`, { newPassword }, {
     headers: {

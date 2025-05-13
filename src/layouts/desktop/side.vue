@@ -18,12 +18,18 @@ const closePopup = () => {
 <template>
   <router-view v-slot="{ Component }">
     <aside class="side">
-      <div>
+      <div v-auto-scrollbar>
         <div class="sticky flex flex-row justify-between top-0">
-          <button class="small" @click="goBack">
+          <button
+            class="small"
+            @click="goBack"
+          >
             <Back />
           </button>
-          <button class="small bg-yellow-300 rounded-2xl" @click="closePopup">
+          <button
+            class="small bg-yellow-300 rounded-2xl"
+            @click="closePopup"
+          >
             <Close />
           </button>
         </div>

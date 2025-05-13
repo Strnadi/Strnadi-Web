@@ -72,9 +72,16 @@ const submit = () => {
     <button @click="save" class="secondary p-2 w-full">Zkusit znovu</button>
   </template> -->
   <h2>Osobní údaje</h2>
-  <form @submit.prevent="submit" class="flex flex-col gap-y-2" ref="form">
+  <form
+    ref="form"
+    class="flex flex-col gap-y-2"
+    @submit.prevent="submit"
+  >
     <div>
-      <label for="name" class="block text-sm font-medium mb-1">Jméno</label>
+      <label
+        for="name"
+        class="block text-sm font-medium mb-1"
+      >Jméno</label>
       <input
         id="name"
         v-model="name"
@@ -83,10 +90,13 @@ const submit = () => {
         placeholder="Jméno"
         class="w-full p-2 border rounded"
         required
-      />
+      >
     </div>
     <div>
-      <label for="surname" class="block text-sm font-medium mb-1">Příjmení</label>
+      <label
+        for="surname"
+        class="block text-sm font-medium mb-1"
+      >Příjmení</label>
       <input
         id="surname"
         v-model="surname"
@@ -95,10 +105,13 @@ const submit = () => {
         placeholder="Příjmení"
         class="w-full p-2 border rounded"
         required
-      />
+      >
     </div>
     <div>
-      <label for="nickname" class="block text-sm font-medium mb-1">Přezdívka</label>
+      <label
+        for="nickname"
+        class="block text-sm font-medium mb-1"
+      >Přezdívka</label>
       <input
         id="nickname"
         v-model="nickname"
@@ -106,10 +119,13 @@ const submit = () => {
         type="text"
         placeholder="Přezdívka"
         class="w-full p-2 border rounded"
-      />
+      >
     </div>
     <div>
-      <label for="zipcode" class="block text-sm font-medium mb-1">PSČ</label>
+      <label
+        for="zipcode"
+        class="block text-sm font-medium mb-1"
+      >PSČ</label>
       <input
         id="zipcode"
         v-model="zipcode"
@@ -117,18 +133,20 @@ const submit = () => {
         type="number"
         placeholder="PSČ"
         class="w-full p-2 border rounded"
-      />
+      >
     </div>
     <LocationSearch
       v-model="town"
+      v-model:text="town"
       class="w-full"
       :placeholder="'Obec, město'"
-      v-model:text="town"
     />
-    <button class="secondary py-1 px-2 text-sm">Uložit</button>
+    <button class="secondary py-1 px-2 text-sm">
+      Uložit
+    </button>
   </form>
 
-  <hr class="my-4 px-8" />
+  <hr class="my-4 px-8">
 
   <h2>Heslo</h2>
   <div class="flex flex-col gap-y-2">
@@ -138,6 +156,12 @@ const submit = () => {
     <RevealablePasswordInput v-model="passwordAgain">
       Heslo znovu
     </RevealablePasswordInput>
-    <button class="primary p-2 w-full" :disabled="!passwordAgain || passwordAgain !== password" @click="submitPasswordChange">Změnit heslo</button>
+    <button
+      class="primary p-2 w-full"
+      :disabled="!passwordAgain || passwordAgain !== password"
+      @click="submitPasswordChange"
+    >
+      Změnit heslo
+    </button>
   </div>
 </template>

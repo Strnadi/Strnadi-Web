@@ -13,7 +13,7 @@ export class ApiError extends Error {
 
     if (body && body.title !== undefined && body.errors !== undefined) {
       this.body = body.title + Object.values(body.errors).map((error: any) => error.join('')).join(' ');
-    } else if (body && body.title) {
+    } else if (body?.title) {
       this.body = body.title;
     } else if(body) {
       this.body = body;

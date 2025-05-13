@@ -54,8 +54,16 @@ const { mutate: submitCategory } = useMutation({
 
 <template>
   <h1>Nová kategorie</h1>
-  <input v-model="name" type="text" placeholder="Název" />
-  <input v-model="label" type="text" placeholder="Popis" />
+  <input
+    v-model="name"
+    type="text"
+    placeholder="Název"
+  >
+  <input
+    v-model="label"
+    type="text"
+    placeholder="Popis"
+  >
 
 
   <div>

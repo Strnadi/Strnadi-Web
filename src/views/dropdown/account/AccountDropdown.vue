@@ -9,25 +9,40 @@ const user = accountStore.user!;
 
 <template>
   <Dropdown>
-    <template v-slot:title class='flex flex-row items-center'>
+    <template
+      #title
+      class="flex flex-row items-center"
+    >
       <ProfileIcon v-if="!user.profilePicture" />
-      <img v-else :src="user.profilePicture" />
+      <img
+        v-else
+        :src="user.profilePicture"
+      >
 
       {{ user.firstName }} {{ user.lastName }}
       <DropdownIcon />
     </template>
     <li>
       <PrefetchLink to="/ucet/muj-ucet">
-        <div class="dropdown-item">Profil</div>
+        <div class="dropdown-item">
+          Profil
+        </div>
       </PrefetchLink>
     </li>
     <li v-if="accountStore.user?.role === 'admin'">
       <PrefetchLink to="/sprava">
-        <div class="dropdown-item">Admin</div>
+        <div class="dropdown-item">
+          Admin
+        </div>
       </PrefetchLink>
     </li>
-    <li class="cursor-pointer" @click="accountStore.logout">
-      <div class="dropdown-item">Odhlásit se</div>
+    <li
+      class="cursor-pointer"
+      @click="accountStore.logout"
+    >
+      <div class="dropdown-item">
+        Odhlásit se
+      </div>
     </li>
   </Dropdown>
 </template>

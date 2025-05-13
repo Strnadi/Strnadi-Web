@@ -107,59 +107,110 @@ const cancelEdit = () => {
 
 <template>
   <h1 class="text-2xl font-semibold">
-    <template v-if="editing">Upravování: </template>
+    <template v-if="editing">
+      Upravování:
+    </template>
     Nahrávka {{ recording?.name }}
   </h1>
 
   <div v-if="filteredRec">
     <ul>
-      <li v-for="dialect in filteredRec[0].detectedDialects" :key="dialect.id">
+      <li
+        v-for="dialect in filteredRec[0].detectedDialects"
+        :key="dialect.id"
+      >
         {{ dialect.userGuessDialect }} {{ dialect.confirmedDialect }}
       </li>
     </ul>
   </div>
 
-  <div v-if="editing" class="space-y-2">
+  <div
+    v-if="editing"
+    class="space-y-2"
+  >
     <div>
-      <label for="name" class="block text-sm font-medium text-gray-700">Název:</label>
-      <input id="name" type="text" v-model="editedName" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+      <label
+        for="name"
+        class="block text-sm font-medium text-gray-700"
+      >Název:</label>
+      <input
+        id="name"
+        v-model="editedName"
+        type="text"
+        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+      >
     </div>
   </div>
 
-  <template v-if="isError"><span class="text-xl text-red-600">Chyba: Nelze získat nahrávku.</span></template>
-  <template v-if="isLoading"><span class="text-gray-500">Načítání...</span></template>
+  <template v-if="isError">
+    <span class="text-xl text-red-600">Chyba: Nelze získat nahrávku.</span>
+  </template>
+  <template v-if="isLoading">
+    <span class="text-gray-500">Načítání...</span>
+  </template>
   <template v-else-if="recording">
     <div class="space-y-4">
       <!-- Metadata Section -->
       <div class="text-sm text-gray-600 space-y-1">
         <p><span class="font-medium">Vytvořeno:</span> {{ new Date(recording.createdAt!).toLocaleString() }}</p>
-        <p><span class="font-medium">Zařízení:</span>
-          <template v-if="recording.device">{{ recording.device }}</template>
-          <template v-else>neznámé</template>
-          <template v-if="recording.byApp"> (přes aplikaci)</template>
+        <p>
+          <span class="font-medium">Zařízení:</span>
+          <template v-if="recording.device">
+            {{ recording.device }}
+          </template>
+          <template v-else>
+            neznámé
+          </template>
+          <template v-if="recording.byApp">
+            (přes aplikaci)
+          </template>
         </p>
       </div>
 
       <!-- Note Section -->
       <div>
-        <h3 class="text-lg font-medium mb-1">Poznámka</h3>
-        <blockquote v-if="!editing" class="p-3 bg-gray-50 border-l-4 border-gray-300 italic">{{ recording.note || 'Žádná poznámka.' }}</blockquote>
+        <h3 class="text-lg font-medium mb-1">
+          Poznámka
+        </h3>
+        <blockquote
+          v-if="!editing"
+          class="p-3 bg-gray-50 border-l-4 border-gray-300 italic"
+        >
+          {{ recording.note || 'Žádná poznámka.' }}
+        </blockquote>
         <div v-else>
-          <textarea id="note" v-model="editedNote" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+          <textarea
+            id="note"
+            v-model="editedNote"
+            rows="3"
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
         </div>
       </div>
 
       <!-- Parts Section -->
       <div>
-        <h3 class="text-lg font-medium mb-2">Části nahrávky</h3>
+        <h3 class="text-lg font-medium mb-2">
+          Části nahrávky
+        </h3>
         <ul class="space-y-4">
-          <li v-for="part in recording.parts" :key="part.id" class="p-3 border rounded-md space-y-3">
-            <audio :src="`${env.VITE_API_URL}/recordings/part/${recording.id}/${part.id}/sound`" controls class="w-full" />
+          <li
+            v-for="part in recording.parts"
+            :key="part.id"
+            class="p-3 border rounded-md space-y-3"
+          >
+            <audio
+              :src="`${env.VITE_API_URL}/recordings/part/${recording.id}/${part.id}/sound`"
+              controls
+              class="w-full"
+            />
 
             <div class="flex items-center w-full">
               <ToggleShow class="w-full">
-                <template v-slot:toggle-button>
-                  <button class="secondary text-sm p-1 px-2">Zobrazit spektrogram</button>
+                <template #toggle-button>
+                  <button class="secondary text-sm p-1 px-2">
+                    Zobrazit spektrogram
+                  </button>
                 </template>
                 <KeepAlive>
                   <Spectrogram
@@ -171,7 +222,12 @@ const cancelEdit = () => {
               </ToggleShow>
 
               <template v-if="accountStore.user?.role == 'admin'">
-                <button class="primary text-sm p-1 px-2" :disabled="editing">Smazat část</button>
+                <button
+                  class="primary text-sm p-1 px-2"
+                  :disabled="editing"
+                >
+                  Smazat část
+                </button>
               </template>
             </div>
           </li>
@@ -180,10 +236,16 @@ const cancelEdit = () => {
 
       <!-- User Section -->
       <div>
-        <h3 class="text-lg font-medium mb-1">Uživatel</h3>
+        <h3 class="text-lg font-medium mb-1">
+          Uživatel
+        </h3>
         <div class="text-gray-700">
-          <template v-if="isUploaderLoading">Načítání...</template>
-          <template v-else-if="isUploaderError">Chyba: Nelze získat informace.</template>
+          <template v-if="isUploaderLoading">
+            Načítání...
+          </template>
+          <template v-else-if="isUploaderError">
+            Chyba: Nelze získat informace.
+          </template>
           <template v-else-if="uploader">
             <span>
               <template v-if="uploader.nickname">{{ uploader.nickname }}</template>
@@ -199,15 +261,25 @@ const cancelEdit = () => {
 
       <template v-if="accountStore.user?.role === 'admin' || accountStore.user?.id === recording.userId">
         <template v-if="editing">
-          <button @click="saveChanges" class="success p-2">Uložit změny</button>
-          <button @click="cancelEdit" class="secondary p-2">Zrušit</button>
+          <button
+            class="success p-2"
+            @click="saveChanges"
+          >
+            Uložit změny
+          </button>
+          <button
+            class="secondary p-2"
+            @click="cancelEdit"
+          >
+            Zrušit
+          </button>
         </template>
 
         <template v-else>
           <button
             v-if="accountStore.user?.role == 'admin' || accountStore.user?.id == recording?.userId"
-            @click="toggleEdit"
             class="secondary p-2 ml-4 flex-shrink-0"
+            @click="toggleEdit"
           >
             Upravit
           </button>

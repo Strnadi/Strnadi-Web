@@ -63,19 +63,21 @@ const location = window.location.href;
             <td>
               <span>
                 Vlastníci telefonů značky Apple si musí aplikaci stáhnout přes beta testovací aplikaci
-                <a href="https://developer.apple.com/testflight" external="true">TestFlight</a>.
+                <a
+                  href="https://developer.apple.com/testflight"
+                  external="true"
+                >TestFlight</a>.
               </span>
             </td>
           </tr>
         </tbody>
       </table>
 
-      <hr />
+      <hr>
 
       <span class="font-medium text-justify italic [text-align-last:center] text-sm">
         Aplikace, stejně jako web, stále prochází velmi bouřlivým vývojem. Za chyby se omlouváme. Těšte se na časté aktualizace a vylepšování.
       </span>
     </div>
   </div>
-
 </template>

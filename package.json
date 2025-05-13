@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite --clearScreen=false",
-    "build": "vue-tsc -b --noCheck && vite build",
+    "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "vue-tsc -b",
-    "lint": "eslint",
-    "format": "prettier"
+    "format": "prettier",
+    "check": "vue-tsc -b",
+    "lint": "eslint"
   },
   "dependencies": {
     "@eslint/js": "^9.26.0",

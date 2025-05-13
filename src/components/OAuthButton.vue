@@ -115,9 +115,9 @@ const login = () => {
 
 <template>
   <button
-    @click="login"
     :disabled="disabled"
     type="button"
+    @click="login"
   >
     <slot />
   </button>

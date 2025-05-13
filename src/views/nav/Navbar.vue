@@ -93,8 +93,8 @@ const { data: categories } = useQuery({
               >
                 <span>{{ article.name }}</span>
                 <span
-                  class="italic"
                   v-if="article.description"
+                  class="italic"
                 >
                   {{ article.description }}
                 </span>
@@ -114,7 +114,8 @@ const { data: categories } = useQuery({
             <AccountDropdown v-if="accountStore.user" />
             <PrefetchLink
               v-else
-              to="/ucet/vitejte" class="button-secondary py-2 px-4"
+              to="/ucet/vitejte"
+              class="button-secondary py-2 px-4"
             >
               Přihlásit se
             </PrefetchLink>

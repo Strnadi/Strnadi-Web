@@ -20,7 +20,7 @@ const { remaining, start } = useCountdown(SuccessTimeout, {
 });
 
 
-const postMessage = (message: OAuthPopupResult) => (window.opener as Window).postMessage(message);
+const postMessage = (message: OAuthPopupResult) => { (window.opener as Window).postMessage(message); };
 
 onMounted(() => {
   const route = window.location;

@@ -16,13 +16,24 @@ const isMobile = computed(() => {
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
     <div class="flex flex-col items-center gap-y-3">
-      <img src="/logo-no-text.svg" />
+      <img src="/logo-no-text.svg">
       <h2>Nářečí českých strnadů</h2>
     </div>
     <span class="text-xl text-center">
       Váš e-mail byl úspěšně ověřen.
     </span>
-    <a v-if="isMobile" class="button-primary p-2 w-full text-center" href="com.delta.strnadi://">Zpět do aplikace</a>
-    <PrefetchLink v-else class="button-primary p-2 w-full text-center" :replace="true" to="/">Dokončit registraci</PrefetchLink>
+    <a
+      v-if="isMobile"
+      class="button-primary p-2 w-full text-center"
+      href="com.delta.strnadi://"
+    >Zpět do aplikace</a>
+    <PrefetchLink
+      v-else
+      class="button-primary p-2 w-full text-center"
+      :replace="true"
+      to="/"
+    >
+      Dokončit registraci
+    </PrefetchLink>
   </div>
 </template>

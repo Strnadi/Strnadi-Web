@@ -29,10 +29,17 @@ const resendEmail = () => {
 
 <template>
   <h1>Znovuodeslání ověřovacího e-mailu</h1>
-  <button :disabled="isActive" @click="resendEmail" class="button-primary p-2 w-full text-center">
+  <button
+    :disabled="isActive"
+    class="button-primary p-2 w-full text-center"
+    @click="resendEmail"
+  >
     Odeslat ověřovací e-mail
   </button>
-  <div class="flex flex-row" v-if="isActive">
+  <div
+    v-if="isActive"
+    class="flex flex-row"
+  >
     <p>{{ remaining }}s</p>
     <SegmentedProgress
       :progress="remaining"

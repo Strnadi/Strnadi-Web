@@ -16,13 +16,18 @@ const closePopup = () => {
 
 
 <template>
-
   <router-view v-slot="{ Component }">
     <Transition>
-      <aside class="center" @keydown.escape="closePopup">
+      <aside
+        class="center"
+        @keydown.escape="closePopup"
+      >
         <div>
           <div>
-            <button class="secondary small" @click="goBack">
+            <button
+              class="secondary small"
+              @click="goBack"
+            >
               <Back />
             </button>
           </div>
@@ -31,7 +36,6 @@ const closePopup = () => {
       </aside>
     </Transition>
   </router-view>
-
 </template>
 
 <style scoped>

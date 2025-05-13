@@ -353,8 +353,12 @@ const acceptString = computed(() => {
       :accept="acceptString"
       :multiple="multiple"
       @change="onInputChange"
-    />
-    <div v-if="isOverDropZone"><slot name="dragging" /></div>
-    <div v-else><slot /></div>
+    >
+    <div v-if="isOverDropZone">
+      <slot name="dragging" />
+    </div>
+    <div v-else>
+      <slot />
+    </div>
   </div>
 </template>
