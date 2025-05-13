@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
 import { accountStore } from '@/state/AccountStore';
 
 import { useQuery } from '@tanstack/vue-query';
 
-import { getArticleCategories, type ArticleCategory, type Article } from '@/api/articles'
+import { getArticleCategories } from '@/api/articles'
 
 import Dropdown from '@/components/Dropdown.vue'
 import AccountDropdown from '@/views/dropdown/account/AccountDropdown.vue';
 
 import Upload from '@/icons/interface/icon-upload.svg';
-import Notifications from '@/icons/interface/icon-notifications-empty.svg';
 import List from '@/icons/interface/icon-list.svg';
 
 import DropdownIcon from '@/icons/interface/dropdown.svg';
@@ -18,7 +16,6 @@ import MapIcon from '@/icons/interface/icon-map.svg';
 
 import { kebabize } from '@/utils/strings';
 
-const isMenuOpen = ref(false);
 
 const { data: categories } = useQuery({
   queryKey: ["categories"],

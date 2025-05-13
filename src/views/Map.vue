@@ -101,7 +101,6 @@ import MapIcon from '@/icons/interface/icon-map.svg';
 import RulerIcon from '@/icons/interface/icon-ruler.svg';
 import FilledRulerIcon from '@/icons/interface/icon-ruler-fill.svg';
 import PictureIcon from '@/icons/interface/icon-picture.svg';
-import { useRoute } from 'vue-router';
 
 // @ts-expect-error FilterIcon is bound through CSS at the bottom of this SFC.
 import FilterIcon from '@/icons/interface/icon-filter2.svg?url';
@@ -121,7 +120,6 @@ const env = import.meta.env;
 
 // -- Map state --
 const router = useRouter();
-const route = useRoute();
 const toolsShown = ref(false);
 
 const center = ref<LatLngExpression>({ lat: 49.9, lng: 15.5 });

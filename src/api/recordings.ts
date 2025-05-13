@@ -1,6 +1,6 @@
 import axios from "axios";
 import { postPhoto } from "./photos";
-import { genericGet, authorizedPost, authorizedPatch, authorizedDelete } from "./utils";
+import { authorizedPatch } from "./utils";
 import type { NumericString } from "@/types/basic";
 
 export interface RecordingPartModel {

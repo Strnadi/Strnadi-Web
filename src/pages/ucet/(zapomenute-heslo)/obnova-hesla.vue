@@ -4,12 +4,11 @@ meta:
 </route>
 
 <script setup lang="ts">
-import * as jose from 'jose';
 import { patchPasswordChange } from '@/api/account';
 import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue';
 import { useMutation } from '@tanstack/vue-query';
 import { useRouteQuery } from '@vueuse/router';
-import { computed, onMounted, ref } from 'vue';
+import { ref } from 'vue';
 
 const token = useRouteQuery("token");
 const userId = useRouteQuery("userId");
@@ -26,7 +25,6 @@ const submitPasswordChange = () => {
     return;
   }
 
-  const decodedToken = jose.decodeJwt(token.value as string);
   mutate({ token: token.value as string, userId: userId.value as string, newPassword: password.value})
 }
 </script>

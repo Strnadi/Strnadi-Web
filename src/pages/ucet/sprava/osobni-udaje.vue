@@ -41,7 +41,6 @@ const submitPasswordChange = () => {
 
 const submit = () => {
   const token = accountStore.token!;
-  const email = accountStore.user!.email;
   mutate(
     {
       userInfo: {
@@ -65,6 +64,9 @@ const submit = () => {
   </h1>
   <template v-if="isPending">
     <p>Ukládání...</p>
+  </template>
+  <template v-if="error">
+    <p>Chyba: {{ error!.message }}</p>
   </template>
   <!-- <template v-if="error">
     <h1>Chyba</h1>

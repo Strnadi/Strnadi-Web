@@ -4,13 +4,13 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, onUnmounted, reactive } from 'vue';
+import { ref, watch, computed, onUnmounted, reactive } from 'vue';
 import { onBeforeRouteUpdate, onBeforeRouteLeave } from 'vue-router';
 import { accountStore } from "@/state/AccountStore";
 import { MapEvents, MapMarkers } from '@/views/Map.vue';
 import { useStepper } from '@vueuse/core';
 import { postRecording, type RecordingUploadReq, type RecordingPartUploadParams } from '@/api/recordings';
-import { useQueryClient, useMutation, useMutationState } from '@tanstack/vue-query';
+import { useQueryClient, useMutation } from '@tanstack/vue-query';
 import { Icon, type LeafletMouseEvent, divIcon } from 'leaflet';
 import Dropzone from '@/components/Dropzone.vue';
 import MaterialIcon from '@/components/MaterialIcon.vue';
@@ -316,8 +316,6 @@ const addDialect = () => {
 
 const currentPartIndex = ref(0);
 
-
-const totalSteps = Object.keys(stepper.steps.value).length -1;
 
 </script>
 

@@ -5,7 +5,7 @@ meta:
 
 <script setup lang="ts">
 import * as jose from 'jose';
-import { onMounted, reactive, watch } from 'vue'
+import { reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMutation } from '@tanstack/vue-query'
 import { postRegister, type SignUpRequest } from '@/api/account'
@@ -83,7 +83,7 @@ const stepper = useStepper({
 })
 
 
-const { mutate: googleSignupMutate, isPending, isError } = useMutation({
+const { mutate: googleSignupMutate, isPending, error } = useMutation({
   mutationFn: ({ idToken }: { idToken: string }) => postGoogleSignup({ idToken }),
 
   onSuccess: (signupJWT: OAuth2SignUpResponse) => {

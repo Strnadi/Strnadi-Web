@@ -5,10 +5,13 @@ import { postDevice } from "@/api/device";
 import { accountStore } from "@/state/AccountStore";
 
 async function initializePushNotifications(_app: FirebaseApp, messaging: Messaging) {
-  const permission = await Notification.requestPermission();
 
-  if (accountStore.user) {
-  
+  while (Notification.permission === "default") {
+    await Notification.requestPermission();
+  }
+
+  if (Notification.permission === "granted" && accountStore.user) {
+
     const registration = await navigator.serviceWorker.getRegistration("/");
   
     try {

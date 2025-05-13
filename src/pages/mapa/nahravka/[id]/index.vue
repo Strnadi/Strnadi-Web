@@ -5,11 +5,11 @@ meta:
 
 <script setup lang="ts">
 import { onBeforeRouteUpdate } from 'vue-router';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router'
-import { getRecording, getFilteredRecording, patchRecording } from '@/api/recordings';
+import { getRecording, getFilteredRecording } from '@/api/recordings';
 import { getUserInfo } from '@/api/account';
-import { ref, computed, type Ref, onUnmounted, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { accountStore } from '@/state/AccountStore';
 import type { NumericString } from '@/types/basic';
 import Spectrogram from '@/components/Spectrogram.vue';
@@ -50,19 +50,6 @@ const {
   queryFn: () => getUserInfo(accountStore.token!, recording.value?.userId!),
   enabled, // Use the computed enabled value
 })
-
-// const {
-//   mutate: editRecording
-// } = useMutation({
-//   mutationFn: (data: ) =>
-//     patchRecording(data.id, data.name, data.note);
-
-//   onSuccess: () => {
-//     // Invalidate queries to refetch the updated data
-//     queryClient.invalidateQueries({ queryKey: ['recording', recordingId.value] });
-//   }
-// });
-
 
 const queryClient = useQueryClient();
 
