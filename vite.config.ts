@@ -20,11 +20,13 @@ import Terminal from 'vite-plugin-terminal';
 import SVGLoader from 'vite-svg-loader';
 import DocsPlugin from './plugins/docs';
 import Inspect from 'vite-plugin-inspect';
+import { qrcode as QRCode } from 'vite-plugin-qrcode';
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     Inspect(),
+    QRCode(),
     purgePolyfills.rollup({  }),
     TSConfigPaths({ loose: true }),
     TailwindCSS(),
@@ -48,39 +50,51 @@ export default defineConfig({
       devOptions: {
         enabled: true
       },
-      // manifest: {
-      //   name: "Strnadi",
-      //   short_name: "Strnadi",
-      //   theme_color: "#ffd641",
-      //   background_color: "#ffffff",
-      //   lang: "cs-CZ",
-      //   display: "standalone",
-      //   start_url: "/",
-      //   id: "cz.delta-skola.strnadi",
-      //   icons: [
-      //     {
-      //       src: "/logo.svg",
-      //       sizes: "121x42",
-      //       type: "image/svg+xml",
-      //       purpose: "any maskable",
-      //     },
-      //   ],
-      // },
+      manifest: {
+        name: "Strnadi - web",
+        short_name: "Strnadi - Web",
+        theme_color: "#ffd641",
+        background_color: "#ffffff",
+        lang: "cs-CZ",
+        display: "standalone",
+        start_url: "/",
+        id: "cz.delta-skola.strnadi",
+        icons: [
+          {
+            src: "/logo.svg",
+            sizes: "121x42",
+            type: "image/svg+xml",
+            purpose: "any maskable",
+          }
+        ],
+      },
       workbox: {
-        globPatterns: ['**/*.{js,css,ico,png,svg}'], // exclude HTML
+        globPatterns: ['**/*.{js,css,ico,png,svg,html}'], // include HTML
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/(?:(new|dev|staging)\.)?strnadi\.cz\/.*$/,
+            urlPattern: ({ request }) => request.destination === 'document',
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'strnadi-cache',
+              cacheName: 'strnadi-html-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 24 * 60 * 60 * 7, // 1 week
+              },
+              networkTimeoutSeconds: 0.5
+            },
+          },
+          {
+            urlPattern: /^https:\/\/(dev|new|old)?api.strnadi.cz\/recordings\/part\/(\d+)\/(\d+)\/sound$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'strnadi-api-cache-sounds',
               expiration: {
                 maxEntries: 100000,
-                maxAgeSeconds: 24 * 60 * 60 * 7, // 1 week
+                maxAgeSeconds: 24 * 60 * 60 * 30, // 30 days
               },
             },
           },
@@ -88,11 +102,24 @@ export default defineConfig({
             urlPattern: /^https:\/\/(dev|new|old)?api.strnadi.cz\/map\/.*$/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'mapy-cache',
+              cacheName: 'strnadi-api-cache-maps',
               expiration: {
                 maxEntries: 100000,
                 maxAgeSeconds: 24 * 60 * 60 * 30, // 30 days
               },
+              networkTimeoutSeconds: 1
+            },
+          },
+          {
+            urlPattern: /^https:\/\/(?:(new|dev|staging)\.)?strnadi\.cz\/.*$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'strnadi-api-cache',
+              expiration: {
+                maxEntries: 100000,
+                maxAgeSeconds: 24 * 60 * 60 * 7, // 1 week
+              },
+              networkTimeoutSeconds: 3
             },
           }
         ],

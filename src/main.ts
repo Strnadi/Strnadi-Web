@@ -16,6 +16,7 @@ import VWave from 'v-wave';
 import vSelect from 'vue-select';
 import VueDatePicker from "@vuepic/vue-datepicker";
 import ExpandableImage from '@/components/ExpandableImage.vue';
+import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import { ApiError } from "@/classes/api-error";
 import "./styles/main.css";
 
@@ -287,9 +288,10 @@ app.use(VWave, {
 app.use(VueClickAway);
 
 app.component('VSelect', vSelect);
-app.component("VueDatePicker", VueDatePicker);
+app.component('VueDatePicker', VueDatePicker);
 app.directive('auto-scrollbar', autoScrollbar)
 
+customElements.define('multi-color-square', defineCustomElement(MultiColorSquare, { shadowRoot: false }));
 customElements.define('expandable-image', defineCustomElement(ExpandableImage, { shadowRoot: false }));
 
 app.mount("#app");

@@ -1,4 +1,6 @@
 import { watch } from "vue";
+
+// @ts-expect-error Dotly has no type information
 import { get, set } from "dotly";
 
 const DEFAULT_KEY = "reactive_persisted";

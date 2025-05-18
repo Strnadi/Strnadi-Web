@@ -9,7 +9,7 @@ import { onMounted, onUnmounted } from 'vue';
 
 export const useEventLast = <
   T extends Record<EventType, unknown>,
-  K extends keyof T
+  K extends keyof T | '*'
 >(
   emitter: Emitter<T>,
   event: K,

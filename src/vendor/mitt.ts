@@ -41,7 +41,7 @@ export interface Emitter<Events extends Record<EventType, unknown>> {
 }
 
 /**
- * Mitt: Tiny (~200b) functional event emitter / pubsub.
+ * Mitt: Tiny functional event emitter / pubsub.
  * @name mitt
  * @returns {Mitt}
  */
@@ -51,7 +51,7 @@ export default function mitt<Events extends Record<EventType, unknown>>(
 	type GenericEventHandler =
 		| Handler<Events[keyof Events]>
 		| WildcardHandler<Events>;
-	all = all || new Map();
+	all = all ?? new Map();
 
 	// store last callbacks separately
 	const lastAll: EventHandlerMap<Events> = new Map();

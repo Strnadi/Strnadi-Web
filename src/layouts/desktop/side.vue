@@ -35,8 +35,8 @@ const closePopup = () => {
         </div>
 
         <component :is="Component" />
-        <div class="bottom-fade" />
       </div>
+      <div class="bottom-fade" />
     </aside>
   </router-view>
 </template>
@@ -64,7 +64,7 @@ const closePopup = () => {
     @apply grid grid-cols-[auto_1fr] overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
     @apply rounded-4xl;
     @apply p-8;
-    @apply pb-0;
+    @apply pb-20;
     @apply pr-[24px];
     @apply bg-white/90;
     @apply gap-y-2;
@@ -107,11 +107,11 @@ const closePopup = () => {
 
   .bottom-fade {
     pointer-events: none;
-    position: sticky;
+    position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 5rem;
+    height: 7rem;
     background: linear-gradient(
       to bottom,
       rgba(255,255,255,0) 0%,

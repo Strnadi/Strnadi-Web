@@ -14,11 +14,14 @@ import { accountStore } from '@/state/AccountStore';
 import type { NumericString } from '@/types/basic';
 import Spectrogram from '@/components/Spectrogram.vue';
 import ToggleShow from '@/components/ToggleShow.vue';
-import { MapStore } from '@/views/map/RecordingsMap.vue';
+import { MapStore, DialectColors } from '@/views/map/RecordingsMap.vue';
+
+import { logged } from '@/utils/functions';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
 const recordingId = useRouteParams<NumericString>('id');
+const partId = useRouteParams<NumericString>('partId');
 
 const env = import.meta.env;
 
@@ -40,6 +43,9 @@ const { data: filteredRec } = useQuery({
 })
 
 const enabled = computed(() => !!recording.value?.userId);
+const recordingPart = computed(() =>
+  recording.value?.parts?.find(part => part.id == partId.value)
+);
 
 
 // todo select location in the map
@@ -58,9 +64,17 @@ const {
 const queryClient = useQueryClient();
 
 onBeforeRouteUpdate(async (to) => {
-  recordingId.value = to.params.id as string;
-  await queryClient.invalidateQueries({ queryKey: ['recording'] });
-  await queryClient.invalidateQueries({ queryKey: ['user'] });
+  // recordingId.value and partId.value (from useRouteParams) are automatically updated.
+  // This hook is for side effects like invalidating queries for the new route parameters.
+
+  const newRouteRecordingId = to.params.id; // Type: string | string[] | undefined
+  if (typeof newRouteRecordingId === 'string') {
+    // Invalidate queries associated with the new recording ID to ensure fresh data.
+    await queryClient.invalidateQueries({ queryKey: ['recordings', newRouteRecordingId as NumericString] });
+    await queryClient.invalidateQueries({ queryKey: ['filtered-recordings', newRouteRecordingId as NumericString] });
+    // The 'user' query will reactively update based on changes to 'recording.value'.
+  }
+  // If partId changes were to trigger specific invalidations, they would be handled similarly.
 });
 
 // Watch for changes in the recording data to reset edited values if needed
@@ -94,9 +108,14 @@ const cancelEdit = () => {
   // Optionally reset fields if needed, though toggleEdit already does this when starting
 };
 
-onMounted(() => {
-  MapStore.move([ recordingPart.gpsLatitudeStart, recordingPart.gpsLongitudeStart ], 17);
-})
+watch(recordingPart, (currentValue) => {
+  if(currentValue) {
+    MapStore.move([
+      currentValue.gpsLatitudeStart,
+      currentValue.gpsLongitudeStart
+    ], 17);
+  }
+}, { immediate: true });
 
 onUnmounted(MapStore.unmove);
 
@@ -158,10 +177,10 @@ onUnmounted(MapStore.unmove);
       <div v-if="filteredRec">
         <ul>
           <li
-            v-for="fr in filteredRec"
-            :key="fr.id"
+            v-for="(fr, idx) in filteredRec"
+            :key="fr?.id ?? idx"
           >
-            <ul>
+            <ul v-if="fr?.detectedDialects">
               <li
                 v-for="dialect in fr.detectedDialects"
                 :key="dialect.id"
@@ -226,32 +245,29 @@ onUnmounted(MapStore.unmove);
         </template>
         <KeepAlive>
           <Spectrogram
-            v-if="recording"
-            :audio-urls="recording.parts?.map(p => `${env.VITE_API_URL}/recordings/part/${recording.id}/${p.id}/sound`) ?? []"
+            v-if="recording && recording.parts && recordingPart && filteredRec"
+            :audio-urls="`${env.VITE_API_URL}/recordings/part/${recording.id}/${recordingPart.id}/sound`"
             :height="300"
             :readonly="true"
-            :selected="[
-              {
-                id: 1,
-                start: 1,
-                end: 3,
-                color: 'red'
-              }
-            ]"
+            :selected="filteredRec.flatMap(fr => fr.detectedDialects.map(dd => ({
+              id: dd.id,
+              start: (new Date(fr.startDate).getTime() - new Date(recording.parts[0].startDate).getTime()) / 1000,
+              end: (new Date(fr.endDate).getTime() - new Date(recording.parts[0].startDate).getTime()) / 1000,
+              color: DialectColors[dd.confirmedDialect ?? dd.userGuessDialect]
+            })))"
           >
             <template #range-tooltip="{ range, close }">
               <div class="p-2 bg-blue-100 border border-blue-300 rounded shadow-md">
                 <h4 class="font-bold">
-                  Custom Tooltip!
+                  Dialekt
                 </h4>
-                <p>Range ID: {{ range.id }}</p>
-                <p>Starts at: {{ range.start.toFixed(2) }}s</p>
-                <p>Ends at: {{ range.end.toFixed(2) }}s</p>
+                <p>Začátek: {{ range.start.toFixed(2) }}s</p>
+                <p>Konec: {{ range.end.toFixed(2) }}s</p>
                 <button
                   class="text-blue-500 hover:underline mt-1"
                   @click="close"
                 >
-                  Dismiss
+                  Zavřít
                 </button>
               </div>
             </template>

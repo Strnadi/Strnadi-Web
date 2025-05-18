@@ -7,11 +7,11 @@ meta:
 import { ref, watch, computed, onUnmounted, reactive } from 'vue';
 import { onBeforeRouteUpdate, onBeforeRouteLeave } from 'vue-router';
 import { accountStore } from "@/state/AccountStore";
-import { MapEvents, MapMarkers } from '@/views/Map.vue';
+import { MapEvents, MapClickEvent, MapStore } from '@/views/map/RecordingsMap.vue';
 import { useStepper } from '@vueuse/core';
 import { postRecording, type RecordingUploadReq, type RecordingPartUploadParams } from '@/api/recordings';
 import { useQueryClient, useMutation } from '@tanstack/vue-query';
-import { Icon, type LeafletMouseEvent, divIcon } from 'leaflet';
+import { divIcon } from 'leaflet';
 import Dropzone from '@/components/Dropzone.vue';
 import MaterialIcon from '@/components/MaterialIcon.vue';
 import TextualCoords from '@/components/map/TextualCoords.vue';
@@ -43,7 +43,7 @@ const uploadStore = reactive({
   setRecordings(recordings: File[]) {
     this.parts ??= [];
 
-    this.parts?.push(
+    this.parts.push(
       ...recordings.map((recording) => ({
         file: recording,
         location: null
@@ -107,6 +107,7 @@ const makeSelectedIcon = (partIndex: number) =>
   divIcon({
     className: "my-custom-pin",
     iconSize: [24, 24],
+    iconAnchor: [0, 12],
     html: `<span style="
   background-color: ${colors.value[partIndex]};
   width: 2rem;
@@ -120,17 +121,17 @@ const makeSelectedIcon = (partIndex: number) =>
   border: 1px solid #FFFFFF;" />`
   });
 
-const handleMapClick = (event: LeafletMouseEvent) => {
-  MapMarkers.addMarker(
-    `selected-part-${currentPartIndex.value}`,
-    event.latlng,
-    makeSelectedIcon(currentPartIndex.value)
-  );
+const handleMapClick = (event: MapClickEvent) => {
+  MapStore.markers[`selected-part-${currentPartIndex.value}`] = {
+    icon: makeSelectedIcon(currentPartIndex.value),
+    id: `selected-part-${currentPartIndex.value}`,
+    position: event.event.latlng
+  };
 
-  uploadStore.parts![currentPartIndex.value].location = event.latlng;
+  uploadStore.parts![currentPartIndex.value].location = event.event.latlng;
   currentPartIndex.value = (currentPartIndex.value + 1) % (uploadStore.parts?.length ?? 0);
 
-
+  // Cancel further event processing.
   return false;
 }
 
@@ -150,10 +151,10 @@ const stepper = useStepper<Record<StepIdentifier, Step>>({
     title: 'Poloha',
     isValid: () => (uploadStore.parts?.every(part => part.location) ?? false),
     before: () => {
-      MapEvents.on("map-click", handleMapClick);
+      MapEvents.on("click", handleMapClick);
     },
     after: () => {
-      MapEvents.off("map-click", handleMapClick);
+      MapEvents.off("click", handleMapClick);
     }
   },
 
@@ -184,7 +185,7 @@ const beforeWindowUnload = (event: BeforeUnloadEvent) => {
 
 const removeMarkers = () => {
   for(let i = 0; i < (uploadStore.parts?.length ?? 0); i++) {
-    MapMarkers.removeMarker(`selected-part-${i}`);
+    delete MapStore.markers[`selected-part-${i}`];
   }
 }
 
@@ -219,6 +220,9 @@ const {
 });
 
 onUnmounted(removeMarkers);
+onUnmounted(() => {
+  MapEvents.off("click", handleMapClick);
+});
 
 // useMutationState({
 //   select: (mutation) => mutation.state.status
@@ -436,31 +440,34 @@ const currentPartIndex = ref(0);
 
       <!-- Location Stage -->
       <template v-if="stepper.isCurrent('location')">
-        <ul>
-          <li
-            v-for="(part, index) in uploadStore.parts"
-            :key="index"
-            class="flex flex-row gap-x-2"
-            :class="{
-              'font-bold': index == currentPartIndex
-            }"
-            :style="{
-              color: colors[index],
-            }"
-          >
-            <!-- <audio :src="partURLs[index]" controls /> -->
-            <span>{{ part.file.name }}</span>
-            <span>
-              <TextualCoords
-                v-if="part.location"
-                :lat="part.location.lat"
-                :lng="part.location.lng"
-                type="municipality_part"
-              />
-              <template v-else>Poloha zatím neurčena.</template>
-            </span>
-          </li>
-        </ul>
+        <div class="flex flex-col gap-y-4">
+          <ul>
+            <li
+              v-for="(part, index) in uploadStore.parts"
+              :key="index"
+              class="flex flex-row gap-x-2"
+              :class="{
+                'font-bold': index == currentPartIndex
+              }"
+              :style="{
+                color: colors[index],
+              }"
+            >
+              <!-- <audio :src="partURLs[index]" controls /> -->
+              <span>{{ part.file.name }}</span>
+              <span>
+                <TextualCoords
+                  v-if="part.location"
+                  :lat="part.location.lat"
+                  :lng="part.location.lng"
+                  type="municipality_part"
+                />
+                <template v-else>Poloha zatím neurčena.</template>
+              </span>
+            </li>
+          </ul>
+          <p>Klikejte postupně do mapy pro přidání pozic.<br /> Zvýrazněná nahrávka je aktuálně vybraná.</p>
+        </div>
       </template>
 
       <!-- Info Stage -->
@@ -469,7 +476,7 @@ const currentPartIndex = ref(0);
           <div class="flex flex-col gap-x-2 gap-y-4 w-full">
             <VueDatePicker
               v-model="uploadStore.dateTime"
-              :flow="['calendar', 'time']"
+              :flow="['year', 'month', 'calendar', 'time']"
               auto-apply
               partial-flow
               model-type="iso"

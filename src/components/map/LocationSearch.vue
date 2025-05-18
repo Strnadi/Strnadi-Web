@@ -5,7 +5,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { getGeocodeAutocomplete } from '@/api/maps';
 
 interface LocationSearchProps extends /* @vue-ignore */ InputHTMLAttributes {
-  text: string;
+  text?: string;
   location?: [number, number];
   searchThreshold?: number;
 }
@@ -14,7 +14,12 @@ defineOptions({
   inheritAttrs: false
 });
 
-const props = defineProps<LocationSearchProps>();
+const props = withDefaults(
+  defineProps<LocationSearchProps>(),
+  {
+    text: ""
+  }
+);
 const emit = defineEmits(['update:text', 'update:location']);
 
 const text = computed({

@@ -19,24 +19,25 @@ const { data: categories } = useQuery({
       Nová kategorie
     </router-link>
   </div>
-  <ul class="flex flex-col">
+  <ul class="flex flex-col gap-y-2">
     <li
       v-for="category in categories"
-      class="flex flex-row justify-between gap-x-4"
+      :key="category.name"
+      class="flex flex-row justify-between gap-x-2"
     >
-      <div class="flex flex-row w-full justify-between">
-        <span>{{ category.name }}</span>
-        <span class="italic">{{ category.label }}</span>
+      <div class="flex flex-col w-full justify-between">
+        <span>{{ category.label }}</span>
+        <span class="italic">{{ category.name }}</span>
       </div>
       <router-link
         :to="`/sprava/informace/kategorie/${category.name}/upravit`"
-        class="font-bold"
+        class="button-secondary  m-auto p-2"
       >
         Upravit
       </router-link>
       <router-link
         :to="`/sprava/informace/kategorie/${category.name}/smazat`"
-        class="button-danger"
+        class="button-danger  m-auto p-2"
       >
         Smazat
       </router-link>

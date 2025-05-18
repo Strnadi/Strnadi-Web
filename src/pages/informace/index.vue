@@ -7,6 +7,8 @@ meta:
 import { useQuery } from '@tanstack/vue-query';
 import { getArticleCategories } from '@/api/articles';
 
+import { kebabize } from '@/utils/strings';
+
 const { data: categories } = useQuery({
   queryKey: ["articles"],
   queryFn: () => getArticleCategories()
@@ -17,12 +19,18 @@ const { data: categories } = useQuery({
 <template>
   <h1>Informace</h1>
 
-  <ul class="flex flex-row flex-wrap">
-    <li v-for="category in categories">
+  <ul class="flex flex-col">
+    <li
+      v-for="category in categories"
+      :key="category.name"
+    >
       <h2>{{ category.label }}</h2>
       <ul class="flex flex-col">
-        <li v-for="article in category.articles">
-          <router-link :to="`/informace/${article.id}`">
+        <li
+          v-for="article in category.articles"
+          :key="article.id"
+        >
+          <router-link :to="`/informace/${category.name}/${kebabize(article.name)}`">
             {{ article.name }}
           </router-link>
         </li>

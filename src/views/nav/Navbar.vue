@@ -1,23 +1,20 @@
 <script setup lang="ts">
-import { accountStore } from '@/state/AccountStore';
-
+import { kebabize } from '@/utils/strings';
 import { useQuery } from '@tanstack/vue-query';
-
+import { accountStore } from '@/state/AccountStore';
 import { getArticleCategories } from '@/api/articles'
 
 import Dropdown from '@/components/Dropdown.vue'
 import AccountDropdown from '@/views/dropdown/account/AccountDropdown.vue';
 
-import Upload from '@/icons/interface/icon-upload.svg';
-import List from '@/icons/interface/icon-list.svg';
-
+import UploadIcon from '@/icons/interface/icon-upload.svg';
 import DropdownIcon from '@/icons/interface/dropdown.svg';
-import MapIcon from '@/icons/interface/icon-map.svg';
-
-import { kebabize } from '@/utils/strings';
 
 
-const { data: categories } = useQuery({
+import MultiColorSquare from '@/components/MultiColorSquare.vue';
+
+
+const { data: categories, isLoading, error } = useQuery({
   queryKey: ["categories"],
   queryFn: async () => getArticleCategories()
 })
@@ -37,44 +34,35 @@ const { data: categories } = useQuery({
         </PrefetchLink>
       </div>
 
-      <!-- Desktop navigation -->
-      <div class="hidden desktop:flex justify-between items-center w-full">
-        <ul class="flex flex-row gap-x-4 items-center">
-          <li>
-            <PrefetchLink
-              to="/"
-              class="dropdown-item"
-            >
-              <MapIcon />
-              Mapa
-            </PrefetchLink>
-          </li>
+      <span v-if="isLoading">
+        Načítání...
+      </span>
 
+      <span v-if="error">
+        Chyba při načítání obsahu: {{ error.message }}
+      </span>
+
+      <!-- Desktop navigation -->
+      <div class="flex justify-between items-center w-full">
+        <ul class="flex flex-row gap-x-4 items-center">
           <template v-if="accountStore.user">
             <li>
               <PrefetchLink
-                to="/nahrat"
+                to="/mapa/nahrat"
                 class="dropdown-item"
               >
-                <Upload />
+                <UploadIcon />
                 Nahrát
-              </PrefetchLink>
-            </li>
-            <li>
-              <PrefetchLink
-                to="/ucet/sprava/moje-nahravky"
-                class="dropdown-item"
-              >
-                <List />
-                Moje záznamy
               </PrefetchLink>
             </li>
           </template>
 
-          <Dropdown v-for="category in categories">
+          <Dropdown
+            v-for="category in categories"
+            :key="category.name"
+          >
             <template
               #title
-              class="flex flex-row items-center"
             >
               {{ category.label }}
               <DropdownIcon />

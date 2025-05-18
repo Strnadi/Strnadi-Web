@@ -6,8 +6,8 @@ import type { NumericString } from "@/types/basic";
 export interface RecordingPartModel {
   id: number;
   recordingId: number;
-  start: string; // ISO date-time
-  end: string;   // ISO date-time
+  startDate: string; // ISO date-time
+  endDate: string;   // ISO date-time
   gpsLatitudeStart: number;
   gpsLatitudeEnd: number;
   gpsLongitudeStart: number;
@@ -45,7 +45,7 @@ export interface FilteredPartModel {
   endDate: string;
   state: number;
   recordingId: number;
-  detectedDialects: DetectedDialect[];
+  detectedDialects: DetectedDialect[] | null;
 }
 
 export interface RecordingUploadReq {
@@ -149,9 +149,9 @@ export const getFilteredRecordings = async (): Promise<FilteredPartModel[]> => {
 	return response.data as FilteredPartModel[];
 }
 
-export const getFilteredRecording = async (id: NumericString): Promise<FilteredPartModel> => {
+export const getFilteredRecording = async (id: NumericString): Promise<FilteredPartModel[]> => {
   const response = await axios.get(`/recordings/filtered?recordingId=${id}`);
-  return response.data as FilteredPartModel;
+  return response.data as FilteredPartModel[];
 }
 
 // export const getFilteredRecordings = async (token: string): Promise<RecordingModel[]> => {
