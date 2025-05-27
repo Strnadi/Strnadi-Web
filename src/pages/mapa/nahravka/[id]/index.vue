@@ -11,14 +11,14 @@ import { getRecording, getFilteredRecording } from '@/api/recordings';
 import { getUserInfo } from '@/api/account';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { accountStore } from '@/state/AccountStore';
-import type { NumericString } from '@/types/basic';
+import type { Numeric } from '@/types/basic';
 import Spectrogram from '@/components/Spectrogram.vue';
 import ToggleShow from '@/components/ToggleShow.vue';
 import { MapStore } from '@/views/map/RecordingsMap.vue';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
-const recordingId = useRouteParams<NumericString>('id');
+const recordingId = useRouteParams<Numeric>('id');
 
 const env = import.meta.env;
 

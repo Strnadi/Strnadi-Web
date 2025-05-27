@@ -6,7 +6,6 @@ import { accountStore } from '@/state/AccountStore';
 
 import LocationSearch from '@/components/map/LocationSearch.vue';
 import InfoIcon from '@/icons/interface/icon-info.svg';
-import ListIcon from '@/icons/interface/icon-list.svg';
 import MapIcon from '@/icons/interface/icon-map.svg';
 import RulerIcon from '@/icons/interface/icon-ruler.svg';
 import FilledRulerIcon from '@/icons/interface/icon-ruler-fill.svg';
@@ -14,18 +13,20 @@ import PictureIcon from '@/icons/interface/icon-picture.svg';
 
 import OptionsIcon from '@/icons/interface/icon-options.svg';
 
+const toolsShown = ref(false);
+const searchText = ref('');
 </script>
 
 
 <template>
-  <div class="absolute bottom-2 right-2 z-[10000] flex flex-row justify-end items-end">
+  <div class="absolute bottom-2 right-2 z-[10] flex flex-row justify-end items-end">
     <!-- TODO: Plus and minus icons-->
 
     <LocationSearch
       v-model:text="searchText"
       placeholder="Hledat..."
       class="drop-shadow-lg rounded-2xl m-2 p-4 w-full sm:w-auto h-[70px]"
-      @update:location="searchUpdateCenter"
+      @update:location="newLocation => MapStore.center = newLocation"
     />
     <PrefetchLink
       class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
@@ -45,17 +46,17 @@ import OptionsIcon from '@/icons/interface/icon-options.svg';
         >
           <button
             class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
-            @click="scaleEnabled = !scaleEnabled"
+            @click="MapStore.scale = !MapStore.scale"
           >
-            <FilledRulerIcon v-if="scaleEnabled" />
+            <FilledRulerIcon v-if="MapStore.scale" />
             <RulerIcon v-else />
           </button>
 
           <button
             class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
-            @click="mode = mode==='aerial'?'outdoor':'aerial'"
+            @click="MapStore.aerial = !MapStore.aerial"
           >
-            <MapIcon v-if="mode==='aerial'" />
+            <MapIcon v-if="MapStore.aerial" />
             <PictureIcon v-else />
           </button>
         </div>
@@ -72,7 +73,7 @@ import OptionsIcon from '@/icons/interface/icon-options.svg';
       </div>
 
       <select
-        v-model="selectedFilter"
+        v-model="MapStore.filter"
         class="filter-select drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100"
         aria-label="Filter recordings"
       >
@@ -88,11 +89,17 @@ import OptionsIcon from '@/icons/interface/icon-options.svg';
           Jen staré nahrávky
         </option>
 
-        <option value="my">
+        <option
+          v-if="accountStore.user"
+          value="my"
+        >
           Jen moje nahrávky
         </option>
 
-        <option value="others">
+        <option
+          v-if="accountStore.user"
+          value="others"
+        >
           Jen nahrávky ostatních
         </option>
 

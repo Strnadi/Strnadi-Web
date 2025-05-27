@@ -1,13 +1,14 @@
 <script lang="ts">
 import mitt from '@/vendor/mitt';
 import { reactive } from 'vue';
-import { type LeafletMouseEvent, type Map as LeafletMap, type PointTuple } from 'leaflet';
+import { type LeafletMouseEvent } from 'leaflet';
 import type { Polygon, Marker } from '@/views/map/Map.vue';
+import { refDebounced } from '@vueuse/core';
 
 let positionStack = ref([
   [ 49.9, 15.5, 8.25 ]
 ]);
-const currentCenter = computed(() => positionStack.value[positionStack.value.length - 1]);
+const currentCenter = computed<[number, number, number]>(() => positionStack.value[positionStack.value.length - 1] as [number, number, number]);
 
 export type MapFilter = 'all' | 'new' | 'old' | 'my' | 'others' | 'any-dialect';
 export interface MapClickEvent {
@@ -41,8 +42,6 @@ export const MapStore = reactive<{
   filter: MapFilter;
   unmove(): void;
   move(newCenter: [number, number], newZoom: number, override?: boolean): void;
-  set center(newCenter: PointTuple);
-  set zoom(newZoom: number);
 }>({
   scale: false,
   aerial: false,
@@ -64,21 +63,13 @@ export const MapStore = reactive<{
     positionStack.value.pop();
 
   },
-
-  set center(newCenter: PointTuple) {
-    // this.move
-  },
-
-  set zoom(newZoom: number) {
-    // this.move
-  }
 });
 
 </script>
 
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { getRecordings, getFilteredRecordings } from '@/api/recordings';
 
@@ -141,13 +132,12 @@ function makeGrid(stepLon: number, stepLat: number): Polygon[] {
 
 const zoom = ref<number>(0);
 
-// const polygons = computed<Polygon[]>(() => [
-//   ...((zoom.value > 10 && zoom.value < 12) ? makeGrid(10/60, 6/60) : []),
-//   ...((zoom >= 12 && zoom < 14) ? makeGrid(5/60, 3/60) : []),
-//   ...((zoom >= 14) ? makeGrid(2.5/60, 1.5/60) : [])
-// ]);
-
-const polygons = [];
+const polygons = refDebounced(
+  computed<Polygon[]>(() => [
+  ...((zoom.value > 10 && zoom.value < 12) ? makeGrid(10/60, 6/60) : []),
+  ...((zoom.value >= 12 && zoom.value < 14) ? makeGrid(5/60, 3/60) : []),
+  ...((zoom.value >= 14) ? makeGrid(2.5/60, 1.5/60) : [])
+]), 2500);
 
 const oldCutoff = new Date(2024, 11, 31);
 const filter = ref<MapFilter>('new');
@@ -192,15 +182,15 @@ const markers = computed<Marker[]>(() => {
             let color: string | undefined = undefined;
             // Check if the dialect string exists and is a key in DialectColors
             if (dd.confirmedDialect && dd.confirmedDialect in DialectColors) {
-              color = DialectColors[dd.confirmedDialect];
+              color = DialectColors[dd.confirmedDialect as keyof typeof DialectColors];
             } else if (dd.userGuessDialect && dd.userGuessDialect in DialectColors) {
-              color = DialectColors[dd.userGuessDialect];
+              color = DialectColors[dd.userGuessDialect as keyof typeof DialectColors];
             }
             return color ?? null; // Return null if no color found, to be filtered later
           }
         ) ?? []
       ) ?? [];
-      const colors = dialectStrings.filter(c => c !== null) as string[]; // Filter out nulls
+      const colors = dialectStrings.filter(c => c !== null); // Filter out nulls
       const finalColors = colors.length > 0 ? colors : ['#000000'];
 
       const icon = divIcon({
@@ -224,7 +214,7 @@ const markers = computed<Marker[]>(() => {
 
 });
 
-const onClick = ({ event, polygon, marker }) => {
+const onClick = ({ event, polygon, marker }: { event: LeafletMouseEvent; polygon?: Polygon; marker?: Marker }) => {
   event.originalEvent.stopPropagation();
 
   if(marker) {
@@ -233,12 +223,23 @@ const onClick = ({ event, polygon, marker }) => {
 
   } else if(polygon) {
 
-    const lat = (polygon.position[0][0] + polygon.position[2][0]) / 2;
-    const lng = (polygon.position[0][1] + polygon.position[2][1]) / 2;
+    if (!polygon.position) return;
 
-    const y = Math.floor(560 - lat*10)
-    const x = Math.floor(lng*6 - 34)
-    MapEvents.emit('click', { event, square: `${y}${x}` });
+    const p0 = polygon.position[0];
+    const p2 = polygon.position[2];
+
+    if (p0 && p2) {
+      const lat = ((p0[0] ?? 0) + (p2[0] ?? 0)) / 2;
+      const lng = ((p0[1] ?? 0) + (p2[1] ?? 0)) / 2;
+
+      const y = Math.floor(560 - lat*10);
+      const x = Math.floor(lng*6 - 34);
+      MapEvents.emit('click', { event, square: `${y}${x}` });
+    } else {
+      // Handle cases where polygon.position might be too short, though makeGrid should prevent this.
+      console.warn('Polygon clicked with unexpected structure:', polygon);
+      return;
+    }
 
   } else {
 

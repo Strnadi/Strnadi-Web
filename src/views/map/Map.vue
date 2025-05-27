@@ -4,14 +4,14 @@ export interface Polygon {
   id: number | string;
   color: string;
   weight: number;
-  position: number[][];
+  position: [number, number][];
   data?: any;
 };
 
 export interface Marker {
   id: number | string;
   icon: Icon;
-  position: number[];
+  position: [number, number];
   data?: any;
 };
 
@@ -78,7 +78,7 @@ watch(
 
     leafletMap.flyTo([ newLat, newLon ], newZoom, {
       animate: true,
-      duration: 1
+      duration: 2
     })
   }
 );
@@ -169,17 +169,6 @@ watch([zoom, center], updateBounds);
         :icon="coords.heading ? iconCurrentHeading : iconCurrent"
       />
 
-      <!-- Controls -->
-      <l-control-scale
-        v-if="scaleBar"
-        :imperial="false"
-      />
-
-      <l-control-zoom
-        v-if="zoomControl"
-        position="bottomleft"
-      />
-
       <!-- Mapy.cz Logo -->
       <l-control position="bottomleft">
         <div class="z-[40]">
@@ -194,6 +183,18 @@ watch([zoom, center], updateBounds);
           </a>
         </div>
       </l-control>
+
+      <!-- Controls -->
+      <l-control-scale
+        v-if="scaleBar"
+        :imperial="false"
+      />
+
+      <l-control-zoom
+        v-if="zoomControl"
+        position="bottomleft"
+      />
+
     </l-map>
   </div>
 </template>

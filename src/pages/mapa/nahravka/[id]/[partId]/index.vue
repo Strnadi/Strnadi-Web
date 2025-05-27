@@ -11,7 +11,7 @@ import { getRecording, getFilteredRecording } from '@/api/recordings';
 import { getUserInfo } from '@/api/account';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { accountStore } from '@/state/AccountStore';
-import type { NumericString } from '@/types/basic';
+import type { Numeric } from '@/types/basic';
 import Spectrogram from '@/components/Spectrogram.vue';
 import ToggleShow from '@/components/ToggleShow.vue';
 import { MapStore, DialectColors } from '@/views/map/RecordingsMap.vue';
@@ -20,8 +20,8 @@ import { logged } from '@/utils/functions';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
-const recordingId = useRouteParams<NumericString>('id');
-const partId = useRouteParams<NumericString>('partId');
+const recordingId = useRouteParams<Numeric>('id');
+const partId = useRouteParams<Numeric>('partId');
 
 const env = import.meta.env;
 
@@ -53,7 +53,7 @@ const recordingPart = computed(() =>
 // Dependent query - only runs when we have an uploaderEmail from the recording
 const {
   data: uploader, 
-  isLoading: isUploaderLoading, 
+  isLoading: isUploaderLoading,
   isError: isUploaderError
 } = useQuery({
   queryKey: ['user', recording.value?.userId],
@@ -70,8 +70,8 @@ onBeforeRouteUpdate(async (to) => {
   const newRouteRecordingId = to.params.id; // Type: string | string[] | undefined
   if (typeof newRouteRecordingId === 'string') {
     // Invalidate queries associated with the new recording ID to ensure fresh data.
-    await queryClient.invalidateQueries({ queryKey: ['recordings', newRouteRecordingId as NumericString] });
-    await queryClient.invalidateQueries({ queryKey: ['filtered-recordings', newRouteRecordingId as NumericString] });
+    await queryClient.invalidateQueries({ queryKey: ['recordings', newRouteRecordingId as Numeric] });
+    await queryClient.invalidateQueries({ queryKey: ['filtered-recordings', newRouteRecordingId as Numeric] });
     // The 'user' query will reactively update based on changes to 'recording.value'.
   }
   // If partId changes were to trigger specific invalidations, they would be handled similarly.

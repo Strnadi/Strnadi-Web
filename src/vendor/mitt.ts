@@ -68,14 +68,25 @@ export default function mitt<Events extends Record<EventType, unknown>>(
 		 * @param {Function} handler Function to call in response to given event
 		 * @memberOf mitt
 		 */
-    on(type: keyof Events | '*', handler: GenericEventHandler): void {
-      const handlers = all.get(type);
-      if (handlers) {
-        handlers.push(handler);
-      } else {
-        all.set(type, [handler] as any);
-      }
-    },
+		on(type: keyof Events | '*', handler: GenericEventHandler): void {
+			if (type === '*') {
+				const wildcardHandler = handler as WildcardHandler<Events>;
+				const handlers = all.get(type) as WildCardEventHandlerList<Events> | undefined;
+				if (handlers) {
+					handlers.push(wildcardHandler);
+				} else {
+					all.set(type, [wildcardHandler] as WildCardEventHandlerList<Events>);
+				}
+			} else {
+				const specificHandler = handler as Handler<Events[typeof type]>;
+				const handlers = all.get(type) as EventHandlerList<Events[typeof type]> | undefined;
+				if (handlers) {
+					handlers.push(specificHandler);
+				} else {
+					all.set(type, [specificHandler] as EventHandlerList<Events[typeof type]>);
+				}
+			}
+		},
 
 		/**
 		 * Remove an event handler for the given type.

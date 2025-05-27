@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { notificationStore } from '@/state/NotificationStore';
-import Map, { MapEvents, MapStore } from '@/views/map/RecordingsMap.vue';
+import Map, { MapEvents } from '@/views/map/RecordingsMap.vue';
 import MapControls from '@/views/map/controls/Desktop.vue';
 import Navbar from '@/views/nav/Navbar.vue';
 import Notification from '@/views/Notification.vue';

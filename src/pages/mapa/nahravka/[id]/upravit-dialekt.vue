@@ -9,10 +9,10 @@ import Spectrogram from '@/components/Spectrogram.vue';
 import { useRouteParams } from '@vueuse/router';
 import { useFetched } from '@/utils/network';
 import { getRecording } from '@/api/recordings';
-import { type NumericString } from '@/types/basic';
+import { type Numeric } from '@/types/basic';
 
 const env = import.meta.env;
-const id = useRouteParams<NumericString>('id');
+const id = useRouteParams<Numeric>('id');
 
 const { data: recording, isLoading, error } = useFetched(getRecording, id, false);
 

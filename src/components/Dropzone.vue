@@ -252,6 +252,10 @@ function validateFiles(files: File[]) {
     const fileType = file.type || extensionToMime[fileExtension] || '';
     
     for (const type of acceptTypes) {
+      if (typeof type !== 'string') {
+        continue;
+      }
+      
       // Handle exact match first
       if (type === fileType) {
         isValid = true;
@@ -275,7 +279,7 @@ function validateFiles(files: File[]) {
         }
         
         // Handle known MIME group patterns
-        if (subType === '*' && mimeGroups[mainType] && mimeGroups[mainType].includes(fileType)) {
+        if (subType === '*' && mainType && (mainType in mimeGroups) && Array.isArray(mimeGroups[mainType]) && mimeGroups[mainType].includes(fileType)) {
           isValid = true;
           break;
         }
@@ -293,7 +297,7 @@ function validateFiles(files: File[]) {
       }
       
       // Handle known MIME type groups by name (e.g., "image")
-      if (mimeGroups[type] && mimeGroups[type].includes(fileType)) {
+      if (mimeGroups[type]?.includes(fileType)) {
         isValid = true;
         break;
       }

@@ -21,8 +21,8 @@ export class ApiError extends Error {
   }
 
   // TODO: maybe google translate this, lmao
-  get message() {
-    return this.body ?? `${this.stringCode || ''} ${this.responseCode || ''}`;
+  override get message(): string {
+    return this.body ?? `${this.stringCode ?? ''} ${this.responseCode ?? ''}`;
   }
 
 };

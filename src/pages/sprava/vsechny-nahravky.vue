@@ -50,9 +50,7 @@ async function downloadSelectedRecordings() {
   // Group selected items by recordingId for efficient processing
   const groupedByRecording: Record<number, { partId: number }[]> = {};
   for (const item of selectedItems.value) {
-    if (!groupedByRecording[item.recordingId]) {
-      groupedByRecording[item.recordingId] = [];
-    }
+    groupedByRecording[item.recordingId] ??= [];
     groupedByRecording[item.recordingId].push({ partId: item.partId });
   }
 
@@ -79,7 +77,7 @@ async function downloadSelectedRecordings() {
       recordingMetaContent += `Created At: ${recording.createdAt ?? 'N/A'}\n`;
       recordingMetaContent += `Estimated Birds Count: ${recording.estimatedBirdsCount ?? 'N/A'}\n`;
       recordingMetaContent += `Device: ${recording.device ?? 'N/A'}\n`;
-      recordingMetaContent += `By App: ${recording.byApp !== undefined ? recording.byApp : 'N/A'}\n`;
+      recordingMetaContent += `By App: ${recording.byApp ?? 'N/A'}\n`;
       recordingMetaContent += `Note: ${recording.note ?? 'N/A'}\n`;
       recordingFolder.file("meta.txt", recordingMetaContent);
 

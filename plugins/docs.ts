@@ -21,7 +21,7 @@ export interface DocsPluginOptions {
 // Virtual module identifiers
 const VIRTUAL_DOCS_ID = 'virtual:docs';
 const VIRTUAL_DOCS_PREFIX = '\0' + VIRTUAL_DOCS_ID;
-const isCI = !!process.env.CI;
+const isCI = !!process.env['CI'];
 
 export function vitePluginDocsRoot(options: DocsPluginOptions = {}): Plugin {
   const {
@@ -43,6 +43,8 @@ export function vitePluginDocsRoot(options: DocsPluginOptions = {}): Plugin {
       if (id === VIRTUAL_DOCS_ID) return VIRTUAL_DOCS_PREFIX;
       const m = docsBlockRE.exec(id);
       if (m) return VIRTUAL_DOCS_PREFIX + id;
+
+      return;
     },
 
     load(id) {
@@ -57,19 +59,16 @@ export function vitePluginDocsRoot(options: DocsPluginOptions = {}): Plugin {
         const m = docsBlockRE.exec(queryId);
         if (m) {
           const file = m[1];
-          const md = docsMap.get(file) || '';
-          return `export default ${JSON.stringify(md)};`;
+          if(file) {
+            return `export default ${JSON.stringify(docsMap.get(file) ?? '')};`;
+          }
         }
       }
       return null;
     },
 
-    transformInclude(id) {
-      return id.split('?')[0].endsWith('.vue');
-    },
-
     transform(code: string, id: string) {
-      const [filepath] = id.split('?');
+      const filepath = id.split('?')[0] ?? '';
       if (!filepath.endsWith('.vue')) return null;
 
       const { descriptor }: { descriptor: SFCDescriptor } = parse(code, { pad: 'space' });
@@ -88,14 +87,19 @@ export function vitePluginDocsRoot(options: DocsPluginOptions = {}): Plugin {
     },
 
     handleHotUpdate({ file, server }) {
-      if (!file.split('?')[0].endsWith('.vue')) return;
-      if (docsMap.has(file)) {
+      if (typeof file !== 'string') return;
+      const filepath = file.split('?')[0] ?? '';
+      if (!filepath.endsWith('.vue')) return;
+
+      if (docsMap.has(filepath)) {
         const mod = server.moduleGraph.getModuleById(VIRTUAL_DOCS_PREFIX);
         if (mod) {
           server.moduleGraph.invalidateModule(mod);
           return [mod];
         }
       }
+
+      return;
     },
 
     configureServer(server: ViteDevServer) {
@@ -120,13 +124,15 @@ export function vitePluginDocsRoot(options: DocsPluginOptions = {}): Plugin {
 
       // Dev-only HTML viewer endpoint
       server.middlewares.use((req, res, next) => {
+        const preprocess = (markdown: string) => markdown.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
         if (req.url === '/__docs') {
           res.setHeader('Content-Type', 'text/html');
           res.write(`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>`);
           res.write(`<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>`);
           for (const [file, content] of docsMap) {
             const safeId = file.replace(/[^a-zA-Z0-9]/g, '_');
-            res.write(`<pre id="raw-${safeId}" style="display:none">${content}</pre>`);
+            res.write(`<pre id="raw-${safeId}" style="display:none">${preprocess(content)}</pre>`);
             res.write(`<details><summary>${file}</summary><div id="${safeId}"></div></details>`);
             res.write(`
               <script>

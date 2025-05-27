@@ -22,12 +22,12 @@ import "./styles/main.css";
 
 declare global {
   interface Array<T> {
-    guarded: (guard: (to: RouteRecordRaw, from: RouteRecordRaw) => RouteRecordRaw) => RouteRecordRaw[]
+    guarded: (guard: (to: RouteRecordRaw, from: RouteRecordRaw) => boolean | RouteLocationRaw) => RouteRecordRaw[]
   }
 }
 
 Array.prototype.guarded = function(
-  guard: (to: RouteRecordRaw, from: RouteRecordRaw) => RouteRecordRaw
+  guard: (to: RouteRecordRaw, from: RouteRecordRaw) => boolean | RouteLocationRaw
 ): RouteRecordRaw[] {
   return this.map((route: RouteRecordRaw) => {
     // add guard to this route
@@ -78,7 +78,7 @@ const removeUnlayoutedRoutes = (routes: RouteRecordRaw[], isDesktop: boolean): R
       processedRoute.children = removeUnlayoutedRoutes(processedRoute.children, isDesktop);
     }
 
-    if (isDesktop && !processedRoute.meta?.layout) {
+    if (isDesktop && !processedRoute.meta?.['layout']) {
       processedRoute = {
         ...processedRoute,
         // component: 
@@ -98,7 +98,7 @@ const removeLayoutsRecursively = (routes: RouteRecordRaw[], isDesktop: boolean):
       processedRoute.children = removeLayoutsRecursively(processedRoute.children, isDesktop);
     }
 
-    if (!isDesktop && processedRoute.meta?.layout) {
+    if (!isDesktop && processedRoute.meta?.['layout']) {
       processedRoute.meta = {
         ...processedRoute.meta,
         layout: false

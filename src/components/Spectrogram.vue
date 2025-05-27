@@ -343,8 +343,8 @@
           <div
             class="pan-thumb h-full bg-blue-500 rounded absolute"
             :style="panThumbStyle"
-            @mousedown.stop.prevent="onPanThumbMouseDown"
             style="z-index: 2"
+            @mousedown.stop.prevent="onPanThumbMouseDown"
           />
         </div>
       </div>
@@ -436,9 +436,10 @@ import {
   defineEmits
 } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
+import type { Numeric } from '@/types/basic';
 
 interface Range {
-  id: number | string;
+  id: Numeric;
   start: number;
   end: number;
   color: string;
@@ -581,7 +582,7 @@ const CLICK_THRESHOLD_MS = 250;
 const CLICK_THRESHOLD_PX = 5;
 
 // Handle‐drag
-const draggingRangeId = ref<number | null>(null);
+const draggingRangeId = ref<Numeric | null>(null); // Changed from number
 const draggingHandle = ref<'start' | 'end' | null>(null);
 
 // Hover line
@@ -592,7 +593,7 @@ const nextRangeColor = ref(`hsla(${Math.random() * 360},70%,50%,0.4)`);
 // Context Menu State
 const isContextMenuVisible = ref(false);
 const contextMenuPosition = ref({ x: 0, y: 0 });
-const contextMenuRangeId = ref<number | null>(null);
+const contextMenuRangeId = ref<Numeric | null>(null); // Changed from number
 
 // State for Range Tooltip
 const isRangeTooltipVisible = ref(false);
@@ -645,7 +646,7 @@ watch(playInViewportOnly, (nv) => {
     playInSelectionOnly.value = false;
   }
 });
-watch(playInSelectionOnly, (nv, ov) => {
+watch(playInSelectionOnly, (nv) => {
   if (nv) {
     autoScroll.value = false;
     playInViewportOnly.value = false;
@@ -656,7 +657,7 @@ watch(playInSelectionOnly, (nv, ov) => {
   }
 });
 
-watch(currentActiveSelectionRange, (newRange, oldRange) => {
+watch(currentActiveSelectionRange, (newRange) => {
   if (playInSelectionOnly.value && !newRange) {
     playInSelectionOnly.value = false;
     // If audio was playing and confined to a selection that disappeared,
@@ -680,10 +681,10 @@ watch(
 function clamp(v: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(v, hi));
 }
-function hexToRgb(h: string) {
+function hexToRgb(h: string): [number, number, number] {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);
   if (!m) return [0, 0, 0];
-  return [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)];
+  return [parseInt(m[1]!, 16), parseInt(m[2]!, 16), parseInt(m[3]!, 16)];
 }
 function timeToIndex(t: number): number {
   const A = spectrogramData.value;
@@ -692,15 +693,19 @@ function timeToIndex(t: number): number {
     hi = A.length - 1;
   while (lo < hi) {
     const mid = (lo + hi) >>> 1;
-    if (A[mid].time < t) lo = mid + 1;
-    else hi = mid;
+    const midElement = A[mid];
+    if (midElement && midElement.time < t) { // Added check for midElement
+      lo = mid + 1;
+    } else {
+      hi = mid;
+    }
   }
   return clamp(lo, 0, A.length - 1);
 }
 
 // Visible ranges in current view
 const visibleRanges = computed(() => {
-  const out: { id: number; left: number; width: number; color: string }[] = [];
+  const out: { id: Numeric; left: number; width: number; color: string }[] = [];
   const total = spectrogramData.value.length;
   if (!isLoaded.value || !total || !canvasRef.value) return out;
   const dispW = containerWidth.value - margin.value.left - margin.value.right;
@@ -708,8 +713,14 @@ const visibleRanges = computed(() => {
   const sIdx = Math.floor(offsetIndex.value);
   const eIdx = Math.min(sIdx + Math.floor(windowSize.value), total);
   if (sIdx >= eIdx || sIdx < 0 || sIdx >= total) return out;
-  const v0 = spectrogramData.value[sIdx].time;
-  const v1 = spectrogramData.value[Math.max(sIdx, eIdx - 1)].time;
+
+  const startElement = spectrogramData.value[sIdx];
+  const endElement = spectrogramData.value[Math.max(sIdx, eIdx - 1)];
+
+  if (!startElement || !endElement) return out; // Should not happen if total > 0 and indices are valid
+
+  const v0 = startElement.time;
+  const v1 = endElement.time;
   const dur = v1 - v0;
   if (dur <= 0) return out;
   for (const r of ranges.value) {
@@ -778,8 +789,14 @@ async function loadAndProcessAudio() {
     if (!decodedBuffers.length) throw new Error('No audio decoded');
 
     if (decodedBuffers.length > 1) {
-      const numCh = decodedBuffers[0].numberOfChannels;
-      const sr = decodedBuffers[0].sampleRate;
+      const firstBuffer = decodedBuffers[0];
+      if (!firstBuffer) {
+          console.error("Error: First audio buffer is unexpectedly undefined.");
+          isLoading.value = false; // Stop loading indication
+          return; // Or throw new Error('Failed to process audio: first buffer missing');
+      }
+      const numCh = firstBuffer.numberOfChannels;
+      const sr = firstBuffer.sampleRate;
       const totalLength = decodedBuffers.reduce((sum, b) => sum + b.length, 0);
       const out = audioCtx.createBuffer(numCh, totalLength, sr);
       let currentOffset = 0;
@@ -794,11 +811,17 @@ async function loadAndProcessAudio() {
       // Calculate splice times from individual durations
       let cumulativeTime = 0;
       for (let i = 0; i < individualDurations.length - 1; i++) {
-        cumulativeTime += individualDurations[i];
-        spliceTimes.value.push(cumulativeTime);
+        const duration = individualDurations[i];
+        if (duration !== undefined) {
+            cumulativeTime += duration;
+            spliceTimes.value.push(cumulativeTime);
+        }
       }
     } else if (decodedBuffers.length === 1) {
-      audioBuffer.value = decodedBuffers[0];
+      const firstBuffer = decodedBuffers[0];
+      if (firstBuffer !== undefined) { // Explicit check
+        audioBuffer.value = firstBuffer;
+      }
       // No splices if only one buffer
     }
     audioDuration.value = audioBuffer.value!.duration; // audioBuffer will be set if decodedBuffers has items
@@ -874,7 +897,8 @@ async function generateSpectrogramDataOffline() {
   for (let i = 0; i < 256; i++) {
     const norm = clamp((i - minV) / range, 0, 1);
     const idx = Math.floor(norm * (props.colorScheme.length - 1));
-    const [r, g, b] = hexToRgb(props.colorScheme[idx]);
+    const colorString = props.colorScheme[idx];
+    const [r, g, b] = hexToRgb(colorString ?? '#000000'); // Provide a fallback if colorString is undefined
     palette[i * 4] = r;
     palette[i * 4 + 1] = g;
     palette[i * 4 + 2] = b;
@@ -889,14 +913,24 @@ async function generateSpectrogramDataOffline() {
   const ctx2 = offCanvas.getContext('2d', { willReadFrequently: true })!;
   const img = ctx2.createImageData(cols, rows);
   for (let x = 0; x < cols; x++) {
-    const vals = temp[x].values;
+    const colData = temp[x];
+    if (!colData) continue;
+    const vals = colData.values;
     for (let y = 0; y < rows; y++) {
       const v = vals[y];
+      if (v === undefined) { // Handle case where v might be undefined (e.g. y out of bounds for vals)
+        const pi = (y * cols + x) * 4;
+        img.data[pi] = 0;     // Default to black
+        img.data[pi + 1] = 0;
+        img.data[pi + 2] = 0;
+        img.data[pi + 3] = 255; // Opaque
+        continue;
+      }
       const pi = (y * cols + x) * 4,
         ci = v * 4;
-      img.data[pi] = palette[ci];
-      img.data[pi + 1] = palette[ci + 1];
-      img.data[pi + 2] = palette[ci + 2];
+      img.data[pi] = palette[ci] ?? 0; // Default to 0 if TypeScript thinks it could be undefined
+      img.data[pi + 1] = palette[ci + 1] ?? 0;
+      img.data[pi + 2] = palette[ci + 2] ?? 0;
       img.data[pi + 3] = 255;
     }
   }
@@ -1364,11 +1398,17 @@ function updateProgressLinePosition() {
     progressLineRef.value.style.left = `${margin.value.left}px`;
     return;
   }
-  const vs = spectrogramData.value[sIdx].time;
-  const ve =
-    spectrogramData.value[
-      Math.min(sIdx + win - 1, spectrogramData.value.length - 1)
-    ].time;
+  const startElement = spectrogramData.value[sIdx];
+  const endElement = spectrogramData.value[Math.min(sIdx + win - 1, spectrogramData.value.length - 1)];
+
+  if (!startElement || !endElement) {
+    // This case should ideally not be hit if prior checks are correct and array is not empty
+    if (progressLineRef.value) progressLineRef.value.style.left = `${margin.value.left}px`;
+    return;
+  }
+  const vs = startElement.time;
+  const ve = endElement.time;
+
   let xPos: number;
   if (currentTime.value <= vs) xPos = margin.value.left;
   else if (currentTime.value >= ve) xPos = margin.value.left + dispW;
@@ -1515,11 +1555,15 @@ function onProgressDragMove(e: MouseEvent) {
   const win = Math.floor(windowSize.value);
   const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
   if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
-    const vs = spectrogramData.value[sIdx].time;
-    const ve = spectrogramData.value[Math.max(sIdx, eIdx - 1)].time;
-    const dur = ve - vs;
-    if (dur > 0)
-      currentTime.value = clamp(vs + f * dur, 0, audioDuration.value);
+    const startElement = spectrogramData.value[sIdx];
+    const endElement = spectrogramData.value[Math.max(sIdx, eIdx - 1)];
+    if (startElement && endElement) {
+      const vs = startElement.time;
+      const ve = endElement.time;
+      const dur = ve - vs;
+      if (dur > 0)
+        currentTime.value = clamp(vs + f * dur, 0, audioDuration.value);
+    }
   }
 }
 function onProgressDragEndHandler(e: MouseEvent) {
@@ -1541,11 +1585,15 @@ function onProgressDragEndHandler(e: MouseEvent) {
       const win = Math.floor(windowSize.value);
       const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
       if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
-        const vs = spectrogramData.value[sIdx].time;
-        const ve = spectrogramData.value[Math.max(sIdx, eIdx - 1)].time;
-        const dur = ve - vs;
-        if (dur > 0) seek(vs + f * dur);
-        else if (audioDuration.value > 0) seek(f * audioDuration.value);
+        const startElement = spectrogramData.value[sIdx];
+        const endElement = spectrogramData.value[Math.max(sIdx, eIdx - 1)];
+        if (startElement && endElement) {
+          const vs = startElement.time;
+          const ve = endElement.time;
+          const dur = ve - vs;
+          if (dur > 0) seek(vs + f * dur);
+          else if (audioDuration.value > 0) seek(f * audioDuration.value);
+        }
       }
     }
   }
@@ -1659,22 +1707,23 @@ function onRangeSelectEndHandler(e: MouseEvent) {
         const win = Math.floor(windowSize.value);
         const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
         if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
-          const vs = spectrogramData.value[sIdx].time;
-          const ve =
-            spectrogramData.value[
-              Math.min(eIdx - 1, spectrogramData.value.length - 1)
-            ].time;
-          const dur = ve - vs;
-          if (dur > 0) {
-            const usedColor = nextRangeColor.value;
-            ranges.value.push({
-              id: Date.now() + Math.random(),
-              start: vs + f0 * dur,
-              end: vs + f1 * dur,
-              color: usedColor
-            });
-            // now generate a fresh color for the *next* range
-            nextRangeColor.value = `hsla(${Math.random() * 360},70%,50%,0.4)`;
+          const startElement = spectrogramData.value[sIdx];
+          const endElement = spectrogramData.value[Math.min(eIdx - 1, spectrogramData.value.length - 1)];
+          if (startElement && endElement) {
+            const vs = startElement.time;
+            const ve = endElement.time;
+            const dur = ve - vs;
+            if (dur > 0) {
+              const usedColor = nextRangeColor.value;
+              ranges.value.push({
+                id: Date.now() + Math.random(),
+                start: vs + f0 * dur,
+                end: vs + f1 * dur,
+                color: usedColor
+              });
+              // now generate a fresh color for the *next* range
+              nextRangeColor.value = `hsla(${Math.random() * 360},70%,50%,0.4)`;
+            }
           }
         }
       }
@@ -1705,21 +1754,22 @@ function onRangeSelectEndHandler(e: MouseEvent) {
       const win = Math.floor(windowSize.value);
       const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
       if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
-        const vs = spectrogramData.value[sIdx].time;
-        const ve =
-          spectrogramData.value[
-            Math.min(eIdx - 1, spectrogramData.value.length - 1)
-          ].time;
-        const dur = ve - vs;
-        if (dur > 0) seek(vs + f * dur);
-        else if (audioDuration.value > 0) seek(f * audioDuration.value); // Fallback for zero duration view
+        const startElement = spectrogramData.value[sIdx];
+        const endElement = spectrogramData.value[Math.min(eIdx - 1, spectrogramData.value.length - 1)];
+        if (startElement && endElement) {
+          const vs = startElement.time;
+          const ve = endElement.time;
+          const dur = ve - vs;
+          if (dur > 0) seek(vs + f * dur);
+          else if (audioDuration.value > 0) seek(f * audioDuration.value); // Fallback for zero duration view
+        }
       }
     }
   }
 }
 
 // HANDLE DRAG
-function onHandleMouseDown(id: number, handle: 'start' | 'end') {
+function onHandleMouseDown(id: Numeric, handle: 'start' | 'end') {
   if (props.readonly) return; // Prevent dragging in readonly mode
   draggingRangeId.value = id;
   draggingHandle.value = handle;
@@ -1747,30 +1797,35 @@ function onHandleMouseMoveHandler(e: MouseEvent) {
   const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
 
   if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
-    const vs = spectrogramData.value[sIdx].time;
-    const ve = spectrogramData.value[Math.max(sIdx, eIdx - 1)].time; // Corrected index for ve
-    const dur = ve - vs;
+    const startElement = spectrogramData.value[sIdx];
+    const endElement = spectrogramData.value[Math.max(sIdx, eIdx - 1)];
 
-    if (dur > 0) {
-      const nt = clamp(vs + f * dur, 0, audioDuration.value); // Clamp new time to overall audio duration
+    if (startElement && endElement) { // Check if elements are defined
+      const vs = startElement.time;
+      const ve = endElement.time;
+      const dur = ve - vs;
 
-      if (draggingHandle.value === 'start') {
-        if (nt > r_item.end) { // Dragged start past current end
-          const originalEnd = r_item.end;
-          r_item.end = nt;
-          r_item.start = originalEnd;
-          draggingHandle.value = 'end'; // Switched roles
-        } else {
-          r_item.start = nt;
-        }
-      } else if (draggingHandle.value === 'end') {
-        if (nt < r_item.start) { // Dragged end past current start
-          const originalStart = r_item.start;
-          r_item.start = nt;
-          r_item.end = originalStart;
-          draggingHandle.value = 'start'; // Switched roles
-        } else {
-          r_item.end = nt;
+      if (dur > 0) {
+        const nt = clamp(vs + f * dur, 0, audioDuration.value);
+
+        if (draggingHandle.value === 'start') {
+          if (nt > r_item.end) {
+            const originalEnd = r_item.end;
+            r_item.end = nt;
+            r_item.start = originalEnd;
+            draggingHandle.value = 'end';
+          } else {
+            r_item.start = nt;
+          }
+        } else if (draggingHandle.value === 'end') {
+          if (nt < r_item.start) {
+            const originalStart = r_item.start;
+            r_item.start = nt;
+            r_item.end = originalStart;
+            draggingHandle.value = 'start';
+          } else {
+            r_item.end = nt;
+          }
         }
       }
     }
@@ -1809,10 +1864,6 @@ function updateZoom(newZoom: number, centerPx?: number) {
   offsetIndex.value = newOff;
 
   renderSpectrogram();
-}
-
-function onSliderInput(e: Event) {
-  updateZoom(+(e.target as HTMLInputElement).value); // This will be removed as slider uses zoomThumb
 }
 
 function onZoomClick(e: MouseEvent) {
@@ -2608,7 +2659,7 @@ function closeContextMenuOnClickOutside(event: MouseEvent | PointerEvent) {
   // This check ensures right-clicks inside also don't close the menu.
 }
 
-function onRangeContextMenu(event: MouseEvent, rangeId: number) {
+function onRangeContextMenu(event: MouseEvent, rangeId: Numeric) {
   event.preventDefault();
   event.stopPropagation(); // Prevent event from bubbling to document
   if (props.readonly) return;
@@ -2703,7 +2754,7 @@ function openRangeTooltip(range: Range, event: MouseEvent) {
   });
 }
 
-function handleRangeFillClick(rangeId: number, event: MouseEvent) {
+function handleRangeFillClick(rangeId: Numeric, event: MouseEvent) {
   // event.stopPropagation() is handled by @click.stop in template
   const range = ranges.value.find(r => r.id === rangeId);
   if (!range) return;

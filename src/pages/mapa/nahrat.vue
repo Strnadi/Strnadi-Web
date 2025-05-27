@@ -7,11 +7,11 @@ meta:
 import { ref, watch, computed, onUnmounted, reactive } from 'vue';
 import { onBeforeRouteUpdate, onBeforeRouteLeave } from 'vue-router';
 import { accountStore } from "@/state/AccountStore";
-import { MapEvents, MapClickEvent, MapStore } from '@/views/map/RecordingsMap.vue';
+import { MapEvents, type MapClickEvent, MapStore } from '@/views/map/RecordingsMap.vue';
 import { useStepper } from '@vueuse/core';
 import { postRecording, type RecordingUploadReq, type RecordingPartUploadParams } from '@/api/recordings';
 import { useQueryClient, useMutation } from '@tanstack/vue-query';
-import { divIcon } from 'leaflet';
+import { divIcon, type Icon } from 'leaflet';
 import Dropzone from '@/components/Dropzone.vue';
 import MaterialIcon from '@/components/MaterialIcon.vue';
 import TextualCoords from '@/components/map/TextualCoords.vue';
@@ -123,12 +123,18 @@ const makeSelectedIcon = (partIndex: number) =>
 
 const handleMapClick = (event: MapClickEvent) => {
   MapStore.markers[`selected-part-${currentPartIndex.value}`] = {
-    icon: makeSelectedIcon(currentPartIndex.value),
+    icon: makeSelectedIcon(currentPartIndex.value) as Icon,
     id: `selected-part-${currentPartIndex.value}`,
-    position: event.event.latlng
+    position: [event.event.latlng.lat, event.event.latlng.lng]
   };
 
-  uploadStore.parts![currentPartIndex.value].location = event.event.latlng;
+  const partToUpdate = uploadStore.parts?.[currentPartIndex.value];
+  if (partToUpdate) {
+    partToUpdate.location = {
+      lat: event.event.latlng.lat,
+      lng: event.event.latlng.lng
+    };
+  }
   currentPartIndex.value = (currentPartIndex.value + 1) % (uploadStore.parts?.length ?? 0);
 
   // Cancel further event processing.
@@ -172,8 +178,12 @@ const stepper = useStepper<Record<StepIdentifier, Step>>({
 watch(
   () => stepper.current.value,
   (newStep, oldStep) => {
-    if ("after" in oldStep) oldStep.after();
-    if ("before" in newStep) newStep.before();
+    if (oldStep?.after) {
+      oldStep.after();
+    }
+    if (newStep?.before) {
+      newStep.before();
+    }
   }
 );
 
@@ -265,6 +275,8 @@ const stillUploading = () => {
     alert("Nahrávání stále probíhá. Nezavírejte stránku.");
     return false;
   }
+
+  return;
 }
 
 onBeforeRouteUpdate(stillUploading);
@@ -273,7 +285,7 @@ onBeforeRouteLeave(stillUploading);
 
 function submitOrNext() {
   if (stepper.current.value.isValid()) {
-    if (stepper.isLast.value) {
+    if (stepper.next.value === 'submit') {
       submit();
     } else {
       stepper.goToNext();
@@ -466,7 +478,7 @@ const currentPartIndex = ref(0);
               </span>
             </li>
           </ul>
-          <p>Klikejte postupně do mapy pro přidání pozic.<br /> Zvýrazněná nahrávka je aktuálně vybraná.</p>
+          <p>Klikejte postupně do mapy pro přidání pozic.<br> Zvýrazněná nahrávka je aktuálně vybraná.</p>
         </div>
       </template>
 
@@ -530,38 +542,6 @@ const currentPartIndex = ref(0);
               >
             </div>
           </div>
-          <div>
-            <select
-              v-model="dialect"
-              class="!bg-transparent drop-shadow-sm m-2 hover:bg-gray-100 bg-white p-2"
-            >
-              <option value="none">
-                Bez dialektu
-              </option>
-              <option value="BC">
-                BC
-              </option>
-              <option value="BE">
-                BE
-              </option>
-              <option value="BlBh">
-                BlBh
-              </option>
-              <option value="BhBl">
-                BhBl
-              </option>
-              <option value="XB">
-                XB
-              </option>
-            </select>
-            <button
-              class="secondary p-2"
-              :disabled="!dialect || dialect == 'none'"
-              @click="addDialect"
-            >
-              Přidat dialekt
-            </button>
-          </div>
 
           <div
             v-if="uploadStore.dialects.length > 0"
@@ -618,7 +598,8 @@ const currentPartIndex = ref(0);
       </template>
 
       <template v-if="stepper.isCurrent('submit')">
-        <p>Odesílání vaší nahrávky do databáze...</p>
+        <p v-if="isPending">Odesílání vaší nahrávky do databáze...</p>
+        <p v-else>Nahrávka byla úspěšně odeslána.</p>
       </template>
 
       <!-- Navigation Buttons -->

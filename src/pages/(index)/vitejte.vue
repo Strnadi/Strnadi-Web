@@ -17,8 +17,12 @@ const route = useRoute();
     </h1>
     <span class="text-md text-justify [text-align-last:center]">Projekt občanské vědy zaměřený na studium rozmanitosti ptačího zpěvu. Nahráváním zpěvu strnadů obecných po celém Česku můžete přispět k poznání, jak se v krajině udržují ptačí nářečí.</span>
 
+    <span class="font-bold text-justify text-sm text-red-400">
+      Web i aplikace stále procházejí velmi bouřlivým vývojem. Za chyby se omlouváme. Těšte se na časté aktualizace a vylepšování.
+    </span>
+
     <router-link
-      :to="route.query.from ? route.query.from : '/'"
+      :to="route.query['from'] ? (route.query['from'] as string) : '/'"
       class="button-primary px-2 py-4 w-full"
     >
       Vstoupit
@@ -44,10 +48,6 @@ const route = useRoute();
         O týmu
       </PrefetchLink>
     </div>
-
-    <span class="font-bold text-justify text-sm text-red-400">
-      Web i aplikace stále procházejí velmi bouřlivým vývojem. Za chyby se omlouváme. Těšte se na časté aktualizace a vylepšování.
-    </span>
 
     <h2 class="self-start">
       Kontakty
