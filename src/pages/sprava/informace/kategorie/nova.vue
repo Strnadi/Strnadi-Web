@@ -6,7 +6,7 @@ meta:
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useQuery, useMutation } from '@tanstack/vue-query';
-import { getArticles, getArticleCategories, postArticleCategory, patchAssignArticleCategory, type Article } from '@/api/articles';
+import { getArticles, postArticleCategory, patchAssignArticleCategory, type Article } from '@/api/articles';
 import { accountStore } from '@/state/AccountStore';
 import { useRouter } from 'vue-router';
  import ListDeselect from '@/components/ListDeselect.vue';
@@ -24,10 +24,7 @@ const { data: articles } = useQuery({
   queryFn: () => getArticles(),
 });
 
-const { data: categories } = useQuery({
-  queryKey: ['categories'],
-  queryFn: () => getArticleCategories(),
-});
+// const categories = useQuery({ queryKey: ['articleCategories'], queryFn: getArticleCategories });
 
 const { mutate: submitCategory } = useMutation({
   mutationFn: async () => {

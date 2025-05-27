@@ -6,11 +6,11 @@ import { accountStore } from '@/state/AccountStore';
 import { useMutation } from '@tanstack/vue-query';
 import { ref } from 'vue';
 
-const name = ref(accountStore.user?.firstName || '');
-const surname = ref(accountStore.user?.lastName || '');
-const nickname = ref(accountStore.user?.nickname || '');
-const zipcode = ref(accountStore.user?.postCode || 0);
-const town = ref(accountStore.user?.city || '');
+const name = ref(accountStore.user?.firstName ?? '');
+const surname = ref(accountStore.user?.lastName ?? '');
+const nickname = ref(accountStore.user?.nickname ?? '');
+const zipcode = ref(accountStore.user?.postCode ?? 0);
+const town = ref(accountStore.user?.city ?? '');
 
 const form = ref<HTMLFormElement | null>(null);
 
@@ -41,7 +41,6 @@ const submitPasswordChange = () => {
 
 const submit = () => {
   const token = accountStore.token!;
-  const email = accountStore.user!.email;
   mutate(
     {
       userInfo: {
@@ -65,6 +64,9 @@ const submit = () => {
   </h1>
   <template v-if="isPending">
     <p>Ukládání...</p>
+  </template>
+  <template v-if="error">
+    <p>Chyba: {{ error!.message }}</p>
   </template>
   <!-- <template v-if="error">
     <h1>Chyba</h1>

@@ -28,13 +28,13 @@
   </teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 
-const props = defineProps({
-  src: { type: String, required: true },
-  alt: { type: String, default: '' }
-})
+defineProps<{
+  src?: string;
+  alt?: string;
+}>();
 
 const isExpanded = ref(false)
 

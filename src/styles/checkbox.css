@@ -1,11 +1,16 @@
 /* ===== Checkbox Styles ===== */
 input[type="checkbox"] {
-  @apply appearance-none border border-gray-300 rounded w-6 h-6 flex-shrink-0;
+  @apply appearance-none border border-gray-300 rounded w-6 h-6 flex-shrink-0 relative;
 }
 
 /* Checked state */
 input[type="checkbox"]:checked {
-  @apply bg-blue-600 border-transparent;
+  @apply border-gray-300;
+}
+
+input[type="checkbox"]:checked::before {
+  content: "";
+  @apply absolute top-1/2 left-1/2 w-4 h-4 bg-yellow-300 rounded-sm transform -translate-x-1/2 -translate-y-1/2;
 }
 
 /* Focus state */

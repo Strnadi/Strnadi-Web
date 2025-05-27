@@ -5,21 +5,28 @@ meta:
 
 <script setup lang="ts">
 import { onBeforeRouteUpdate } from 'vue-router';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router'
-import { getRecording, getFilteredRecording, patchRecording } from '@/api/recordings';
+import { getRecording, getFilteredRecording } from '@/api/recordings';
 import { getUserInfo } from '@/api/account';
-import { ref, computed, type Ref, onUnmounted, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { accountStore } from '@/state/AccountStore';
-import type { NumericString } from '@/types/basic';
+import type { Numeric } from '@/types/basic';
 import Spectrogram from '@/components/Spectrogram.vue';
 import ToggleShow from '@/components/ToggleShow.vue';
+import { MapStore, DialectColors } from '@/views/map/RecordingsMap.vue';
+
+import { logged } from '@/utils/functions';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
-const recordingId = useRouteParams<NumericString>('id');
+const recordingId = useRouteParams<Numeric>('id');
+const partId = useRouteParams<Numeric>('partId');
 
 const env = import.meta.env;
+
+const selected = ref([]);
+const audio = ref<HTMLAudioElement | null>(null);
 
 const editing = ref(false);
 const editedName = ref('');
@@ -36,6 +43,9 @@ const { data: filteredRec } = useQuery({
 })
 
 const enabled = computed(() => !!recording.value?.userId);
+const recordingPart = computed(() =>
+  recording.value?.parts?.find(part => part.id == partId.value)
+);
 
 
 // todo select location in the map
@@ -43,7 +53,7 @@ const enabled = computed(() => !!recording.value?.userId);
 // Dependent query - only runs when we have an uploaderEmail from the recording
 const {
   data: uploader, 
-  isLoading: isUploaderLoading, 
+  isLoading: isUploaderLoading,
   isError: isUploaderError
 } = useQuery({
   queryKey: ['user', recording.value?.userId],
@@ -51,26 +61,21 @@ const {
   enabled, // Use the computed enabled value
 })
 
-// const {
-//   mutate: editRecording
-// } = useMutation({
-//   mutationFn: (data: ) =>
-//     patchRecording(data.id, data.name, data.note);
-
-//   onSuccess: () => {
-//     // Invalidate queries to refetch the updated data
-//     queryClient.invalidateQueries({ queryKey: ['recording', recordingId.value] });
-//   }
-// });
-
-
 const queryClient = useQueryClient();
 
 onBeforeRouteUpdate(async (to) => {
-  recordingId.value = to.params.id as string;
-  await queryClient.invalidateQueries({ queryKey: ['recording'] });
-  await queryClient.invalidateQueries({ queryKey: ['user'] });
-})
+  // recordingId.value and partId.value (from useRouteParams) are automatically updated.
+  // This hook is for side effects like invalidating queries for the new route parameters.
+
+  const newRouteRecordingId = to.params.id; // Type: string | string[] | undefined
+  if (typeof newRouteRecordingId === 'string') {
+    // Invalidate queries associated with the new recording ID to ensure fresh data.
+    await queryClient.invalidateQueries({ queryKey: ['recordings', newRouteRecordingId as Numeric] });
+    await queryClient.invalidateQueries({ queryKey: ['filtered-recordings', newRouteRecordingId as Numeric] });
+    // The 'user' query will reactively update based on changes to 'recording.value'.
+  }
+  // If partId changes were to trigger specific invalidations, they would be handled similarly.
+});
 
 // Watch for changes in the recording data to reset edited values if needed
 watch(recording, (newRecording) => {
@@ -103,6 +108,19 @@ const cancelEdit = () => {
   // Optionally reset fields if needed, though toggleEdit already does this when starting
 };
 
+watch(recordingPart, (currentValue) => {
+  if(currentValue) {
+    MapStore.move([
+      currentValue.gpsLatitudeStart,
+      currentValue.gpsLongitudeStart
+    ], 17);
+  }
+}, { immediate: true });
+
+onUnmounted(MapStore.unmove);
+
+// todo move when selecting diff recordings (onBeforeRouteUpdate)
+
 </script>
 
 <template>
@@ -112,17 +130,6 @@ const cancelEdit = () => {
     </template>
     Nahrávka {{ recording?.name }}
   </h1>
-
-  <div v-if="filteredRec">
-    <ul>
-      <li
-        v-for="dialect in filteredRec[0].detectedDialects"
-        :key="dialect.id"
-      >
-        {{ dialect.userGuessDialect }} {{ dialect.confirmedDialect }}
-      </li>
-    </ul>
-  </div>
 
   <div
     v-if="editing"
@@ -151,41 +158,53 @@ const cancelEdit = () => {
   <template v-else-if="recording">
     <div class="space-y-4">
       <!-- Metadata Section -->
-      <div class="text-sm text-gray-600 space-y-1">
-        <p><span class="font-medium">Vytvořeno:</span> {{ new Date(recording.createdAt!).toLocaleString() }}</p>
-        <p>
-          <span class="font-medium">Zařízení:</span>
-          <template v-if="recording.device">
-            {{ recording.device }}
-          </template>
-          <template v-else>
-            neznámé
-          </template>
+      <div class="flex flex-row justify-between w-full text-sm text-gray-600 space-y-1">
+        <span v-if="uploader">
+          <template v-if="uploader.nickname">{{ uploader.nickname }}</template>
+          <template v-else>{{ uploader.firstName }} {{ uploader.lastName }}</template>
+          {{ uploader.city ? `(${uploader.city})` : '' }}
+
           <template v-if="recording.byApp">
-            (přes aplikaci)
+            přes aplikaci
           </template>
-        </p>
+        </span>
+        <template v-if="recording.device">
+          {{ recording.device }}
+        </template>
+        <span>{{ new Date(recording.createdAt!).toLocaleString() }}</span>
       </div>
 
-      <!-- Note Section -->
-      <div>
-        <h3 class="text-lg font-medium mb-1">
-          Poznámka
-        </h3>
-        <blockquote
-          v-if="!editing"
-          class="p-3 bg-gray-50 border-l-4 border-gray-300 italic"
-        >
-          {{ recording.note || 'Žádná poznámka.' }}
-        </blockquote>
-        <div v-else>
-          <textarea
-            id="note"
-            v-model="editedNote"
-            rows="3"
-            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-        </div>
+      <div v-if="filteredRec">
+        <ul>
+          <li
+            v-for="(fr, idx) in filteredRec"
+            :key="fr?.id ?? idx"
+          >
+            <ul v-if="fr?.detectedDialects">
+              <li
+                v-for="dialect in fr.detectedDialects"
+                :key="dialect.id"
+              >
+                {{ dialect.userGuessDialect }} {{ dialect.confirmedDialect }}
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+      <blockquote
+        v-if="!editing"
+        class="p-3 bg-gray-50 border-l-4 border-gray-300 italic"
+      >
+        {{ recording.note || 'Žádná poznámka.' }}
+      </blockquote>
+      <div v-else>
+        <textarea
+          id="note"
+          v-model="editedNote"
+          rows="3"
+          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        />
       </div>
 
       <!-- Parts Section -->
@@ -197,67 +216,64 @@ const cancelEdit = () => {
           <li
             v-for="part in recording.parts"
             :key="part.id"
-            class="p-3 border rounded-md space-y-3"
+            class="p-3 space-y-3 flex flex-row"
           >
             <audio
+              ref="audio"
               :src="`${env.VITE_API_URL}/recordings/part/${recording.id}/${part.id}/sound`"
               controls
               class="w-full"
             />
 
-            <div class="flex items-center w-full">
-              <ToggleShow class="w-full">
-                <template #toggle-button>
-                  <button class="secondary text-sm p-1 px-2">
-                    Zobrazit spektrogram
-                  </button>
-                </template>
-                <KeepAlive>
-                  <Spectrogram
-                    :key="part.id"
-                    :audio-url="`${env.VITE_API_URL}/recordings/part/${recording.id}/${part.id}/sound`"
-                    :height="150"
-                  />
-                </KeepAlive>
-              </ToggleShow>
-
-              <template v-if="accountStore.user?.role == 'admin'">
-                <button
-                  class="primary text-sm p-1 px-2"
-                  :disabled="editing"
-                >
-                  Smazat část
-                </button>
-              </template>
-            </div>
+            <template v-if="accountStore.user?.role == 'admin'">
+              <button
+                class="primary text-sm p-1 px-2"
+                :disabled="editing"
+              >
+                Smazat část
+              </button>
+            </template>
           </li>
         </ul>
       </div>
 
-      <!-- User Section -->
-      <div>
-        <h3 class="text-lg font-medium mb-1">
-          Uživatel
-        </h3>
-        <div class="text-gray-700">
-          <template v-if="isUploaderLoading">
-            Načítání...
-          </template>
-          <template v-else-if="isUploaderError">
-            Chyba: Nelze získat informace.
-          </template>
-          <template v-else-if="uploader">
-            <span>
-              <template v-if="uploader.nickname">{{ uploader.nickname }}</template>
-              <template v-else>{{ uploader.firstName }} {{ uploader.lastName }}</template>
-              {{ uploader.city ? `(${uploader.city})` : '' }}
-            </span>
-          </template>
-          <template v-else>
-            <span>Informace o uživateli nejsou k dispozici.</span>
-          </template>
-        </div>
-      </div>
+      <ToggleShow class="w-full">
+        <template #toggle-button>
+          <button class="secondary text-sm p-1 px-2">
+            Zobrazit spektrogram
+          </button>
+        </template>
+        <KeepAlive>
+          <Spectrogram
+            v-if="recording && recording.parts && recordingPart && filteredRec"
+            :audio-urls="`${env.VITE_API_URL}/recordings/part/${recording.id}/${recordingPart.id}/sound`"
+            :height="300"
+            :readonly="true"
+            :selected="filteredRec.flatMap(fr => fr.detectedDialects.map(dd => ({
+              id: dd.id,
+              start: (new Date(fr.startDate).getTime() - new Date(recording.parts[0].startDate).getTime()) / 1000,
+              end: (new Date(fr.endDate).getTime() - new Date(recording.parts[0].startDate).getTime()) / 1000,
+              color: DialectColors[dd.confirmedDialect ?? dd.userGuessDialect]
+            })))"
+          >
+            <template #range-tooltip="{ range, close }">
+              <div class="p-2 bg-blue-100 border border-blue-300 rounded shadow-md">
+                <h4 class="font-bold">
+                  Dialekt
+                </h4>
+                <p>Začátek: {{ range.start.toFixed(2) }}s</p>
+                <p>Konec: {{ range.end.toFixed(2) }}s</p>
+                <button
+                  class="text-blue-500 hover:underline mt-1"
+                  @click="close"
+                >
+                  Zavřít
+                </button>
+              </div>
+            </template>
+          </Spectrogram>
+        </KeepAlive>
+      </ToggleShow>
 
       <template v-if="accountStore.user?.role === 'admin' || accountStore.user?.id === recording.userId">
         <template v-if="editing">

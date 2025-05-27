@@ -5,15 +5,13 @@ meta:
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 import { useMutation } from "@tanstack/vue-query";
 import { postGoogleLogin, postLogin } from "@/api/account";
 import { accountStore } from "@/state/AccountStore";
 
 import AuthButtons from "@/views/AuthButtons.vue";
 import RevealablePasswordInput from "@/components/RevealablePasswordInput.vue";
-
-const env = import.meta.env;
 
 const router = useRouter();
 

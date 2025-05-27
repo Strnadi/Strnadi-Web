@@ -16,17 +16,18 @@ import VWave from 'v-wave';
 import vSelect from 'vue-select';
 import VueDatePicker from "@vuepic/vue-datepicker";
 import ExpandableImage from '@/components/ExpandableImage.vue';
+import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import { ApiError } from "@/classes/api-error";
 import "./styles/main.css";
 
 declare global {
   interface Array<T> {
-    guarded: (guard: (to: RouteRecordRaw, from: RouteRecordRaw) => RouteRecordRaw) => RouteRecordRaw[]
+    guarded: (guard: (to: RouteRecordRaw, from: RouteRecordRaw) => boolean | RouteLocationRaw) => RouteRecordRaw[]
   }
 }
 
 Array.prototype.guarded = function(
-  guard: (to: RouteRecordRaw, from: RouteRecordRaw) => RouteRecordRaw
+  guard: (to: RouteRecordRaw, from: RouteRecordRaw) => boolean | RouteLocationRaw
 ): RouteRecordRaw[] {
   return this.map((route: RouteRecordRaw) => {
     // add guard to this route
@@ -77,7 +78,7 @@ const removeUnlayoutedRoutes = (routes: RouteRecordRaw[], isDesktop: boolean): R
       processedRoute.children = removeUnlayoutedRoutes(processedRoute.children, isDesktop);
     }
 
-    if (isDesktop && !processedRoute.meta?.layout) {
+    if (isDesktop && !processedRoute.meta?.['layout']) {
       processedRoute = {
         ...processedRoute,
         // component: 
@@ -97,7 +98,7 @@ const removeLayoutsRecursively = (routes: RouteRecordRaw[], isDesktop: boolean):
       processedRoute.children = removeLayoutsRecursively(processedRoute.children, isDesktop);
     }
 
-    if (!isDesktop && processedRoute.meta?.layout) {
+    if (!isDesktop && processedRoute.meta?.['layout']) {
       processedRoute.meta = {
         ...processedRoute.meta,
         layout: false
@@ -212,7 +213,7 @@ const router = createRouter({
     });
 
     // Reset window scroll position as well
-    return { top: 0, left: 0 };
+    return { top: 0, left: 0, behavior: 'smooth' };
   }
 });
 
@@ -287,9 +288,10 @@ app.use(VWave, {
 app.use(VueClickAway);
 
 app.component('VSelect', vSelect);
-app.component("VueDatePicker", VueDatePicker);
+app.component('VueDatePicker', VueDatePicker);
 app.directive('auto-scrollbar', autoScrollbar)
 
+customElements.define('multi-color-square', defineCustomElement(MultiColorSquare, { shadowRoot: false }));
 customElements.define('expandable-image', defineCustomElement(ExpandableImage, { shadowRoot: false }));
 
 app.mount("#app");

@@ -21,7 +21,6 @@ import InfoIcon from '@/icons/interface/icon-info.svg';
     </prefetch-link>
 
     <prefetch-link
-      v-if="accountStore.user"
       v-wave
       to="/informace"
       class="flex flex-1 justify-center items-center"
@@ -33,20 +32,21 @@ import InfoIcon from '@/icons/interface/icon-info.svg';
     <prefetch-link
       v-if="accountStore.user"
       v-wave
+      to="/mapa/nahrat"
+      class="flex flex-1 justify-center items-center"
+      :class="{ 'bg-gray-100': $route.path.startsWith('/nahrat') }"
+    >
+      <UploadIcon />
+    </prefetch-link>
+
+    <prefetch-link
+      v-if="accountStore.user"
+      v-wave
       to="/ucet/sprava/moje-nahravky"
       class="flex flex-1 justify-center items-center"
       :class="{ 'bg-gray-100': $route.path.startsWith('/ucet/sprava/moje-nahravky') }"
     >
       <ListIcon />
-    </prefetch-link>
-
-    <prefetch-link
-      v-wave
-      to="/nahrat"
-      class="flex flex-1 justify-center items-center"
-      :class="{ 'bg-gray-100': $route.path.startsWith('/nahrat') }"
-    >
-      <UploadIcon />
     </prefetch-link>
 
     <prefetch-link

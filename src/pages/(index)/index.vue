@@ -1,19 +1,36 @@
 <script setup lang="ts">
-import Map from '@/views/Map.vue';
+import Map, { MapEvents } from '@/views/map/RecordingsMap.vue';
+import MapControls from '@/views/map/controls/Mobile.vue';
+import { useEventLast } from '@/utils/events';
 import { useCssVar, useMediaQuery } from '@vueuse/core';
+import { useRouter } from 'vue-router';
 import { computed } from 'vue';
 
+const router = useRouter();
 const desktopBp = useCssVar('--breakpoint-desktop', document.documentElement);
 const isDesktop = useMediaQuery(
   computed(() => `(min-width: ${desktopBp.value})`)
 );
+
+if(!isDesktop.value) {
+  useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
+
+    if (recording && recordingPart) {
+      router.push(`/mapa/nahravka/${recording.id}/${recordingPart.id}`);
+    } else if (square) {
+      router.push(`/mapa/ctverec/${square}`);
+    }
+
+  });
+}
 </script>
 
 <template>
   <div
     v-if="!isDesktop"
-    class="flex flex-1"
+    class="relative flex flex-1"
   >
     <Map />
+    <MapControls />
   </div>
 </template>

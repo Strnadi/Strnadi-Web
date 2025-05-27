@@ -9,15 +9,23 @@ export const changeImage = (base: string): PluginSimple =>
 
     markdownIt.renderer.rules.image = (tokens, idx, options, env, self) => {
       const token = tokens[idx];
+
+      if (!token) {
+        return originalImageRenderer(tokens, idx, options, env, self);
+      }
+
       const srcIndex = token.attrIndex('src');
       token.tag = 'expandable-image';
 
-      if (srcIndex >= 0) {
-        if(!base.endsWith('/')) {
+      if (token.attrs && srcIndex >= 0) {
+        if (!base.endsWith('/')) {
           base += '/';
         }
 
-        token.attrs![srcIndex][1] = base + token.attrs![srcIndex][1];
+        const attributePair = token.attrs[srcIndex];
+        if (attributePair) {
+          attributePair[1] = base + attributePair[1];
+        }
       }
       return originalImageRenderer(tokens, idx, options, env, self);
     };

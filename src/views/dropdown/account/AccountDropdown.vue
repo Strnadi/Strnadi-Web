@@ -11,17 +11,27 @@ const user = accountStore.user!;
   <Dropdown>
     <template
       #title
-      class="flex flex-row items-center"
     >
-      <ProfileIcon v-if="!user.profilePicture" />
-      <img
-        v-else
-        :src="user.profilePicture"
-      >
+      <div class="flex flex-row items-center">
+        <ProfileIcon v-if="!user.profilePicture" />
+        <img
+          v-else
+          :src="user.profilePicture"
+        >
 
-      {{ user.firstName }} {{ user.lastName }}
-      <DropdownIcon />
+        {{ user.firstName }} {{ user.lastName }}
+        <DropdownIcon />
+      </div>
     </template>
+    <li>
+      <PrefetchLink
+        to="/ucet/sprava/moje-nahravky"
+        class="dropdown-item"
+      >
+        <List />
+        Moje záznamy
+      </PrefetchLink>
+    </li>
     <li>
       <PrefetchLink to="/ucet/muj-ucet">
         <div class="dropdown-item">

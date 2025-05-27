@@ -8,3 +8,18 @@ declare module '*.vue' {
   const component: DefineComponent<{}, {}, any>
   export default component
 }
+
+interface ViteTypeOptions {
+  strictImportMetaEnv: unknown
+}
+
+interface ImportMetaEnv {
+  readonly VITE_GOOGLE_CLIENT_ID: string;
+  readonly VITE_API_URL: string;
+  readonly VITE_POSTHOG_KEY: string;
+  readonly VITE_PUBLIC_URL: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
+}

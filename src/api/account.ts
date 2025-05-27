@@ -1,4 +1,4 @@
-import type { NumericString } from "@/types/basic";
+import type { Numeric } from "@/types/basic";
 import axios from "axios";
 import type { JWTPayload } from "jose";
 
@@ -70,7 +70,7 @@ export const getUsers = async (token: string): Promise<User[]> => {
   return response.data as User[];  
 }
 
-export const getUserInfo = async (token: string, id: NumericString): Promise<User> => {
+export const getUserInfo = async (token: string, id: Numeric): Promise<User> => {
   const response = await axios.get(`/users/${id}`, {
     headers: {
       'Authorization': `Bearer ${token ?? ''}`,
@@ -80,14 +80,14 @@ export const getUserInfo = async (token: string, id: NumericString): Promise<Use
   return response.data as User;  
 }
 
-export const getUserId = async (token: string): Promise<NumericString> => {
+export const getUserId = async (token: string): Promise<Numeric> => {
   const response = await axios.get(`/users/get-id`, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },
   });
 
-  return response.data as NumericString;  
+  return response.data as Numeric;  
 }
 
 export const getCurrentUserInfo = async (token: string): Promise<User> => {

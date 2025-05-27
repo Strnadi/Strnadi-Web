@@ -41,7 +41,7 @@ export interface Emitter<Events extends Record<EventType, unknown>> {
 }
 
 /**
- * Mitt: Tiny (~200b) functional event emitter / pubsub.
+ * Mitt: Tiny functional event emitter / pubsub.
  * @name mitt
  * @returns {Mitt}
  */
@@ -51,7 +51,7 @@ export default function mitt<Events extends Record<EventType, unknown>>(
 	type GenericEventHandler =
 		| Handler<Events[keyof Events]>
 		| WildcardHandler<Events>;
-	all = all || new Map();
+	all = all ?? new Map();
 
 	// store last callbacks separately
 	const lastAll: EventHandlerMap<Events> = new Map();
@@ -68,14 +68,25 @@ export default function mitt<Events extends Record<EventType, unknown>>(
 		 * @param {Function} handler Function to call in response to given event
 		 * @memberOf mitt
 		 */
-    on(type: keyof Events | '*', handler: GenericEventHandler): void {
-      const handlers = all.get(type);
-      if (handlers) {
-        handlers.push(handler);
-      } else {
-        all.set(type, [handler] as any);
-      }
-    },
+		on(type: keyof Events | '*', handler: GenericEventHandler): void {
+			if (type === '*') {
+				const wildcardHandler = handler as WildcardHandler<Events>;
+				const handlers = all.get(type) as WildCardEventHandlerList<Events> | undefined;
+				if (handlers) {
+					handlers.push(wildcardHandler);
+				} else {
+					all.set(type, [wildcardHandler] as WildCardEventHandlerList<Events>);
+				}
+			} else {
+				const specificHandler = handler as Handler<Events[typeof type]>;
+				const handlers = all.get(type) as EventHandlerList<Events[typeof type]> | undefined;
+				if (handlers) {
+					handlers.push(specificHandler);
+				} else {
+					all.set(type, [specificHandler] as EventHandlerList<Events[typeof type]>);
+				}
+			}
+		},
 
 		/**
 		 * Remove an event handler for the given type.

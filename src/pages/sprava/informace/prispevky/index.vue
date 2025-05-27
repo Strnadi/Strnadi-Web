@@ -19,27 +19,30 @@ const { data: articles } = useQuery({
       Nový příspěvek
     </router-link>
   </div>
-  <ul class="flex flex-col">
+  <ul class="flex flex-col gap-y-2">
     <li
       v-for="article in articles"
-      class="flex flex-row justify-around gap-x-4"
+      :key="article.id"
+      class="flex flex-row justify-around gap-x-2"
     >
-      <div class="flex flex-row w-full justify-between">
+      <div class="flex flex-col w-full justify-between">
         <span>{{ article.name }}</span>
         <span>{{ article.description }}</span>
       </div>
-      <router-link
-        :to="`/sprava/informace/prispevky/${article.id}/upravit`"
-        class="font-bold"
-      >
-        Upravit
-      </router-link>
-      <router-link
-        :to="`/sprava/informace/prispevky/${article.id}/smazat`"
-        class="button-danger"
-      >
-        Smazat
-      </router-link>
+      <div class="flex flex-row">
+        <router-link
+          :to="`/sprava/informace/prispevky/${article.id}/upravit`"
+          class="button-secondary m-auto p-2"
+        >
+          Upravit
+        </router-link>
+        <router-link
+          :to="`/sprava/informace/prispevky/${article.id}/smazat`"
+          class="button-danger m-auto p-2"
+        >
+          Smazat
+        </router-link>
+      </div>
     </li>
   </ul>
 </template>

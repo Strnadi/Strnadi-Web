@@ -4,8 +4,7 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { accountStore } from '@/state/AccountStore';
-
+import { accountStore } from '@/state/AccountStore'
 </script>
 
 <template>
@@ -46,12 +45,10 @@ import { accountStore } from '@/state/AccountStore';
 </template>
 
 <style scoped>
-
 @reference "../../styles/main.css";
 
 .link {
   @apply flex flex-col justify-center;
   @apply p-2 my-1 border-2 border-gray-300 rounded-lg;
 }
-
 </style>

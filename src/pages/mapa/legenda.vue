@@ -4,7 +4,8 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { DialectIcons } from '@/views/Map.vue';
+import { DialectColors } from '@/views/map/RecordingsMap.vue';
+import MultiColorSquare from '@/components/MultiColorSquare.vue';
 </script>
 
 <template>
@@ -14,16 +15,15 @@ import { DialectIcons } from '@/views/Map.vue';
     class="flex flex-row gap-x-2 gap-y-2 flex-wrap"
   >
     <div
-      v-for="(data, _) in DialectIcons"
-      :key="data.fileName"
+      v-for="(icon, key) in DialectColors"
+      :key="key"
       class="flex min-w-fit flex-row p-2 items-center border-1 border-gray-200 bg-white rounded-2xl flex-[1_0_20%]"
     >
-      <img
-        :src="data.fileName"
-        :alt="`Map Icon ${data.friendlyName}`"
-        class="w-8 h-8 m-1"
-      >
-      <span class="text-sm font-medium">{{ data.friendlyName }}</span>
+      <multi-color-square
+        :colors="[icon]"
+        class="w-8 h-8 m-1 !border-transparent rounded-md"
+      />
+      <span class="text-sm font-medium">{{ key }}</span>
     </div>
   </div>
 </template>

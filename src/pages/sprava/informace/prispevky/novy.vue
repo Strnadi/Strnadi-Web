@@ -4,7 +4,7 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 import { useQuery, useMutation } from '@tanstack/vue-query';
 import { getArticleCategories, postArticle, postArticleFile, patchAssignArticleCategory } from '@/api/articles';
 import { accountStore } from '@/state/AccountStore';

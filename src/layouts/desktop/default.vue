@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { notificationStore } from '@/state/NotificationStore';
-import Map, { MapMarkers, MapEvents } from '@/views/Map.vue';
+import Map, { MapEvents } from '@/views/map/RecordingsMap.vue';
+import MapControls from '@/views/map/controls/Desktop.vue';
 import Navbar from '@/views/nav/Navbar.vue';
 import Notification from '@/views/Notification.vue';
-import { useEvent, useEventLast } from '@/utils/events';
+import { useEventLast } from '@/utils/events';
 
 import { useRouter } from 'vue-router';
 
@@ -12,13 +13,16 @@ const goHome = () => {
   router.push("/");
 }
 
-useEventLast(MapEvents, 'map-click', goHome);
-useEvent(MapEvents, 'part-click', ({ rec }) => {
-  // zoom.value = 15;
+useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
 
-  // MapMarkers.addMarker
+  if (recording && recordingPart) {
+    router.push(`/mapa/nahravka/${recording.id}/${recordingPart.id}`);
+  } else if (square) {
+    router.push(`/mapa/ctverec/${square}`);
+  } else {
+    goHome();
+  }
 
-  router.push(`/mapa/nahravka/${rec.id}`);
 });
 
 </script>
@@ -49,6 +53,7 @@ useEvent(MapEvents, 'part-click', ({ rec }) => {
     </aside>
     <div class="flex flex-1">
       <Map />
+      <MapControls />
     </div>
   </div>
 

@@ -28,7 +28,7 @@ const isRevealed = ref(false);
   <div class="flex flex-row justify-end gap-x-2">
     <div class="flex flex-col w-full">
       <label
-        v-if="slots.default"
+        v-if="slots['default']"
         class="block text-sm font-medium mb-1"
         for="password"
       >

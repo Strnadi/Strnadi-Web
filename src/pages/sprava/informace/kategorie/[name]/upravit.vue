@@ -5,11 +5,9 @@ meta:
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useQuery, useMutation } from '@tanstack/vue-query';
+import { useQuery } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router';
-import { useRouter } from 'vue-router';
-import { accountStore } from '@/state/AccountStore';
-import { getArticles, getArticleByCategory, type Article } from '@/api/articles';
+import { getArticles, getArticleByCategory } from '@/api/articles';
 import ListDeselect from '@/components/ListDeselect.vue';
 
 import draggable from 'vuedraggable';

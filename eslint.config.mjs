@@ -24,8 +24,15 @@ export default tseslint.config(
 
       parserOptions: {
         parser: tseslint.parser,
-        projectService: true,
-        allowDefaultProject: ["eslint.config.mjs", "prettier.config.js"],
+        projectService: {
+          enabled: true,
+          useFsEvents: true,
+          watchOptions: {
+            interval: 1000,
+            recursive: true
+          },
+          allowDefaultProject: ["eslint.config.mjs", "prettier.config.js"]
+        },
         extraFileExtensions: ['.vue'],
 
         tsconfigRootDir: import.meta.dirname,
@@ -37,7 +44,9 @@ export default tseslint.config(
       '@typescript-eslint/restrict-template-expressions': [
         'error',
         { allowBoolean: true }
-      ]
+      ],
+
+      'vue/multi-word-component-names': "off"
     }
   }
 );

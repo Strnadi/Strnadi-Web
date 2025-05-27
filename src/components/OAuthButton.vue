@@ -50,7 +50,7 @@ onMounted(() => {
 
   const decodedToken = jose.decodeJwt(idToken);
 
-  if(!decodedToken.nonce || decodedToken.nonce !== state) {
+  if(!decodedToken['nonce'] || decodedToken['nonce'] !== state) {
     emit('error', "Nonce mismatch")
     return;
   }
