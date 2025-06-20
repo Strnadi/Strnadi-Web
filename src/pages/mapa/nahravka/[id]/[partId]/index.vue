@@ -108,16 +108,16 @@ const cancelEdit = () => {
   // Optionally reset fields if needed, though toggleEdit already does this when starting
 };
 
-watch(recordingPart, (currentValue) => {
-  if(currentValue) {
-    MapStore.move([
-      currentValue.gpsLatitudeStart,
-      currentValue.gpsLongitudeStart
-    ], 17);
-  }
-}, { immediate: true });
+// watch(recordingPart, (currentValue) => {
+//   if(currentValue) {
+//     MapStore.move([
+//       currentValue.gpsLatitudeStart,
+//       currentValue.gpsLongitudeStart
+//     ], 17);
+//   }
+// }, { immediate: true });
 
-onUnmounted(MapStore.unmove);
+// onUnmounted(MapStore.unmove);
 
 // todo move when selecting diff recordings (onBeforeRouteUpdate)
 

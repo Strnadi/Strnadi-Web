@@ -5,10 +5,12 @@ import { type LeafletMouseEvent } from 'leaflet';
 import type { Polygon, Marker } from '@/views/map/Map.vue';
 import { refDebounced } from '@vueuse/core';
 
-let positionStack = ref([
-  [ 49.9, 15.5, 8.25 ]
-]);
-const currentCenter = computed<[number, number, number]>(() => positionStack.value[positionStack.value.length - 1] as [number, number, number]);
+// let positionStack = ref([
+//   [ 49.9, 15.5, 8.25 ]
+// ]);
+// const currentCenter = computed<[number, number, number]>(() => positionStack.value[positionStack.value.length - 1] as [number, number, number]);
+
+const currentCenter = ref([ 49.9, 15.5, 8.25 ]);
 
 export type MapFilter = 'all' | 'new' | 'old' | 'my' | 'others' | 'any-dialect';
 export interface MapClickEvent {
@@ -50,17 +52,18 @@ export const MapStore = reactive<{
 
   move(newCenter: [number, number], newZoom: number, override = false) {
 
-    if(!override) {
-      positionStack.value.push([...newCenter, newZoom]);
-    } else {
-      positionStack.value[positionStack.value.length - 1] = [...newCenter, newZoom];
-    }
+    // if(!override) {
+    //   positionStack.value.push([...newCenter, newZoom]);
+    // } else {
+    //   positionStack.value[positionStack.value.length - 1] = [...newCenter, newZoom];
+    // }
 
+    currentCenter.value = [...newCenter, newZoom];
   },
 
   unmove() {
 
-    positionStack.value.pop();
+    // positionStack.value.pop();
 
   },
 });

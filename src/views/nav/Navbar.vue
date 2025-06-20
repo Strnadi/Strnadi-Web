@@ -10,10 +10,6 @@ import AccountDropdown from '@/views/dropdown/account/AccountDropdown.vue';
 import UploadIcon from '@/icons/interface/icon-upload.svg';
 import DropdownIcon from '@/icons/interface/dropdown.svg';
 
-
-import MultiColorSquare from '@/components/MultiColorSquare.vue';
-
-
 const { data: categories, isLoading, error } = useQuery({
   queryKey: ["categories"],
   queryFn: async () => getArticleCategories()
