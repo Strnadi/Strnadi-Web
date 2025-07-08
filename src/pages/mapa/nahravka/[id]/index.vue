@@ -218,7 +218,7 @@ const cancelEdit = () => {
         </ul>
       </div>
 
-      <ToggleShow class="w-full">
+      <!-- <ToggleShow class="w-full">
         <template #toggle-button>
           <button class="secondary text-sm p-1 px-2">
             Zobrazit spektrogram
@@ -257,9 +257,9 @@ const cancelEdit = () => {
             </template>
           </Spectrogram>
         </KeepAlive>
-      </ToggleShow>
+      </ToggleShow> -->
 
-      <template v-if="accountStore.user?.role === 'admin' || accountStore.user?.id === recording.userId">
+      <!-- <template v-if="accountStore.user?.role === 'admin' || accountStore.user?.id === recording.userId">
         <template v-if="editing">
           <button
             class="success p-2"
@@ -296,7 +296,7 @@ const cancelEdit = () => {
             Požádat o smazání
           </button>
         </template>
-      </template>
+      </template> -->
     </div>
   </template>
   <template v-else>

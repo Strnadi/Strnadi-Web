@@ -1,3 +1,7 @@
+<script lang="ts">
+import FilterIcon from '@/icons/interface/icon-filter2.svg'
+</script>
+
 <script setup lang="ts">
 import { ref } from 'vue';
 
@@ -113,15 +117,15 @@ const searchText = ref('');
 
 <style scoped>
 .filter-select {
-  appearance: none;
+/*  appearance: none;
   background-image: v-bind("`url(\"${FilterIcon}\")`");
   background-repeat: no-repeat;
   background-position: center;
   background-size: 32px 32px;
-  width: 70px;
+  width: 70px;*/
   height: 70px;
-  padding: 0;
-  text-indent: 9999px;
+  padding: 10px;
+  /*text-indent: 9999px;*/
   cursor: pointer;
 }
 

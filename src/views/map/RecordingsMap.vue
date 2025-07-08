@@ -143,12 +143,11 @@ const polygons = refDebounced(
 ]), 2500);
 
 const oldCutoff = new Date(2024, 11, 31);
-const filter = ref<MapFilter>('new');
 const markers = computed<Marker[]>(() => {
 
   return recordings.value
     ?.filter(r => {
-      switch (filter.value) {
+      switch (MapStore.filter) {
         case 'my': return r.userId === accountStore.user?.id;
         case 'others': return r.userId !== accountStore.user?.id;
         case 'old': return new Date(r.createdAt) <= oldCutoff;

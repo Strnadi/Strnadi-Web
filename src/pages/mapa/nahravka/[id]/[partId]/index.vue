@@ -237,7 +237,7 @@ const cancelEdit = () => {
         </ul>
       </div>
 
-      <ToggleShow class="w-full">
+      <!-- <ToggleShow class="w-full">
         <template #toggle-button>
           <button class="secondary text-sm p-1 px-2">
             Zobrazit spektrogram
@@ -312,7 +312,7 @@ const cancelEdit = () => {
             Požádat o smazání
           </button>
         </template>
-      </template>
+      </template> -->
     </div>
   </template>
   <template v-else>
