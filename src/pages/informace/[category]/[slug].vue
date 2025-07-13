@@ -1,6 +1,8 @@
 <route>
 meta:
   layout: desktop/side
+  landing-bypass: true
+
 </route>
 
 <script setup lang="ts">

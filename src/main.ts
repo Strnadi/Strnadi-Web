@@ -126,6 +126,8 @@ const nameRoutes = (routes: RouteRecordRaw[], suffix: string, predicate: (route:
 };
 
 const welcomeGuard = (to: RouteRecordRaw, _from: RouteRecordRaw): boolean | RouteLocationRaw => {
+  console.log("meta", to);
+
   if(
        !localStorage.getItem("FirstLaunch")
     && !to.meta?.['landing-bypass']

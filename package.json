@@ -84,5 +84,8 @@
     "esbuild",
     "protobufjs",
     "vue-demi"
-  ]
+  ],
+  "patchedDependencies": {
+    "vite-plugin-vue-meta-layouts@0.5.1": "patches/vite-plugin-vue-meta-layouts@0.5.1.patch"
+  }
 }
