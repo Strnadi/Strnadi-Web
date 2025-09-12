@@ -18,12 +18,10 @@ const { data: recordings, isError, isLoading } = useQuery({
 
 const recordingsLength = computed(() => recordings.value?.length || 0);
 
-console.log("Here");
-
 </script>
 
 <template>
-  <h1>Moje nahrávky</h1>
+  <h1><TranslatedText identifier="recordings.mine" /></h1>
   <template v-if="isLoading">
     <TranslatedText identifier="loading" />...
   </template>
@@ -45,7 +43,7 @@ console.log("Here");
         >
           <div class="flex flex-row justify-between">
             <span class="text-lg font-bold">{{ rec.name }}</span>
-            <span class="text-lime-400">Nahráno</span>
+            <span class="text-lime-400"><TranslatedText identifier="recordings.recorded" /></span>
           </div>
           <div class="flex flex-row justify-between">
             <span />

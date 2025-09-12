@@ -3,6 +3,7 @@ import ProfileIcon from "@/icons/interface/icon-profile.svg"
 import DropdownIcon from '@/icons/interface/dropdown.svg';
 import { accountStore } from '@/state/AccountStore';
 import Dropdown from '@/components/Dropdown.vue';
+import TranslatedText from '@/components/TranslatedText.vue';
 
 const user = accountStore.user!;
 </script>
@@ -29,20 +30,20 @@ const user = accountStore.user!;
         class="dropdown-item"
       >
         <List />
-        Moje záznamy
+        <TranslatedText identifier="account.my_records" />
       </PrefetchLink>
     </li>
     <li>
       <PrefetchLink to="/ucet/muj-ucet">
         <div class="dropdown-item">
-          Profil
+          <TranslatedText identifier="account.profile" />
         </div>
       </PrefetchLink>
     </li>
     <li v-if="accountStore.user?.role === 'admin'">
       <PrefetchLink to="/sprava">
         <div class="dropdown-item">
-          Admin
+          <TranslatedText identifier="account.admin" />
         </div>
       </PrefetchLink>
     </li>
@@ -51,7 +52,7 @@ const user = accountStore.user!;
       @click="accountStore.logout"
     >
       <div class="dropdown-item">
-        Odhlásit se
+        <TranslatedText identifier="account.logout" />
       </div>
     </li>
   </Dropdown>
