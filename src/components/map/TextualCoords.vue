@@ -2,6 +2,7 @@
 import { getReverseGeocode } from '@/api/maps';
 import { useQuery } from '@tanstack/vue-query';
 import { computed } from 'vue';
+import TranslatedText from '../TranslatedText.vue';
 
 
 const props = defineProps<{
@@ -37,10 +38,10 @@ const name = computed(() => {
 
 <template>
   <template v-if="isError">
-    Chyba při načítání lokace.
+    <TranslatedText identifier="errors.location" />
   </template>
   <template v-else-if="isLoading">
-    Načítání...
+    <TranslatedText identifier="loading" />...
   </template>
   <template v-else-if="name">
     {{ name }}

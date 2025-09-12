@@ -10,7 +10,7 @@ import { refDebounced } from '@vueuse/core';
 // ]);
 // const currentCenter = computed<[number, number, number]>(() => positionStack.value[positionStack.value.length - 1] as [number, number, number]);
 
-const currentCenter = ref([ 49.9, 15.5, 8.25 ]);
+const currentCenter = ref<[number, number, number]>([ 49.9, 15.5, 8.25 ]);
 
 export type MapFilter = 'all' | 'new' | 'old' | 'my' | 'others' | 'any-dialect';
 export interface MapClickEvent {
@@ -43,14 +43,14 @@ export const MapStore = reactive<{
   aerial: boolean;
   filter: MapFilter;
   unmove(): void;
-  move(newCenter: [number, number], newZoom: number, override?: boolean): void;
+  move(newCenter: [number, number], newZoom?: number, override?: boolean): void;
 }>({
   scale: false,
   aerial: false,
   filter: 'new',
   markers: {},
 
-  move(newCenter: [number, number], newZoom: number, override = false) {
+  move(newCenter: [number, number], newZoom?: number, override = false) {
 
     // if(!override) {
     //   positionStack.value.push([...newCenter, newZoom]);
@@ -58,7 +58,7 @@ export const MapStore = reactive<{
     //   positionStack.value[positionStack.value.length - 1] = [...newCenter, newZoom];
     // }
 
-    currentCenter.value = [...newCenter, newZoom];
+    currentCenter.value = [...newCenter, newZoom ?? currentCenter.value[2]];
   },
 
   unmove() {

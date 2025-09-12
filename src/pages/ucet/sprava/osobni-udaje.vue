@@ -18,10 +18,10 @@ const password = ref("");
 const passwordAgain = ref("");
 
 const { mutate, isPending, error } = useMutation({
-  mutationFn: ({ userInfo, token, userId }: { userInfo: UserUpdateRequest; token: string; userId: string }) =>
+  mutationFn: ({ userInfo, token, userId }: { userInfo: UserUpdateRequest; token: string; userId: string | number }) =>
     patchUser(token, userId, userInfo),
 
-  onSuccess: (data) => {
+  onSuccess: () => {
     accountStore.user!.firstName = name.value;
     accountStore.user!.lastName = surname.value;
     accountStore.user!.nickname = nickname.value;
@@ -31,12 +31,12 @@ const { mutate, isPending, error } = useMutation({
 });
 
 const { mutate: passwordChangeMutate } = useMutation({
-  mutationFn: ({ token, userId, newPassword }: {token: string, userId: string, newPassword: string}) =>
+  mutationFn: ({ token, userId, newPassword }: {token: string, userId: string | number, newPassword: string}) =>
     patchPasswordChange(token, userId, newPassword)
 })
 
 const submitPasswordChange = () => {
-  passwordChangeMutate({ token: accountStore.token!, email: accountStore.user!.email, newPassword: password.value })
+  passwordChangeMutate({ token: accountStore.token!, userId: accountStore.user!.id, newPassword: password.value })
 }
 
 const submit = () => {

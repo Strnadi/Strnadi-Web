@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import OAuth2Button from './OAuthButton.vue';
+import TranslatedText from './TranslatedText.vue';
 const env = import.meta.env;
 
 const oauth2_url = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -19,6 +20,6 @@ const oauth2_prompt = "select_account";
     :response-type="oauth2_responseType"
     :scope="oauth2_scope"
   >
-    Pokračovat přes Google
+    <TranslatedText identifier="buttons.continue_google" />
   </OAuth2Button>
 </template>

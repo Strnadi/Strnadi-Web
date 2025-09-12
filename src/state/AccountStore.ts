@@ -50,12 +50,8 @@ persist(accountStore, {
       const exp = store.token_object.exp;
 
       if (exp && now > exp) {
-        
         const newJWT = await getRenewedJWT(store.token);
         store.login(newJWT);
-
-      } else {
-        store.logout();
       }
     }
   }

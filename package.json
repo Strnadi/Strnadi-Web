@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite --clearScreen=false",
-    "build": "vue-tsc -b --noCheck && vite build",
+    "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "format": "prettier",
-    "check": "vue-tsc -b",
+    "check": "vue-tsc --noEmit -p tsconfig.app.json",
     "lint": "eslint"
   },
   "dependencies": {
@@ -80,6 +80,7 @@
     "@firebase/util",
     "@parcel/watcher",
     "@sentry/cli",
+    "@tailwindcss/oxide",
     "core-js",
     "esbuild",
     "protobufjs",

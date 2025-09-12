@@ -40,7 +40,7 @@ export const persist = <T>(object: T, options?: Partial<PersistOptions<T>>) => {
 /**
  * Asserts store
  */
-const assertStore = (storage: Storage, key: string): object | null => {
+const assertStore = <T>(storage: Storage, key: string): T | null => {
   const _store = storage.getItem(key);
 
   if (!_store) {
@@ -53,7 +53,7 @@ const assertStore = (storage: Storage, key: string): object | null => {
 /**
  * Gets store
  */
-const getStore = (storage: Storage, key: string): object | null => {
+const getStore = <T>(storage: Storage, key: string): T | null => {
   let _store = storage.getItem(key);
 
   try {
@@ -74,7 +74,7 @@ const getStore = (storage: Storage, key: string): object | null => {
 /**
  * Syncs reactive object with local store
  */
-const syncReactiveWithLocal = (object: object, store: object, paths?: string[]): void => {
+const syncReactiveWithLocal = <T>(object: T, store: T, paths?: string[]): void => {
   if (paths) {
     paths.forEach(path => {
       const _value = get(store, path);
@@ -84,7 +84,7 @@ const syncReactiveWithLocal = (object: object, store: object, paths?: string[]):
       }
     });
   } else {
-    object = Object.assign(object, store);
+    object = Object.assign(object as object, store);
   }
 };
 

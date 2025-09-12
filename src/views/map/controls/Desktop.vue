@@ -30,17 +30,8 @@ const searchText = ref('');
       v-model:text="searchText"
       placeholder="Hledat..."
       class="drop-shadow-lg rounded-2xl m-2 p-4 w-full sm:w-auto h-[70px]"
-      @update:location="newLocation => MapStore.center = newLocation"
+      @update:location="newLocation => MapStore.move(newLocation)"
     />
-    <PrefetchLink
-      class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
-      to="/mapa/legenda"
-    >
-      <InfoIcon
-        width="32"
-        height="32"
-      />
-    </PrefetchLink>
 
     <div class="flex flex-row-reverse items-end">
       <div class="flex flex-col">
@@ -75,6 +66,16 @@ const searchText = ref('');
           />
         </button>
       </div>
+
+      <PrefetchLink
+        class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
+        to="/mapa/legenda"
+      >
+        <InfoIcon
+          width="32"
+          height="32"
+        />
+      </PrefetchLink>
 
       <select
         v-model="MapStore.filter"

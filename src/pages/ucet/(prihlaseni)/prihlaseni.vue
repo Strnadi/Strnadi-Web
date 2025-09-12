@@ -12,6 +12,7 @@ import { accountStore } from "@/state/AccountStore";
 
 import AuthButtons from "@/views/AuthButtons.vue";
 import RevealablePasswordInput from "@/components/RevealablePasswordInput.vue";
+import TranslatedText from "@/components/TranslatedText.vue";
 
 const router = useRouter();
 
@@ -94,9 +95,9 @@ const errorHandler = (error: string) => {
               class="w-full p-2 border rounded"
             >
               <div class="text-sm font-medium mb-1 flex flex-row justify-between">
-                <span>Heslo</span>
+                <span><TranslatedText identifier="labels.password" /></span>
                 <PrefetchLink to="/ucet/zapomenute-heslo">
-                  Zapomenuté heslo?
+                  <TranslatedText identifier="buttons.forgotten_password" />
                 </PrefetchLink>
               </div>
             </RevealablePasswordInput>
@@ -108,7 +109,7 @@ const errorHandler = (error: string) => {
           :disabled="isPending"
           @click="handleLogin"
         >
-          Přihlásit se
+          <TranslatedText identifier="buttons.login" />
         </button>
         <AuthButtons
           @success="googleLogin"
