@@ -5,6 +5,7 @@ import { accountStore } from '@/state/AccountStore';
 import { useMutation } from '@tanstack/vue-query';
 import { useCountdown } from '@vueuse/core'
 import { shallowRef } from 'vue';
+import TranslatedText from '@/components/TranslatedText.vue';
 
 const countdownMaxSeconds = 30;
 const countdownSeconds = shallowRef(countdownMaxSeconds);
@@ -28,13 +29,13 @@ const resendEmail = () => {
 </script>
 
 <template>
-  <h1>Znovuodeslání ověřovacího e-mailu</h1>
+  <h1><TranslatedText identifier="email_verification.title" /></h1>
   <button
     :disabled="isActive"
     class="button-primary p-2 w-full text-center"
     @click="resendEmail"
   >
-    Odeslat ověřovací e-mail
+    <TranslatedText identifier="email_verification.send" />
   </button>
   <div
     v-if="isActive"

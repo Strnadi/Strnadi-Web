@@ -15,6 +15,9 @@ import { divIcon, type Icon } from 'leaflet';
 import Dropzone from '@/components/Dropzone.vue';
 import MaterialIcon from '@/components/MaterialIcon.vue';
 import TextualCoords from '@/components/map/TextualCoords.vue';
+import { translations } from '@/constants/Translations';
+import { applicationStore } from '@/state/ApplicationStore';
+import TranslatedText from '@/components/TranslatedText.vue';
 
 import "@vuepic/vue-datepicker/dist/main.css";
 
@@ -77,6 +80,7 @@ const uploadStore = reactive({
 });
 
 const queryClient = useQueryClient();
+const currentTranslations = computed(() => translations[applicationStore.language]);
 
 const dialect = ref("");
 const error = ref<string | null>(null);
@@ -144,17 +148,17 @@ const handleMapClick = (event: MapClickEvent) => {
 // Define the steps for the upload process
 const stepper = useStepper<Record<StepIdentifier, Step>>({
   'file': {
-    title: 'Soubory',
+    title: currentTranslations.value.upload.steps.file,
     isValid: () => (uploadStore.parts?.length ?? 0) > 0 && (uploadStore.parts?.every(part => part.file) ?? false),
   },
 
   'photos': {
-    title: 'Fotky',
+    title: currentTranslations.value.upload.steps.photos,
     isValid: () => true,
   },
 
   'location': {
-    title: 'Poloha',
+    title: currentTranslations.value.upload.steps.location,
     isValid: () => (uploadStore.parts?.every(part => part.location) ?? false),
     before: () => {
       MapEvents.on("click", handleMapClick);
@@ -165,12 +169,12 @@ const stepper = useStepper<Record<StepIdentifier, Step>>({
   },
 
   'info': {
-    title: 'Informace o nahrávce',
+    title: currentTranslations.value.upload.steps.info,
     isValid: () => !!uploadStore.dateTime && uploadStore.confirmUpload,
   },
 
   'submit': {
-    title: 'Odeslat',
+    title: currentTranslations.value.upload.steps.submit,
     isValid: () => true, // Final step, always valid to view
   }
 });
@@ -474,11 +478,15 @@ const currentPartIndex = ref(0);
                   :lng="part.location.lng"
                   type="municipality_part"
                 />
-                <template v-else>Poloha zatím neurčena.</template>
+                <template v-else><TranslatedText identifier="upload.location.not_set" /></template>
               </span>
             </li>
           </ul>
-          <p>Klikejte postupně do mapy pro přidání pozic.<br> Zvýrazněná nahrávka je aktuálně vybraná.</p>
+          <p>
+            <TranslatedText identifier="upload.location.instructions_line1" />
+            <br>
+            <TranslatedText identifier="upload.location.instructions_line2" />
+          </p>
         </div>
       </template>
 

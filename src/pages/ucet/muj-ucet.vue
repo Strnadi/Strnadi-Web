@@ -5,43 +5,44 @@ meta:
 
 <script setup lang="ts">
 import { accountStore } from '@/state/AccountStore'
+import TranslatedText from '@/components/TranslatedText.vue';
 </script>
 
 <template>
-  <h1>Můj profil</h1>
+  <h1><TranslatedText identifier="account.my_profile" /></h1>
   <span class="text-xl font-medium">{{ accountStore.user!.firstName }} {{ accountStore.user!.lastName }}</span>
   <span class="text-lg">{{ accountStore.user!.email }}</span>
-  <prefetch-link
+  <PrefetchLink
     to="/ucet/moje-nahravky"
     class="link"
   >
-    Moje nahrávky
-  </prefetch-link>
-  <prefetch-link
+    <TranslatedText identifier="account.my_recordings" />
+  </PrefetchLink>
+  <PrefetchLink
     to="/ucet/osobni-udaje"
     class="link"
   >
-    Osobní údaje
-  </prefetch-link>
-  <prefetch-link
+    <TranslatedText identifier="account.personal_data" />
+  </PrefetchLink>
+  <PrefetchLink
     to="/ucet/oznameni"
     class="link"
   >
-    Oznámení
-  </prefetch-link>
+    <TranslatedText identifier="account.notifications" />
+  </PrefetchLink>
 
   <template v-if="!accountStore.user?.isEmailVerified">
-    <prefetch-link to="/ucet/overeni-emailu">
-      Odeslat znovu ověřovací e-mail
-    </prefetch-link>
+    <PrefetchLink to="/ucet/overeni-emailu">
+      <TranslatedText identifier="account.resend_verification_email" />
+    </PrefetchLink>
   </template>
 
-  <prefetch-link
+  <PrefetchLink
     to="/ucet/sprava/smazat"
     class="p-2"
   >
-    <span class="text-red-500">Smazat účet</span>
-  </prefetch-link>
+    <span class="text-red-500"><TranslatedText identifier="account.delete_account" /></span>
+  </PrefetchLink>
 </template>
 
 <style scoped>
