@@ -13,6 +13,7 @@ import { accountStore } from "@/state/AccountStore";
 import AuthButtons from "@/views/AuthButtons.vue";
 import RevealablePasswordInput from "@/components/RevealablePasswordInput.vue";
 import TranslatedText from "@/components/TranslatedText.vue";
+import { t } from '@/utils/translation';
 
 const router = useRouter();
 
@@ -57,13 +58,13 @@ const errorHandler = (error: string) => {
 </script>
 
 <template>
-  <h1>Přihlášení</h1>
+  <h1><TranslatedText identifier="login.title" /></h1>
   <div class="flex flex-col items-center gap-y-6">
     <div v-if="error">
-      Chyba: {{ error }}
+      {{ t('login.error') }} {{ error }}
     </div>
     <div v-if="isPending">
-      Načítání...
+      {{ t('login.loading') }}
     </div>
     <div
       v-else
@@ -77,13 +78,13 @@ const errorHandler = (error: string) => {
             <label
               for="email"
               class="block text-sm font-medium mb-1"
-            >E-Mail</label>
+            ><TranslatedText identifier="labels.email" /></label>
             <input
               id="email"
               v-model="email"
               name="mail"
               type="email"
-              placeholder="E-Mail"
+              :placeholder="t('placeholders.email')"
               class="w-full p-2 border rounded"
             >
           </div>
@@ -91,7 +92,7 @@ const errorHandler = (error: string) => {
             <RevealablePasswordInput
               v-model="password"
               name="pass"
-              placeholder="Heslo"
+              :placeholder="t('placeholders.password')"
               class="w-full p-2 border rounded"
             >
               <div class="text-sm font-medium mb-1 flex flex-row justify-between">
