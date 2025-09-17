@@ -27,7 +27,7 @@ export interface MapProps {
 </script>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { useGeolocation } from '@vueuse/core';
 import { type Map as LeafletMap, type LeafletMouseEvent, Icon } from 'leaflet';
 
@@ -76,10 +76,13 @@ watch(
   ([ newLat, newLon, newZoom ]) => {
     if (!leafletMap) return;
 
-    leafletMap.flyTo([ newLat, newLon ], newZoom, {
-      animate: true,
-      duration: 2
-    })
+    // leafletMap.flyTo([ newLat, newLon ], newZoom, {
+    //   animate: true,
+    //   duration: 0.5
+    // })
+
+    center.value = [newLat, newLon];
+    zoom.value = newZoom;
   }
 );
 

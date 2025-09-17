@@ -39,7 +39,7 @@ defineProps<{
 const isExpanded = ref(false)
 
 onMounted(() => {
-  const handleKeydown = (e) => {
+  const handleKeydown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       isExpanded.value = false
     }

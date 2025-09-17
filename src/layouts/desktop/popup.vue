@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Back from '@/icons/interface/icon-back.svg';
+import TranslatedText from '@/components/TranslatedText.vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -21,10 +22,10 @@ const closePopup = () => {
         <div class="max-w-fit">
           <button
             class="secondary big max-w-fit"
-            @click="goBack"
+            @click="router.back"
           >
             <Back />
-            <span>Zpět</span>
+            <span><TranslatedText identifier="buttons.back" /></span>
           </button>
         </div>
         <component :is="Component" />

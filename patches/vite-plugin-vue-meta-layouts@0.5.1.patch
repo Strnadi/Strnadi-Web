@@ -1,0 +1,68 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index ff561440763191ef8767a61848ab93c6bf7cdbd9..68edcbadef0ffd674edf019b3a05feb34634bd6a 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -78,25 +78,27 @@ export function setupLayouts(routes) {
+       
+       if (top) {
+         ${skipTopLevelRouteLayout ? skipCode : ""}
+-        if (route.meta?.layout !== false) {
++        if (route.meta?.layout !== false && !route.meta?.isLayout) {
+           return {
+             path: route.path,
+             component: layouts[route.meta?.layout || '${defaultLayout}'],
+             // ref \u2192 https://github.com/JohnCampionJr/vite-plugin-vue-layouts/pull/97
+             children: route.path === '/' ? [route] : [{...route, path: ''}],
+             meta: {
++              ...route.meta,
+               isLayout: true
+             }
+           }
+         }
+       }
+ 
+-      if (route.meta?.layout) {
++      if (route.meta?.layout && !route.meta?.isLayout) {
+         return { 
+           path: route.path,
+           component: layouts[route.meta?.layout],
+           children: [ {...route, path: ''} ],
+           meta: {
++            ...route.meta,
+             isLayout: true
+           }
+         }
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 3af63d0a69f791d1b72015634442bf11fa1a7042..2c2356cf8f52dde9f5066d7c47fe051608c87d3d 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -76,25 +76,27 @@ export function setupLayouts(routes) {
+       
+       if (top) {
+         ${skipTopLevelRouteLayout ? skipCode : ""}
+-        if (route.meta?.layout !== false) {
++        if (route.meta?.layout !== false && !route.meta?.isLayout) {
+           return {
+             path: route.path,
+             component: layouts[route.meta?.layout || '${defaultLayout}'],
+             // ref \u2192 https://github.com/JohnCampionJr/vite-plugin-vue-layouts/pull/97
+             children: route.path === '/' ? [route] : [{...route, path: ''}],
+             meta: {
++              ...route.meta,
+               isLayout: true
+             }
+           }
+         }
+       }
+ 
+-      if (route.meta?.layout) {
++      if (route.meta?.layout && !route.meta?.isLayout) {
+         return { 
+           path: route.path,
+           component: layouts[route.meta?.layout],
+           children: [ {...route, path: ''} ],
+           meta: {
++            ...route.meta,
+             isLayout: true
+           }
+         }

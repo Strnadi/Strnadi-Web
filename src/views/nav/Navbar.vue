@@ -9,14 +9,13 @@ import AccountDropdown from '@/views/dropdown/account/AccountDropdown.vue';
 
 import UploadIcon from '@/icons/interface/icon-upload.svg';
 import DropdownIcon from '@/icons/interface/dropdown.svg';
-
-
-import MultiColorSquare from '@/components/MultiColorSquare.vue';
-
+import { applicationStore } from '@/state/ApplicationStore';
+import TranslatedText from '@/components/TranslatedText.vue';
+import { translations } from '@/constants/Translations';
 
 const { data: categories, isLoading, error } = useQuery({
   queryKey: ["categories"],
-  queryFn: async () => getArticleCategories()
+  queryFn: getArticleCategories
 })
 
 </script>
@@ -35,7 +34,7 @@ const { data: categories, isLoading, error } = useQuery({
       </div>
 
       <span v-if="isLoading">
-        Načítání...
+        <TranslatedText identifier="loading" />...
       </span>
 
       <span v-if="error">
@@ -89,12 +88,15 @@ const { data: categories, isLoading, error } = useQuery({
         </ul>
 
         <ul class="flex flex-row gap-x-4 items-center">
-          <PrefetchLink
-            to="/aplikace"
-            class="button-primary py-2 px-4 max-sm:text-sm"
-          >
-            Stáhnout aplikaci
-          </PrefetchLink>
+          <select @change="(e: Event) => applicationStore.language = (e.target as HTMLSelectElement).value">
+            <option
+              v-for="key in Object.keys(translations)"
+              :key="key"
+              :value="key"
+              :selected="key === applicationStore.language"
+            >{{ translations[key].lang_name }}</option>
+          </select>
+
           <li>
             <AccountDropdown v-if="accountStore.user" />
             <PrefetchLink
@@ -102,9 +104,16 @@ const { data: categories, isLoading, error } = useQuery({
               to="/ucet/vitejte"
               class="button-secondary py-2 px-4"
             >
-              Přihlásit se
+              <TranslatedText identifier="buttons.login" />
             </PrefetchLink>
           </li>
+
+          <PrefetchLink
+              to="/aplikace"
+              class="button-primary py-2 px-4 max-sm:text-sm"
+          >
+            <TranslatedText identifier="buttons.app" />
+          </PrefetchLink>
         </ul>
       </div>
     </div>

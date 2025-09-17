@@ -125,7 +125,9 @@ const nameRoutes = (routes: RouteRecordRaw[], suffix: string, predicate: (route:
   });
 };
 
-const welcomeGuard = (to: RouteRecordRaw, _from: RouteRecordRaw): boolean | RouteLocationRaw => {
+const welcomeGuard = (to: RouteLocationNormalized, _from: RouteLocationNormalized): boolean | RouteLocationRaw => {
+  console.log("meta", to);
+
   if(
        !localStorage.getItem("FirstLaunch")
     && !to.meta?.['landing-bypass']
@@ -134,8 +136,10 @@ const welcomeGuard = (to: RouteRecordRaw, _from: RouteRecordRaw): boolean | Rout
     return {
       path: '/vitejte',
       query: {
-        from: to.path
-      }
+        // ...to.query,
+        from: to.fullPath
+      },
+      // hash: to.hash
     };
   }
 
@@ -194,7 +198,7 @@ if (!import.meta.env.MODE) {
 
 routes = routes.guarded(welcomeGuard);
 
-console.log(routes)
+// console.log(routes)
 
 const app = createApp(App);
 const router = createRouter({

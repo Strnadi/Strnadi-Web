@@ -115,11 +115,6 @@ function submit() {
 
   if (stepper.current.value === stepper.steps.value.done) register()
 
-  if(stepper.isLast.value) {
-    router.replace('/')
-    accountStore.login(regData.value)
-  }
-
 }
 
 function allStepsBeforeAreValid(index: number): boolean {
@@ -134,7 +129,8 @@ function allStepsBeforeAreValid(index: number): boolean {
 const router = useRouter()
 const { mutate: registerMutate, isPending: isRegPending, isError: isRegError, data: regData, error: regError } = useMutation({
   mutationFn: (data: SignUpRequest) => postRegister(data),
-  onSuccess: () => {
+  onSuccess: (jwt: string) => {
+    accountStore.login(jwt)
     registerStore.reset()
   },
 })
@@ -231,7 +227,7 @@ watch(() => stepper.current.value, (newValue) => {
               type="text"
             >
             <p class="text-gray-600 text-sm">
-              Pokud nevyplníte … zobrazováno Vaše celé jméno.
+              Pokud nevyplníte, na webu bude zobrazováno Vaše celé jméno.
             </p>
           </div>
         </div>
@@ -261,7 +257,7 @@ watch(() => stepper.current.value, (newValue) => {
               v-model:text="registerStore.city"
             />
             <p class="text-gray-600">
-              Nepovinné … na vašem profilu.
+              Nepovinné, bude zobrazováno na vašem profilu.
             </p>
           </div>
         </div>
@@ -271,6 +267,9 @@ watch(() => stepper.current.value, (newValue) => {
           v-if="stepper.isCurrent('password')"
           class="flex flex-col gap-y-4"
         >
+          <p class="text-gray-600">
+            Heslo musí mít minimálně 8 znaků a 1 číslici.
+          </p>
           <RevealablePasswordInput
             v-model="registerStore.password"
             label="Heslo"

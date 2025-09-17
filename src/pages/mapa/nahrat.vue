@@ -15,6 +15,7 @@ import { divIcon, type Icon } from 'leaflet';
 import Dropzone from '@/components/Dropzone.vue';
 import MaterialIcon from '@/components/MaterialIcon.vue';
 import TextualCoords from '@/components/map/TextualCoords.vue';
+import TranslatedText from '@/components/TranslatedText.vue';
 
 import "@vuepic/vue-datepicker/dist/main.css";
 
@@ -338,19 +339,19 @@ const currentPartIndex = ref(0);
 <template>
   <template v-if="!accountStore.user">
     <h1 class="text-2xl">
-      Nahrát
+      <TranslatedText identifier="upload.title" />
     </h1>
     <p class="font-medium">
-      Je potřeba se nejdříve přihlásit.
+      <TranslatedText identifier="upload.login_required" />
     </p>
   </template>
 
   <template v-else-if="!accountStore.user.isEmailVerified">
     <h1 class="text-2xl">
-      Nahrát
+      <TranslatedText identifier="upload.title" />
     </h1>
     <p class="font-medium">
-      Je potřeba si nejdříve ověřit svůj e-mail.
+      <TranslatedText identifier="upload.email_verification_required" />
     </p>
   </template>
 
@@ -372,15 +373,15 @@ const currentPartIndex = ref(0);
           @drop="onSoundDrop"
         >
           <template #dragging>
-            <p>Upusťte soubory sem pro nahrání</p>
+            <p><TranslatedText identifier="upload.drop_files_here" /></p>
           </template>
 
           <div class="flex flex-col items-center gap-y-1">
             <div>
-              <p>Přetáhněte nebo klikněte sem pro vybrání</p>
-              <p>jednoho nebo několika zvukových souborů</p>
+              <p><TranslatedText identifier="upload.select_or_drag_files" /></p>
+              <p><TranslatedText identifier="upload.select_multiple_audio" /></p>
             </div>
-            <p>(.wav, .mp3, .flac, .aac, .ogg)</p>
+            <p><TranslatedText identifier="upload.audio_formats" /></p>
 
             <ul
               class="flex flex-col w-full"
@@ -403,7 +404,7 @@ const currentPartIndex = ref(0);
                   class="text-red-500"
                   @click="uploadStore.parts?.splice(index, 1)"
                 >
-                  Smazat
+                  <TranslatedText identifier="upload.delete" />
                 </button>
               </li>
             </ul>
@@ -419,11 +420,11 @@ const currentPartIndex = ref(0);
           @drop="onPhotoDrop"
         >
           <template #dragging>
-            <p>Upusťte soubory sem pro nahrání</p>
+            <p><TranslatedText identifier="upload.drop_files_here" /></p>
           </template>
 
           <div class="flex flex-col items-center gap-y-1">
-            <p>Klikněte nebo přetáhněte fotky z místa dění</p>
+            <p><TranslatedText identifier="upload.select_or_drag_photos" /></p>
 
             <ul
               class="flex flex-col w-full"
@@ -442,7 +443,7 @@ const currentPartIndex = ref(0);
                   class="danger"
                   @click="uploadStore.photos?.splice(index, 1)"
                 >
-                  Odebrat
+                  <TranslatedText identifier="upload.remove" />
                 </button>
               </li>
             </ul>
@@ -474,11 +475,11 @@ const currentPartIndex = ref(0);
                   :lng="part.location.lng"
                   type="municipality_part"
                 />
-                <template v-else>Poloha zatím neurčena.</template>
+                <template v-else><TranslatedText identifier="upload.location_not_set" /></template>
               </span>
             </li>
           </ul>
-          <p>Klikejte postupně do mapy pro přidání pozic.<br> Zvýrazněná nahrávka je aktuálně vybraná.</p>
+          <p><TranslatedText identifier="upload.map_instructions" /></p>
         </div>
       </template>
 
@@ -497,7 +498,7 @@ const currentPartIndex = ref(0);
               <label
                 for="title"
                 class="block text-sm font-medium w-full"
-              >Titulek</label>
+              ><TranslatedText identifier="upload.title_label" /></label>
               <input
                 id="title"
                 v-model="uploadStore.title"
@@ -509,7 +510,7 @@ const currentPartIndex = ref(0);
               <label
                 for="note"
                 class="block text-sm font-medium"
-              >Poznámka</label>
+              ><TranslatedText identifier="upload.note_label" /></label>
               <textarea
                 id="note"
                 v-model="uploadStore.note"
@@ -520,7 +521,7 @@ const currentPartIndex = ref(0);
               <label
                 for="device"
                 class="block text-sm font-medium"
-              >Nahrávací zařízení</label>
+              ><TranslatedText identifier="upload.device_label" /></label>
               <input
                 id="device"
                 v-model="uploadStore.device"
@@ -532,7 +533,7 @@ const currentPartIndex = ref(0);
               <label
                 for="birdCount"
                 class="block text-sm font-medium"
-              >Počet strnadů ({{ uploadStore.birdCount }})</label>
+              ><TranslatedText identifier="upload.bird_count_label" /> ({{ uploadStore.birdCount }})</label>
               <input
                 id="birdCount"
                 v-model="uploadStore.birdCount"
@@ -547,7 +548,7 @@ const currentPartIndex = ref(0);
             v-if="uploadStore.dialects.length > 0"
             class="flex flex-col gap-y-2"
           >
-            <h2>Nářečí</h2>
+            <h2><TranslatedText identifier="upload.dialects" /></h2>
             <ul class="flex flex-row gap-x-4">
               <li
                 v-for="(addedDialect, index) in uploadStore.dialects"
@@ -560,7 +561,7 @@ const currentPartIndex = ref(0);
           </div>
 
 
-          <h2>Části nahrávky</h2>
+          <h2><TranslatedText identifier="upload.parts" /></h2>
           <ul class="flex flex-col gap-y-2">
             <li
               v-for="(part, index) in uploadStore.parts"
@@ -578,7 +579,7 @@ const currentPartIndex = ref(0);
                 class="secondary px-2 py-1"
                 @click="uploadStore.removePartByIndex(index)"
               >
-                Odebrat
+                <TranslatedText identifier="upload.remove" />
               </button>
             </li>
           </ul>
@@ -590,34 +591,34 @@ const currentPartIndex = ref(0);
               type="checkbox"
             >
             <p class="text-gray-500">
-              Nahrávku jsem zkontroloval(a) a chci ji odeslat do<br> databáze. Jsem si vědom(a) tím, že v ní zůstane
-              i po smazání mého<br> účtu a že smazána bude jen ve vyjimečných případech.
+              <TranslatedText identifier="upload.confirm_upload_text" />
             </p>
           </div>
         </div>
       </template>
 
       <template v-if="stepper.isCurrent('submit')">
-        <p v-if="isPending">Odesílání vaší nahrávky do databáze...</p>
-        <p v-else>Nahrávka byla úspěšně odeslána.</p>
+        <p v-if="isPending"><TranslatedText identifier="upload.uploading" /></p>
+        <p v-else><TranslatedText identifier="upload.uploaded" /></p>
       </template>
 
       <!-- Navigation Buttons -->
-      <div class="flex justify-between mt-4">
+      <div class="flex flex-row-reverse justify-between w-full mt-4">
         <button
-          type="button"
-          :disabled="stepper.isFirst.value"
-          class="secondary p-2"
-          @click="stepper.goToPrevious()"
-        >
-          Zpět
-        </button>
-        <button
+          v-if="!stepper.isLast.value"
           type="submit"
           :disabled="!(stepper.current.value.isValid() && allStepsBeforeAreValid(stepper.index.value))"
           class="primary p-2"
         >
-          Další
+          <TranslatedText identifier="upload.next" />
+        </button>
+        <button
+          v-if="!stepper.isFirst.value && !stepper.isLast.value"
+          type="button"
+          class="secondary p-2"
+          @click="stepper.goToPrevious()"
+        >
+          <TranslatedText identifier="upload.back" />
         </button>
       </div>
     </form>

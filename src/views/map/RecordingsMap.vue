@@ -5,10 +5,12 @@ import { type LeafletMouseEvent } from 'leaflet';
 import type { Polygon, Marker } from '@/views/map/Map.vue';
 import { refDebounced } from '@vueuse/core';
 
-let positionStack = ref([
-  [ 49.9, 15.5, 8.25 ]
-]);
-const currentCenter = computed<[number, number, number]>(() => positionStack.value[positionStack.value.length - 1] as [number, number, number]);
+// let positionStack = ref([
+//   [ 49.9, 15.5, 8.25 ]
+// ]);
+// const currentCenter = computed<[number, number, number]>(() => positionStack.value[positionStack.value.length - 1] as [number, number, number]);
+
+const currentCenter = ref<[number, number, number]>([ 49.9, 15.5, 8.25 ]);
 
 export type MapFilter = 'all' | 'new' | 'old' | 'my' | 'others' | 'any-dialect';
 export interface MapClickEvent {
@@ -41,26 +43,27 @@ export const MapStore = reactive<{
   aerial: boolean;
   filter: MapFilter;
   unmove(): void;
-  move(newCenter: [number, number], newZoom: number, override?: boolean): void;
+  move(newCenter: [number, number], newZoom?: number, override?: boolean): void;
 }>({
   scale: false,
   aerial: false,
   filter: 'new',
   markers: {},
 
-  move(newCenter: [number, number], newZoom: number, override = false) {
+  move(newCenter: [number, number], newZoom?: number, override = false) {
 
-    if(!override) {
-      positionStack.value.push([...newCenter, newZoom]);
-    } else {
-      positionStack.value[positionStack.value.length - 1] = [...newCenter, newZoom];
-    }
+    // if(!override) {
+    //   positionStack.value.push([...newCenter, newZoom]);
+    // } else {
+    //   positionStack.value[positionStack.value.length - 1] = [...newCenter, newZoom];
+    // }
 
+    currentCenter.value = [...newCenter, newZoom ?? currentCenter.value[2]];
   },
 
   unmove() {
 
-    positionStack.value.pop();
+    // positionStack.value.pop();
 
   },
 });
@@ -140,12 +143,11 @@ const polygons = refDebounced(
 ]), 2500);
 
 const oldCutoff = new Date(2024, 11, 31);
-const filter = ref<MapFilter>('new');
 const markers = computed<Marker[]>(() => {
 
   return recordings.value
     ?.filter(r => {
-      switch (filter.value) {
+      switch (MapStore.filter) {
         case 'my': return r.userId === accountStore.user?.id;
         case 'others': return r.userId !== accountStore.user?.id;
         case 'old': return new Date(r.createdAt) <= oldCutoff;

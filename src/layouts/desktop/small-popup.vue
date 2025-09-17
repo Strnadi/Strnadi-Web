@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
+import TranslatedText from '@/components/TranslatedText.vue';
 import Back from '@/icons/interface/icon-back.svg';
 
 const router = useRouter();
@@ -25,7 +26,7 @@ const closePopup = () => {
             @click="closePopup"
           >
             <Back />
-            <span>Zpět</span>
+            <span><TranslatedText identifier="buttons.back" /></span>
           </button>
         </div>
         <component :is="Component" />

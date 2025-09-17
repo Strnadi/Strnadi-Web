@@ -21,7 +21,7 @@ import PictureIcon from '@/icons/interface/icon-picture.svg';
       <LocationSearch
         placeholder="Hledat..."
         class="drop-shadow-lg rounded-2xl m-2 p-4 w-full h-12"
-        @update:location="searchUpdateCenter"
+        @update:location="newLocation => MapStore.move(newLocation)"
       />
     </div>
 

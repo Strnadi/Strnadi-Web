@@ -7,10 +7,12 @@ meta:
 import { getPasswordResetRequest } from "@/api/account";
 import { useMutation } from "@tanstack/vue-query";
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 
 const email = ref("");
+const router = useRouter();
 
-const { mutate } = useMutation({
+const { mutate, isSuccess } = useMutation({
   mutationFn: ({ email }: { email: string }) => getPasswordResetRequest(email)
 })
 
@@ -24,7 +26,7 @@ const submit = () => { mutate({ email: email.value }); }
       Zapomenuté heslo
     </h1>
 
-    <div class="flex flex-col items-center gap-y-6 w-full">
+    <div v-if="!isSuccess" class="flex flex-col items-center gap-y-6 w-full">
       <div class="w-full flex flex-col gap-y-1">
         <label
           for="email"
@@ -43,6 +45,12 @@ const submit = () => { mutate({ email: email.value }); }
       >
         Odeslat kód
       </button>
+    </div>
+
+    <div v-else class="flex flex-col items-center gap-y-6 w-full">
+      <span>E-mail úspěšně odeslán</span>
+
+      <button class="secondary w-full h-10" @click="router.push('/')">Zavřít</button>
     </div>
   </div>
 </template>

@@ -94,11 +94,11 @@ const cancelEdit = () => {
   // Optionally reset fields if needed, though toggleEdit already does this when starting
 };
 
-onMounted(() => {
-  MapStore.move([ recordingPart.gpsLatitudeStart, recordingPart.gpsLongitudeStart ], 17);
-})
+// onMounted(() => {
+//   MapStore.move([ recordingPart.gpsLatitudeStart, recordingPart.gpsLongitudeStart ], 17);
+// })
 
-onUnmounted(MapStore.unmove);
+// onUnmounted(MapStore.unmove);
 
 // todo move when selecting diff recordings (onBeforeRouteUpdate)
 
@@ -218,7 +218,7 @@ onUnmounted(MapStore.unmove);
         </ul>
       </div>
 
-      <ToggleShow class="w-full">
+      <!-- <ToggleShow class="w-full">
         <template #toggle-button>
           <button class="secondary text-sm p-1 px-2">
             Zobrazit spektrogram
@@ -257,9 +257,9 @@ onUnmounted(MapStore.unmove);
             </template>
           </Spectrogram>
         </KeepAlive>
-      </ToggleShow>
+      </ToggleShow> -->
 
-      <template v-if="accountStore.user?.role === 'admin' || accountStore.user?.id === recording.userId">
+      <!-- <template v-if="accountStore.user?.role === 'admin' || accountStore.user?.id === recording.userId">
         <template v-if="editing">
           <button
             class="success p-2"
@@ -296,7 +296,7 @@ onUnmounted(MapStore.unmove);
             Požádat o smazání
           </button>
         </template>
-      </template>
+      </template> -->
     </div>
   </template>
   <template v-else>

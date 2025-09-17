@@ -17,9 +17,7 @@ export const useEventLast = <
   last: boolean = true
 ) => {
   onMounted(() => {
-
     emitter[last ? 'last' : 'on'](event, handler);
-
   });
 
   onUnmounted(() => {

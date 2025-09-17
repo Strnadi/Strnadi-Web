@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite --clearScreen=false",
-    "build": "vue-tsc -b && vite build",
+    "build": "vue-tsc -b --noCheck && vite build",
     "preview": "vite preview",
     "format": "prettier",
-    "check": "vue-tsc -b",
+    "check": "vue-tsc --noEmit -p tsconfig.app.json",
     "lint": "eslint"
   },
   "dependencies": {
@@ -80,9 +80,13 @@
     "@firebase/util",
     "@parcel/watcher",
     "@sentry/cli",
+    "@tailwindcss/oxide",
     "core-js",
     "esbuild",
     "protobufjs",
     "vue-demi"
-  ]
+  ],
+  "patchedDependencies": {
+    "vite-plugin-vue-meta-layouts@0.5.1": "patches/vite-plugin-vue-meta-layouts@0.5.1.patch"
+  }
 }

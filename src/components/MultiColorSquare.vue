@@ -43,7 +43,7 @@ const squareStyle = computed(() => {
   }
 
   if (parsedColors.value.length === 1) {
-    backgroundValue = parsedColors.value[0];
+    backgroundValue = parsedColors.value[0]!;
   } else if (props.gradient) {
     backgroundValue = `linear-gradient(to bottom, ${parsedColors.value.join(', ')})`;
   } else {

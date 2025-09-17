@@ -108,16 +108,16 @@ const cancelEdit = () => {
   // Optionally reset fields if needed, though toggleEdit already does this when starting
 };
 
-watch(recordingPart, (currentValue) => {
-  if(currentValue) {
-    MapStore.move([
-      currentValue.gpsLatitudeStart,
-      currentValue.gpsLongitudeStart
-    ], 17);
-  }
-}, { immediate: true });
+// watch(recordingPart, (currentValue) => {
+//   if(currentValue) {
+//     MapStore.move([
+//       currentValue.gpsLatitudeStart,
+//       currentValue.gpsLongitudeStart
+//     ], 17);
+//   }
+// }, { immediate: true });
 
-onUnmounted(MapStore.unmove);
+// onUnmounted(MapStore.unmove);
 
 // todo move when selecting diff recordings (onBeforeRouteUpdate)
 
@@ -237,7 +237,7 @@ onUnmounted(MapStore.unmove);
         </ul>
       </div>
 
-      <ToggleShow class="w-full">
+      <!-- <ToggleShow class="w-full">
         <template #toggle-button>
           <button class="secondary text-sm p-1 px-2">
             Zobrazit spektrogram
@@ -312,7 +312,7 @@ onUnmounted(MapStore.unmove);
             Požádat o smazání
           </button>
         </template>
-      </template>
+      </template> -->
     </div>
   </template>
   <template v-else>

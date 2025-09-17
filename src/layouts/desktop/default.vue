@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { notificationStore } from '@/state/NotificationStore';
+import { applicationStore } from '@/state/ApplicationStore';
 import Map, { MapEvents } from '@/views/map/RecordingsMap.vue';
 import MapControls from '@/views/map/controls/Desktop.vue';
 import Navbar from '@/views/nav/Navbar.vue';
@@ -34,19 +34,19 @@ useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
   >
     <Navbar />
     <aside
-      v-if="notificationStore.notifications.length"
+      v-if="applicationStore.notifications.length"
       class="notifications"
     >
       <ul class="flex flex-col-reverse gap-y-2">
         <li
-          v-for="(notification, index) in notificationStore.notifications"
+          v-for="(notification, index) in applicationStore.notifications"
           :key="index"
         >
           <Notification
             :kind="notification.kind"
             :title="notification.title"
             :message="notification.message"
-            @dismiss="notificationStore.notifications.splice(index, 1)"
+            @dismiss="applicationStore.notifications.splice(index, 1)"
           />
         </li>
       </ul>

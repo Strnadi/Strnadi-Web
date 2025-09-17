@@ -30,7 +30,7 @@ export const accountStore = reactive({
           name: user.firstName,
           surname: user.lastName
         }
-      );  
+      );
     }
   },
 
@@ -49,13 +49,10 @@ persist(accountStore, {
       const now = Math.floor(Date.now() / 1000);
       const exp = store.token_object.exp;
 
+      // Let's renew the token if it's expired
       if (exp && now > exp) {
-        
         const newJWT = await getRenewedJWT(store.token);
         store.login(newJWT);
-
-      } else {
-        store.logout();
       }
     }
   }

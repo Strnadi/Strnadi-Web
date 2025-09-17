@@ -9,6 +9,7 @@ import { onMounted } from 'vue';
 
 import AppleIcon from '@/icons/apple.svg';
 import AndroidIcon from '@/icons/android.svg';
+import TranslatedText from '@/components/TranslatedText.vue';
 
 const isApple = (): boolean => {
   const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
@@ -44,7 +45,7 @@ const location = window.location.href;
         />
 
         <span class="font-medium text-justify [text-align-last:center] text-sm w-1/2">
-          Toto je "chytrý" QR kód, který vás přesměruje přímo na ten správný obchod s aplikacemi pro vaši platformu.
+          <TranslatedText identifier="app.qr_code" />
         </span>
       </div>
 
@@ -54,7 +55,7 @@ const location = window.location.href;
             <td><AndroidIcon /></td>
             <td>
               <span>
-                Na obchodě Google Play se aplikace jmenuje Strnadi a je v předběžném přístupu.
+                <TranslatedText identifier="app.google_play" />
               </span>
             </td>
           </tr>
@@ -62,7 +63,7 @@ const location = window.location.href;
             <td><AppleIcon /></td>
             <td>
               <span>
-                Vlastníci telefonů značky Apple si musí aplikaci stáhnout přes beta testovací aplikaci
+                <TranslatedText identifier="app.apple" />
                 <a
                   href="https://developer.apple.com/testflight"
                   external="true"
@@ -75,8 +76,8 @@ const location = window.location.href;
 
       <hr>
 
-      <span class="font-medium text-justify italic [text-align-last:center] text-sm">
-        Aplikace, stejně jako web, stále prochází velmi bouřlivým vývojem. Za chyby se omlouváme. Těšte se na časté aktualizace a vylepšování.
+      <span class="font-medium text-justify italic [text-align-last:center] text-sm text-red-600">
+        <TranslatedText identifier="app.development" />
       </span>
     </div>
   </div>

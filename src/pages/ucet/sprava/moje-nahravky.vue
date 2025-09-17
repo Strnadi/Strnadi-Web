@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { getRecordings } from '@/api/recordings';
 import { accountStore } from '@/state/AccountStore';
 import { computed } from 'vue';
+import TranslatedText from '@/components/TranslatedText.vue';
 
 const { data: recordings, isError, isLoading } = useQuery({
   queryKey: ['my-recordings'],
@@ -24,10 +25,10 @@ console.log("Here");
 <template>
   <h1>Moje nahrávky</h1>
   <template v-if="isLoading">
-    Loading...
+    <TranslatedText identifier="loading" />...
   </template>
   <template v-if="isError">
-    Error loading recordings.
+    <TranslatedText identifier="errors.recordings.loading" />
   </template>
   <template v-else>
     <ul
@@ -54,7 +55,7 @@ console.log("Here");
       </li>
     </ul>
     <p v-else>
-      Zatím zde nic není.
+      <translated-text identifier="empty" />
     </p>
   </template>
 </template>

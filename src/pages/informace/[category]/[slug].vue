@@ -1,6 +1,8 @@
 <route>
 meta:
   layout: desktop/side
+  landing-bypass: true
+
 </route>
 
 <script setup lang="ts">
@@ -50,7 +52,7 @@ const options = {
 </script>
 
 <template>
-  <div class="max-w-full">
+  <div class="max-w-full pb-16">
     <vue-markdown
       v-if="markdown"
       :source="markdown"
