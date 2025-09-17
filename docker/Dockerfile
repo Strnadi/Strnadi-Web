@@ -2,6 +2,7 @@
 FROM oven/bun:alpine AS build
 WORKDIR /usr/src/app
 
+COPY patches patches
 COPY package.json .env ./
 RUN bun install
 
