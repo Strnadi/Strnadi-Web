@@ -43,7 +43,7 @@ const { data: suggestions } = useQuery({
   }, 500),
 
   enabled: computed(() => text.value !== undefined && text.value.length >= (props.searchThreshold || 3)),
-})
+});
 
 const update = () => {
   if (!suggestions.value) {

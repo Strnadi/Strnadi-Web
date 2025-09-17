@@ -13,7 +13,6 @@ async function initializePushNotifications(_app: FirebaseApp, messaging: Messagi
   if (Notification.permission === "granted" && accountStore.user) {
 
     const registration = await navigator.serviceWorker.getRegistration("/");
-  
     try {
       const token = await getToken(messaging, {
         vapidKey,
@@ -35,7 +34,6 @@ async function initializePushNotifications(_app: FirebaseApp, messaging: Messagi
     } catch (error) {
       console.error("An error occurred while retrieving token. ", error);
     }
-    
   }
 }
 
@@ -50,4 +48,3 @@ export default {
     }
   },
 };
-

@@ -16,7 +16,7 @@ const route = useRoute();
     <h1 class="text-center">
       <TranslatedText identifier="project_name" />
     </h1>
-    <span class="text-md text-justify [text-align-last:center]">Projekt občanské vědy zaměřený na studium rozmanitosti ptačího zpěvu. Nahráváním zpěvu strnadů obecných po celém Česku můžete přispět k poznání, jak se v krajině udržují ptačí nářečí.</span>
+    <span class="text-md text-justify [text-align-last:center]"><TranslatedText identifier="project_description" /></span>
 
     <span class="font-bold text-justify text-sm text-red-400">
       <TranslatedText identifier="development" />

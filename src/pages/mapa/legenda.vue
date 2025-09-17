@@ -21,7 +21,8 @@ import MultiColorSquare from '@/components/MultiColorSquare.vue';
     >
       <multi-color-square
         :colors="[icon]"
-        class="w-8 h-8 m-1 !border-transparent rounded-md"
+        size="32px"
+        class="m-1 !border-transparent rounded-md"
       />
       <span class="text-sm font-medium">{{ key }}</span>
     </div>

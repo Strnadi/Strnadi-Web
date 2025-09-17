@@ -10,7 +10,7 @@ export interface PersistOptions<T> {
   paths: string[];
   storage: Storage;
   syncCallback: (store: T) => void | Promise<void>;
-};
+}
 
 /* Persists a Vue reactive object */
 export const persist = <T>(object: T, options?: Partial<PersistOptions<T>>) => {

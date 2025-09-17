@@ -1,3 +1,8 @@
+<script setup lang="ts">
+import TranslatedText from '../TranslatedText.vue';
+
+</script>
+
 <template>
-  Načítání...
+  <TranslatedText identifier="loading" />...
 </template>

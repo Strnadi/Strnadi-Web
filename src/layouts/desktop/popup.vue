@@ -22,7 +22,7 @@ const closePopup = () => {
         <div class="max-w-fit">
           <button
             class="secondary big max-w-fit"
-            @click="goBack"
+            @click="router.back"
           >
             <Back />
             <span><TranslatedText identifier="buttons.back" /></span>

@@ -5,15 +5,18 @@ meta:
 
 <script setup lang="ts">
 import HorizontalLineWithText from "@/components/HorizontalLineWithText.vue";
+import TranslatedText from "@/components/TranslatedText.vue";
 </script>
 
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
     <img src="/logo-no-text.svg">
     <h1 class="text-center">
-      Nářečí českých strnadů
+      <TranslatedText identifier="project_name" />
     </h1>
-    <span class="text-xl text-center">Projekt občanské vědy</span>
+    <span class="text-xl text-center">
+      <TranslatedText identifier="project_description_short" />
+    </span>
 
     <div class="flex flex-col items-center gap-y-2 w-full">
       <PrefetchLink

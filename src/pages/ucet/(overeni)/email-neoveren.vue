@@ -20,7 +20,7 @@ const isMobile = computed(() => {
       <h2>Nářečí českých strnadů</h2>
     </div>
     <span class="text-xl text-center">
-      Váš e-mail bohužel nebyl ověřen.
+      Váš e-mail se bohužel nepodařilo ověřit.
     </span>
     <a
       v-if="isMobile"
