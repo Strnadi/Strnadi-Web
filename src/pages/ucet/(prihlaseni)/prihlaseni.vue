@@ -4,11 +4,13 @@ meta:
 </route>
 
 <script setup lang="ts">
+import * as jose from "jose";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useMutation } from "@tanstack/vue-query";
-import { postGoogleLogin, postLogin } from "@/api/account";
+import {postAppleLogin, postGoogleLogin, postLogin} from "@/api/account";
 import { accountStore } from "@/state/AccountStore";
+import { registerStore } from "@/pages/ucet/(prihlaseni)/registrace.vue";
 
 import AuthButtons from "@/views/AuthButtons.vue";
 import RevealablePasswordInput from "@/components/RevealablePasswordInput.vue";
@@ -30,6 +32,31 @@ const { mutate: googleLoginMutate, isPending: googleLoginPending, error: googleL
   },
 });
 
+const { mutate: appleLoginMutate, isPending: appleLoginPending, error: appleLoginMutationError } = useMutation({
+  mutationFn: (loginInfo: { idToken: string, givenName?: string, familyName?: string }) =>
+      postAppleLogin(loginInfo),
+
+  onSuccess: async (data) => {
+
+    console.log("data", data)
+
+    if (data.exists === false) {
+      registerStore.name = data.firstName;
+      registerStore.surname = data.lastName;
+      registerStore.email = data.email;
+      registerStore.appleId = data.appleid;
+      registerStore.isExternalSignup = true;
+      registerStore.jwt = data.jwt;
+      await router.push("/ucet/registrace");
+    } else {
+      await accountStore.login(data.jwt);
+      await router.replace('/');
+    }
+
+  },
+});
+
+
 const { mutate: loginMutate, isPending: loginPending, error: loginError } = useMutation({
   mutationFn: (loginInfo: { email: string; password: string }) =>
     postLogin(loginInfo),
@@ -40,15 +67,23 @@ const { mutate: loginMutate, isPending: loginPending, error: loginError } = useM
   },
 });
 
-const isPending = computed(() => loginPending.value || googleLoginPending.value)
-const error = computed(() => loginError.value || googleLoginMutationError.value || oauth2_error.value)
+const isPending = computed(() => loginPending.value || googleLoginPending.value || appleLoginPending.value)
+const error = computed(() => loginError.value || googleLoginMutationError.value || oauth2_error.value || appleLoginMutationError.value)
 
 const handleLogin = () => {
   loginMutate({ email: email.value, password: password.value });
 };
 
-const googleLogin = (idToken: string) => {
-  googleLoginMutate({ idToken })
+const success = (idToken: string, user: string) => {
+  const jwt = jose.decodeJwt(idToken);
+
+  const parsedUser = user !== '' ? JSON.parse(user) : {};
+
+  if(jwt.iss === 'https://appleid.apple.com') {
+    appleLoginMutate({ idToken, givenName: parsedUser.name?.firstName, familyName: parsedUser.name?.lastName });
+  } else {
+    googleLoginMutate({ idToken })
+  }
 }
 
 const errorHandler = (error: string) => {
@@ -112,7 +147,7 @@ const errorHandler = (error: string) => {
           <TranslatedText identifier="buttons.login" />
         </button>
         <AuthButtons
-          @success="googleLogin"
+          @success="success"
           @error="errorHandler"
         />
       </div>

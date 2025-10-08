@@ -49,6 +49,7 @@ const { data: categories, isLoading, error } = useQuery({
               <PrefetchLink
                 to="/mapa/nahrat"
                 class="dropdown-item"
+                v-wave
               >
                 <UploadIcon />
                 Nahrát
@@ -74,6 +75,7 @@ const { data: categories, isLoading, error } = useQuery({
               <prefetch-link
                 :to="`/informace/${category.name}/${kebabize(article.name)}`"
                 class="dropdown-item !flex !flex-col !items-start"
+                v-wave
               >
                 <span>{{ article.name }}</span>
                 <span
@@ -88,14 +90,28 @@ const { data: categories, isLoading, error } = useQuery({
         </ul>
 
         <ul class="flex flex-row gap-x-4 items-center">
-          <select @change="(e: Event) => applicationStore.language = (e.target as HTMLSelectElement).value">
-            <option
-              v-for="key in Object.keys(translations)"
-              :key="key"
-              :value="key"
-              :selected="key === applicationStore.language"
-            >{{ translations[key].lang_name }}</option>
-          </select>
+          <Dropdown>
+            <template #title>
+<!--              {{ translations[applicationStore.language].lang_name }}-->
+              {{ translations[applicationStore.language].lang_name }}
+              <DropdownIcon />
+            </template>
+
+            <ul>
+              <li
+                v-for="key in (Object.keys(translations) as (keyof typeof translations)[])"
+                :key="key"
+                class="dropdown-item"
+                v-wave
+              >
+                <button
+                    :class="key === applicationStore.language ? 'font-bold' : ''"
+                    @click="() => applicationStore.language = key"
+                >{{ translations[key].lang_name }}</button>
+              </li>
+            </ul>
+
+          </Dropdown>
 
           <li>
             <AccountDropdown v-if="accountStore.user" />

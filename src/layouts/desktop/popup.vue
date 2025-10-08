@@ -23,6 +23,7 @@ const closePopup = () => {
           <button
             class="secondary big max-w-fit"
             @click="router.back"
+            w-vave
           >
             <Back />
             <span><TranslatedText identifier="buttons.back" /></span>

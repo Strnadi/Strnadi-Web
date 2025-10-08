@@ -1,6 +1,7 @@
 import type { Numeric } from "@/types/basic";
 import axios from "axios";
 import type { JWTPayload } from "jose";
+import * as jose from "jose";
 
 export interface JWTObject extends JWTPayload {
 };
@@ -35,6 +36,7 @@ export interface SignUpRequest {
   lastName: string;
   nickname: string | null;
   consent: boolean;
+  appleId?: string | null;
 }
 
 export interface UserUpdateRequest {
@@ -98,11 +100,34 @@ export const getCurrentUserInfo = async (token: string): Promise<User> => {
 export const postLogin = async (loginData: LoginRequest): Promise<OAuth2Token> =>
   genericPost("login", loginData);
 
-export const postRegister = async (signUpData: SignUpRequest): Promise<OAuth2Token> =>
-  genericPost("sign-up", signUpData);
+export const postRegister = async (signUpData: SignUpRequest, signUpJwt?: string): Promise<OAuth2Token> => {
+    const response = await axios.post(`/auth/sign-up`, signUpData, {
+        headers:  signUpJwt ? {
+            'Authorization': `Bearer ${signUpJwt}`,
+        } : {}
+    });
+    return response.data;
+}
 
 export const postGoogleLogin = async (loginInfo: { idToken: string }): Promise<OAuth2Token> =>
   genericPost("login-google", loginInfo);
+
+export const postAppleLogin = async (loginInfo: { idToken: string, givenName?: string, familyName?: string }): Promise<OAuth2Token> => {
+
+    const token = jose.decodeJwt(loginInfo.idToken);
+
+    const data = {
+        idToken: loginInfo.idToken,
+        email: token['email'],
+        userIdentifier: token.sub,
+        givenName: loginInfo.givenName ?? '',
+        familyName: loginInfo.familyName ?? '',
+    }
+
+    return genericPost("apple", data);
+
+}
+
 
 export const postGoogleSignup = async (signupInfo: { idToken: string }): Promise<OAuth2SignUpResponse> =>
   genericPost("sign-up-google", signupInfo);

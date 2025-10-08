@@ -137,7 +137,7 @@ const welcomeGuard = (to: RouteLocationNormalized, _from: RouteLocationNormalize
       path: '/vitejte',
       query: {
         // ...to.query,
-        from: to.fullPath
+        from: encodeURIComponent(to.fullPath)
       },
       // hash: to.hash
     };
@@ -287,7 +287,7 @@ app.use(firebasePlugin);
 app.use(VueQueryPlugin);
 app.use(Vue3RouterPrefetch, { type: "hover", name: "PrefetchLink" });
 app.use(VWave, {
-  duration: 0.2
+  duration: 0.1,
 });
 app.use(VueClickAway);
 

@@ -15,6 +15,14 @@
   font-family: 'Bricolage Grotesque', Arial, Helvetica, sans-serif;
 }
 
+* {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+}
+
 @theme {
   --breakpoint-desktop: 60rem;
 }

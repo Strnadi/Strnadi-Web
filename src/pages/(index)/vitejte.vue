@@ -23,7 +23,7 @@ const route = useRoute();
     </span>
 
     <router-link
-      :to="route.query['from'] ? (route.query['from'] as string) : '/'"
+      :to="route.query['from'] ? decodeURIComponent(route.query['from'] as string) : '/'"
       class="button-primary px-2 py-4 w-full"
     >
       <TranslatedText identifier="buttons.enter" />

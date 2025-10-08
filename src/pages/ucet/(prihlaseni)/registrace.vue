@@ -3,20 +3,11 @@ meta:
   layout: desktop/small-popup
 </route>
 
-<script setup lang="ts">
-import * as jose from 'jose';
-import { reactive, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { useMutation } from '@tanstack/vue-query'
-import { postRegister, type SignUpRequest } from '@/api/account'
-import { accountStore } from '@/state/AccountStore'
-import { postGoogleSignup, type JWTObject, type OAuth2SignUpResponse } from '@/api/account';
-import { useStepper } from '@vueuse/core';
-import AuthButtons from '@/views/AuthButtons.vue';
-import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue'
+<script lang="ts">
 
+import {reactive} from "vue";
 
-const registerStore = reactive({
+export const registerStore = reactive({
   name: "",
   surname: "",
   nickname: "",
@@ -28,6 +19,8 @@ const registerStore = reactive({
   dataAgreement: false,
   marketingAgreement: false,
   isExternalSignup: false,
+  appleId: null as string | null,
+  jwt: null as string | null,
 
   reset() {
     this.name = "";
@@ -37,9 +30,31 @@ const registerStore = reactive({
     this.password = "";
     this.postCode = 0;
     this.city = "";
+    this.appleId = "";
+    this.dataAgreement = false;
+    this.isExternalSignup = false;
+    this.passwordConfirm = "";
+    this.marketingAgreement = false;
+    this.jwt = null;
   }
 
 });
+
+</script>
+
+<script setup lang="ts">
+import * as jose from 'jose';
+import { watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useMutation } from '@tanstack/vue-query'
+import { postRegister, type SignUpRequest } from '@/api/account'
+import { accountStore } from '@/state/AccountStore'
+import { postGoogleSignup, type JWTObject, type OAuth2SignUpResponse } from '@/api/account';
+import { useStepper } from '@vueuse/core';
+import AuthButtons from '@/views/AuthButtons.vue';
+import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue'
+
+
 
 
 const stepper = useStepper({
@@ -128,7 +143,7 @@ function allStepsBeforeAreValid(index: number): boolean {
 // set up the final registration mutation
 const router = useRouter()
 const { mutate: registerMutate, isPending: isRegPending, isError: isRegError, data: regData, error: regError } = useMutation({
-  mutationFn: (data: SignUpRequest) => postRegister(data),
+  mutationFn: (data: SignUpRequest) => postRegister(data, registerStore.jwt ?? undefined),
   onSuccess: (jwt: string) => {
     accountStore.login(jwt)
     registerStore.reset()
@@ -144,6 +159,7 @@ const register = () => {
     password: registerStore.password,
     postCode: registerStore.postCode,
     city: registerStore.city,
+    appleId: registerStore.appleId,
     consent: false,
   })
 }

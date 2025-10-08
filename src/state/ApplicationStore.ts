@@ -1,6 +1,6 @@
 import { reactive } from 'vue'
 import type { Notification } from "@/types/notifications";
-import type { translations } from '@/constants/Translations';
+import { translations } from '@/constants/Translations';
 import persist from '@/vendor/persist';
 
 export const applicationStore = reactive({

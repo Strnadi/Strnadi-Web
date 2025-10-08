@@ -3,7 +3,7 @@ meta:
   layout: desktop/center
 </route>
 
-<script setup lang="ts">
+<script lang="ts">
 import { ref, watch, computed, onUnmounted, reactive } from 'vue';
 import { onBeforeRouteUpdate, onBeforeRouteLeave } from 'vue-router';
 import { accountStore } from "@/state/AccountStore";
@@ -12,12 +12,14 @@ import { useStepper } from '@vueuse/core';
 import { postRecording, type RecordingUploadReq, type RecordingPartUploadParams } from '@/api/recordings';
 import { useQueryClient, useMutation } from '@tanstack/vue-query';
 import { divIcon, type Icon } from 'leaflet';
-import Dropzone from '@/components/Dropzone.vue';
-import MaterialIcon from '@/components/MaterialIcon.vue';
-import TextualCoords from '@/components/map/TextualCoords.vue';
-import TranslatedText from '@/components/TranslatedText.vue';
 
 import "@vuepic/vue-datepicker/dist/main.css";
+
+export const soundAccept = [
+  "audio/*",
+  "application/ogg",
+  "application/vorbis"
+];
 
 
 interface LatLng {
@@ -30,7 +32,7 @@ interface RecordingPart {
   location: LatLng | null;
 };
 
-const uploadStore = reactive({
+export const uploadStore = reactive({
   parts: null as RecordingPart[] | null,
   photos: null as File[] | null,
   dialects: [] as string[],
@@ -43,12 +45,13 @@ const uploadStore = reactive({
 
   setRecordings(recordings: File[]) {
     this.parts ??= [];
+    console.log(recordings);
 
     this.parts.push(
-      ...recordings.map((recording) => ({
-        file: recording,
-        location: null
-      })) as RecordingPart[]
+        ...(recordings.map((recording) => ({
+          file: recording,
+          location: null
+        })) as RecordingPart[])
     );
   },
 
@@ -77,16 +80,18 @@ const uploadStore = reactive({
 
 });
 
+</script>
+
+<script setup lang="ts">
+import Dropzone from '@/components/Dropzone.vue';
+import MaterialIcon from '@/components/MaterialIcon.vue';
+import TextualCoords from '@/components/map/TextualCoords.vue';
+import TranslatedText from '@/components/TranslatedText.vue';
+
 const queryClient = useQueryClient();
 
 const dialect = ref("");
 const error = ref<string | null>(null);
-
-const soundAccept = [
-  "audio/*",
-  "application/ogg",
-  "application/vorbis"
-];
 
 const photoAccept = "image/*";
 

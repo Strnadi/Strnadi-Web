@@ -21,6 +21,7 @@ import SVGLoader from 'vite-svg-loader';
 import DocsPlugin from './plugins/docs';
 import Inspect from 'vite-plugin-inspect';
 import { qrcode as QRCode } from 'vite-plugin-qrcode';
+import mkcert from 'vite-plugin-mkcert';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -130,14 +131,15 @@ export default defineConfig({
       project: process.env['MODE'] === 'production' ? "strnadi-web" : "strnadi-web-staging",
       telemetry: false
     }),
+      mkcert(),
     vueDevTools({
       launchEditor: "subl4"
     }),
-    Visualizer({
-      gzipSize: true,
-      open: false,
-      template: "sunburst",
-    }),
+    // Visualizer({
+    //   gzipSize: true,
+    //   open: false,
+    //   template: "sunburst",
+    // }),
   ],
 
   build: {
@@ -172,6 +174,11 @@ export default defineConfig({
   },
 
   server: {
+      allowedHosts: true,
+      // https: {
+      //
+      // },
+
     headers: {
       "content-security-policy":
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'script-src-elem' blob:;",

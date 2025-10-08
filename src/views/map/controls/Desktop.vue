@@ -42,6 +42,7 @@ const searchText = ref('');
           <button
             class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
             @click="MapStore.scale = !MapStore.scale"
+            v-wave
           >
             <FilledRulerIcon v-if="MapStore.scale" />
             <RulerIcon v-else />
@@ -50,6 +51,7 @@ const searchText = ref('');
           <button
             class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
             @click="MapStore.aerial = !MapStore.aerial"
+            v-wave
           >
             <MapIcon v-if="MapStore.aerial" />
             <PictureIcon v-else />
@@ -59,6 +61,7 @@ const searchText = ref('');
         <button
           class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
           @click="toolsShown = !toolsShown"
+          v-wave
         >
           <OptionsIcon
             width="32"
@@ -70,6 +73,7 @@ const searchText = ref('');
       <PrefetchLink
         class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
         to="/mapa/legenda"
+        v-wave
       >
         <InfoIcon
           width="32"

@@ -2,6 +2,8 @@
 import LocationSearch from '@/components/map/LocationSearch.vue';
 import { MapStore } from '@/views/map/RecordingsMap.vue';
 import LocationArrowIcon from '@/icons/interface/icon-location-arrow.svg';
+import {useGeolocation} from "@vueuse/core";
+
 
 import InfoIcon from '@/icons/interface/icon-info.svg';
 import MapIcon from '@/icons/interface/icon-map.svg';
@@ -9,12 +11,14 @@ import RulerIcon from '@/icons/interface/icon-ruler.svg';
 import FilledRulerIcon from '@/icons/interface/icon-ruler-fill.svg';
 import PictureIcon from '@/icons/interface/icon-picture.svg';
 
+const { coords, isSupported: isGeolocationSupported } = useGeolocation();
+
 </script>
 
 <template>
   <div class="absolute top-0 left-0 flex flex-1 w-full h-full z-[10000] pointer-events-none">
     <div class="absolute top-0 left-0 flex flex-row w-full justify-around items-center p-2 pointer-events-auto">
-      <button class="secondary p-3">
+      <button v-if="isGeolocationSupported" class="secondary p-3" @click="() => MapStore.move([coords.latitude, coords.longitude], 14)">
         <LocationArrowIcon />
       </button>
 
