@@ -16,17 +16,17 @@ const goHome = () => {
   router.push("/");
 }
 
-useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
-
-  if (recording && recordingPart) {
-    router.push(`/mapa/nahravka/${recording.id}/${recordingPart.id}`);
-  } else if (square) {
-    router.push(`/mapa/ctverec/${square}`);
-  } else {
-    goHome();
-  }
-
-});
+// useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
+//
+//   if (recording && recordingPart) {
+//     router.push(`/mapa/nahravka/${recording.id}/${recordingPart.id}`);
+//   } else if (square) {
+//     router.push(`/mapa/ctverec/${square}`);
+//   } else {
+//     goHome();
+//   }
+//
+// });
 
 </script>
 
@@ -71,7 +71,7 @@ useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
     </div>
 
     <router-view />
-  </Dropzone>
+ </Dropzone>
 </template>
 
 <style scoped>

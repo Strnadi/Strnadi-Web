@@ -5,11 +5,14 @@ import firebasePlugin from "@/plugins/vue/firebase";
 import Vue3RouterPrefetch from 'vue3-router-prefetch'
 import axios from "axios";
 import { createApp, defineCustomElement } from "vue";
-import { createRouter, createWebHistory, type RouteLocationRaw, type RouteRecordRaw } from "vue-router";
+import { createRouter, createWebHistory, type RouteLocationNormalized, type RouteLocationRaw, type RouteRecordRaw } from "vue-router";
 import { VueQueryPlugin } from "@tanstack/vue-query";
 import { routes as generatedRoutes } from 'vue-router/auto-routes'
 import { setupLayouts } from 'virtual:meta-layouts';
 import { useTimeoutFn, useEventListener } from '@vueuse/core';
+
+// @ts-expect-error No types available.
+import VueVirtualScroller from 'vue-virtual-scroller';
 
 import VueClickAway from "vue3-click-away";
 import VWave from 'v-wave';
@@ -19,6 +22,7 @@ import ExpandableImage from '@/components/ExpandableImage.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import { ApiError } from "@/classes/api-error";
 import "./styles/main.css";
+import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 
 declare global {
   interface Array<T> {
@@ -290,6 +294,7 @@ app.use(VWave, {
   duration: 0.1,
 });
 app.use(VueClickAway);
+app.use(VueVirtualScroller);
 
 app.component('VSelect', vSelect);
 app.component('VueDatePicker', VueDatePicker);

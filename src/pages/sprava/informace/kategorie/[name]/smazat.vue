@@ -11,24 +11,26 @@ import { accountStore } from '@/state/AccountStore';
 import { deleteArticleCategory } from '@/api/articles';
 
 const router = useRouter();
-const name = useRouteParams('name');
+const name = useRouteParams<string>('name');
 
-const { mutate: del } = useMutation({
+const { mutate: deleteCategory } = useMutation({
   mutationFn: () => deleteArticleCategory(accountStore.token!, name.value),
 
   onSuccess() {
     router.back();
   }
-})
+});
+
+const handleDeleteCategory = () => {
+  deleteCategory();
+}
 </script>
 
 <template>
-  <h1>Smazání kategorie</h1>
-  <span class="font-medium">Opravdu si přejete tuto kategorii smazat? Tuto akci nelze vrátit zpět.</span>
-
+  <h1>Smazání kategorie {{ name }}</h1>
   <button
     class="danger"
-    @click="del"
+    @click="handleDeleteCategory"
   >
     Smazat
   </button>

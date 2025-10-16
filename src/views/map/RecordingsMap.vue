@@ -153,11 +153,9 @@ const markers = computed<Marker[]>(() => {
         case 'old': return new Date(r.createdAt) <= oldCutoff;
         case 'new': return new Date(r.createdAt) > oldCutoff;
         case 'any-dialect': {
-
           return filteredRecordings.value?.some(
             fp => fp.recordingId === r.id && fp.detectedDialects !== null
           ) ?? false;
-
         }
         default: return true;
       }
@@ -177,7 +175,6 @@ const markers = computed<Marker[]>(() => {
       }))
     )
     .map(({ rec, part, filteredParts }) => {
-
       const dialectStrings = filteredParts?.flatMap(
         fp => fp.detectedDialects?.map(
           dd => {
@@ -211,20 +208,15 @@ const markers = computed<Marker[]>(() => {
           part: part
         }
       }
-
     }) ?? [];
-
 });
 
 const onClick = ({ event, polygon, marker }: { event: LeafletMouseEvent; polygon?: Polygon; marker?: Marker }) => {
   event.originalEvent.stopPropagation();
 
   if(marker) {
-
     MapEvents.emit('click', { event, recording: marker.data.recording, recordingPart: marker.data.part });
-
   } else if(polygon) {
-
     if (!polygon.position) return;
 
     const p0 = polygon.position[0];
@@ -242,11 +234,8 @@ const onClick = ({ event, polygon, marker }: { event: LeafletMouseEvent; polygon
       console.warn('Polygon clicked with unexpected structure:', polygon);
       return;
     }
-
   } else {
-
     MapEvents.emit('click', { event });
-
   }
 }
 

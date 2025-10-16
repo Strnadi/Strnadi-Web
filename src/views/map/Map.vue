@@ -122,10 +122,10 @@ watch([zoom, center], updateBounds);
       @update:zoom="updateZoom"
     >
       <!-- Tile Layers -->
-      <l-tile-layer
-        url="/map-loading.png"
-        :z-index="0"
-      />
+<!--      <l-tile-layer-->
+<!--        url="/map-loading.png"-->
+<!--        :z-index="0"-->
+<!--      />-->
       <l-tile-layer
         :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode!=='aerial'? '256@2x':'256'}/{z}/{x}/{y}`"
         :max-zoom="19"

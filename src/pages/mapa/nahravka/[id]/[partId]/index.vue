@@ -237,6 +237,35 @@ const cancelEdit = () => {
         </ul>
       </div>
 
+      <Spectrogram
+        v-if="recording && recording.parts && recordingPart && filteredRec"
+        :audio-urls="`${env.VITE_API_URL}/recordings/part/${recording.id}/${recordingPart.id}/sound`"
+        :height="300"
+        :readonly="true"
+        :selected="filteredRec.flatMap(fr => fr.detectedDialects.map(dd => ({
+            id: dd.id,
+            start: (new Date(fr.startDate).getTime() - new Date(recording.parts[0].startDate).getTime()) / 1000,
+            end: (new Date(fr.endDate).getTime() - new Date(recording.parts[0].startDate).getTime()) / 1000,
+            color: DialectColors[dd.confirmedDialect ?? dd.userGuessDialect]
+          })))"
+      >
+        <template #range-tooltip="{ range, close }">
+          <div class="p-2 bg-blue-100 border border-blue-300 rounded shadow-md">
+            <h4 class="font-bold">
+              Dialekt
+            </h4>
+            <p>Začátek: {{ range.start.toFixed(2) }}s</p>
+            <p>Konec: {{ range.end.toFixed(2) }}s</p>
+            <button
+                class="text-blue-500 hover:underline mt-1"
+                @click="close"
+            >
+              Zavřít
+            </button>
+          </div>
+        </template>
+      </Spectrogram>
+
       <!-- <ToggleShow class="w-full">
         <template #toggle-button>
           <button class="secondary text-sm p-1 px-2">

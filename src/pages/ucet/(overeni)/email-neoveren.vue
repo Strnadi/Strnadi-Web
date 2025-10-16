@@ -9,8 +9,7 @@ import { computed } from 'vue';
 const isMobile = computed(() => {
   const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
   return /android|iPad|iPhone/i.test(userAgent);
-})
-
+});
 </script>
 
 <template>

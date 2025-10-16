@@ -40,7 +40,7 @@ console.log("Here");
         :key="rec.id"
       >
         <router-link
-          :to="`/nahravka/${rec.id}`"
+          :to="`/mapa/nahravka/${rec.id}`"
           class="flex flex-col justify-around p-2 border-2 border-gray-200 hover:bg-gray-300 h-20 rounded-lg"
         >
           <div class="flex flex-row justify-between">

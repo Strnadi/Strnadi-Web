@@ -9,17 +9,22 @@ import { useRouteParams } from '@vueuse/router';
 import { useRouter } from 'vue-router';
 import { accountStore } from '@/state/AccountStore';
 import { deleteArticle } from '@/api/articles';
+import type { Numeric } from '@/types/basic';
 
 const router = useRouter();
-const id = useRouteParams('id');
+const id = useRouteParams<Numeric>('id');
 
-const { mutate: del } = useMutation({
+const { mutate: mutateDeleteArticle } = useMutation({
   mutationFn: () => deleteArticle(accountStore.token!, id.value),
 
   onSuccess() {
     router.back();
   }
-})
+});
+
+const handleDeleteArticle = () => {
+  mutateDeleteArticle();
+}
 </script>
 
 <template>
@@ -28,7 +33,7 @@ const { mutate: del } = useMutation({
 
   <button
     class="danger"
-    @click="del"
+    @click="handleDeleteArticle"
   >
     Smazat
   </button>

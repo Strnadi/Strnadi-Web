@@ -35,7 +35,7 @@ const { mutate: submitArticle } = useMutation({
     const id = await postArticle(accountStore.token!, {
       name: name.value,
       description: description.value
-    })
+    });
 
     const textFile = new File(
       [
@@ -57,7 +57,7 @@ const { mutate: submitArticle } = useMutation({
 
     for (const category of categories?.value ?? []) {
       patchAssignArticleCategory(accountStore.token!, category, {
-        articleId: id,
+        articleId: Number.parseInt(id),
         order: 0
       })
     }
@@ -67,7 +67,6 @@ const { mutate: submitArticle } = useMutation({
     router.replace("/sprava/informace");
   }
 })
-
 </script>
 
 <template>
@@ -130,4 +129,8 @@ const { mutate: submitArticle } = useMutation({
       </button>
     </li>
   </ul>
+
+  <button class="primary p-2 w-full" @click="() => submitArticle({ content: editorContent })">
+    Uložit
+  </button>
 </template>

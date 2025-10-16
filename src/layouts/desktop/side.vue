@@ -65,6 +65,7 @@ const closePopup = () => {
     @apply rounded-4xl;
     @apply p-8;
     @apply pb-20;
+    @apply wrap-anywhere;
     @apply pr-[24px];
     @apply bg-white/90;
     @apply gap-y-2;

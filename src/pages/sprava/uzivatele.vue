@@ -25,7 +25,7 @@ const { data: users, isLoading } = useQuery({
       <PrefetchLink
         v-for="user in users"
         :key="user.id"
-        :to="`/uzivatele/${user.id}`"
+        :to="`/uzivatel/${user.id}`"
         class="flex flex-col border-2 border-gray-200 hover:bg-gray-300 p-2 rounded-lg"
       >
         <span>{{ user.firstName }} {{ user.lastName }}</span>

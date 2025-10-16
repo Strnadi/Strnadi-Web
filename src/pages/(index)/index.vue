@@ -12,17 +12,17 @@ const isDesktop = useMediaQuery(
   computed(() => `(min-width: ${desktopBp.value})`)
 );
 
-if(!isDesktop.value) {
-  useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
+useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
 
-    if (recording && recordingPart) {
-      router.push(`/mapa/nahravka/${recording.id}/${recordingPart.id}`);
-    } else if (square) {
-      router.push(`/mapa/ctverec/${square}`);
-    }
+  if (recording && recordingPart) {
+    router.push(`/mapa/nahravka/${recording.id}/${recordingPart.id}`);
+  } else if (square) {
+    router.push(`/mapa/ctverec/${square}`);
+  } else {
+    router.push("/");
+  }
 
-  });
-}
+});
 </script>
 
 <template>

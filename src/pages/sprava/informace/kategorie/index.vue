@@ -5,8 +5,7 @@ import { useQuery } from "@tanstack/vue-query";
 const { data: categories } = useQuery({
   queryKey: ["categories"],
   queryFn: () => getArticleCategories()
-})
-
+});
 </script>
 
 <template>

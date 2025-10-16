@@ -37,14 +37,14 @@ const location = window.location.href;
 
   <div class="flex flex-col items-center gap-y-4">
     <div class="flex flex-col items-center gap-y-4">
-      <div class="flex flex-row items-center gap-x-4">
+      <div class="flex flex-col items-center gap-x-4 w-3/4 gap-y-2">
         <QrcodeSvg
           :value="location"
           :size="200"
           class="w-fit"
         />
 
-        <span class="font-medium text-justify [text-align-last:center] text-sm w-1/2">
+        <span class="font-medium text-justify [text-align-last:center] text-sm">
           <TranslatedText identifier="app.qr_code" />
         </span>
       </div>

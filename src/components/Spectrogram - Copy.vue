@@ -506,6 +506,13 @@ const cacheCanvas = ref<HTMLCanvasElement | null>(null);
 const cacheHeightBins = ref(0);
 const totalBins = ref(0);
 
+// New chunk-based caching system
+const CHUNK_SIZE = 512; // Number of columns per chunk
+const computedChunks = ref<Map<number, HTMLCanvasElement>>(new Map());
+const computingChunks = ref<Set<number>>(new Set());
+const rawSpectrogramData = ref<{ time: number; values: Uint8Array }[]>([]);
+const spectrogramPalette = ref<Uint8ClampedArray | null>(null);
+
 // AudioContext + nodes
 const internalAudioContext = ref<AudioContext | null>(null);
 const liveAnalyser = ref<AnalyserNode | null>(null);
@@ -837,6 +844,10 @@ async function loadAndProcessAudio() {
 async function generateSpectrogramDataOffline() {
   if (!audioBuffer.value) return;
   spectrogramData.value = [];
+  rawSpectrogramData.value = [];
+  computedChunks.value.clear();
+  computingChunks.value.clear();
+
   const buf = audioBuffer.value;
   const offline = new OfflineAudioContext(
     buf.numberOfChannels,
@@ -879,7 +890,11 @@ async function generateSpectrogramDataOffline() {
   proc.disconnect();
   analyser.disconnect();
 
+  // Store raw data for on-demand chunk computation
+  rawSpectrogramData.value = temp;
   spectrogramData.value = temp.map((d) => ({ time: d.time }));
+
+  // Compute palette once
   let minV = 255,
     maxV = 0;
   for (const col of temp) {
@@ -898,48 +913,19 @@ async function generateSpectrogramDataOffline() {
     const norm = clamp((i - minV) / range, 0, 1);
     const idx = Math.floor(norm * (props.colorScheme.length - 1));
     const colorString = props.colorScheme[idx];
-    const [r, g, b] = hexToRgb(colorString ?? '#000000'); // Provide a fallback if colorString is undefined
+    const [r, g, b] = hexToRgb(colorString ?? '#000000');
     palette[i * 4] = r;
     palette[i * 4 + 1] = g;
     palette[i * 4 + 2] = b;
     palette[i * 4 + 3] = 255;
   }
+  spectrogramPalette.value = palette;
 
-  const cols = temp.length,
-    rows = cacheHeightBins.value;
-  const offCanvas = document.createElement('canvas');
-  offCanvas.width = cols;
-  offCanvas.height = rows;
-  const ctx2 = offCanvas.getContext('2d', { willReadFrequently: true })!;
-  const img = ctx2.createImageData(cols, rows);
-  for (let x = 0; x < cols; x++) {
-    const colData = temp[x];
-    if (!colData) continue;
-    const vals = colData.values;
-    for (let y = 0; y < rows; y++) {
-      const v = vals[y];
-      if (v === undefined) { // Handle case where v might be undefined (e.g. y out of bounds for vals)
-        const pi = (y * cols + x) * 4;
-        img.data[pi] = 0;     // Default to black
-        img.data[pi + 1] = 0;
-        img.data[pi + 2] = 0;
-        img.data[pi + 3] = 255; // Opaque
-        continue;
-      }
-      const pi = (y * cols + x) * 4,
-        ci = v * 4;
-      img.data[pi] = palette[ci] ?? 0; // Default to 0 if TypeScript thinks it could be undefined
-      img.data[pi + 1] = palette[ci + 1] ?? 0;
-      img.data[pi + 2] = palette[ci + 2] ?? 0;
-      img.data[pi + 3] = 255;
-    }
-  }
-  ctx2.putImageData(img, 0, 0);
-  cacheCanvas.value = offCanvas;
+  // No longer create full cacheCanvas here
+  cacheCanvas.value = null;
 
   offsetIndex.value = 0;
   zoomLevel.value = DEFAULT_BASE_ZOOM;
-  // Corrected windowSize calculation for initial setup
   windowSize.value = Math.max(
     MIN_COLS_AT_MAX_ZOOM_DISPLAY,
     Math.floor(spectrogramData.value.length / zoomLevel.value)
@@ -964,13 +950,103 @@ async function generateSpectrogramDataOffline() {
   handleResize();
 }
 
+// Compute a specific chunk of the spectrogram
+function computeChunk(chunkIndex: number): HTMLCanvasElement | null {
+  if (!rawSpectrogramData.value.length || !spectrogramPalette.value) return null;
+
+  const startCol = chunkIndex * CHUNK_SIZE;
+  const endCol = Math.min(startCol + CHUNK_SIZE, rawSpectrogramData.value.length);
+  const chunkWidth = endCol - startCol;
+
+  if (chunkWidth <= 0) return null;
+
+  const rows = cacheHeightBins.value;
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = chunkWidth;
+  offCanvas.height = rows;
+  const ctx2 = offCanvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx2) return null;
+
+  const img = ctx2.createImageData(chunkWidth, rows);
+  const palette = spectrogramPalette.value;
+
+  for (let x = 0; x < chunkWidth; x++) {
+    const colData = rawSpectrogramData.value[startCol + x];
+    if (!colData) continue;
+    const vals = colData.values;
+    for (let y = 0; y < rows; y++) {
+      const v = vals[y];
+      if (v === undefined) {
+        const pi = (y * chunkWidth + x) * 4;
+        img.data[pi] = 0;
+        img.data[pi + 1] = 0;
+        img.data[pi + 2] = 0;
+        img.data[pi + 3] = 255;
+        continue;
+      }
+      const pi = (y * chunkWidth + x) * 4;
+      const ci = v * 4;
+      img.data[pi] = palette[ci] ?? 0;
+      img.data[pi + 1] = palette[ci + 1] ?? 0;
+      img.data[pi + 2] = palette[ci + 2] ?? 0;
+      img.data[pi + 3] = 255;
+    }
+  }
+  ctx2.putImageData(img, 0, 0);
+  return offCanvas;
+}
+
+// Get or compute a chunk
+function getChunk(chunkIndex: number): HTMLCanvasElement | null {
+  if (computedChunks.value.has(chunkIndex)) {
+    return computedChunks.value.get(chunkIndex) ?? null;
+  }
+
+  if (computingChunks.value.has(chunkIndex)) {
+    return null; // Currently computing
+  }
+
+  // Mark as computing and compute synchronously for now
+  computingChunks.value.add(chunkIndex);
+  const chunk = computeChunk(chunkIndex);
+  computingChunks.value.delete(chunkIndex);
+
+  if (chunk) {
+    computedChunks.value.set(chunkIndex, chunk);
+  }
+
+  return chunk;
+}
+
+// Preload chunks around the visible area in the background
+function preloadNearbyChunks(startIdx: number, endIdx: number) {
+  const startChunk = Math.floor(startIdx / CHUNK_SIZE);
+  const endChunk = Math.floor((endIdx - 1) / CHUNK_SIZE);
+
+  // Preload 2 chunks on each side
+  const preloadStart = Math.max(0, startChunk - 2);
+  const preloadEnd = Math.min(
+    Math.floor(rawSpectrogramData.value.length / CHUNK_SIZE),
+    endChunk + 2
+  );
+
+  // Use setTimeout to avoid blocking the main thread
+  setTimeout(() => {
+    for (let i = preloadStart; i <= preloadEnd; i++) {
+      if (!computedChunks.value.has(i) && !computingChunks.value.has(i)) {
+        getChunk(i);
+      }
+    }
+  }, 0);
+}
+
 // Render
 function renderSpectrogram() {
   if (
     !canvasRef.value ||
-    !cacheCanvas.value ||
     !isLoaded.value ||
-    !spectrogramData.value.length
+    !spectrogramData.value.length ||
+    !rawSpectrogramData.value.length
   )
     return;
   const ctx = canvasRef.value.getContext('2d');
@@ -978,25 +1054,54 @@ function renderSpectrogram() {
   const dispW = containerWidth.value - margin.value.left - margin.value.right;
   const dispH = containerHeight.value - margin.value.top - margin.value.bottom;
   if (dispW <= 0 || dispH <= 0) return;
-  const totalCols = cacheCanvas.value.width;
+  const totalCols = rawSpectrogramData.value.length;
   const sIdx = Math.floor(offsetIndex.value);
   const num = Math.floor(windowSize.value);
 
   ctx.clearRect(0, 0, containerWidth.value, containerHeight.value);
   ctx.imageSmoothingEnabled = false;
+
   if (sIdx < totalCols && num > 0 && sIdx >= 0) {
-    ctx.drawImage(
-      cacheCanvas.value,
-      sIdx,
-      0,
-      Math.min(num, totalCols - sIdx),
-      cacheHeightBins.value,
-      margin.value.left,
-      margin.value.top,
-      dispW,
-      dispH
-    );
+    const endIdx = Math.min(sIdx + num, totalCols);
+    const startChunk = Math.floor(sIdx / CHUNK_SIZE);
+    const endChunk = Math.floor((endIdx - 1) / CHUNK_SIZE);
+
+    let currentX = margin.value.left;
+
+    // Render each chunk that overlaps the visible range
+    for (let chunkIdx = startChunk; chunkIdx <= endChunk; chunkIdx++) {
+      const chunk = getChunk(chunkIdx);
+      if (!chunk) continue;
+
+      const chunkStartCol = chunkIdx * CHUNK_SIZE;
+      const chunkEndCol = Math.min(chunkStartCol + CHUNK_SIZE, totalCols);
+
+      // Calculate visible portion of this chunk
+      const visibleStart = Math.max(sIdx, chunkStartCol);
+      const visibleEnd = Math.min(endIdx, chunkEndCol);
+      const visibleWidth = visibleEnd - visibleStart;
+
+      if (visibleWidth <= 0) continue;
+
+      // Source coordinates within the chunk
+      const srcX = visibleStart - chunkStartCol;
+      const srcWidth = visibleWidth;
+
+      // Destination coordinates on canvas
+      const dstX = currentX + ((visibleStart - sIdx) / num) * dispW;
+      const dstWidth = (srcWidth / num) * dispW;
+
+      ctx.drawImage(
+        chunk,
+        srcX, 0, srcWidth, cacheHeightBins.value,
+        dstX, margin.value.top, dstWidth, dispH
+      );
+    }
+
+    // Trigger background preloading
+    preloadNearbyChunks(sIdx, endIdx);
   }
+
   const v0 = spectrogramData.value[sIdx]?.time || 0;
   const v1 =
     spectrogramData.value[Math.min(sIdx + num - 1, totalCols - 1)]?.time ||
@@ -1985,7 +2090,7 @@ function setupAudioElementListeners() {
       (playInSelectionOnly.value && currentActiveSelectionRange.value);
 
     // Playback has ended. Reset position to the start of the context it was playing in.
-    // Looping should be handled by onTime. This is a final state reset.
+    // Looping should be handled in onTime. This is a final state reset.
     if (isSegmentActive) {
       el.currentTime = segmentStart;
     } else {
@@ -2488,25 +2593,6 @@ function onPanThumbMouseUp() {
   document.removeEventListener('mousemove', onPanThumbMouseMove);
 }
 
-function onPanTrackMouseDown(e: MouseEvent) {
-  if (!isLoaded.value || !panTrackRef.value || maxOffsetIndex.value <= 0) return;
-  if (e.target !== panTrackRef.value && e.target !== panTrackRef.value.firstChild) return; // Allow click on track or regions
-
-  const rect = panTrackRef.value.getBoundingClientRect();
-  const clickX = e.clientX - rect.left;
-  const scrollableTrackWidth = panTrackDOMWidth.value - panThumbWidthPx.value;
-  if (scrollableTrackWidth <= 0) return;
-
-  const targetThumbStartX = clickX - panThumbWidthPx.value / 2;
-  const newOffsetRatio = clamp(targetThumbStartX / scrollableTrackWidth, 0, 1);
-  offsetIndex.value = clamp(
-    newOffsetRatio * maxOffsetIndex.value,
-    0,
-    maxOffsetIndex.value
-  );
-  renderSpectrogram();
-}
-
 function onZoomThumbMouseDown(e: MouseEvent) {
   if (!isLoaded.value || zoomRange.value <= 0) return;
   isDraggingZoomThumb.value = true;
@@ -2540,6 +2626,25 @@ function onZoomThumbMouseMove(e: MouseEvent) {
 function onZoomThumbMouseUp() {
   isDraggingZoomThumb.value = false;
   document.removeEventListener('mousemove', onZoomThumbMouseMove);
+}
+
+function onPanTrackMouseDown(e: MouseEvent) {
+  if (!isLoaded.value || !panTrackRef.value || maxOffsetIndex.value <= 0) return;
+  if (e.target !== panTrackRef.value && e.target !== panTrackRef.value.firstChild) return; // Allow click on track or regions
+
+  const rect = panTrackRef.value.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  const scrollableTrackWidth = panTrackDOMWidth.value - panThumbWidthPx.value;
+  if (scrollableTrackWidth <= 0) return;
+
+  const targetThumbStartX = clickX - panThumbWidthPx.value / 2;
+  const newOffsetRatio = clamp(targetThumbStartX / scrollableTrackWidth, 0, 1);
+  offsetIndex.value = clamp(
+    newOffsetRatio * maxOffsetIndex.value,
+    0,
+    maxOffsetIndex.value
+  );
+  renderSpectrogram();
 }
 
 function onZoomTrackMouseDown(e: MouseEvent) {
@@ -2775,9 +2880,8 @@ watch(() => props.readonly, (isReadonly) => {
 });
 
 function resetAndCleanupAudioResources() {
-  stopAudio(); // Stops current playback and disconnects audioSourceNode
+  stopAudio();
 
-  // Release internal audio graph nodes (if they exist)
   if (liveAnalyser.value) {
     liveAnalyser.value.disconnect();
     liveAnalyser.value = null;
@@ -2787,8 +2891,6 @@ function resetAndCleanupAudioResources() {
     gainNode.value = null;
   }
 
-  // Close and release the internal AudioContext if it exists
-  // getAudioContext() will create a new one if needed later
   if (internalAudioContext.value) {
     internalAudioContext.value.close().catch((e) => {
       console.warn('Error closing AudioContext during resource reset:', e);
@@ -2796,17 +2898,22 @@ function resetAndCleanupAudioResources() {
     internalAudioContext.value = null;
   }
 
-  audioBuffer.value = null; // Release reference to the decoded audio buffer
+  audioBuffer.value = null;
 
-  // Release canvas and large data arrays
+  // Clear chunk cache
+  computedChunks.value.clear();
+  computingChunks.value.clear();
+  rawSpectrogramData.value = [];
+  spectrogramPalette.value = null;
+
   if (cacheCanvas.value) {
-    cacheCanvas.value.width = 0; // Attempt to release graphics memory
+    cacheCanvas.value.width = 0;
     cacheCanvas.value.height = 0;
     cacheCanvas.value = null;
   }
   spectrogramData.value = [];
   spliceTimes.value = [];
-  ranges.value = []; // Clear ranges when audio source changes
+  ranges.value = [];
 
   // Reset state variables
   isLoaded.value = false;

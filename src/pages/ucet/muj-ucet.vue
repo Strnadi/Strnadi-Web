@@ -9,8 +9,14 @@ import { accountStore } from '@/state/AccountStore'
 
 <template>
   <h1>Můj profil</h1>
-  <span class="text-xl font-medium">{{ accountStore.user!.firstName }} {{ accountStore.user!.lastName }}</span>
-  <span class="text-lg">{{ accountStore.user!.email }}</span>
+  <div class="flex flex-col">
+    <div class="flex flex-row justify-between">
+      <span class="text-xl font-medium">{{ accountStore.user!.firstName }} {{ accountStore.user!.lastName }}</span>
+      <span class="text-xl font-medium">{{ accountStore.user?.city }}</span>
+    </div>
+    <span class="text-lg">{{ accountStore.user!.email }}</span>
+  </div>
+
   <prefetch-link
     to="/ucet/moje-nahravky"
     class="link"

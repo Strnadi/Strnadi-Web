@@ -38,7 +38,7 @@ const squareStyle = computed(() => {
       width: props.size,
       height: props.size,
       background: 'transparent',
-      border: '1px solid grey',
+      // border: '1px solid grey',
     };
   }
 

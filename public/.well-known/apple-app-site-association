@@ -5,9 +5,9 @@
       {
         "appID": "3GPTVJHVFN.com.delta.strnadi",
         "paths": [
-          "/ucet/reset-hesla",
-          "/ucet/email-verifikovan",
-          "/ucet/email-neverifikovan"
+          "/ucet/obnova-hesla",
+          "/ucet/email-overen",
+          "/ucet/email-neoveren"
         ]
       }
     ]

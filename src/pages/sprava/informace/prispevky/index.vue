@@ -19,15 +19,15 @@ const { data: articles } = useQuery({
       Nový příspěvek
     </router-link>
   </div>
-  <ul class="flex flex-col gap-y-2">
+  <ul class="flex flex-col gap-y-3">
     <li
       v-for="article in articles"
       :key="article.id"
       class="flex flex-row justify-around gap-x-2"
     >
-      <div class="flex flex-col w-full justify-between">
+      <div class="flex flex-col w-full justify-around">
         <span>{{ article.name }}</span>
-        <span>{{ article.description }}</span>
+        <span v-if="article.description"><i>{{ article.description }}</i></span>
       </div>
       <div class="flex flex-row">
         <router-link

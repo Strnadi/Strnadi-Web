@@ -101,31 +101,29 @@ export const postLogin = async (loginData: LoginRequest): Promise<OAuth2Token> =
   genericPost("login", loginData);
 
 export const postRegister = async (signUpData: SignUpRequest, signUpJwt?: string): Promise<OAuth2Token> => {
-    const response = await axios.post(`/auth/sign-up`, signUpData, {
-        headers:  signUpJwt ? {
-            'Authorization': `Bearer ${signUpJwt}`,
-        } : {}
-    });
-    return response.data;
+  const response = await axios.post(`/auth/sign-up`, signUpData, {
+    headers:  signUpJwt ? {
+      'Authorization': `Bearer ${signUpJwt}`,
+    } : {}
+  });
+  return response.data;
 }
 
 export const postGoogleLogin = async (loginInfo: { idToken: string }): Promise<OAuth2Token> =>
   genericPost("login-google", loginInfo);
 
 export const postAppleLogin = async (loginInfo: { idToken: string, givenName?: string, familyName?: string }): Promise<OAuth2Token> => {
+  const token = jose.decodeJwt(loginInfo.idToken);
 
-    const token = jose.decodeJwt(loginInfo.idToken);
+  const data = {
+    idToken: loginInfo.idToken,
+    email: token['email'],
+    userIdentifier: token.sub,
+    givenName: loginInfo.givenName ?? '',
+    familyName: loginInfo.familyName ?? '',
+  }
 
-    const data = {
-        idToken: loginInfo.idToken,
-        email: token['email'],
-        userIdentifier: token.sub,
-        givenName: loginInfo.givenName ?? '',
-        familyName: loginInfo.familyName ?? '',
-    }
-
-    return genericPost("apple", data);
-
+  return genericPost("apple", data);
 }
 
 
