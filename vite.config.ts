@@ -22,6 +22,8 @@ import DocsPlugin from './plugins/docs';
 import Inspect from 'vite-plugin-inspect';
 import { qrcode as QRCode } from 'vite-plugin-qrcode';
 import mkcert from 'vite-plugin-mkcert';
+import path from "node:path";
+import fs from "node:fs";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -131,7 +133,7 @@ export default defineConfig({
       project: process.env['MODE'] === 'production' ? "strnadi-web" : "strnadi-web-staging",
       telemetry: false
     }),
-      mkcert(),
+    mkcert(),
     vueDevTools({
       launchEditor: "subl4"
     }),
@@ -140,6 +142,31 @@ export default defineConfig({
     //   open: false,
     //   template: "sunburst",
     // }),
+    {
+      name: 'configure-server',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.originalUrl?.startsWith('/.well-known')) {
+            res.setHeader('Content-Type', 'application/json');
+            const filePath = path.join(__dirname, `public${req.originalUrl}`);
+            fs.createReadStream(filePath).pipe(res);
+          } else {
+            next();
+          }
+        });
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.originalUrl?.startsWith('/.well-known')) {
+            res.setHeader('Content-Type', 'application/json');
+            const filePath = path.join(__dirname, `public${req.originalUrl}`);
+            fs.createReadStream(filePath).pipe(res);
+          } else {
+            next();
+          }
+        });
+      }
+    }
   ],
 
   build: {
