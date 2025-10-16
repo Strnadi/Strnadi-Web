@@ -52,10 +52,11 @@ export const genericPatch = async<T, U = undefined>(endpoint: string, data?: U):
   return response.data;
 }
 
-export const authorizedPatch = async<T, U = undefined>(endpoint: string, token: string, data?: U): Promise<T> => {
+export const authorizedPatch = async<T, U = undefined>(endpoint: string, token: string, data?: U, headers?: Record<string, string>): Promise<T> => {
   const response = await axios.patch(endpoint, data, {
     headers: {
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${token}`,
+      ...headers
     }
   });
 

@@ -1,4 +1,4 @@
-<route>
+<route lang="yaml">
 meta:
   layout: desktop/side
 </route>
@@ -12,6 +12,8 @@ import JSZip from '@progress/jszip-esm';
 import { getRecordings } from '@/api/recordings';
 import TextualCoords from '@/components/map/TextualCoords.vue';
 import type { RecordingModel } from '@/api/recordings';
+import { getUserInfo } from '@/api/account';
+import { accountStore } from '@/state/AccountStore';
 
 const zipFileName = `strnadi-${new Date().toUTCString()}.zip`;
 
@@ -183,7 +185,10 @@ async function downloadSelectedRecordings() {
         <h2 class="text-lg font-semibold mb-1">
           {{ recording.name || `Nahrávka ID: ${recording.id}` }}
         </h2>
-        <small class="mb-2 text-gray-600">ID: {{ recording.id }}</small>
+        <div class="flex flex-row justify-between">
+          <!-- <small class="mb-2 text-gray-600">ID: {{ (await getUserInfo(accountStore.user!.id, recording.userId)) }}</small> -->
+          <small class="mb-2 text-gray-600">ID: {{ recording.id }}</small>
+        </div>
         <ul v-if="recording.parts && recording.parts.length > 0">
           <li
             v-for="part in recording.parts"

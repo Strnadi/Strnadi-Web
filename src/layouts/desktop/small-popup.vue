@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import TranslatedText from '@/components/TranslatedText.vue';
-import Back from '@/icons/interface/icon-back.svg';
+import Close from '@/icons/interface/icon-close.svg';
 
 const router = useRouter();
 const closePopup = () => {
@@ -19,16 +19,17 @@ const closePopup = () => {
       <div
         :key="`${route.path}`"
         @click.stop
+        v-auto-scrollbar
       >
-        <div>
+        <div class="sticky flex flex-row-reverse top-0">
           <button
-            class="secondary big max-w-fit"
+            class="small bg-yellow-300 rounded-2xl"
             @click="closePopup"
           >
-            <Back />
-            <span><TranslatedText identifier="buttons.back" /></span>
+            <Close />
           </button>
         </div>
+
         <component :is="Component" />
       </div>
     </aside>
@@ -49,18 +50,18 @@ const closePopup = () => {
   }
 
   aside > div {
-    @apply grid grid-cols-[auto_1fr] overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
+    @apply /* grid grid-cols-[auto_1fr] */ overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
     @apply rounded-4xl;
     @apply p-8;
     @apply bg-white/90;
   }
 
   aside > div > div > button.small {
-    @apply py-1 mr-4 self-start flex flex-row items-center border-none bg-transparent;
+    @apply py-1 mr-4 self-start flex flex-row items-center border-none;
   }
 
   aside > div > div > button.big {
-    @apply py-1 -ml-3 mr-4 self-start flex flex-row items-center border-none bg-transparent;
+    @apply py-1 -ml-3 mr-4 self-start flex flex-row items-center border-none;
   }
 
   aside > div :not(div:first-of-type, h1:first-of-type, div:first-of-type) {

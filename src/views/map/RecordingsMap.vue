@@ -27,9 +27,8 @@ export const DialectColors = {
   'BhBl': '#8ED0FF',
   'BlBh': '#4E68F0',
   'XB': '#F04D4D',
-  'XsB': '#AC0000',
-  'XlB': '#EA0000',
-  'Bez dialektu': '#000000',
+  'Neznámý': '#aaaaaa',
+  'Bez dialektu': '#000000'
 };
 
 
@@ -205,10 +204,23 @@ const markers = computed<Marker[]>(() => {
         position: [part.gpsLatitudeStart, part.gpsLongitudeStart],
         data: {
           recording: rec,
-          part: part
+          part: part,
+          colors: colors
         }
       }
-    }) ?? [];
+    })/* .filter(marker => {
+      if (MapStore.filter === 'any-dialect' && marker.data.colors && marker.data.colors.every(color => color === '#000000')) {
+        return false;
+      }
+
+      return true;
+    }) *//* .sort((markerA, markerB) => {
+
+    }).filter(marker => {
+      if (MapStore.filter !== 'any-dialect') return true;
+
+      return filteredRecordings.value?.some(fp => fp.recordingId === marker.data.recording.id && fp.detectedDialects !== null && fp.detectedDialects.some(dd => dd.confirmedDialect !== null)) ?? false;
+    }) */ ?? [];
 });
 
 const onClick = ({ event, polygon, marker }: { event: LeafletMouseEvent; polygon?: Polygon; marker?: Marker }) => {

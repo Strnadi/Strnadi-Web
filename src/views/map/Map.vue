@@ -129,6 +129,7 @@ watch([zoom, center], updateBounds);
       <l-tile-layer
         :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode!=='aerial'? '256@2x':'256'}/{z}/{x}/{y}`"
         :max-zoom="19"
+        :min-zoom="5"
         :z-index="1"
         attribution="<a href='https://api.mapy.cz/copyright' target='_blank'>&copy; Seznam.cz a.s. a další</a>"
       />
@@ -136,6 +137,7 @@ watch([zoom, center], updateBounds);
         v-if="mode==='aerial'"
         :url="`${env.VITE_API_URL}/map/v1/maptiles/names-overlay/256/{z}/{x}/{y}`"
         :max-zoom="19"
+        :min-zoom="5"
         :z-index="2"
         attribution="<a href='https://api.mapy.cz/copyright' target='_blank'>&copy; Seznam.cz a.s. a další</a>"
       />

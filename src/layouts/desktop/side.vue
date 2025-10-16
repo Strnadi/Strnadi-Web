@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Back from "@/icons/interface/icon-back.svg";
 import Close from "@/icons/interface/icon-close.svg";
 import { useRouter } from 'vue-router';
 
@@ -18,14 +17,8 @@ const closePopup = () => {
 <template>
   <router-view v-slot="{ Component }">
     <aside class="side">
-      <div v-auto-scrollbar>
-        <div class="sticky flex flex-row justify-between top-0">
-          <button
-            class="small"
-            @click="goBack"
-          >
-            <Back />
-          </button>
+      <div v-auto-scrollbar class="relative">
+        <div class="sticky flex flex-row-reverse justify-between top-0">
           <button
             class="small bg-yellow-300 rounded-2xl"
             @click="closePopup"
@@ -61,7 +54,7 @@ const closePopup = () => {
   }
 
   aside > div {
-    @apply grid grid-cols-[auto_1fr] overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
+    @apply /*grid grid-cols-[auto_1fr] */ overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
     @apply rounded-4xl;
     @apply p-8;
     @apply pb-20;

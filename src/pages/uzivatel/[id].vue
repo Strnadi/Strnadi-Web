@@ -20,10 +20,9 @@ const { data: user } = useQuery({
 
 <template>
   <h1>
-    Uživatel
     <template v-if="user && user.firstName && user.lastName">
       {{ user.firstName }} {{ user.lastName }}
     </template>
-    <template v-else> {{ user?.nickname }} </template>
+    <template v-else> Uživatel @{{ user?.nickname }} </template>
   </h1>
 </template>

@@ -1,8 +1,7 @@
-<route>
+<route lang="yaml">
 meta:
   layout: desktop/side
   landing-bypass: true
-
 </route>
 
 <script setup lang="ts">
@@ -48,7 +47,6 @@ const options = {
   typographer: true,
   quotes: "„“‚‘"
 };
-
 </script>
 
 <template>

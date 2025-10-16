@@ -1,4 +1,4 @@
-<route>
+<route lang="yaml">
 meta:
   layout: desktop/small-popup
 </route>

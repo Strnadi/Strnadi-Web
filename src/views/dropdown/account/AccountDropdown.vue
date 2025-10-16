@@ -3,6 +3,7 @@ import ProfileIcon from "@/icons/interface/icon-profile.svg"
 import DropdownIcon from '@/icons/interface/dropdown.svg';
 import { accountStore } from '@/state/AccountStore';
 import Dropdown from '@/components/Dropdown.vue';
+// import List from '@/icons/interface/icon-list.svg';
 
 const user = accountStore.user!;
 </script>
@@ -24,19 +25,19 @@ const user = accountStore.user!;
       </div>
     </template>
     <li>
-      <PrefetchLink
-        to="/ucet/sprava/moje-nahravky"
-        class="dropdown-item"
-      >
-        <List />
-        Moje záznamy
-      </PrefetchLink>
-    </li>
-    <li>
       <PrefetchLink to="/ucet/muj-ucet">
         <div class="dropdown-item">
           Profil
         </div>
+      </PrefetchLink>
+    </li> 
+    <li>
+      <PrefetchLink
+        to="/ucet/sprava/moje-nahravky"
+        class="dropdown-item"
+      >
+        <!-- <List /> -->
+        Moje záznamy
       </PrefetchLink>
     </li>
     <li v-if="accountStore.user?.role === 'admin'">

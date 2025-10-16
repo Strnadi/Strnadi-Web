@@ -5,7 +5,7 @@ import { type Numeric } from "@/types/basic";
 export interface ArticleFile {
   id: number;
   articleId: number;
-  filename: string | null;
+  fileName: string | null;
 };
 
 export interface Article {
@@ -53,11 +53,13 @@ export const postArticleFile = async (token: string, articleID: Numeric, file: F
     }
   });
 
-export const patchArticleFile = async (token: string, articleID: Numeric, filename: string) =>
-  authorizedPatch(`/article/${articleID}/${filename}`, token)
+export const patchArticleFile = async (token: string, articleID: Numeric, filename: string, file: File) =>
+  authorizedPatch(`/articles/${articleID}/${filename}`, token, `"${await fileToBase64NoPrefix(file)}"`, {
+    "Content-Type": "application/json"
+  })
 
 export const deleteArticleFile = async (token: string, articleID: Numeric, filename: string) =>
-  authorizedDelete(`/article/${articleID}/${filename}`, token)
+  authorizedDelete(`/articles/${articleID}/${filename}`, token)
 
 export const postArticleCategory = async (token: string, category: Partial<ArticleCategory>) =>
   authorizedPost<string, Partial<ArticleCategory>>("/articles/categories", token, category);

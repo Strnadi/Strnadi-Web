@@ -1,4 +1,4 @@
-<route>
+<route lang="yaml">
 meta:
   layout: desktop/small-popup
 </route>
@@ -25,7 +25,7 @@ onMounted(() => {
   if (isApple()) {
     window.location.href = 'https://ios.strnadi.cz';
   } else if (isAndroid()) {
-    window.location.href = 'https://apk.strnadi.cz';
+    window.location.href = 'https://play.google.com/store/apps/details?id=com.delta.strnadi';
   }
 });
 

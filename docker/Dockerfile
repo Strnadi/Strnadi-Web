@@ -1,4 +1,3 @@
-
 FROM oven/bun:alpine AS build
 WORKDIR /usr/src/app
 

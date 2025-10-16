@@ -24,8 +24,6 @@ const searchText = ref('');
 
 <template>
   <div class="absolute bottom-2 right-2 z-[10] flex flex-row justify-end items-end">
-    <!-- TODO: Plus and minus icons-->
-
     <LocationSearch
       v-model:text="searchText"
       placeholder="Hledat..."

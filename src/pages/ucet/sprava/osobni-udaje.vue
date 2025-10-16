@@ -1,3 +1,8 @@
+<route lang="yaml">
+meta:
+  layout: desktop/side
+</route>
+
 <script setup lang="ts">
 import { patchPasswordChange, patchUser, type UserUpdateRequest } from '@/api/account';
 import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue';

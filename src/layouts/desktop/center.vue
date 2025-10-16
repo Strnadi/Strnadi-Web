@@ -23,14 +23,6 @@ const closePopup = () => {
         @keydown.escape="closePopup"
       >
         <div>
-          <div>
-            <button
-              class="secondary small"
-              @click="goBack"
-            >
-              <Back />
-            </button>
-          </div>
           <component :is="Component" />
         </div>
       </aside>
@@ -58,7 +50,7 @@ const closePopup = () => {
   }
 
   aside > div {
-    @apply grid grid-cols-[auto_1fr] overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
+    @apply /* grid grid-cols-[auto_1fr] */ overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
     @apply rounded-4xl;
     @apply p-8;
     @apply bg-white/90;

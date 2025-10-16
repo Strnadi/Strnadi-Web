@@ -1,6 +1,6 @@
 export const translations = {
     "cs-CZ": {
-        "lang_name": "Čeština",
+        "lang_name": "🇨🇿 Čeština",
         "project_name": "Nářečí českých strnadů",
         "project_description": "Projekt občanské vědy zaměřený na studium rozmanitosti ptačího zpěvu. Nahráváním zpěvu strnadů obecných po celém Česku můžete přispět k poznání, jak se v krajině udržují ptačí nářečí.",
         "project_description_short": "Projekt občanské vědy",
@@ -26,7 +26,7 @@ export const translations = {
             "enter": "Vstoupit",
             "app": "Stáhnout aplikaci",
             "contacts": "Kontakty",
-            "supporters": "Kdo nás podporuje",
+            "supporters": "Projekt podporují",
             "about_us": "O týmu",
             "login": "Přihlásit se",
             "register": "Registrovat se",
@@ -72,7 +72,7 @@ export const translations = {
     },
 
     "en-US": {
-        "lang_name": "English",
+        "lang_name": "🇺🇸 English",
         "project_name": "Yellowhammers' Dialects",
         "project_description": "Citizen science project focused on the diversity of birdsong. By recording yellowhammer songs across the Czech Republic, you can help us understand how bird dialects persist in the landscape.",
         "development": "The website and the app are in heavy development. We apologise for any errors. Expect frequent updates and improvements.",
@@ -144,7 +144,7 @@ export const translations = {
         },
     },
     "de-DE": {
-        "lang_name": "Deutsch",
+        "lang_name": "🇩🇪 Deutsch",
         "project_name": "Dialekte der Goldammer",
         "project_description": "Bürgerwissenschaftliches Projekt zur Erforschung der Vielfalt des Vogelgesangs. Durch die Aufnahme von Goldammerngesängen in der ganzen Tschechischen Republik können Sie dazu beitragen, zu verstehen, wie sich Vogeldialekte in der Landschaft erhalten.",
         "development": "Die Website und die App befinden sich in starker Entwicklung. Wir entschuldigen uns für eventuelle Fehler. Erwarten Sie häufige Updates und Verbesserungen.",

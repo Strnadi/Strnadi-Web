@@ -1,4 +1,4 @@
-<route>
+<route lang="yaml">
 meta:
   layout: desktop/center
 </route>
@@ -54,10 +54,10 @@ const { data: textQuery } = useQuery({
 watch(
   () => articleQuery.value,
   (data?: Article) => {
-    if (!data) return
-    name.value = data.name
-    description.value = data.description
-    categories.value = data.categories.map((c: any) => c.name)
+    if (!data) return;
+    name.value = data.name;
+    description.value = data.description;
+    categories.value = data.categories.map((c: any) => c.name);
   },
   { immediate: true }
 )
@@ -121,7 +121,7 @@ const { mutate: submitArticle } = useMutation({
           lastModified: Date.now()
         }
       );
-      ops.push(patchArticleFile(accountStore.token!, id.value, textFile));
+      ops.push(patchArticleFile(accountStore.token!, id.value, ARTICLE_TEXT_FILENAME, textFile));
     }
 
     // upload new attachments
@@ -178,37 +178,43 @@ const { mutate: submitArticle } = useMutation({
     @click.stop
   >
     <li
-      v-for="file in article?.files?.filter(f => f.filename !== ARTICLE_TEXT_FILENAME)"
-      :key="file.filename"
+      v-for="file in article?.files?.filter(f => f.fileName !== ARTICLE_TEXT_FILENAME) ?? []"
+      :key="file.fileName"
       class="flex flex-row w-full items-center justify-between"
     >
-      <MaterialIcon
-        class="h-10"
-        :filename="file.filename"
-      />
-      <div class="flex flex-col">
-        <p
-          :class="{
-            'line-through': deleteFiles.includes(file.filename)
-          }"
-        >
-          {{ file.filename }}
-        </p>
+      <div class="flex flex-row gap-x-2 items-center">
+        <MaterialIcon
+          class="h-10"
+          :filename="file.fileName"
+        />
+        <div class="flex flex-col">
+          <p
+            :class="{
+              'line-through': deleteFiles.includes(file.fileName)
+            }"
+          >
+            {{ file.fileName }}
+          </p>
+        </div>
       </div>
       <button
-        v-if="!deleteFiles.includes(file.filename)"
+        v-if="!deleteFiles.includes(file.fileName)"
         class="text-red-500"
-        @click="deleteFiles.push(file.filename)"
+        @click="deleteFiles.push(file.fileName)"
       >
         Smazat
       </button>
       <button
         v-else
         class="text-red-500"
-        @click="deleteFiles.splice(deleteFiles.indexOf(file.filename), 1)"
+        @click="deleteFiles.splice(deleteFiles.indexOf(file.fileName), 1)"
       >
         Obnovit
       </button>
     </li>
   </ul>
+
+  <button class="primary p-2 w-full" @click="() => submitArticle({ content: editorContent })">
+    Uložit
+  </button>
 </template>

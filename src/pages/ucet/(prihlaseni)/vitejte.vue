@@ -1,4 +1,4 @@
-<route>
+<route lang="yaml">
 meta:
   layout: desktop/popup
 </route>
@@ -21,17 +21,17 @@ import TranslatedText from "@/components/TranslatedText.vue";
     <div class="flex flex-col items-center gap-y-2 w-full">
       <PrefetchLink
         :replace="true"
-        to="/ucet/registrace"
+        to="/ucet/prihlaseni"
         class="button-primary p-2 w-full"
       >
-        Založit účet
+        Přihlásit se
       </PrefetchLink>
       <PrefetchLink
         :replace="true"
-        to="/ucet/prihlaseni"
+        to="/ucet/registrace"
         class="button-secondary p-2 w-full"
       >
-        Přihlásit se
+        Založit účet
       </PrefetchLink>
     </div>
 
