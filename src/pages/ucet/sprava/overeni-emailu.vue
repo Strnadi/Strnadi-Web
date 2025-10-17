@@ -1,3 +1,8 @@
+<route lang="yaml">
+meta:
+  layout: desktop/popup
+</route>
+
 <script setup lang="ts">
 import { getResendVerifyEmail } from '@/api/account';
 import SegmentedProgress from '@/components/SegmentedProgress.vue';

@@ -21,6 +21,8 @@ export const registerStore = reactive({
   isExternalSignup: false,
   appleId: null as string | null,
   jwt: null as string | null,
+  userExists: false,
+  checkingEmail: false,
 
   reset() {
     this.name = "";
@@ -36,6 +38,8 @@ export const registerStore = reactive({
     this.passwordConfirm = "";
     this.marketingAgreement = false;
     this.jwt = null;
+    this.userExists = false;
+    this.checkingEmail = false;
   }
 
 });
@@ -44,23 +48,45 @@ export const registerStore = reactive({
 
 <script setup lang="ts">
 import * as jose from 'jose';
-import { watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMutation } from '@tanstack/vue-query'
-import { postRegister, type SignUpRequest } from '@/api/account'
+import { getUserExists, postRegister, type SignUpRequest } from '@/api/account'
 import { accountStore } from '@/state/AccountStore'
 import { postGoogleSignup, type JWTObject, type OAuth2SignUpResponse } from '@/api/account';
 import { useStepper } from '@vueuse/core';
 import AuthButtons from '@/views/AuthButtons.vue';
 import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue'
+import TranslatedText from '@/components/TranslatedText.vue';
+import LocationSearch from '@/components/map/LocationSearch.vue';
+import DigitInput from '@/components/DigitInput.vue';
 
+const emailElement = ref<HTMLInputElement | null>(null);
 
-
+// 1) Pre‐fetch whether the email exists whenever email or agreement changes
+watch(
+  () => [registerStore.email, registerStore.dataAgreement],
+  async ([email, agreed]) => {
+    if (email && agreed) {
+      registerStore.checkingEmail = true;
+      registerStore.userExists = await getUserExists(email);
+      registerStore.checkingEmail = false;
+    } else {
+      registerStore.userExists = false;
+    }
+  }
+);
 
 const stepper = useStepper({
   'email': {
     title: 'E-mail',
-    isValid: () => registerStore.email && registerStore.dataAgreement,
+    isValid: () =>
+      emailElement.value &&
+      !!registerStore.email &&
+      registerStore.dataAgreement &&
+      !registerStore.userExists &&
+      !registerStore.checkingEmail &&
+      emailElement.value.checkValidity()
   },
 
   'personal-info': {
@@ -81,7 +107,9 @@ const stepper = useStepper({
         password &&
         passwordConfirm &&
         password === passwordConfirm &&
-        password.length >= 8
+        password.length >= 8 &&
+        /[A-Z]/.test(password) &&
+        /[0-9]/.test(password)
       )
     },
   },
@@ -170,8 +198,7 @@ watch(() => stepper.current.value, (newValue) => {
   ) {
     stepper.goToNext();
   }
-})
-
+});
 </script>
 
 <template>
@@ -185,13 +212,34 @@ watch(() => stepper.current.value, (newValue) => {
       <div>
         <div v-if="stepper.isCurrent('email')">
           <div class="flex flex-col gap-y-4">
-            <input
-              v-model="registerStore.email"
-              name="email"
-              type="email"
-              required
-              placeholder="E-Mail"
-            >
+            <template v-if="registerStore.userExists">
+              <p class="text-red-600">
+                Tento e-mail je již registrován. Pokud si nepamatujete své heslo, můžete si ho <PrefetchLink
+                  to="/ucet/zapomenute-heslo"
+                  class="underline"
+                >obnovit zde</PrefetchLink>.
+              </p>
+            </template>
+
+            <div class="flex flex-col w-full">
+              <label for="email">
+                <div class="text-sm font-medium mb-1 flex flex-row justify-between">
+                  <span>E-mail</span>
+                  <PrefetchLink to="/ucet/zapomenute-heslo">
+                    <TranslatedText identifier="buttons.forgotten_password" />?
+                  </PrefetchLink>
+                </div>
+              </label>
+              <input
+                v-model="registerStore.email"
+                ref="emailElement"
+                name="email"
+                type="email"
+                class="p-2"
+                required
+                placeholder="E-Mail"
+              >
+            </div>
             <div class="flex flex-row items-center gap-x-2 m-4">
               <input
                 id="agreement"
@@ -221,6 +269,7 @@ watch(() => stepper.current.value, (newValue) => {
             <label for="name">Jméno</label>
             <input
               id="name"
+              class="p-2"
               v-model="registerStore.name"
               type="text"
               required
@@ -230,6 +279,7 @@ watch(() => stepper.current.value, (newValue) => {
             <label for="surname">Příjmení</label>
             <input
               id="surname"
+              class="p-2"
               v-model="registerStore.surname"
               type="text"
               required
@@ -239,6 +289,7 @@ watch(() => stepper.current.value, (newValue) => {
             <label for="nickname">Přezdívka (nepovinné)</label>
             <input
               id="nickname"
+              class="p-2"
               v-model="registerStore.nickname"
               type="text"
             >
@@ -254,22 +305,27 @@ watch(() => stepper.current.value, (newValue) => {
           class="flex flex-col gap-y-4"
         >
           <div class="flex flex-col gap-y-1">
-            <label for="postalCode">PSČ</label>
+            <DigitInput
+              v-model="registerStore.postCode"
+              :digits="5"
+            />
+            <!-- <label for="postalCode">PSČ</label>
             <input
               id="postalCode"
               v-model="registerStore.postCode"
               type="number"
               min="0"
               max="99999"
-            >
+            > -->
             <p class="text-gray-600">
-              Nepovinné … z vaší lokality.
+              Nepovinné; pokus vyplníte, budete dostávat aktuality z vaší lokality.
             </p>
           </div>
           <div class="flex flex-col gap-y-1">
             <label for="city">Město</label>
             <LocationSearch
               id="city"
+              class="p-2"
               v-model:text="registerStore.city"
             />
             <p class="text-gray-600">
@@ -284,15 +340,23 @@ watch(() => stepper.current.value, (newValue) => {
           class="flex flex-col gap-y-4"
         >
           <p class="text-gray-600">
-            Heslo musí mít minimálně 8 znaků a 1 číslici.
+            Heslo musí mít minimálně 8 znaků, 1 velké písmeno a 1 číslici.
           </p>
+          <template v-if="!stepper.current.value.isValid() && registerStore.password !== '' && registerStore.passwordConfirm === registerStore.password">
+            <span>Heslo nesplňuje požadavky</span>
+          </template>
+          <template v-if="registerStore.password !== registerStore.passwordConfirm && registerStore.passwordConfirm !== ''">
+            <span>Hesla nejsou stejná</span>
+          </template>
           <RevealablePasswordInput
             v-model="registerStore.password"
             label="Heslo"
+            class="p-2"
           />
           <RevealablePasswordInput
             v-model="registerStore.passwordConfirm"
             label="Heslo znovu"
+            class="p-2"
           />
         </div>
 

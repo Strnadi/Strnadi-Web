@@ -15,7 +15,7 @@ const isDesktop = useMediaQuery(
 useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
 
   if (recording && recordingPart) {
-    router.push(`/mapa/nahravka/${recording.id}/${recordingPart.id}`);
+    router.push(`/mapa/nahravka/${recording.id}`);
   } else if (square) {
     router.push(`/mapa/ctverec/${square}`);
   } else {

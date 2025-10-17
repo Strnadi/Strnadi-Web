@@ -59,7 +59,8 @@ const queryClient = useQueryClient();
 
 onBeforeRouteUpdate(async (to) => {
   recordingId.value = to.params.id as string;
-  await queryClient.invalidateQueries({ queryKey: ['recording'] });
+  await queryClient.invalidateQueries({ queryKey: ['recordings'] });
+  await queryClient.invalidateQueries({ queryKey: ['filtered-recordings'] });
   await queryClient.invalidateQueries({ queryKey: ['user'] });
 });
 
@@ -109,7 +110,12 @@ const cancelEdit = () => {
     <template v-if="editing">
       Upravování:
     </template>
-    Nahrávka {{ recording?.name }}
+    <template v-if="recording?.name">
+      {{ recording.name }}  
+    </template>
+    <template v-else>
+      Nahrávka #{{ recordingId }}
+    </template>
   </h1>
 
   <div
@@ -152,7 +158,7 @@ const cancelEdit = () => {
         <template v-if="recording.device">
           {{ recording.device }}
         </template>
-        <span>{{ new Date(recording.createdAt!).toLocaleString() }}</span>
+        <span>{{ new Date(recording.parts?.[0]?.startDate ?? recording.createdAt!).toLocaleString() }}</span>
       </div>
 
       <div v-if="filteredRec">

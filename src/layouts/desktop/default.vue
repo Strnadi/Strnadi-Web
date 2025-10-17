@@ -31,35 +31,35 @@ const goHome = () => {
 </script>
 
 <template>
-  <Dropzone :headless="true" :multiple="true" :accept="soundAccept" @drop="async (files) => {
-    await router.push('/mapa/nahrat');
-    // console.log(files);
-    uploadStore.setRecordings(files)
-    // console.log(typeof files);
-  }">
-    <template #dragging>
+  <!-- <Dropzone :headless="true" :multiple="true" :accept="soundAccept" @drop="async (files) => { -->
+    <!-- await router.push('/mapa/nahrat'); -->
+    <!-- // console.log(files); -->
+    <!-- uploadStore.setRecordings(files) -->
+    <!-- // console.log(typeof files); -->
+  <!-- }> -->
+    <!-- <template #dragging>
       <div class="flex w-screen h-screen"><span class="m-auto">Upusťte soubory pro nahrání</span></div>
-    </template>
+    </template> -->
 
     <div
-        class="flex min-w-svw min-h-svh"
-        @keyup.escape="goHome"
+      class="flex min-w-svw min-h-svh"
+      @keyup.escape="goHome"
     >
       <Navbar />
       <aside
-          v-if="applicationStore.notifications.length"
-          class="notifications"
+        v-if="applicationStore.notifications.length"
+        class="notifications"
       >
         <ul class="flex flex-col-reverse gap-y-2">
           <li
-              v-for="(notification, index) in applicationStore.notifications"
-              :key="index"
+            v-for="(notification, index) in applicationStore.notifications"
+            :key="index"
           >
             <Notification
-                :kind="notification.kind"
-                :title="notification.title"
-                :message="notification.message"
-                @dismiss="applicationStore.notifications.splice(index, 1)"
+              :kind="notification.kind"
+              :title="notification.title"
+              :message="notification.message"
+              @dismiss="applicationStore.notifications.splice(index, 1)"
             />
           </li>
         </ul>
@@ -71,7 +71,7 @@ const goHome = () => {
     </div>
 
     <router-view />
- </Dropzone>
+  <!-- </Dropzone> -->
 </template>
 
 <style scoped>

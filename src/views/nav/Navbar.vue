@@ -6,6 +6,7 @@ import { getArticleCategories } from '@/api/articles'
 
 import Dropdown from '@/components/Dropdown.vue'
 import AccountDropdown from '@/views/dropdown/account/AccountDropdown.vue';
+import UploadProgress from '@/components/UploadProgress.vue';
 
 import UploadIcon from '@/icons/interface/icon-upload.svg';
 import DropdownIcon from '@/icons/interface/dropdown.svg';
@@ -22,115 +23,120 @@ const { data: categories, isLoading, error } = useQuery({
 
 <template>
   <nav class="w-full">
-    <div class="flex justify-between gap-x-4 items-center h-16 bg-white rounded-4xl m-2 desktop:m-5 pr-4">
-      <!-- Logo -->
-      <div class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc] shrink-0">
-        <PrefetchLink to="/vitejte">
-          <img
-            src="/logo.svg"
-            alt="Logo"
-          >
-        </PrefetchLink>
-      </div>
+    <div class="nav-container">
+      <div class="flex justify-between gap-x-4 items-center h-16 bg-white rounded-4xl m-2 desktop:m-5 pr-4">
+        <!-- Logo -->
+        <div class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc] shrink-0">
+          <PrefetchLink to="/vitejte">
+            <img
+              src="/logo.svg"
+              alt="Logo"
+            >
+          </PrefetchLink>
+        </div>
 
-      <span v-if="isLoading">
-        <TranslatedText identifier="loading" />...
-      </span>
+        <span v-if="isLoading">
+          <TranslatedText identifier="loading" />...
+        </span>
 
-      <span v-if="error">
-        Chyba při načítání obsahu: {{ error.message }}
-      </span>
+        <span v-if="error">
+          Chyba při načítání obsahu: {{ error.message }}
+        </span>
 
-      <!-- Desktop navigation -->
-      <div class="flex justify-between items-center w-full">
-        <ul class="flex flex-row gap-x-4 items-center">
-          <template v-if="accountStore.user">
-            <li>
-              <PrefetchLink
-                to="/mapa/nahrat"
-                class="dropdown-item"
-                v-wave
+        <!-- Desktop navigation -->
+        <div class="flex justify-between items-center w-full gap-x-4">
+          <ul class="flex flex-row gap-x-4 items-center">
+            <template v-if="accountStore.user">
+              <li>
+                <PrefetchLink
+                  to="/mapa/nahrat"
+                  class="dropdown-item"
+                  v-wave
+                >
+                  <UploadIcon />
+                  Nahrát
+                </PrefetchLink>
+              </li>
+            </template>
+
+            <Dropdown
+              v-for="category in categories"
+              :key="category.name"
+            >
+              <template
+                #title
               >
-                <UploadIcon />
-                Nahrát
+                {{ category.label }}
+                <DropdownIcon />
+              </template>
+
+              <li
+                v-for="article in category.articles"
+                :key="article.id"
+              >
+                <prefetch-link
+                  :to="`/informace/${category.name}/${kebabize(article.name)}`"
+                  class="dropdown-item !flex !flex-col !items-start"
+                  v-wave
+                >
+                  <span>{{ article.name }}</span>
+                  <span
+                    v-if="article.description"
+                    class="italic"
+                  >
+                    {{ article.description }}
+                  </span>
+                </prefetch-link>
+              </li>
+            </Dropdown>
+          </ul>
+
+          <!-- Upload Progress (inline with nav items) -->
+          <UploadProgress />
+
+          <ul class="flex flex-row gap-x-4 items-center">
+            <Dropdown>
+              <template #title>
+<!--              {{ translations[applicationStore.language].lang_name }}-->
+                {{ translations[applicationStore.language].lang_name }}
+                <DropdownIcon />
+              </template>
+
+              <ul>
+                <li
+                  v-for="key in (Object.keys(translations) as (keyof typeof translations)[])"
+                  :key="key"
+                  class="dropdown-item"
+                  v-wave
+                >
+                  <button
+                      :class="key === applicationStore.language ? 'font-bold' : ''"
+                      @click="() => applicationStore.language = key"
+                  >{{ translations[key].lang_name }}</button>
+                </li>
+              </ul>
+
+            </Dropdown>
+
+            <li>
+              <AccountDropdown v-if="accountStore.user" />
+              <PrefetchLink
+                v-else
+                to="/ucet/vitejte"
+                class="button-secondary py-2 px-4"
+              >
+                <TranslatedText identifier="buttons.login" />
               </PrefetchLink>
             </li>
-          </template>
 
-          <Dropdown
-            v-for="category in categories"
-            :key="category.name"
-          >
-            <template
-              #title
-            >
-              {{ category.label }}
-              <DropdownIcon />
-            </template>
-
-            <li
-              v-for="article in category.articles"
-              :key="article.id"
-            >
-              <prefetch-link
-                :to="`/informace/${category.name}/${kebabize(article.name)}`"
-                class="dropdown-item !flex !flex-col !items-start"
-                v-wave
-              >
-                <span>{{ article.name }}</span>
-                <span
-                  v-if="article.description"
-                  class="italic"
-                >
-                  {{ article.description }}
-                </span>
-              </prefetch-link>
-            </li>
-          </Dropdown>
-        </ul>
-
-        <ul class="flex flex-row gap-x-4 items-center">
-          <Dropdown>
-            <template #title>
-<!--              {{ translations[applicationStore.language].lang_name }}-->
-              {{ translations[applicationStore.language].lang_name }}
-              <DropdownIcon />
-            </template>
-
-            <ul>
-              <li
-                v-for="key in (Object.keys(translations) as (keyof typeof translations)[])"
-                :key="key"
-                class="dropdown-item"
-                v-wave
-              >
-                <button
-                    :class="key === applicationStore.language ? 'font-bold' : ''"
-                    @click="() => applicationStore.language = key"
-                >{{ translations[key].lang_name }}</button>
-              </li>
-            </ul>
-
-          </Dropdown>
-
-          <li>
-            <AccountDropdown v-if="accountStore.user" />
             <PrefetchLink
-              v-else
-              to="/ucet/vitejte"
-              class="button-secondary py-2 px-4"
+                to="/aplikace"
+                class="button-primary py-2 px-4 max-sm:text-sm"
             >
-              <TranslatedText identifier="buttons.login" />
+              <TranslatedText identifier="buttons.app" />
             </PrefetchLink>
-          </li>
-
-          <PrefetchLink
-              to="/aplikace"
-              class="button-primary py-2 px-4 max-sm:text-sm"
-          >
-            <TranslatedText identifier="buttons.app" />
-          </PrefetchLink>
-        </ul>
+          </ul>
+        </div>
       </div>
     </div>
   </nav>
@@ -146,6 +152,10 @@ const { data: categories, isLoading, error } = useQuery({
 
 nav {
   @apply fixed z-[9] drop-shadow-xl min-w-0 w-full;
+}
+
+.nav-container {
+  @apply flex flex-col;
 }
 
 </style>

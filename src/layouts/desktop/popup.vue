@@ -18,6 +18,13 @@ const closePopup = () => {
       @click="closePopup"
       @keydown.escape="closePopup"
     >
+      <button
+        class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl"
+        @click="closePopup"
+      >
+        <Close />
+      </button>
+
       <div @click.stop>
         <component :is="Component" />
       </div>

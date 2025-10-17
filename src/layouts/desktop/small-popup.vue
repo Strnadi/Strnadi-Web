@@ -20,15 +20,14 @@ const closePopup = () => {
         :key="`${route.path}`"
         @click.stop
         v-auto-scrollbar
+        class="relative"
       >
-        <div class="sticky flex flex-row-reverse top-0">
-          <button
-            class="small bg-yellow-300 rounded-2xl"
-            @click="closePopup"
-          >
-            <Close />
-          </button>
-        </div>
+        <button
+          class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl"
+          @click="closePopup"
+        >
+          <Close />
+        </button>
 
         <component :is="Component" />
       </div>

@@ -5,13 +5,14 @@ meta:
 
 <script lang="ts">
 import { ref, watch, computed, onUnmounted, reactive } from 'vue';
-import { onBeforeRouteUpdate, onBeforeRouteLeave } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { accountStore } from "@/state/AccountStore";
 import { MapEvents, type MapClickEvent, MapStore } from '@/views/map/RecordingsMap.vue';
 import { useStepper } from '@vueuse/core';
-import { postRecording, type RecordingUploadReq, type RecordingPartUploadParams } from '@/api/recordings';
-import { useQueryClient, useMutation } from '@tanstack/vue-query';
+import { type RecordingPartUploadParams } from '@/api/recordings';
+import { useQueryClient } from '@tanstack/vue-query';
 import { divIcon, type Icon } from 'leaflet';
+import { uploadQueueStore } from '@/state/UploadStore';
 
 import "@vuepic/vue-datepicker/dist/main.css";
 
@@ -89,9 +90,12 @@ import TextualCoords from '@/components/map/TextualCoords.vue';
 import TranslatedText from '@/components/TranslatedText.vue';
 
 const queryClient = useQueryClient();
+const router = useRouter();
 
 const dialect = ref("");
 const error = ref<string | null>(null);
+const isSubmitting = ref(false);
+const uploadSuccess = ref(false);
 
 const photoAccept = "image/*";
 
@@ -194,57 +198,20 @@ watch(
 );
 
 
-const beforeWindowUnload = (event: BeforeUnloadEvent) => {
-  event.preventDefault();
-  event.returnValue = true;
+const removeMarkers = () => {
+  const selectedParts = Object.keys(MapStore.markers).filter(key => key.startsWith('selected-part-'));
+
+  for (const key of selectedParts) {
+    delete MapStore.markers[key];
+  }
 };
 
-const removeMarkers = () => {
-  for(let i = 0; i < (uploadStore.parts?.length ?? 0); i++) {
-    delete MapStore.markers[`selected-part-${i}`];
-  }
-}
-
-const {
-  mutate: submitRecording,
-  error: uploadError,
-  isPending,
-} = useMutation({
-  mutationFn: ({
-    token,
-    recording,
-    parts,
-    photos
-  }: {
-    token: string;
-    recording: RecordingUploadReq;
-    parts: RecordingPartUploadParams[];
-    photos?: File[];
-  }) => postRecording(token, recording, parts, photos),
-
-  onMutate() {
-    window.addEventListener("beforeunload", beforeWindowUnload);
-  },
-
-  onSettled() {
-    window.removeEventListener("beforeunload", beforeWindowUnload)
-    queryClient.invalidateQueries({ queryKey: ["all-recordings"] });
-    stepper.goTo("file");
-
-    removeMarkers();
-  }
-});
-
-onUnmounted(removeMarkers);
-onUnmounted(() => {
-  MapEvents.off("click", handleMapClick);
-});
-
-// useMutationState({
-//   select: (mutation) => mutation.state.status
-// })
-
 const submit = () => {
+  if (isSubmitting.value) return;
+  
+  isSubmitting.value = true;
+  uploadSuccess.value = false;
+
   const recording = {
     createdAt: new Date().toISOString(),
     estimatedBirdsCount: uploadStore.birdCount,
@@ -268,25 +235,33 @@ const submit = () => {
       } as RecordingPartUploadParams)
   );
 
-  submitRecording({
-    token: accountStore.token!,
-    recording: recording,
-    parts: recordingParts,
-    photos: uploadStore.photos ?? []
-  });
+  // Add to background upload queue
+  uploadQueueStore.addTask(
+    recording,
+    recordingParts,
+    uploadStore.photos ?? undefined,
+    accountStore.token!
+  );
+
+  // Reset form and show success
+  uploadSuccess.value = true;
+  isSubmitting.value = false;
+  
+  // Reset store and UI
+  uploadStore.reset();
+  removeMarkers();
+  stepper.goTo("file");
+  
+  // Redirect to map after a short delay
+  setTimeout(() => {
+    router.push('/');
+  }, 2000);
 };
 
-const stillUploading = () => {
-  if(isPending.value) {
-    alert("Nahrávání stále probíhá. Nezavírejte stránku.");
-    return false;
-  }
-
-  return;
-}
-
-onBeforeRouteUpdate(stillUploading);
-onBeforeRouteLeave(stillUploading);
+onUnmounted(removeMarkers);
+onUnmounted(() => {
+  MapEvents.off("click", handleMapClick);
+});
 
 
 function submitOrNext() {
@@ -365,10 +340,6 @@ const currentPartIndex = ref(0);
       class="text-lg font-bold mb-4"
       v-text="stepper.current.value.title"
     />
-
-    <template v-if="uploadError">
-      <span>{{ uploadError }}</span>
-    </template>
 
     <form @submit.prevent="submitOrNext">
       <template v-if="stepper.isCurrent('file')">
@@ -603,8 +574,23 @@ const currentPartIndex = ref(0);
       </template>
 
       <template v-if="stepper.isCurrent('submit')">
-        <p v-if="isPending"><TranslatedText identifier="upload.uploading" /></p>
-        <p v-else><TranslatedText identifier="upload.uploaded" /></p>
+        <div class="flex flex-col gap-4 items-center justify-center p-8">
+          <template v-if="uploadSuccess">
+            <div class="text-6xl">✅</div>
+            <p class="text-xl font-semibold text-green-600">
+              Nahrávka byla zařazena do fronty
+            </p>
+            <p class="text-sm text-gray-600">
+              Nahrávání probíhá na pozadí. Můžete pokračovat v používání aplikace.
+            </p>
+            <p class="text-sm text-gray-600">
+              Sledujte průběh v horní liště.
+            </p>
+          </template>
+          <template v-else>
+            <p>Příprava nahrávky...</p>
+          </template>
+        </div>
       </template>
 
       <!-- Navigation Buttons -->

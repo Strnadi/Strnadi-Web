@@ -68,13 +68,13 @@ const displayName = computed(() => {
         <span class="text-sm text-gray-600">Úprava osobních informací</span>
       </prefetch-link>
 
-      <prefetch-link
+      <!-- <prefetch-link
         to="/ucet/sprava/oznameni"
         class="link"
       >
         <span class="font-medium">Oznámení</span>
         <span class="text-sm text-gray-600">Správa notifikací</span>
-      </prefetch-link>
+      </prefetch-link> -->
 
       <prefetch-link 
         v-if="accountStore.user?.role === 'admin'"
