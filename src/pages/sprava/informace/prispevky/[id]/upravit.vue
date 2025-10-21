@@ -4,7 +4,7 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue'
+import { computed, watch, ref } from 'vue';
 import { useQuery, useMutation } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router';
 import { useRouter } from 'vue-router';
@@ -41,14 +41,14 @@ const editorContent = ref('');
 const { data: articleQuery } = useQuery({
   queryKey: ['articles', id],
   queryFn: () => getArticle(id.value)
-})
+});
 
 // fetch markdown text separately
 const { data: textQuery } = useQuery({
   queryKey: ['articles', id, 'text'],
   queryFn: () => getArticleFile(id.value, ARTICLE_TEXT_FILENAME),
   enabled: computed(() => !!id.value)
-})
+});
 
 // initialize form when the article metadata arrives
 watch(
@@ -60,18 +60,18 @@ watch(
     categories.value = data.categories.map((c: any) => c.name);
   },
   { immediate: true }
-)
+);
 
 // initialize editor when the markdown arrives
 watch(
   () => textQuery.value,
   (md?: string) => {
-    if (md == null) return
-    originalContent.value = md
-    editorContent.value = md
+    if (md == null) return;
+    originalContent.value = md;
+    editorContent.value = md;
   },
   { immediate: true }
-)
+);
 
 const article = computed(() => articleQuery.value);
 
@@ -95,8 +95,8 @@ const { mutate: submitArticle } = useMutation({
       ops.push(
         patchArticle(accountStore.token!, id.value, {
           name: name.value,
-          description: description.value,
-          categories: categories.value
+          description: description.value
+          // categories: categories.value
         })
       );
     }
@@ -121,7 +121,14 @@ const { mutate: submitArticle } = useMutation({
           lastModified: Date.now()
         }
       );
-      ops.push(patchArticleFile(accountStore.token!, id.value, ARTICLE_TEXT_FILENAME, textFile));
+      ops.push(
+        patchArticleFile(
+          accountStore.token!,
+          id.value,
+          ARTICLE_TEXT_FILENAME,
+          textFile
+        )
+      );
     }
 
     // upload new attachments
@@ -135,36 +142,34 @@ const { mutate: submitArticle } = useMutation({
     router.replace('/sprava/informace');
   }
 });
-
 </script>
 
 <template>
   <h1>Úprava příspěvku</h1>
-  <input
-    v-model="name"
-    type="text"
-    placeholder="Nadpis"
-  >
-  <input
-    v-model="description"
-    type="text"
-    placeholder="Popisek"
-  >
+  <div class="flex flex-col gap-y-2">
+    <input v-model="name" type="text" placeholder="Nadpis" class="p-2" />
+    <input
+      v-model="description"
+      type="text"
+      placeholder="Popisek"
+      class="p-2"
+    />
+  </div>
 
   <div>
     <h2>Vyberte kategorie</h2>
     <v-select
       v-model="categories"
       multiple
-      :options="availableCategories?.map(category => category.name)"
+      :options="availableCategories?.map((category) => category.name)"
       :components="{ ListDeselect }"
     />
   </div>
 
   <MdEditor
     v-model="editorContent"
-    @upload-img="newFiles => files.push(...newFiles)"
-    @save="content => submitArticle({ content })"
+    @upload-img="(newFiles) => files.push(...newFiles)"
+    @save="(content) => submitArticle({ content })"
     language="en-US"
     :no-mermaid="true"
     :no-katex="true"
@@ -173,20 +178,17 @@ const { mutate: submitArticle } = useMutation({
     :no-img-zoom-in="true"
   />
 
-  <ul
-    class="flex flex-col w-full"
-    @click.stop
-  >
+  <ul class="flex flex-col w-full" @click.stop>
+    <!-- Existing files -->
     <li
-      v-for="file in article?.files?.filter(f => f.fileName !== ARTICLE_TEXT_FILENAME) ?? []"
+      v-for="file in article?.files?.filter(
+        (f) => f.fileName !== ARTICLE_TEXT_FILENAME
+      ) ?? []"
       :key="file.fileName"
       class="flex flex-row w-full items-center justify-between"
     >
       <div class="flex flex-row gap-x-2 items-center">
-        <MaterialIcon
-          class="h-10"
-          :filename="file.fileName"
-        />
+        <MaterialIcon class="h-10" :filename="file.fileName" />
         <div class="flex flex-col">
           <p
             :class="{
@@ -212,9 +214,31 @@ const { mutate: submitArticle } = useMutation({
         Obnovit
       </button>
     </li>
+
+    <!-- Newly added files -->
+    <li
+      v-for="(file, index) in files"
+      :key="`new-${index}`"
+      class="flex flex-row w-full items-center justify-between"
+    >
+      <div class="flex flex-row gap-x-2 items-center">
+        <MaterialIcon class="h-10" :filename="file.name" />
+        <div class="flex flex-col">
+          <p class="text-green-600">
+            {{ file.name }} <span class="text-sm">(nový)</span>
+          </p>
+        </div>
+      </div>
+      <button class="text-red-500" @click="files.splice(index, 1)">
+        Odebrat
+      </button>
+    </li>
   </ul>
 
-  <button class="primary p-2 w-full" @click="() => submitArticle({ content: editorContent })">
+  <button
+    class="primary p-2 w-full"
+    @click="() => submitArticle({ content: editorContent })"
+  >
     Uložit
   </button>
 </template>

@@ -13,23 +13,18 @@ const isDesktop = useMediaQuery(
 );
 
 useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
-
   if (recording && recordingPart) {
     router.push(`/mapa/nahravka/${recording.id}`);
   } else if (square) {
     router.push(`/mapa/ctverec/${square}`);
   } else {
-    router.push("/");
+    router.push('/');
   }
-
 });
 </script>
 
 <template>
-  <div
-    v-if="!isDesktop"
-    class="relative flex flex-1"
-  >
+  <div v-if="!isDesktop" class="relative flex flex-1">
     <Map />
     <MapControls />
   </div>

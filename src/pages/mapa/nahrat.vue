@@ -6,40 +6,39 @@ meta:
 <script lang="ts">
 import { ref, watch, computed, onUnmounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import { accountStore } from "@/state/AccountStore";
-import { MapEvents, type MapClickEvent, MapStore } from '@/views/map/RecordingsMap.vue';
+import { accountStore } from '@/state/AccountStore';
+import {
+  MapEvents,
+  type MapClickEvent,
+  MapStore
+} from '@/views/map/RecordingsMap.vue';
 import { useStepper } from '@vueuse/core';
 import { type RecordingPartUploadParams } from '@/api/recordings';
 import { useQueryClient } from '@tanstack/vue-query';
 import { divIcon, type Icon } from 'leaflet';
 import { uploadQueueStore } from '@/state/UploadStore';
 
-import "@vuepic/vue-datepicker/dist/main.css";
+import '@vuepic/vue-datepicker/dist/main.css';
 
-export const soundAccept = [
-  "audio/*",
-  "application/ogg",
-  "application/vorbis"
-];
-
+export const soundAccept = ['audio/*', 'application/ogg', 'application/vorbis'];
 
 interface LatLng {
   lat: number;
   lng: number;
-};
+}
 
 interface RecordingPart {
   file: File;
   location: LatLng | null;
-};
+}
 
 export const uploadStore = reactive({
   parts: null as RecordingPart[] | null,
   photos: null as File[] | null,
   dialects: [] as string[],
-  note: "" as string | null,
-  title: "" as string,
-  device: "" as string | null,
+  note: '' as string | null,
+  title: '' as string,
+  device: '' as string | null,
   birdCount: 1,
   dateTime: new Date().toISOString(),
   confirmUpload: false,
@@ -49,10 +48,10 @@ export const uploadStore = reactive({
     console.log(recordings);
 
     this.parts.push(
-        ...(recordings.map((recording) => ({
-          file: recording,
-          location: null
-        })) as RecordingPart[])
+      ...(recordings.map((recording) => ({
+        file: recording,
+        location: null
+      })) as RecordingPart[])
     );
   },
 
@@ -73,14 +72,12 @@ export const uploadStore = reactive({
     this.photos = null;
     this.dialects = [];
     this.note = null;
-    this.title = "";
+    this.title = '';
     this.device = null;
     this.birdCount = 1;
     this.dateTime = new Date().toISOString();
   }
-
 });
-
 </script>
 
 <script setup lang="ts">
@@ -92,12 +89,12 @@ import TranslatedText from '@/components/TranslatedText.vue';
 const queryClient = useQueryClient();
 const router = useRouter();
 
-const dialect = ref("");
+const dialect = ref('');
 const error = ref<string | null>(null);
 const isSubmitting = ref(false);
 const uploadSuccess = ref(false);
 
-const photoAccept = "image/*";
+const photoAccept = 'image/*';
 
 type StepIdentifier = 'file' | 'photos' | 'location' | 'info' | 'submit';
 
@@ -106,29 +103,31 @@ interface Step {
   isValid: () => boolean;
   before?: () => void;
   after?: () => void;
-};
+}
 
-const colors = computed(() => Array.from(
-  {length: uploadStore.parts?.length ?? 0},
-  () => '#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0')
-));
+const colors = computed(() =>
+  Array.from(
+    { length: uploadStore.parts?.length ?? 0 },
+    () => '#' + ((Math.random() * 0xffffff) << 0).toString(16).padStart(6, '0')
+  )
+);
 
 const makeSelectedIcon = (partIndex: number) =>
   divIcon({
-    className: "my-custom-pin",
+    className: 'my-custom-pin',
     iconSize: [24, 24],
     iconAnchor: [0, 12],
     html: `<span style="
-  background-color: ${colors.value[partIndex]};
-  width: 2rem;
-  height: 2rem;
-  display: block;
-  left: -1.5rem;
-  top: -1.5rem;
-  position: relative;
-  border-radius: 3rem 3rem 0;
-  transform: rotate(45deg);
-  border: 1px solid #FFFFFF;" />`
+      background-color: ${colors.value[partIndex]};
+      width: 2rem;
+      height: 2rem;
+      display: block;
+      left: -1.5rem;
+      top: -1.5rem;
+      position: relative;
+      border-radius: 3rem 3rem 0;
+      transform: rotate(45deg);
+      border: 1px solid #FFFFFF;" />`
   });
 
 const handleMapClick = (event: MapClickEvent) => {
@@ -145,43 +144,46 @@ const handleMapClick = (event: MapClickEvent) => {
       lng: event.event.latlng.lng
     };
   }
-  currentPartIndex.value = (currentPartIndex.value + 1) % (uploadStore.parts?.length ?? 0);
+  currentPartIndex.value =
+    (currentPartIndex.value + 1) % (uploadStore.parts?.length ?? 0);
 
   // Cancel further event processing.
   return false;
-}
+};
 
 // Define the steps for the upload process
 const stepper = useStepper<Record<StepIdentifier, Step>>({
-  'file': {
+  file: {
     title: 'Soubory',
-    isValid: () => (uploadStore.parts?.length ?? 0) > 0 && (uploadStore.parts?.every(part => part.file) ?? false),
+    isValid: () =>
+      (uploadStore.parts?.length ?? 0) > 0 &&
+      (uploadStore.parts?.every((part) => part.file) ?? false)
   },
 
-  'photos': {
+  photos: {
     title: 'Fotky',
-    isValid: () => true,
+    isValid: () => true
   },
 
-  'location': {
+  location: {
     title: 'Poloha',
-    isValid: () => (uploadStore.parts?.every(part => part.location) ?? false),
+    isValid: () => uploadStore.parts?.every((part) => part.location) ?? false,
     before: () => {
-      MapEvents.on("click", handleMapClick);
+      MapEvents.on('click', handleMapClick);
     },
     after: () => {
-      MapEvents.off("click", handleMapClick);
+      MapEvents.off('click', handleMapClick);
     }
   },
 
-  'info': {
+  info: {
     title: 'Informace o nahrávce',
-    isValid: () => !!uploadStore.dateTime && uploadStore.confirmUpload,
+    isValid: () => !!uploadStore.dateTime && uploadStore.confirmUpload
   },
 
-  'submit': {
+  submit: {
     title: 'Odeslat',
-    isValid: () => true, // Final step, always valid to view
+    isValid: () => true // Final step, always valid to view
   }
 });
 
@@ -197,9 +199,10 @@ watch(
   }
 );
 
-
 const removeMarkers = () => {
-  const selectedParts = Object.keys(MapStore.markers).filter(key => key.startsWith('selected-part-'));
+  const selectedParts = Object.keys(MapStore.markers).filter((key) =>
+    key.startsWith('selected-part-')
+  );
 
   for (const key of selectedParts) {
     delete MapStore.markers[key];
@@ -208,31 +211,32 @@ const removeMarkers = () => {
 
 const submit = () => {
   if (isSubmitting.value) return;
-  
+
   isSubmitting.value = true;
   uploadSuccess.value = false;
 
   const recording = {
     createdAt: new Date().toISOString(),
     estimatedBirdsCount: uploadStore.birdCount,
-    device: uploadStore.device || "",
+    device: uploadStore.device || '',
     name: uploadStore.title,
     byApp: false,
-    note: uploadStore.note,
+    note: uploadStore.note
   };
 
   // Each file is treated as a separate recording part
+  // Note: endDate will be calculated in UploadStore based on audio duration
   const recordingParts = uploadStore.parts!.map(
     ({ file, location }) =>
       ({
         startDate: uploadStore.dateTime,
-        endDate: uploadStore.dateTime,
+        endDate: uploadStore.dateTime, // Placeholder, will be recalculated
         gpsLatitudeStart: location!.lat,
         gpsLatitudeEnd: location!.lat,
         gpsLongitudeStart: location!.lng,
         gpsLongitudeEnd: location!.lng,
-        data: file,
-      } as RecordingPartUploadParams)
+        data: file
+      }) as RecordingPartUploadParams
   );
 
   // Add to background upload queue
@@ -246,12 +250,12 @@ const submit = () => {
   // Reset form and show success
   uploadSuccess.value = true;
   isSubmitting.value = false;
-  
+
   // Reset store and UI
   uploadStore.reset();
   removeMarkers();
-  stepper.goTo("file");
-  
+  stepper.goTo('file');
+
   // Redirect to map after a short delay
   setTimeout(() => {
     router.push('/');
@@ -260,9 +264,8 @@ const submit = () => {
 
 onUnmounted(removeMarkers);
 onUnmounted(() => {
-  MapEvents.off("click", handleMapClick);
+  MapEvents.off('click', handleMapClick);
 });
-
 
 function submitOrNext() {
   if (stepper.current.value.isValid()) {
@@ -276,7 +279,7 @@ function submitOrNext() {
 
 const onSoundDrop = (acceptedFiles: File[]) => {
   if (acceptedFiles.length === 0) {
-    error.value = "Žádné validní soubory nebyly vybrány.";
+    error.value = 'Žádné validní soubory nebyly vybrány.';
     return;
   }
 
@@ -297,23 +300,23 @@ const makeURL = (file: File) => {
 
 // Function to check if all previous steps are valid for navigation links
 function allStepsBeforeAreValid(index: number): boolean {
-  return (
-    !Array
-      .from({ length: index }, () => null)
-      .some((_, i) => !stepper.at(i)?.isValid())
-  )
+  return !Array.from({ length: index }, () => null).some(
+    (_, i) => !stepper.at(i)?.isValid()
+  );
 }
 
 const addDialect = () => {
-  if (dialect.value && dialect.value != "none" && !uploadStore.dialects.includes(dialect.value)) {
+  if (
+    dialect.value &&
+    dialect.value != 'none' &&
+    !uploadStore.dialects.includes(dialect.value)
+  ) {
     uploadStore.dialects.push(dialect.value);
-    dialect.value = "none";
+    dialect.value = 'none';
   }
 };
 
 const currentPartIndex = ref(0);
-
-
 </script>
 
 <template>
@@ -336,18 +339,11 @@ const currentPartIndex = ref(0);
   </template>
 
   <template v-else>
-    <h1
-      class="text-lg font-bold mb-4"
-      v-text="stepper.current.value.title"
-    />
+    <h1 class="text-lg font-bold mb-4" v-text="stepper.current.value.title" />
 
     <form @submit.prevent="submitOrNext">
       <template v-if="stepper.isCurrent('file')">
-        <Dropzone
-          :accept="soundAccept"
-          :multiple="true"
-          @drop="onSoundDrop"
-        >
+        <Dropzone :accept="soundAccept" :multiple="true" @drop="onSoundDrop">
           <template #dragging>
             <p><TranslatedText identifier="upload.drop_files_here" /></p>
           </template>
@@ -355,23 +351,19 @@ const currentPartIndex = ref(0);
           <div class="flex flex-col items-center gap-y-1">
             <div>
               <p><TranslatedText identifier="upload.select_or_drag_files" /></p>
-              <p><TranslatedText identifier="upload.select_multiple_audio" /></p>
+              <p>
+                <TranslatedText identifier="upload.select_multiple_audio" />
+              </p>
             </div>
             <p><TranslatedText identifier="upload.audio_formats" /></p>
 
-            <ul
-              class="flex flex-col w-full"
-              @click.stop
-            >
+            <ul class="flex flex-col w-full" @click.stop>
               <li
-                v-for="(file, index) in uploadStore.parts?.map(p => p.file)"
+                v-for="(file, index) in uploadStore.parts?.map((p) => p.file)"
                 :key="file.name"
                 class="flex flex-row w-full items-center justify-between"
               >
-                <MaterialIcon
-                  class="h-10"
-                  :filename="file.name"
-                />
+                <MaterialIcon class="h-10" :filename="file.name" />
                 <div class="flex flex-col">
                   <p>{{ file.name }}</p>
                   <p>{{ file.size / 1_000_000 }} MB</p>
@@ -390,11 +382,7 @@ const currentPartIndex = ref(0);
 
       <!-- Photos Stage -->
       <template v-if="stepper.isCurrent('photos')">
-        <Dropzone
-          :multiple="true"
-          :accept="photoAccept"
-          @drop="onPhotoDrop"
-        >
+        <Dropzone :multiple="true" :accept="photoAccept" @drop="onPhotoDrop">
           <template #dragging>
             <p><TranslatedText identifier="upload.drop_files_here" /></p>
           </template>
@@ -402,19 +390,13 @@ const currentPartIndex = ref(0);
           <div class="flex flex-col items-center gap-y-1">
             <p><TranslatedText identifier="upload.select_or_drag_photos" /></p>
 
-            <ul
-              class="flex flex-col w-full"
-              @click.stop
-            >
+            <ul class="flex flex-col w-full" @click.stop>
               <li
                 v-for="(file, index) in uploadStore.photos"
                 :key="file.name"
                 class="flex flex-row w-full items-center justify-between"
               >
-                <img
-                  :src="makeURL(file)"
-                  class="h-[200px]"
-                >
+                <img :src="makeURL(file)" class="h-[200px]" />
                 <button
                   class="danger"
                   @click="uploadStore.photos?.splice(index, 1)"
@@ -439,7 +421,7 @@ const currentPartIndex = ref(0);
                 'font-bold': index == currentPartIndex
               }"
               :style="{
-                color: colors[index],
+                color: colors[index]
               }"
             >
               <!-- <audio :src="partURLs[index]" controls /> -->
@@ -451,7 +433,9 @@ const currentPartIndex = ref(0);
                   :lng="part.location.lng"
                   type="municipality_part"
                 />
-                <template v-else><TranslatedText identifier="upload.location_not_set" /></template>
+                <template v-else
+                  ><TranslatedText identifier="upload.location_not_set"
+                /></template>
               </span>
             </li>
           </ul>
@@ -471,52 +455,46 @@ const currentPartIndex = ref(0);
               model-type="iso"
             />
             <div class="w-full">
-              <label
-                for="title"
-                class="block text-sm font-medium w-full"
-              ><TranslatedText identifier="upload.title_label" /></label>
+              <label for="title" class="block text-sm font-medium w-full"
+                ><TranslatedText identifier="upload.title_label"
+              /></label>
               <input
                 id="title"
                 v-model="uploadStore.title"
                 type="text"
                 class="w-full"
-              >
-            </div>
-            <div>
-              <label
-                for="note"
-                class="block text-sm font-medium"
-              ><TranslatedText identifier="upload.note_label" /></label>
-              <textarea
-                id="note"
-                v-model="uploadStore.note"
-                class="w-full"
               />
             </div>
             <div>
-              <label
-                for="device"
-                class="block text-sm font-medium"
-              ><TranslatedText identifier="upload.device_label" /></label>
+              <label for="note" class="block text-sm font-medium"
+                ><TranslatedText identifier="upload.note_label"
+              /></label>
+              <textarea id="note" v-model="uploadStore.note" class="w-full" />
+            </div>
+            <div>
+              <label for="device" class="block text-sm font-medium"
+                ><TranslatedText identifier="upload.device_label"
+              /></label>
               <input
                 id="device"
                 v-model="uploadStore.device"
                 type="text"
                 class="w-full"
-              >
+              />
             </div>
             <div>
-              <label
-                for="birdCount"
-                class="block text-sm font-medium"
-              ><TranslatedText identifier="upload.bird_count_label" /> ({{ uploadStore.birdCount }})</label>
+              <label for="birdCount" class="block text-sm font-medium"
+                ><TranslatedText identifier="upload.bird_count_label" /> ({{
+                  uploadStore.birdCount
+                }})</label
+              >
               <input
                 id="birdCount"
                 v-model="uploadStore.birdCount"
                 min="1"
                 max="2"
                 type="range"
-              >
+              />
             </div>
           </div>
 
@@ -535,7 +513,6 @@ const currentPartIndex = ref(0);
               </li>
             </ul>
           </div>
-
 
           <h2><TranslatedText identifier="upload.parts" /></h2>
           <ul class="flex flex-col gap-y-2">
@@ -565,7 +542,7 @@ const currentPartIndex = ref(0);
               v-model="uploadStore.confirmUpload"
               class="h-full"
               type="checkbox"
-            >
+            />
             <p class="text-gray-500">
               <TranslatedText identifier="upload.confirm_upload_text" />
             </p>
@@ -581,11 +558,10 @@ const currentPartIndex = ref(0);
               Nahrávka byla zařazena do fronty
             </p>
             <p class="text-sm text-gray-600">
-              Nahrávání probíhá na pozadí. Můžete pokračovat v používání aplikace.
+              Nahrávání probíhá na pozadí. Můžete pokračovat v používání
+              aplikace.
             </p>
-            <p class="text-sm text-gray-600">
-              Sledujte průběh v horní liště.
-            </p>
+            <p class="text-sm text-gray-600">Sledujte průběh v horní liště.</p>
           </template>
           <template v-else>
             <p>Příprava nahrávky...</p>
@@ -598,7 +574,12 @@ const currentPartIndex = ref(0);
         <button
           v-if="!stepper.isLast.value"
           type="submit"
-          :disabled="!(stepper.current.value.isValid() && allStepsBeforeAreValid(stepper.index.value))"
+          :disabled="
+            !(
+              stepper.current.value.isValid() &&
+              allStepsBeforeAreValid(stepper.index.value)
+            )
+          "
           class="primary p-2"
         >
           <TranslatedText identifier="upload.next" />
@@ -616,17 +597,14 @@ const currentPartIndex = ref(0);
 
     <!-- Step Indicators -->
     <div class="flex gap-2 my-4 justify-center">
-      <div
-        v-for="(step, id, i) in stepper.steps.value"
-        :key="id"
-      >
+      <div v-for="(step, id, i) in stepper.steps.value" :key="id">
         <button
           :disabled="!allStepsBeforeAreValid(i) && stepper.isBefore(id)"
           class="text-sm text-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
           :class="{
             'text-gray-900 font-bold': stepper.isCurrent(id),
             'text-green-600': stepper.isAfter(id) && step.isValid(), // Mark completed steps
-            'text-red-600': stepper.isAfter(id) && !step.isValid(), // Mark invalid past steps
+            'text-red-600': stepper.isAfter(id) && !step.isValid() // Mark invalid past steps
           }"
           @click="stepper.goTo(id)"
           v-text="step.title"

@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { getArticles } from "@/api/articles";
-import { useQuery } from "@tanstack/vue-query";
+import { getArticles } from '@/api/articles';
+import { useQuery } from '@tanstack/vue-query';
 
 const { data: articles } = useQuery({
-  queryKey: ["articles"],
+  queryKey: ['articles'],
   queryFn: () => getArticles()
-})
-
+});
 </script>
 
 <template>
@@ -27,7 +26,9 @@ const { data: articles } = useQuery({
     >
       <div class="flex flex-col w-full justify-around">
         <span>{{ article.name }}</span>
-        <span v-if="article.description"><i>{{ article.description }}</i></span>
+        <span v-if="article.description"
+          ><i>{{ article.description }}</i></span
+        >
       </div>
       <div class="flex flex-row">
         <router-link

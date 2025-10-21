@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import GoogleButton from "@/components/GoogleButton.vue";
-import AppleButton from "@/components/AppleButton.vue";
+import GoogleButton from '@/components/GoogleButton.vue';
+import AppleButton from '@/components/AppleButton.vue';
 
 defineOptions({
   inheritAttrs: false

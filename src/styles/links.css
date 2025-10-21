@@ -1,7 +1,7 @@
-a[external=true]:hover {
+a[external='true']:hover {
   text-decoration: underline;
 }
 
-a[external=true] {
+a[external='true'] {
   color: black;
 }

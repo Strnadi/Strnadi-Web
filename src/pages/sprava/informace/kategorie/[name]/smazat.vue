@@ -23,15 +23,10 @@ const { mutate: deleteCategory } = useMutation({
 
 const handleDeleteCategory = () => {
   deleteCategory();
-}
+};
 </script>
 
 <template>
   <h1>Smazání kategorie {{ name }}</h1>
-  <button
-    class="danger"
-    @click="handleDeleteCategory"
-  >
-    Smazat
-  </button>
+  <button class="danger" @click="handleDeleteCategory">Smazat</button>
 </template>

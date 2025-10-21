@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, useSlots } from 'vue';
-import type { InputHTMLAttributes } from 'vue'
+import type { InputHTMLAttributes } from 'vue';
 
 const slots = useSlots();
 
@@ -9,7 +9,8 @@ defineOptions({
   inheritAttrs: false
 });
 
-interface RevealablePasswordInputProps extends /* @vue-ignore */ InputHTMLAttributes {
+interface RevealablePasswordInputProps
+  extends /* @vue-ignore */ InputHTMLAttributes {
   modelValue?: string;
 }
 
@@ -18,7 +19,9 @@ const emit = defineEmits(['update:modelValue']);
 
 const inputValue = computed({
   get: () => props.modelValue,
-  set: (value) => { emit('update:modelValue', value); },
+  set: (value) => {
+    emit('update:modelValue', value);
+  }
 });
 
 const isRevealed = ref(false);
@@ -40,13 +43,9 @@ const isRevealed = ref(false);
         v-model="inputValue"
         :type="isRevealed ? 'text' : 'password'"
         class="w-full pr-16"
-      >
+      />
     </div>
-    <button
-      class="text-xl"
-      type="button"
-      @click="isRevealed = !isRevealed"
-    >
+    <button class="text-xl" type="button" @click="isRevealed = !isRevealed">
       {{ isRevealed ? '🫣' : '👁️' }}
     </button>
   </div>

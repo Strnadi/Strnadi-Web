@@ -4,13 +4,13 @@ meta:
 </route>
 
 <script setup lang="ts">
-import HorizontalLineWithText from "@/components/HorizontalLineWithText.vue";
-import TranslatedText from "@/components/TranslatedText.vue";
+import HorizontalLineWithText from '@/components/HorizontalLineWithText.vue';
+import TranslatedText from '@/components/TranslatedText.vue';
 </script>
 
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
-    <img src="/logo-no-text.svg">
+    <img src="/logo-no-text.svg" />
     <h1 class="text-center">
       <TranslatedText identifier="project_name" />
     </h1>
@@ -39,11 +39,6 @@ import TranslatedText from "@/components/TranslatedText.vue";
       <span class="text-sm text-gray-500">Nebo</span>
     </HorizontalLineWithText>
 
-    <router-link
-      to="/"
-      class="p-2"
-    >
-      Pokračovat bez účtu
-    </router-link>
+    <router-link to="/" class="p-2"> Pokračovat bez účtu </router-link>
   </div>
 </template>

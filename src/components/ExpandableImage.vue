@@ -4,7 +4,7 @@
     :alt="alt"
     class="cursor-pointer hover:transform hover:scale-102 transition-transform duration-200 max-w-full"
     @click="isExpanded = true"
-  >
+  />
 
   <teleport to="body">
     <div
@@ -12,13 +12,8 @@
       class="fullscreen-overlay"
       @click="isExpanded = false"
     >
-      <img
-        :src="src"
-        :alt="alt"
-        class="fullscreen-image"
-        @click.stop
-      >
-      <button 
+      <img :src="src" :alt="alt" class="fullscreen-image" @click.stop />
+      <button
         class="button-secondary absolute top-4 right-4 w-12 h-12 rounded-full flex justify-center items-center text-2xl z-[10000]"
         @click="isExpanded = false"
       >
@@ -29,26 +24,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue';
 
 defineProps<{
   src?: string;
   alt?: string;
 }>();
 
-const isExpanded = ref(false)
+const isExpanded = ref(false);
 
 onMounted(() => {
   const handleKeydown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
-      isExpanded.value = false
+      isExpanded.value = false;
     }
-  }
-  window.addEventListener('keydown', handleKeydown)
+  };
+  window.addEventListener('keydown', handleKeydown);
   onUnmounted(() => {
-    window.removeEventListener('keydown', handleKeydown)
-  })
-})
+    window.removeEventListener('keydown', handleKeydown);
+  });
+});
 </script>
 
 <style scoped>

@@ -1,8 +1,5 @@
 <template>
-  <div
-    :style="squareStyle"
-    class="inline-block box-border"
-  />
+  <div :style="squareStyle" class="inline-block box-border" />
 </template>
 
 <script setup lang="ts">
@@ -20,7 +17,11 @@ const parsedColors = computed<string[]>(() => {
     try {
       return JSON.parse(props.colors);
     } catch (e) {
-      console.warn('MultiColorSquare: Could not parse colors string:', props.colors, e);
+      console.warn(
+        'MultiColorSquare: Could not parse colors string:',
+        props.colors,
+        e
+      );
       return [];
     }
   }
@@ -39,26 +40,28 @@ const squareStyle = computed(() => {
       height: props.size,
       background: 'transparent',
       border: '1px solid grey',
-      "border-radius": '0.2rem',
+      'border-radius': '0.2rem'
     };
   }
 
   if (parsedColors.value.length === 1) {
     backgroundValue = parsedColors.value[0]!;
   } else if (props.gradient) {
-    backgroundValue = `linear-gradient(to bottom, ${parsedColors.value.join(', ')})`;
+    backgroundValue = `linear-gradient(to bottom right, ${parsedColors.value.join(', ')})`;
   } else {
     const numberOfColors = parsedColors.value.length;
     const step = 100 / numberOfColors;
-    const colorStops = parsedColors.value.map((color, index) => {
-      const start = index * step;
-      const end = (index + 1) * step;
-      if (index === 0) {
-        return `${color} 0%, ${color} ${end}%`;
-      }
-      return `${color} ${start}%, ${color} ${end}%`;
-    }).join(', ');
-    backgroundValue = `linear-gradient(to bottom, ${colorStops})`;
+    const colorStops = parsedColors.value
+      .map((color, index) => {
+        const start = index * step;
+        const end = (index + 1) * step;
+        if (index === 0) {
+          return `${color} 0%, ${color} ${end}%`;
+        }
+        return `${color} ${start}%, ${color} ${end}%`;
+      })
+      .join(', ');
+    backgroundValue = `linear-gradient(to bottom right, ${colorStops})`;
   }
 
   return {
@@ -66,7 +69,7 @@ const squareStyle = computed(() => {
     height: props.size,
     border: '1px solid black',
     background: backgroundValue,
-    "border-radius": '0.2rem',
+    'border-radius': '0.2rem'
   };
 });
 </script>

@@ -6,11 +6,12 @@ import AccountIcon from '@/icons/interface/icon-profile.svg';
 import UploadIcon from '@/icons/interface/icon-upload.svg';
 import ListIcon from '@/icons/interface/icon-list.svg';
 import InfoIcon from '@/icons/interface/icon-info.svg';
-
 </script>
 
 <template>
-  <nav class="sticky bottom-0 flex flex-row justify-evenly w-full h-16 bg-white">
+  <nav
+    class="sticky bottom-0 flex flex-row justify-evenly w-full h-16 bg-white"
+  >
     <prefetch-link
       v-wave
       to="/"
@@ -44,7 +45,9 @@ import InfoIcon from '@/icons/interface/icon-info.svg';
       v-wave
       to="/ucet/sprava/moje-nahravky"
       class="flex flex-1 justify-center items-center"
-      :class="{ 'bg-gray-100': $route.path.startsWith('/ucet/sprava/moje-nahravky') }"
+      :class="{
+        'bg-gray-100': $route.path.startsWith('/ucet/sprava/moje-nahravky')
+      }"
     >
       <ListIcon />
     </prefetch-link>
@@ -61,7 +64,6 @@ import InfoIcon from '@/icons/interface/icon-info.svg';
 </template>
 
 <style scoped>
-
 @reference "../../styles/main.css";
 
 :deep(.dropdown-item) {
@@ -71,5 +73,4 @@ import InfoIcon from '@/icons/interface/icon-info.svg';
 nav {
   @apply z-[9] drop-shadow-xl min-w-0 w-full;
 }
-
 </style>

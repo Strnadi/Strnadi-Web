@@ -7,11 +7,11 @@ const route = useRoute();
 
 const goBack = () => {
   router.back();
-}
+};
 
 const closePopup = () => {
-  router.replace("/");
-}
+  router.replace('/');
+};
 </script>
 
 <template>

@@ -18,73 +18,76 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick } from 'vue';
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
-  digits: { type: Number, default: 6 },
-})
+  digits: { type: Number, default: 6 }
+});
 
-const emit = defineEmits(['update:modelValue', 'complete'])
-const digitsArray = ref(Array(props.digits).fill(''))
-const inputs = ref([])
+const emit = defineEmits(['update:modelValue', 'complete']);
+const digitsArray = ref(Array(props.digits).fill(''));
+const inputs = ref([]);
 
-watch(() => props.modelValue, (val) => {
-  const chars = val.split('').slice(0, props.digits)
-  for (let i = 0; i < props.digits; i++) {
-    digitsArray.value[i] = chars[i] || ''
+watch(
+  () => props.modelValue,
+  (val) => {
+    const chars = val.split('').slice(0, props.digits);
+    for (let i = 0; i < props.digits; i++) {
+      digitsArray.value[i] = chars[i] || '';
+    }
   }
-})
+);
 
 watch(
   digitsArray,
   (arr) => {
-    const joined = arr.join('')
-    emit('update:modelValue', joined)
+    const joined = arr.join('');
+    emit('update:modelValue', joined);
     if (arr.every((d) => d !== '')) {
-      emit('complete', joined)
+      emit('complete', joined);
     }
   },
   { deep: true }
-)
+);
 
 function focusInput(i) {
   nextTick(() => {
-    inputs.value[i]?.focus()
-    inputs.value[i]?.select()
-  })
+    inputs.value[i]?.focus();
+    inputs.value[i]?.select();
+  });
 }
 
 function onInput(e, i) {
-  const val = e.target.value.replace(/\D/g, '')
-  digitsArray.value[i] = val
-  if (val && i < props.digits - 1) focusInput(i + 1)
+  const val = e.target.value.replace(/\D/g, '');
+  digitsArray.value[i] = val;
+  if (val && i < props.digits - 1) focusInput(i + 1);
 }
 
 function onKeydown(e, i) {
   if (e.key === 'Backspace' && !digitsArray.value[i] && i > 0) {
-    digitsArray.value[i - 1] = ''
-    focusInput(i - 1)
-    e.preventDefault()
+    digitsArray.value[i - 1] = '';
+    focusInput(i - 1);
+    e.preventDefault();
   }
   if (e.key === 'ArrowLeft' && i > 0) {
-    focusInput(i - 1)
-    e.preventDefault()
+    focusInput(i - 1);
+    e.preventDefault();
   }
   if (e.key === 'ArrowRight' && i < props.digits - 1) {
-    focusInput(i + 1)
-    e.preventDefault()
+    focusInput(i + 1);
+    e.preventDefault();
   }
 }
 
 function onPaste(e) {
-  e.preventDefault()
-  const paste = (e.clipboardData.getData('text') || '').replace(/\D/g, '')
+  e.preventDefault();
+  const paste = (e.clipboardData.getData('text') || '').replace(/\D/g, '');
   paste.split('').forEach((c, idx) => {
-    if (idx < props.digits) digitsArray.value[idx] = c
-  })
-  const nextEmpty = digitsArray.value.findIndex((d) => !d)
-  if (nextEmpty !== -1) focusInput(nextEmpty)
+    if (idx < props.digits) digitsArray.value[idx] = c;
+  });
+  const nextEmpty = digitsArray.value.findIndex((d) => !d);
+  if (nextEmpty !== -1) focusInput(nextEmpty);
 }
 </script>
 

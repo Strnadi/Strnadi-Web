@@ -11,9 +11,7 @@ import MultiColorSquare from '@/components/MultiColorSquare.vue';
 <template>
   <h1>Nápověda k mapě</h1>
 
-  <div
-    class="flex flex-row gap-x-2 gap-y-2 flex-wrap"
-  >
+  <div class="flex flex-row gap-x-2 gap-y-2 flex-wrap">
     <div
       v-for="(icon, key) in DialectColors"
       :key="key"

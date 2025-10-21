@@ -2,9 +2,9 @@
 import { kebabize } from '@/utils/strings';
 import { useQuery } from '@tanstack/vue-query';
 import { accountStore } from '@/state/AccountStore';
-import { getArticleCategories } from '@/api/articles'
+import { getArticleCategories } from '@/api/articles';
 
-import Dropdown from '@/components/Dropdown.vue'
+import Dropdown from '@/components/Dropdown.vue';
 import AccountDropdown from '@/views/dropdown/account/AccountDropdown.vue';
 import UploadProgress from '@/components/UploadProgress.vue';
 
@@ -14,24 +14,28 @@ import { applicationStore } from '@/state/ApplicationStore';
 import TranslatedText from '@/components/TranslatedText.vue';
 import { translations } from '@/constants/Translations';
 
-const { data: categories, isLoading, error } = useQuery({
-  queryKey: ["categories"],
+const {
+  data: categories,
+  isLoading,
+  error
+} = useQuery({
+  queryKey: ['categories'],
   queryFn: getArticleCategories
-})
-
+});
 </script>
 
 <template>
   <nav class="w-full">
     <div class="nav-container">
-      <div class="flex justify-between gap-x-4 items-center h-16 bg-white rounded-4xl m-2 desktop:m-5 pr-4">
+      <div
+        class="flex justify-between gap-x-4 items-center h-16 bg-white rounded-4xl m-2 desktop:m-5 pr-4"
+      >
         <!-- Logo -->
-        <div class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc] shrink-0">
+        <div
+          class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc] shrink-0"
+        >
           <PrefetchLink to="/vitejte">
-            <img
-              src="/logo.svg"
-              alt="Logo"
-            >
+            <img src="/logo.svg" alt="Logo" />
           </PrefetchLink>
         </div>
 
@@ -48,42 +52,27 @@ const { data: categories, isLoading, error } = useQuery({
           <ul class="flex flex-row gap-x-4 items-center">
             <template v-if="accountStore.user">
               <li>
-                <PrefetchLink
-                  to="/mapa/nahrat"
-                  class="dropdown-item"
-                  v-wave
-                >
+                <PrefetchLink to="/mapa/nahrat" class="dropdown-item" v-wave>
                   <UploadIcon />
                   Nahrát
                 </PrefetchLink>
               </li>
             </template>
 
-            <Dropdown
-              v-for="category in categories"
-              :key="category.name"
-            >
-              <template
-                #title
-              >
+            <Dropdown v-for="category in categories" :key="category.name">
+              <template #title>
                 {{ category.label }}
                 <DropdownIcon />
               </template>
 
-              <li
-                v-for="article in category.articles"
-                :key="article.id"
-              >
+              <li v-for="article in category.articles" :key="article.id">
                 <prefetch-link
                   :to="`/informace/${category.name}/${kebabize(article.name)}`"
                   class="dropdown-item !flex !flex-col !items-start"
                   v-wave
                 >
                   <span>{{ article.name }}</span>
-                  <span
-                    v-if="article.description"
-                    class="italic"
-                  >
+                  <span v-if="article.description" class="italic">
                     {{ article.description }}
                   </span>
                 </prefetch-link>
@@ -97,25 +86,30 @@ const { data: categories, isLoading, error } = useQuery({
           <ul class="flex flex-row gap-x-4 items-center">
             <Dropdown>
               <template #title>
-<!--              {{ translations[applicationStore.language].lang_name }}-->
+                <!--              {{ translations[applicationStore.language].lang_name }}-->
                 {{ translations[applicationStore.language].lang_name }}
                 <DropdownIcon />
               </template>
 
               <ul>
                 <li
-                  v-for="key in (Object.keys(translations) as (keyof typeof translations)[])"
+                  v-for="key in Object.keys(
+                    translations
+                  ) as (keyof typeof translations)[]"
                   :key="key"
                   class="dropdown-item"
                   v-wave
                 >
                   <button
-                      :class="key === applicationStore.language ? 'font-bold' : ''"
-                      @click="() => applicationStore.language = key"
-                  >{{ translations[key].lang_name }}</button>
+                    :class="
+                      key === applicationStore.language ? 'font-bold' : ''
+                    "
+                    @click="() => (applicationStore.language = key)"
+                  >
+                    {{ translations[key].lang_name }}
+                  </button>
                 </li>
               </ul>
-
             </Dropdown>
 
             <li>
@@ -130,8 +124,8 @@ const { data: categories, isLoading, error } = useQuery({
             </li>
 
             <PrefetchLink
-                to="/aplikace"
-                class="button-primary py-2 px-4 max-sm:text-sm"
+              to="/aplikace"
+              class="button-primary py-2 px-4 max-sm:text-sm"
             >
               <TranslatedText identifier="buttons.app" />
             </PrefetchLink>
@@ -143,7 +137,6 @@ const { data: categories, isLoading, error } = useQuery({
 </template>
 
 <style scoped>
-
 @reference "../../styles/main.css";
 
 :deep(.dropdown-item) {
@@ -157,5 +150,4 @@ nav {
 .nav-container {
   @apply flex flex-col;
 }
-
 </style>

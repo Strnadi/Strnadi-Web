@@ -6,10 +6,16 @@ const activeTasks = computed(() => uploadQueueStore.getActiveTasks());
 const hasActiveTasks = computed(() => activeTasks.value.length > 0);
 const overallProgress = computed(() => uploadQueueStore.getTotalProgress());
 
-const queuedCount = computed(() => activeTasks.value.filter(t => t.status === 'queued').length);
-const uploadingCount = computed(() => activeTasks.value.filter(t => t.status === 'uploading').length);
+const queuedCount = computed(
+  () => activeTasks.value.filter((t) => t.status === 'queued').length
+);
+const uploadingCount = computed(
+  () => activeTasks.value.filter((t) => t.status === 'uploading').length
+);
 
-const errorTasks = computed(() => uploadQueueStore.tasks.filter(t => t.status === 'error'));
+const errorTasks = computed(() =>
+  uploadQueueStore.tasks.filter((t) => t.status === 'error')
+);
 
 const dismissError = (taskId: string) => {
   uploadQueueStore.removeTask(taskId);
@@ -19,7 +25,8 @@ const dismissError = (taskId: string) => {
 const handleBeforeUnload = (event: BeforeUnloadEvent) => {
   if (hasActiveTasks.value) {
     event.preventDefault();
-    event.returnValue = 'Nahrávání stále probíhá. Opravdu chcete opustit stránku?';
+    event.returnValue =
+      'Nahrávání stále probíhá. Opravdu chcete opustit stránku?';
     return event.returnValue;
   }
 };
@@ -39,10 +46,7 @@ onUnmounted(() => {
     class="upload-progress-container"
   >
     <!-- Active Upload Indicator (Compact) -->
-    <div
-      v-if="hasActiveTasks"
-      class="upload-progress"
-    >
+    <div v-if="hasActiveTasks" class="upload-progress">
       <span class="upload-icon">📤</span>
       <div class="upload-content">
         <div class="upload-text">
@@ -72,9 +76,7 @@ onUnmounted(() => {
       class="upload-error"
     >
       <span class="error-icon">⚠️</span>
-      <div class="error-text">
-        Chyba při nahrávání
-      </div>
+      <div class="error-text">Chyba při nahrávání</div>
       <button
         class="dismiss-button"
         @click="dismissError(errorTask.id)"

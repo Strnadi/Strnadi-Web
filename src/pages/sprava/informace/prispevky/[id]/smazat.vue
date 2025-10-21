@@ -24,17 +24,15 @@ const { mutate: mutateDeleteArticle } = useMutation({
 
 const handleDeleteArticle = () => {
   mutateDeleteArticle();
-}
+};
 </script>
 
 <template>
   <h1>Smazání příspěvku</h1>
-  <span class="font-medium">Opravdu si přejete tento příspěvek smazat? Tuto akci nelze vrátit zpět.</span>
-
-  <button
-    class="danger"
-    @click="handleDeleteArticle"
+  <span class="font-medium"
+    >Opravdu si přejete tento příspěvek smazat? Tuto akci nelze vrátit
+    zpět.</span
   >
-    Smazat
-  </button>
+
+  <button class="danger" @click="handleDeleteArticle">Smazat</button>
 </template>

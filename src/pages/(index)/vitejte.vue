@@ -12,18 +12,24 @@ const route = useRoute();
 
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
-    <img src="/logo-no-text.svg">
+    <img src="/logo-no-text.svg" />
     <h1 class="text-center">
       <TranslatedText identifier="project_name" />
     </h1>
-    <span class="text-md text-justify [text-align-last:center]"><TranslatedText identifier="project_description" /></span>
+    <span class="text-md text-justify [text-align-last:center]"
+      ><TranslatedText identifier="project_description"
+    /></span>
 
     <span class="font-bold text-justify text-sm text-red-400">
       <TranslatedText identifier="development" />
     </span>
 
     <router-link
-      :to="route.query['from'] ? decodeURIComponent(route.query['from'] as string) : '/'"
+      :to="
+        route.query['from']
+          ? decodeURIComponent(route.query['from'] as string)
+          : '/'
+      "
       class="button-primary px-2 py-4 w-full"
     >
       <TranslatedText identifier="buttons.enter" />
@@ -33,7 +39,7 @@ const route = useRoute();
       <h2 class="text-xl">Foto týdne</h2>
     </div> -->
 
-    <hr>
+    <hr />
 
     <div class="flex flex-col w-full gap-x-1 gap-y-1">
       <PrefetchLink
@@ -54,14 +60,10 @@ const route = useRoute();
       <TranslatedText identifier="buttons.contacts" />
     </h2>
     <div class="flex flex-row gap-x-4">
-      <a
-        external="true"
-        href="mailto:info@strnadi.cz"
-      >info@strnadi.cz</a>
-      <a
-        external="true"
-        href="mailto:developers@strnadi.cz"
-      >developers@strnadi.cz</a>
+      <a external="true" href="mailto:info@strnadi.cz">info@strnadi.cz</a>
+      <a external="true" href="mailto:developers@strnadi.cz"
+        >developers@strnadi.cz</a
+      >
     </div>
   </div>
 </template>

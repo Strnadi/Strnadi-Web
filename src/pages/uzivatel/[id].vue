@@ -4,16 +4,16 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { useRouteParams } from "@vueuse/router";
-import type { Numeric} from "@/types/basic";
-import { getUserInfo } from "@/api/account";
-import { accountStore } from "@/state/AccountStore";
-import { useQuery } from "@tanstack/vue-query";
+import { useRouteParams } from '@vueuse/router';
+import type { Numeric } from '@/types/basic';
+import { getUserInfo } from '@/api/account';
+import { accountStore } from '@/state/AccountStore';
+import { useQuery } from '@tanstack/vue-query';
 
-const id = useRouteParams<Numeric>("id");
+const id = useRouteParams<Numeric>('id');
 
 const { data: user } = useQuery({
-  queryKey: ["user", id],
+  queryKey: ['user', id],
   queryFn: () => getUserInfo(accountStore.token!, id.value)
 });
 </script>

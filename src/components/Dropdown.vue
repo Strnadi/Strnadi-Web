@@ -18,10 +18,7 @@ function close() {
 
 // Handler for clicks outside the dropdown (mobile only)
 function handleClickOutside(event: MouseEvent) {
-  if (
-    dropdownRef.value &&
-    !dropdownRef.value.contains(event.target as Node)
-  ) {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
     close();
   }
 }

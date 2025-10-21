@@ -1,2 +1,1 @@
-
-export const ARTICLE_TEXT_FILENAME = "Text.md";
+export const ARTICLE_TEXT_FILENAME = 'Text.md';

@@ -1,29 +1,27 @@
 <script lang="ts">
-
 export interface Polygon {
   id: number | string;
   color: string;
   weight: number;
   position: [number, number][];
   data?: any;
-};
+}
 
 export interface Marker {
   id: number | string;
   icon: Icon;
   position: [number, number];
   data?: any;
-};
+}
 
 export interface MapProps {
   polygons?: Polygon[];
   markers?: Marker[];
-  mode?: "outdoor" | "basic" | "aerial";
+  mode?: 'outdoor' | 'basic' | 'aerial';
   scaleBar?: boolean;
   zoomControl?: boolean;
   position: [lat: number, lon: number, alt: number];
 }
-
 </script>
 
 <script setup lang="ts">
@@ -43,37 +41,46 @@ import {
 import 'leaflet/dist/leaflet.css';
 
 const env = import.meta.env;
-let leafletMap: (LeafletMap | null) = null;
+let leafletMap: LeafletMap | null = null;
 
 const hoveredPolygon = ref<(number | string) | null>(null);
 const hoveredMarker = ref<(number | string) | null>(null);
 
 const { coords, isSupported: isGeolocationSupported } = useGeolocation();
-const iconCurrent = new Icon({ iconUrl: '/dialects/current-location.svg', iconSize: [24, 24], iconAnchor: [19, 19] });
-const iconCurrentHeading = new Icon({ iconUrl: '/dialects/current-location.svg', iconSize: [24, 24], iconAnchor: [19, 19] });
+const iconCurrent = new Icon({
+  iconUrl: '/dialects/current-location.svg',
+  iconSize: [24, 24],
+  iconAnchor: [19, 19]
+});
+const iconCurrentHeading = new Icon({
+  iconUrl: '/dialects/current-location.svg',
+  iconSize: [24, 24],
+  iconAnchor: [19, 19]
+});
 
-const props = withDefaults(
-  defineProps<MapProps>(),
-  {
-    mode: 'outdoor',
-    zoomControl: false,
-    polygons: () => [] as Polygon[],
-    markers: () => [] as Marker[]
-  }
-);
+const props = withDefaults(defineProps<MapProps>(), {
+  mode: 'outdoor',
+  zoomControl: false,
+  polygons: () => [] as Polygon[],
+  markers: () => [] as Marker[]
+});
 
 const zoom = ref<number>(props.position[2]);
-const center = ref<[number, number]>([ props.position[0], props.position[1] ]);
+const center = ref<[number, number]>([props.position[0], props.position[1]]);
 
 const emit = defineEmits<{
-  'click': [payload: { event: LeafletMouseEvent; polygon?: Polygon; marker?: Marker }];
-  'update:bounds': [bounds: [north: number, south: number, west: number, east: number]];
+  click: [
+    payload: { event: LeafletMouseEvent; polygon?: Polygon; marker?: Marker }
+  ];
+  'update:bounds': [
+    bounds: [north: number, south: number, west: number, east: number]
+  ];
   'update:zoom': [newZoom: number];
 }>();
 
 watch(
   () => props.position,
-  ([ newLat, newLon, newZoom ]) => {
+  ([newLat, newLon, newZoom]) => {
     if (!leafletMap) return;
 
     // leafletMap.flyTo([ newLat, newLon ], newZoom, {
@@ -104,7 +111,6 @@ function onMapReady(mapComp: any) {
 }
 
 watch([zoom, center], updateBounds);
-
 </script>
 
 <template>
@@ -122,19 +128,19 @@ watch([zoom, center], updateBounds);
       @update:zoom="updateZoom"
     >
       <!-- Tile Layers -->
-<!--      <l-tile-layer-->
-<!--        url="/map-loading.png"-->
-<!--        :z-index="0"-->
-<!--      />-->
+      <!--      <l-tile-layer-->
+      <!--        url="/map-loading.png"-->
+      <!--        :z-index="0"-->
+      <!--      />-->
       <l-tile-layer
-        :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode!=='aerial'? '256@2x':'256'}/{z}/{x}/{y}`"
+        :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode !== 'aerial' ? '256@2x' : '256'}/{z}/{x}/{y}`"
         :max-zoom="19"
         :min-zoom="5"
         :z-index="1"
         attribution="<a href='https://api.mapy.cz/copyright' target='_blank'>&copy; Seznam.cz a.s. a další</a>"
       />
       <l-tile-layer
-        v-if="mode==='aerial'"
+        v-if="mode === 'aerial'"
         :url="`${env.VITE_API_URL}/map/v1/maptiles/names-overlay/256/{z}/{x}/{y}`"
         :max-zoom="19"
         :min-zoom="5"
@@ -177,29 +183,19 @@ watch([zoom, center], updateBounds);
       <!-- Mapy.cz Logo -->
       <l-control position="bottomleft">
         <div class="z-[40]">
-          <a
-            href="http://mapy.cz/"
-            target="_blank"
-          >
+          <a href="http://mapy.cz/" target="_blank">
             <img
               src="https://api.mapy.cz/img/api/logo.svg"
               alt="Mapy.cz Logo"
-            >
+            />
           </a>
         </div>
       </l-control>
 
       <!-- Controls -->
-      <l-control-scale
-        v-if="scaleBar"
-        :imperial="false"
-      />
+      <l-control-scale v-if="scaleBar" :imperial="false" />
 
-      <l-control-zoom
-        v-if="zoomControl"
-        position="bottomleft"
-      />
-
+      <l-control-zoom v-if="zoomControl" position="bottomleft" />
     </l-map>
   </div>
 </template>

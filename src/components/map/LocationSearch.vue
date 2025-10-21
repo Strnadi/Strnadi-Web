@@ -14,35 +14,43 @@ defineOptions({
   inheritAttrs: false
 });
 
-const props = withDefaults(
-  defineProps<LocationSearchProps>(),
-  {
-    text: ""
-  }
-);
+const props = withDefaults(defineProps<LocationSearchProps>(), {
+  text: ''
+});
 const emit = defineEmits(['update:text', 'update:location']);
 
 const text = computed({
   get: () => props.text,
-  set: (value) => { emit('update:text', value); },
+  set: (value) => {
+    emit('update:text', value);
+  }
 });
 
 const location = computed({
   get: () => props.location,
-  set: (value) => { emit('update:location', value); },
+  set: (value) => {
+    emit('update:location', value);
+  }
 });
-
 
 const { data: suggestions } = useQuery({
   queryKey: ['places', text],
   queryFn: useDebounceFn(async () => {
-    return getGeocodeAutocomplete(
-      text.value,
-      ["coordinate", "regional.address", "regional.street", "poi", "regional.municipality_part", "regional.municipality"]
-    );
+    return getGeocodeAutocomplete(text.value, [
+      'coordinate',
+      'regional.address',
+      'regional.street',
+      'poi',
+      'regional.municipality_part',
+      'regional.municipality'
+    ]);
   }, 500),
 
-  enabled: computed(() => text.value !== undefined && text.value.length >= (props.searchThreshold || 3)),
+  enabled: computed(
+    () =>
+      text.value !== undefined &&
+      text.value.length >= (props.searchThreshold || 3)
+  )
 });
 
 const update = () => {
@@ -50,14 +58,15 @@ const update = () => {
     return;
   }
 
-  const selected = suggestions.value.find((suggestion) => suggestion.name === text.value) || null;
+  const selected =
+    suggestions.value.find((suggestion) => suggestion.name === text.value) ||
+    null;
   if (!selected) {
     return;
   }
 
   location.value = [selected.position.lat, selected.position.lon];
-}
-
+};
 </script>
 
 <template>
@@ -67,7 +76,7 @@ const update = () => {
     type="text"
     list="places"
     @input="update"
-  >
+  />
   <datalist id="places">
     <option
       v-for="(suggestion, index) in suggestions"

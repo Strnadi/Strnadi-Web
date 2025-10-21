@@ -3,7 +3,7 @@
 }
 
 .toggle::before {
-  content: "";
+  content: '';
   @apply absolute top-[4px] left-[4px] w-[26px] h-[26px] bg-[#fff] rounded-full transition-transform duration-[400ms];
 }
 

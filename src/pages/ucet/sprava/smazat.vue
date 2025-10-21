@@ -8,21 +8,15 @@ meta:
   <h2>Opravdu si chcete smazat účet? Tuto akci nelze vrátit zpět.</h2>
 
   <div class="flex flex-row items-center gap-x-2">
-    <input
-      id="agreement"
-      v-model="enabled"
-      type="checkbox"
-    >
+    <input id="agreement" v-model="enabled" type="checkbox" />
     <label for="agreement">
-      <span class="text-sm">Opravdu si chci smazat účet. Nahrávky zůstávají v databázi.</span>
+      <span class="text-sm"
+        >Opravdu si chci smazat účet. Nahrávky zůstávají v databázi.</span
+      >
     </label>
   </div>
 
-  <button
-    class="primary p-2"
-    :disabled="!enabled"
-    @click="() => mutate()"
-  >
+  <button class="primary p-2" :disabled="!enabled" @click="() => mutate()">
     Smazat účet
   </button>
 </template>
@@ -44,6 +38,6 @@ const { mutate } = useMutation({
   onSuccess: () => {
     accountStore.logout();
     router.push('/');
-  },
+  }
 });
 </script>

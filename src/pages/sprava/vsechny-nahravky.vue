@@ -9,17 +9,31 @@ import { useQuery } from '@tanstack/vue-query';
 import axios from 'axios';
 import JSZip from '@progress/jszip-esm';
 
-import { getRecordings } from '@/api/recordings';
+import {
+  getFilteredRecording,
+  getFilteredRecordings,
+  getRecordings
+} from '@/api/recordings';
 import TextualCoords from '@/components/map/TextualCoords.vue';
 import type { RecordingModel } from '@/api/recordings';
 import { getUserInfo } from '@/api/account';
 import { accountStore } from '@/state/AccountStore';
+import MultiColorSquare from '@/components/MultiColorSquare.vue';
 
 const zipFileName = `strnadi-${new Date().toUTCString()}.zip`;
 
-const { data: recordings, isLoading, isError } = useQuery<RecordingModel[]>({
-  queryKey: ["all-recordings"],
-  queryFn: async () => getRecordings({ parts: true }),
+const {
+  data: recordings,
+  isLoading,
+  isError
+} = useQuery<RecordingModel[]>({
+  queryKey: ['all-recordings'],
+  queryFn: async () => getRecordings({ parts: true })
+});
+
+const { data: filteredRecordings } = useQuery({
+  queryKey: ['filtered-recordings'],
+  queryFn: () => getFilteredRecordings()
 });
 
 const selectedItems = ref<{ recordingId: number; partId: number }[]>([]);
@@ -28,7 +42,9 @@ const isDownloading = ref(false);
 const hasSelectedItems = computed(() => selectedItems.value.length > 0);
 
 function togglePartSelection(recordingId: number, partId: number) {
-  const index = selectedItems.value.findIndex(item => item.recordingId === recordingId && item.partId === partId);
+  const index = selectedItems.value.findIndex(
+    (item) => item.recordingId === recordingId && item.partId === partId
+  );
   if (index > -1) {
     selectedItems.value.splice(index, 1); // Remove if exists
   } else {
@@ -37,12 +53,14 @@ function togglePartSelection(recordingId: number, partId: number) {
 }
 
 function isPartSelected(recordingId: number, partId: number): boolean {
-  return selectedItems.value.some(item => item.recordingId === recordingId && item.partId === partId);
+  return selectedItems.value.some(
+    (item) => item.recordingId === recordingId && item.partId === partId
+  );
 }
 
 async function downloadSelectedRecordings() {
   if (!hasSelectedItems.value) {
-    alert("Nebyla vybrána žádná část nahrávky.");
+    alert('Nebyla vybrána žádná část nahrávky.');
     return;
   }
 
@@ -61,15 +79,19 @@ async function downloadSelectedRecordings() {
       const recordingId = parseInt(recIdStr, 10);
       const partsToDownload = groupedByRecording[recordingId];
 
-      const recording = recordings.value?.find(r => r.id === recordingId);
+      const recording = recordings.value?.find((r) => r.id === recordingId);
       if (!recording) {
-        console.warn(`Recording with ID ${recordingId} not found in local data. Skipping.`);
+        console.warn(
+          `Recording with ID ${recordingId} not found in local data. Skipping.`
+        );
         continue;
       }
 
       const recordingFolder = zip.folder(String(recording.id));
       if (!recordingFolder) {
-        console.error(`Could not create folder in zip for recording ${recording.id}. Skipping.`);
+        console.error(
+          `Could not create folder in zip for recording ${recording.id}. Skipping.`
+        );
         continue;
       }
 
@@ -81,18 +103,22 @@ async function downloadSelectedRecordings() {
       recordingMetaContent += `Device: ${recording.device ?? 'N/A'}\n`;
       recordingMetaContent += `By App: ${recording.byApp ?? 'N/A'}\n`;
       recordingMetaContent += `Note: ${recording.note ?? 'N/A'}\n`;
-      recordingFolder.file("meta.txt", recordingMetaContent);
+      recordingFolder.file('meta.txt', recordingMetaContent);
 
       for (const { partId } of partsToDownload) {
-        const part = recording.parts?.find(p => p.id === partId);
+        const part = recording.parts?.find((p) => p.id === partId);
         if (!part) {
-          console.warn(`Part with ID ${partId} for recording ${recordingId} not found. Skipping.`);
+          console.warn(
+            `Part with ID ${partId} for recording ${recordingId} not found. Skipping.`
+          );
           continue;
         }
 
         const partFolder = recordingFolder.folder(String(part.id));
         if (!partFolder) {
-          console.error(`Could not create part folder in zip for part ${part.id}. Skipping.`);
+          console.error(
+            `Could not create part folder in zip for part ${part.id}. Skipping.`
+          );
           continue;
         }
 
@@ -105,26 +131,35 @@ async function downloadSelectedRecordings() {
         partMetaContent += `GPS Longitude Start: ${part.gpsLongitudeStart ?? 'N/A'}\n`;
         partMetaContent += `GPS Latitude End: ${part.gpsLatitudeEnd ?? 'N/A'}\n`;
         partMetaContent += `GPS Longitude End: ${part.gpsLongitudeEnd ?? 'N/A'}\n`;
-        partFolder.file("meta.txt", partMetaContent);
+        partFolder.file('meta.txt', partMetaContent);
 
         // Fetch and add sound file
         try {
-          const soundResponse = await axios.get(`/recordings/part/${recording.id}/${part.id}/sound`, {
-            responseType: 'arraybuffer' // Fetch as ArrayBuffer
-          });
+          const soundResponse = await axios.get(
+            `/recordings/part/${recording.id}/${part.id}/sound`,
+            {
+              responseType: 'arraybuffer' // Fetch as ArrayBuffer
+            }
+          );
           // Assuming the sound file is a WAV file.
           // You might need to adjust the extension based on the actual Content-Type
           // or if the API guarantees a specific format.
-          partFolder.file("sound.wav", soundResponse.data, { binary: true });
+          partFolder.file('sound.wav', soundResponse.data, { binary: true });
         } catch (error) {
-          console.error(`Failed to download sound for recording ${recording.id}, part ${part.id}:`, error);
-          partFolder.file("download_error.txt", `Failed to download sound file. Error: ${error instanceof Error ? error.message : String(error)}`);
+          console.error(
+            `Failed to download sound for recording ${recording.id}, part ${part.id}:`,
+            error
+          );
+          partFolder.file(
+            'download_error.txt',
+            `Failed to download sound file. Error: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
     }
 
     // Generate zip file and trigger download
-    const zipContentBlob = await zip.generateAsync({ type: "blob" });
+    const zipContentBlob = await zip.generateAsync({ type: 'blob' });
     const downloadUrl = URL.createObjectURL(zipContentBlob);
     const anchor = document.createElement('a');
     anchor.href = downloadUrl;
@@ -137,15 +172,13 @@ async function downloadSelectedRecordings() {
     anchor.click();
     document.body.removeChild(anchor);
     URL.revokeObjectURL(downloadUrl);
-
   } catch (error) {
-    console.error("Error creating or downloading zip file:", error);
-    alert("Došlo k chybě při vytváření ZIP souboru.");
+    console.error('Error creating or downloading zip file:', error);
+    alert('Došlo k chybě při vytváření ZIP souboru.');
   } finally {
     isDownloading.value = false;
   }
 }
-
 </script>
 
 <template>
@@ -160,13 +193,19 @@ async function downloadSelectedRecordings() {
     <p>Nelze načíst nahrávky.</p>
   </template>
 
-  <p v-else-if="!recordings || recordings.length === 0">
-    Zatím zde nic není.
-  </p>
+  <p v-else-if="!recordings || recordings.length === 0">Zatím zde nic není.</p>
 
   <template v-else>
     <p>Celkový počet nahrávek: {{ recordings.length }}</p>
-    <p>Celkový počet částí: {{ recordings.reduce((acc, recording) => acc + (recording.parts?.length || 0), 0) }}</p>
+    <p>
+      Celkový počet částí:
+      {{
+        recordings.reduce(
+          (acc, recording) => acc + (recording.parts?.length || 0),
+          0
+        )
+      }}
+    </p>
 
     <button
       class="primary p-2 my-4"
@@ -200,27 +239,32 @@ async function downloadSelectedRecordings() {
               :checked="isPartSelected(recording.id, part.id)"
               class="form-checkbox h-5 w-5 text-blue-600"
               @change="togglePartSelection(recording.id, part.id)"
-            >
-            <span class="text-sm">Část ID: {{ part.id }}</span>
+            />
+            <span class="text-sm">Část #{{ part.id }}</span>
             <TextualCoords
-              v-if="part.gpsLatitudeStart !== undefined && part.gpsLongitudeStart !== undefined"
+              v-if="
+                part.gpsLatitudeStart !== undefined &&
+                part.gpsLongitudeStart !== undefined
+              "
               :lat="part.gpsLatitudeStart"
               :lng="part.gpsLongitudeStart"
               type="municipality_part"
               class="text-xs text-gray-500"
             />
-            <span
-              v-else
-              class="text-xs text-gray-400"
-            >(GPS data chybí)</span>
+            <span v-else class="text-xs text-gray-400">(GPS data chybí)</span>
           </li>
         </ul>
-        <p
-          v-else
-          class="text-sm text-gray-500"
-        >
+        <p v-else class="text-sm text-gray-500">
           Tato nahrávka nemá žádné části.
         </p>
+
+        <hr />
+
+        <ul v-for="fr in filteredRecordings" :key="fr.id">
+          <li>
+            <!-- <MultiColorSquare size="16px" :colors="fr.detectedDialects.map(d => d.confirmedDialectColor)" /> -->
+          </li>
+        </ul>
       </li>
     </ul>
   </template>

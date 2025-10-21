@@ -1,9 +1,9 @@
-import * as jose from 'jose'
-import { reactive } from 'vue'
-import type { User, JWTObject } from '@/api/account'
+import * as jose from 'jose';
+import { reactive } from 'vue';
+import type { User, JWTObject } from '@/api/account';
 import { getCurrentUserInfo, getRenewedJWT } from '@/api/account';
 import { posthogInstance } from '@/plugins/vue/posthog';
-import persist from "@/vendor/persist";
+import persist from '@/vendor/persist';
 
 export const accountStore = reactive({
   token: null as string | null,
@@ -18,19 +18,16 @@ export const accountStore = reactive({
     const decoded = jose.decodeJwt<JWTObject>(jwt);
     const user = await getCurrentUserInfo(jwt);
 
-    if(user) {
+    if (user) {
       this.user = user;
       this.token = jwt;
       this.token_object = decoded;
 
-      posthogInstance.identify(
-        `${user.id}`,
-        {
-          email: user.email,
-          name: user.firstName,
-          surname: user.lastName
-        }
-      );
+      posthogInstance.identify(`${user.id}`, {
+        email: user.email,
+        name: user.firstName,
+        surname: user.lastName
+      });
     }
   },
 

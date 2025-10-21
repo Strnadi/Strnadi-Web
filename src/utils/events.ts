@@ -1,10 +1,6 @@
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 
-import {
-  type Emitter,
-  type EventType,
-  type Handler
-} from '@/vendor/mitt';
+import { type Emitter, type EventType, type Handler } from '@/vendor/mitt';
 import { onMounted, onUnmounted } from 'vue';
 
 export const useEventLast = <
@@ -23,7 +19,7 @@ export const useEventLast = <
   onUnmounted(() => {
     emitter.off(event, handler);
   });
-}
+};
 
 export const useEvent = <
   T extends Record<EventType, unknown>,
@@ -34,4 +30,4 @@ export const useEvent = <
   handler: Handler<T[K]>
 ): void => {
   useEventLast(emitter, event, handler, false);
-}
+};

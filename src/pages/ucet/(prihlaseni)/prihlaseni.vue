@@ -4,41 +4,50 @@ meta:
 </route>
 
 <script setup lang="ts">
-import * as jose from "jose";
-import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
-import { useMutation } from "@tanstack/vue-query";
-import {postAppleLogin, postGoogleLogin, postLogin} from "@/api/account";
-import { accountStore } from "@/state/AccountStore";
-import { registerStore } from "@/pages/ucet/(prihlaseni)/registrace.vue";
+import * as jose from 'jose';
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useMutation } from '@tanstack/vue-query';
+import { postAppleLogin, postGoogleLogin, postLogin } from '@/api/account';
+import { accountStore } from '@/state/AccountStore';
+import { registerStore } from '@/pages/ucet/(prihlaseni)/registrace.vue';
 
-import AuthButtons from "@/views/AuthButtons.vue";
-import RevealablePasswordInput from "@/components/RevealablePasswordInput.vue";
-import TranslatedText from "@/components/TranslatedText.vue";
+import AuthButtons from '@/views/AuthButtons.vue';
+import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue';
+import TranslatedText from '@/components/TranslatedText.vue';
 
 const router = useRouter();
 
-const email = ref("");
-const password = ref("");
-const oauth2_error = ref("");
+const email = ref('');
+const password = ref('');
+const oauth2_error = ref('');
 
-const { mutate: googleLoginMutate, isPending: googleLoginPending, error: googleLoginMutationError } = useMutation({
-  mutationFn: (loginInfo: { idToken: string }) =>
-    postGoogleLogin(loginInfo),
+const {
+  mutate: googleLoginMutate,
+  isPending: googleLoginPending,
+  error: googleLoginMutationError
+} = useMutation({
+  mutationFn: (loginInfo: { idToken: string }) => postGoogleLogin(loginInfo),
 
   onSuccess: (data) => {
     router.replace('/');
     accountStore.login(data);
-  },
+  }
 });
 
-const { mutate: appleLoginMutate, isPending: appleLoginPending, error: appleLoginMutationError } = useMutation({
-  mutationFn: (loginInfo: { idToken: string, givenName?: string, familyName?: string }) =>
-      postAppleLogin(loginInfo),
+const {
+  mutate: appleLoginMutate,
+  isPending: appleLoginPending,
+  error: appleLoginMutationError
+} = useMutation({
+  mutationFn: (loginInfo: {
+    idToken: string;
+    givenName?: string;
+    familyName?: string;
+  }) => postAppleLogin(loginInfo),
 
   onSuccess: async (data) => {
-
-    console.log("data", data)
+    console.log('data', data);
 
     if (data.exists === false) {
       registerStore.name = data.firstName;
@@ -47,28 +56,39 @@ const { mutate: appleLoginMutate, isPending: appleLoginPending, error: appleLogi
       registerStore.appleId = data.appleid;
       registerStore.isExternalSignup = true;
       registerStore.jwt = data.jwt;
-      await router.push("/ucet/registrace");
+      await router.push('/ucet/registrace');
     } else {
       await accountStore.login(data.jwt);
       await router.replace('/');
     }
-
-  },
+  }
 });
 
-
-const { mutate: loginMutate, isPending: loginPending, error: loginError } = useMutation({
+const {
+  mutate: loginMutate,
+  isPending: loginPending,
+  error: loginError
+} = useMutation({
   mutationFn: (loginInfo: { email: string; password: string }) =>
     postLogin(loginInfo),
 
   onSuccess: (data) => {
     router.back();
     accountStore.login(data);
-  },
+  }
 });
 
-const isPending = computed(() => loginPending.value || googleLoginPending.value || appleLoginPending.value)
-const error = computed(() => loginError.value || googleLoginMutationError.value || oauth2_error.value || appleLoginMutationError.value)
+const isPending = computed(
+  () =>
+    loginPending.value || googleLoginPending.value || appleLoginPending.value
+);
+const error = computed(
+  () =>
+    loginError.value ||
+    googleLoginMutationError.value ||
+    oauth2_error.value ||
+    appleLoginMutationError.value
+);
 
 const handleLogin = () => {
   loginMutate({ email: email.value, password: password.value });
@@ -79,40 +99,34 @@ const success = (idToken: string, user: string) => {
 
   const parsedUser = user !== '' ? JSON.parse(user) : {};
 
-  if(jwt.iss === 'https://appleid.apple.com') {
-    appleLoginMutate({ idToken, givenName: parsedUser.name?.firstName, familyName: parsedUser.name?.lastName });
+  if (jwt.iss === 'https://appleid.apple.com') {
+    appleLoginMutate({
+      idToken,
+      givenName: parsedUser.name?.firstName,
+      familyName: parsedUser.name?.lastName
+    });
   } else {
-    googleLoginMutate({ idToken })
+    googleLoginMutate({ idToken });
   }
-}
+};
 
 const errorHandler = (error: string) => {
   oauth2_error.value = error;
-}
+};
 </script>
 
 <template>
   <h1>Přihlášení</h1>
   <div class="flex flex-col items-center gap-y-6">
-    <div v-if="error">
-      Chyba: {{ error }}
-    </div>
-    <div v-if="isPending">
-      Načítání...
-    </div>
-    <div
-      v-else
-      class="flex flex-col items-center gap-y-6 w-full"
-    >
-      <div
-        class="flex flex-col items-center gap-y-2 max-lg:w-full"
-      >
+    <div v-if="error">Chyba: {{ error }}</div>
+    <div v-if="isPending">Načítání...</div>
+    <div v-else class="flex flex-col items-center gap-y-6 w-full">
+      <div class="flex flex-col items-center gap-y-2 max-lg:w-full">
         <div class="flex flex-col gap-x-2 gap-y-4 w-full">
           <div class="w-full">
-            <label
-              for="email"
-              class="block text-sm font-medium mb-1"
-            >E-Mail</label>
+            <label for="email" class="block text-sm font-medium mb-1"
+              >E-Mail</label
+            >
             <input
               id="email"
               v-model="email"
@@ -120,7 +134,7 @@ const errorHandler = (error: string) => {
               type="email"
               placeholder="E-Mail"
               class="w-full p-2 border rounded"
-            >
+            />
           </div>
           <div class="w-full">
             <RevealablePasswordInput
@@ -129,7 +143,9 @@ const errorHandler = (error: string) => {
               placeholder="Heslo"
               class="w-full p-2 border rounded"
             >
-              <div class="text-sm font-medium mb-1 flex flex-row justify-between">
+              <div
+                class="text-sm font-medium mb-1 flex flex-row justify-between"
+              >
                 <span><TranslatedText identifier="labels.password" /></span>
                 <PrefetchLink to="/ucet/zapomenute-heslo">
                   <TranslatedText identifier="buttons.forgotten_password" />
@@ -146,10 +162,7 @@ const errorHandler = (error: string) => {
         >
           <TranslatedText identifier="buttons.login" />
         </button>
-        <AuthButtons
-          @success="success"
-          @error="errorHandler"
-        />
+        <AuthButtons @success="success" @error="errorHandler" />
       </div>
     </div>
   </div>

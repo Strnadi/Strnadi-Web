@@ -7,8 +7,8 @@ import { getIcon } from 'material-file-icons';
 import { computed } from 'vue';
 
 const props = defineProps<{
-  filename: string
+  filename: string;
 }>();
 
-const svg = computed(() => getIcon(props.filename).svg)
+const svg = computed(() => getIcon(props.filename).svg);
 </script>

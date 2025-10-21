@@ -8,28 +8,30 @@ import { getResendVerifyEmail } from '@/api/account';
 import SegmentedProgress from '@/components/SegmentedProgress.vue';
 import { accountStore } from '@/state/AccountStore';
 import { useMutation } from '@tanstack/vue-query';
-import { useCountdown } from '@vueuse/core'
+import { useCountdown } from '@vueuse/core';
 import { shallowRef } from 'vue';
 
 const countdownMaxSeconds = 30;
 const countdownSeconds = shallowRef(countdownMaxSeconds);
 
-const { isActive, remaining, start, stop, reset } = useCountdown(countdownSeconds, {
-  onComplete() {
-    stop();
-    reset();
+const { isActive, remaining, start, stop, reset } = useCountdown(
+  countdownSeconds,
+  {
+    onComplete() {
+      stop();
+      reset();
+    }
   }
-})
+);
 
 const { mutate } = useMutation({
-  mutationFn: ({ userId }: { userId: number}) => getResendVerifyEmail(userId)
-})
+  mutationFn: ({ userId }: { userId: number }) => getResendVerifyEmail(userId)
+});
 
 const resendEmail = () => {
-  mutate({ userId: accountStore.user!.id })
+  mutate({ userId: accountStore.user!.id });
   start();
-}
-
+};
 </script>
 
 <template>
@@ -41,10 +43,7 @@ const resendEmail = () => {
   >
     Odeslat ověřovací e-mail
   </button>
-  <div
-    v-if="isActive"
-    class="flex flex-row"
-  >
+  <div v-if="isActive" class="flex flex-row">
     <p>{{ remaining }}s</p>
     <SegmentedProgress
       :progress="remaining"

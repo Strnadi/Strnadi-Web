@@ -3,8 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <h1>Čtverec</h1>

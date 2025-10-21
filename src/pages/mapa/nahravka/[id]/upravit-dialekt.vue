@@ -14,10 +14,13 @@ import { type Numeric } from '@/types/basic';
 const env = import.meta.env;
 const id = useRouteParams<Numeric>('id');
 
-const { data: recording, isLoading, error } = useFetched(getRecording, id, false);
+const {
+  data: recording,
+  isLoading,
+  error
+} = useFetched(getRecording, id, false);
 
 const segments = ref([]);
-
 </script>
 
 <template>
@@ -35,8 +38,14 @@ const segments = ref([]);
     <Spectrogram
       v-if="recording && recording.parts"
       v-model:selected="segments"
-      :audio-urls="recording.parts.map(p => `${env.VITE_API_URL}/recordings/part/${recording?.id}/${p.id}/sound`)"
+      :audio-urls="
+        recording.parts.map(
+          (p) =>
+            `${env.VITE_API_URL}/recordings/part/${recording?.id}/${p.id}/sound`
+        )
+      "
       :height="400"
+      :max-frequency="9000"
     />
   </template>
 </template>

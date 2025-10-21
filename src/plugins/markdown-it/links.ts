@@ -1,12 +1,21 @@
 import { type PluginSimple } from 'markdown-it';
 
-export const changeLink = (target: HTMLAnchorElement["target"], base: string): PluginSimple =>
+export const changeLink =
+  (target: HTMLAnchorElement['target'], base: string): PluginSimple =>
   (markdownIt) => {
-    const originalLinkRender = markdownIt.renderer.rules['link_open'] || function(tokens, idx, options, env, self) {
-      return self.renderToken(tokens, idx, options);
-    };
+    const originalLinkRender =
+      markdownIt.renderer.rules['link_open'] ||
+      function (tokens, idx, options, env, self) {
+        return self.renderToken(tokens, idx, options);
+      };
 
-    markdownIt.renderer.rules['link_open'] = (tokens, idx, options, env, self) => {
+    markdownIt.renderer.rules['link_open'] = (
+      tokens,
+      idx,
+      options,
+      env,
+      self
+    ) => {
       const token = tokens[idx];
 
       if (!token) {
@@ -47,4 +56,4 @@ export const changeLink = (target: HTMLAnchorElement["target"], base: string): P
 
       return originalLinkRender(tokens, idx, options, env, self);
     };
-  }
+  };

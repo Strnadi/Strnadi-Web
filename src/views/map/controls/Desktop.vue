@@ -1,5 +1,5 @@
 <script lang="ts">
-import FilterIcon from '@/icons/interface/icon-filter2.svg'
+import FilterIcon from '@/icons/interface/icon-filter2.svg';
 </script>
 
 <script setup lang="ts">
@@ -21,22 +21,20 @@ const toolsShown = ref(false);
 const searchText = ref('');
 </script>
 
-
 <template>
-  <div class="absolute bottom-2 right-2 z-[2] flex flex-row justify-end items-end">
+  <div
+    class="absolute bottom-2 right-2 z-[2] flex flex-row justify-end items-end"
+  >
     <LocationSearch
       v-model:text="searchText"
       placeholder="Hledat..."
       class="drop-shadow-lg rounded-2xl m-2 p-4 w-full sm:w-auto h-[70px]"
-      @update:location="newLocation => MapStore.move(newLocation)"
+      @update:location="(newLocation) => MapStore.move(newLocation)"
     />
 
     <div class="flex flex-row-reverse items-end">
       <div class="flex flex-col">
-        <div
-          v-if="toolsShown"
-          class="flex flex-col-reverse gap-x-2"
-        >
+        <div v-if="toolsShown" class="flex flex-col-reverse gap-x-2">
           <button
             class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
             @click="MapStore.scale = !MapStore.scale"
@@ -61,10 +59,7 @@ const searchText = ref('');
           @click="toolsShown = !toolsShown"
           v-wave
         >
-          <OptionsIcon
-            width="32"
-            height="32"
-          />
+          <OptionsIcon width="32" height="32" />
         </button>
       </div>
 
@@ -73,10 +68,7 @@ const searchText = ref('');
         to="/mapa/legenda"
         v-wave
       >
-        <InfoIcon
-          width="32"
-          height="32"
-        />
+        <InfoIcon width="32" height="32" />
       </PrefetchLink>
 
       <select
@@ -84,35 +76,19 @@ const searchText = ref('');
         class="filter-select drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100"
         aria-label="Filter recordings"
       >
-        <option value="all">
-          Všechny nahrávky
-        </option>
+        <option value="all">Všechny nahrávky</option>
 
-        <option value="new">
-          Jen nové nahrávky
-        </option>
+        <option value="new">Jen nové nahrávky</option>
 
-        <option value="old">
-          Jen staré nahrávky
-        </option>
+        <option value="old">Jen staré nahrávky</option>
 
-        <option
-          v-if="accountStore.user"
-          value="my"
-        >
-          Jen moje nahrávky
-        </option>
+        <option v-if="accountStore.user" value="my">Jen moje nahrávky</option>
 
-        <option
-          v-if="accountStore.user"
-          value="others"
-        >
+        <option v-if="accountStore.user" value="others">
           Jen nahrávky ostatních
         </option>
 
-        <option value="any-dialect">
-          Jen nahrávky s dialektem
-        </option>
+        <option value="any-dialect">Jen nahrávky s dialektem</option>
       </select>
     </div>
   </div>
@@ -120,7 +96,7 @@ const searchText = ref('');
 
 <style scoped>
 .filter-select {
-/*  appearance: none;
+  /*  appearance: none;
   background-image: v-bind("`url(\"${FilterIcon}\")`");
   background-repeat: no-repeat;
   background-position: center;
@@ -131,5 +107,4 @@ const searchText = ref('');
   /*text-indent: 9999px;*/
   cursor: pointer;
 }
-
 </style>

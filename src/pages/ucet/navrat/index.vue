@@ -12,22 +12,21 @@ import * as jose from 'jose';
 const SuccessTimeout = 5; // seconds
 
 const { remaining, start } = useCountdown(SuccessTimeout, {
-
   immediate: false,
   interval: 1000,
   onComplete: window.close.bind(window)
-
 });
 
-
-const postMessage = (message: OAuthPopupResult) => { (window.opener as Window).postMessage(message); };
+const postMessage = (message: OAuthPopupResult) => {
+  (window.opener as Window).postMessage(message);
+};
 
 onMounted(() => {
   const route = window.location;
 
-  if(!route.hash) {
+  if (!route.hash) {
     return;
-  };
+  }
 
   const fragment = route.hash.substring(1);
   const params = new URLSearchParams(fragment);
@@ -37,7 +36,7 @@ onMounted(() => {
   if (!idToken) {
     postMessage({
       message: 'error',
-      data: "No token returned"
+      data: 'No token returned'
     });
 
     return;
@@ -45,10 +44,10 @@ onMounted(() => {
 
   const decodedToken = jose.decodeJwt(idToken);
 
-  if(!decodedToken.nonce || decodedToken.nonce !== state) {
+  if (!decodedToken.nonce || decodedToken.nonce !== state) {
     postMessage({
       message: 'error',
-      data: "Nonce mismatch"
+      data: 'Nonce mismatch'
     });
 
     return;
@@ -61,7 +60,6 @@ onMounted(() => {
 
   start();
 });
-
 </script>
 
 <template>

@@ -5,18 +5,12 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const closePopup = () => {
-  router.push("/");
-}
-
-
+  router.push('/');
+};
 </script>
 
 <template>
-  <aside
-      class="popup"
-      @click="closePopup"
-      @keydown.escape="closePopup"
-  >
+  <aside class="popup" @click="closePopup" @keydown.escape="closePopup">
     <slot />
   </aside>
 </template>

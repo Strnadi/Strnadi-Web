@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, toRef } from 'vue';
 import { useDropZone, useFileDialog } from '@vueuse/core';
-import { validateFiles } from "@/utils/files.ts";
+import { validateFiles } from '@/utils/files.ts';
 
 interface CommonProps {
   accept?: string | string[];
@@ -17,7 +17,6 @@ interface MultipleFileProps extends CommonProps {
   multiple: true;
   modelValue?: File[];
 }
-
 
 const props = defineProps<SingleFileProps | MultipleFileProps>();
 const emit = defineEmits(['drop', 'update:modelValue']);
@@ -41,12 +40,18 @@ const dropzoneFiles = computed({
   }
 });
 
-
 const dropZoneRef = ref<HTMLElement | null>(null);
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
   onDrop: (files: File[] | null) => {
-    const { valid } = validateFiles(Array.isArray(props.accept) ? props.accept : props.accept ? [props.accept] : ['*'], files || []);
+    const { valid } = validateFiles(
+      Array.isArray(props.accept)
+        ? props.accept
+        : props.accept
+          ? [props.accept]
+          : ['*'],
+      files || []
+    );
     dropzoneFiles.value = valid;
   }
 });
@@ -62,20 +67,30 @@ const acceptString = computed(() => {
 const { open, onChange } = useFileDialog({
   accept: acceptString.value,
   multiple: props.multiple
-})
+});
 
 onChange((files) => {
   if (files) {
-    const { valid } = validateFiles(Array.isArray(props.accept) ? props.accept : props.accept ? [props.accept] : ['*'], Array.from(files));
+    const { valid } = validateFiles(
+      Array.isArray(props.accept)
+        ? props.accept
+        : props.accept
+          ? [props.accept]
+          : ['*'],
+      Array.from(files)
+    );
     dropzoneFiles.value = valid;
   }
-})
+});
 </script>
 
 <template>
   <div
     ref="dropZoneRef"
-    :class="!headless && `border-2 border-dashed rounded-lg border-gray-300 w-full p-2 flex flex-col justify-center items-center min-h-[5rem] h-full`"
+    :class="
+      !headless &&
+      `border-2 border-dashed rounded-lg border-gray-300 w-full p-2 flex flex-col justify-center items-center min-h-[5rem] h-full`
+    "
     @click="() => !headless && open()"
     @dragenter.stop
   >

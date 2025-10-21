@@ -7,7 +7,7 @@ meta:
 <script setup lang="ts">
 import VueMarkdown from 'vue-markdown-render';
 import { useQuery } from '@tanstack/vue-query';
-import { useRouteParams } from '@vueuse/router'
+import { useRouteParams } from '@vueuse/router';
 import { computed } from 'vue';
 import { changeImage } from '@/plugins/markdown-it/images';
 import { changeLink } from '@/plugins/markdown-it/links';
@@ -20,32 +20,36 @@ const category = useRouteParams<string>('category');
 const slug = useRouteParams<string>('slug');
 
 const { data: articles } = useQuery({
-  queryKey: ["articles", category],
+  queryKey: ['articles', category],
   queryFn: () => getArticleByCategory(category.value)
-})
+});
 
-const id = computed(() => articles.value?.find(article => kebabize(article.name) === slug.value)?.id!);
+const id = computed(
+  () =>
+    articles.value?.find((article) => kebabize(article.name) === slug.value)
+      ?.id!
+);
 
 const { data: markdown } = useQuery({
-  queryKey: ["articles", category, slug],
+  queryKey: ['articles', category, slug],
   queryFn: () => {
-    return getArticleFile(id.value, "Text.md")
+    return getArticleFile(id.value, 'Text.md');
   },
   enabled: computed(() => !!id.value)
-})
+});
 
 const fileBase = computed(() => `${env.VITE_API_URL}/articles/${id.value}`);
 
 const plugins = computed(() => [
   changeImage(fileBase.value),
-  changeLink("_blank", fileBase.value)
+  changeLink('_blank', fileBase.value)
 ]);
 
 const options = {
   html: true,
   linkify: true,
   typographer: true,
-  quotes: "„“‚‘"
+  quotes: '„“‚‘'
 };
 </script>
 

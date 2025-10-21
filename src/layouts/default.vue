@@ -8,7 +8,6 @@ const desktopBp = useCssVar('--breakpoint-desktop', document.documentElement);
 const isDesktop = useMediaQuery(
   computed(() => `(min-width: ${desktopBp.value})`)
 );
-
 </script>
 
 <template>

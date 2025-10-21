@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { getArticleCategories } from "@/api/articles";
-import { useQuery } from "@tanstack/vue-query";
+import { getArticleCategories } from '@/api/articles';
+import { useQuery } from '@tanstack/vue-query';
 
 const { data: categories } = useQuery({
-  queryKey: ["categories"],
+  queryKey: ['categories'],
   queryFn: () => getArticleCategories()
 });
 </script>
@@ -30,13 +30,13 @@ const { data: categories } = useQuery({
       </div>
       <router-link
         :to="`/sprava/informace/kategorie/${category.name}/upravit`"
-        class="button-secondary  m-auto p-2"
+        class="button-secondary m-auto p-2"
       >
         Upravit
       </router-link>
       <router-link
         :to="`/sprava/informace/kategorie/${category.name}/smazat`"
-        class="button-danger  m-auto p-2"
+        class="button-danger m-auto p-2"
       >
         Smazat
       </router-link>

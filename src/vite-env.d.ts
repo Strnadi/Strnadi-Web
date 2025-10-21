@@ -4,13 +4,13 @@
 /// <reference types="vite-plugin-vue-meta-layouts/client" />
 
 declare module '*.vue' {
-  import type { DefineComponent } from 'vue'
-  const component: DefineComponent<{}, {}, any>
-  export default component
+  import type { DefineComponent } from 'vue';
+  const component: DefineComponent<{}, {}, any>;
+  export default component;
 }
 
 interface ViteTypeOptions {
-  strictImportMetaEnv: unknown
+  strictImportMetaEnv: unknown;
 }
 
 interface ImportMetaEnv {
@@ -22,5 +22,5 @@ interface ImportMetaEnv {
 }
 
 interface ImportMeta {
-  readonly env: ImportMetaEnv
+  readonly env: ImportMetaEnv;
 }

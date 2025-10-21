@@ -6,22 +6,27 @@ meta:
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useQuery, useMutation } from '@tanstack/vue-query';
-import { getArticles, postArticleCategory, patchAssignArticleCategory, type Article } from '@/api/articles';
+import {
+  getArticles,
+  postArticleCategory,
+  patchAssignArticleCategory,
+  type Article
+} from '@/api/articles';
 import { accountStore } from '@/state/AccountStore';
 import { useRouter } from 'vue-router';
- import ListDeselect from '@/components/ListDeselect.vue';
+import ListDeselect from '@/components/ListDeselect.vue';
 
 const router = useRouter();
 
-const name = ref("");
-const label = ref("");
+const name = ref('');
+const label = ref('');
 
 // Id's
 const categoryArticles = ref<number[]>([]);
 
 const { data: articles } = useQuery({
   queryKey: ['articles'],
-  queryFn: () => getArticles(),
+  queryFn: () => getArticles()
 });
 
 // const categories = useQuery({ queryKey: ['articleCategories'], queryFn: getArticleCategories });
@@ -43,25 +48,15 @@ const { mutate: submitCategory } = useMutation({
   },
 
   onSuccess() {
-    router.replace("/sprava/informace");
+    router.replace('/sprava/informace');
   }
-})
-
+});
 </script>
 
 <template>
   <h1>Nová kategorie</h1>
-  <input
-    v-model="name"
-    type="text"
-    placeholder="Název"
-  >
-  <input
-    v-model="label"
-    type="text"
-    placeholder="Popis"
-  >
-
+  <input v-model="name" type="text" placeholder="Název" />
+  <input v-model="label" type="text" placeholder="Popis" />
 
   <div>
     <h2>Zahrnuté příspěvky</h2>
@@ -75,7 +70,5 @@ const { mutate: submitCategory } = useMutation({
     />
   </div>
 
-  <button @click="submitCategory">
-    Přidat
-  </button>
+  <button @click="submitCategory">Přidat</button>
 </template>

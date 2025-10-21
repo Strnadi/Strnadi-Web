@@ -1,60 +1,100 @@
-.button-primary, .button-secondary, button, input[type="button"], input[type="submit"] {
+.button-primary,
+.button-secondary,
+button,
+input[type='button'],
+input[type='submit'] {
   cursor: pointer;
   @apply font-semibold;
   text-align: center;
 }
 
-.button-primary, button.primary, input[type="button"].primary, input[type="submit"].primary {
+.button-primary,
+button.primary,
+input[type='button'].primary,
+input[type='submit'].primary {
   @apply bg-yellow-300 text-[#2D2B18];
   @apply border-2 rounded-2xl border-none;
   @apply font-bold;
 }
 
-.button-primary:hover, button.primary:hover, input[type="button"].primary:hover, input[type="submit"].primary:hover {
+.button-primary:hover,
+button.primary:hover,
+input[type='button'].primary:hover,
+input[type='submit'].primary:hover {
   @apply bg-yellow-400;
 }
 
-.button-primary:disabled, button.primary:disabled, input[type="button"].primary:disabled, input[type="submit"].primary:disabled {
+.button-primary:disabled,
+button.primary:disabled,
+input[type='button'].primary:disabled,
+input[type='submit'].primary:disabled {
   @apply bg-gray-200;
 }
 
-.button-primary:disabled:hover, button.primary:disabled:hover, input[type="button"].primary:disabled:hover, input[type="submit"].primary:disabled:hover {
+.button-primary:disabled:hover,
+button.primary:disabled:hover,
+input[type='button'].primary:disabled:hover,
+input[type='submit'].primary:disabled:hover {
   @apply bg-gray-200;
 }
 
-.button-secondary, button.secondary, input[type="button"].secondary, input[type="submit"].secondary {
+.button-secondary,
+button.secondary,
+input[type='button'].secondary,
+input[type='submit'].secondary {
   @apply bg-white text-[#2D2B18];
   @apply border-2 rounded-2xl border-[#E8E8E8];
   @apply font-bold;
 }
 
-.button-secondary:hover, button.secondary:hover, input[type="button"].secondary:hover, input[type="submit"].secondary:hover {
+.button-secondary:hover,
+button.secondary:hover,
+input[type='button'].secondary:hover,
+input[type='submit'].secondary:hover {
   @apply border-[#cccccc];
 }
 
-.button-secondary:disabled, button.secondary:disabled, input[type="button"].secondary:disabled, input[type="submit"].secondary:disabled {
+.button-secondary:disabled,
+button.secondary:disabled,
+input[type='button'].secondary:disabled,
+input[type='submit'].secondary:disabled {
   @apply bg-gray-200;
 }
 
-.button-secondary:disabled:hover, button.secondary:disabled:hover, input[type="button"].secondary:disabled:hover, input[type="submit"].secondary:disabled:hover {
+.button-secondary:disabled:hover,
+button.secondary:disabled:hover,
+input[type='button'].secondary:disabled:hover,
+input[type='submit'].secondary:disabled:hover {
   @apply border-[#e5e7eb]; /* same border color as the disabled state */
 }
 
 /* Danger button */
-.button-danger, button.danger, input[type="button"].danger, input[type="submit"].danger {
+.button-danger,
+button.danger,
+input[type='button'].danger,
+input[type='submit'].danger {
   @apply text-red-500;
   @apply border-2 rounded-2xl border-none;
   @apply font-bold;
 }
 
-.button-danger:hover, button.danger:hover, input[type="button"].danger:hover, input[type="submit"].danger:hover {
+.button-danger:hover,
+button.danger:hover,
+input[type='button'].danger:hover,
+input[type='submit'].danger:hover {
   @apply border-[#cccccc];
 }
 
-.button-danger:disabled, button.danger:disabled, input[type="button"].danger:disabled, input[type="submit"].danger:disabled {
+.button-danger:disabled,
+button.danger:disabled,
+input[type='button'].danger:disabled,
+input[type='submit'].danger:disabled {
   @apply bg-gray-200;
 }
 
-.button-danger:disabled:hover, button.danger:disabled:hover, input[type="button"].danger:disabled:hover, input[type="submit"].danger:disabled:hover {
+.button-danger:disabled:hover,
+button.danger:disabled:hover,
+input[type='button'].danger:disabled:hover,
+input[type='submit'].danger:disabled:hover {
   @apply bg-gray-200;
 }

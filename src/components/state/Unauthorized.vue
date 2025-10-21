@@ -1,3 +1,1 @@
-<template>
-  K tomuto prostředku nemáte přístup.
-</template>
+<template>K tomuto prostředku nemáte přístup.</template>

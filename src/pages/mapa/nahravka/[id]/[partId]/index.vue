@@ -6,7 +6,7 @@ meta:
 <script setup lang="ts">
 import { onBeforeRouteUpdate } from 'vue-router';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { useRouteParams } from '@vueuse/router'
+import { useRouteParams } from '@vueuse/router';
 import { getRecording, getFilteredRecording } from '@/api/recordings';
 import { getUserInfo } from '@/api/account';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
@@ -32,34 +32,37 @@ const editing = ref(false);
 const editedName = ref('');
 const editedNote = ref('');
 
-const { data: recording, isError, isLoading } = useQuery({
+const {
+  data: recording,
+  isError,
+  isLoading
+} = useQuery({
   queryKey: ['recordings', recordingId.value],
   queryFn: () => getRecording(recordingId.value, false)
-})
+});
 
 const { data: filteredRec } = useQuery({
   queryKey: ['filtered-recordings', recordingId.value],
   queryFn: () => getFilteredRecording(recordingId.value)
-})
+});
 
 const enabled = computed(() => !!recording.value?.userId);
 const recordingPart = computed(() =>
-  recording.value?.parts?.find(part => part.id == partId.value)
+  recording.value?.parts?.find((part) => part.id == partId.value)
 );
-
 
 // todo select location in the map
 
 // Dependent query - only runs when we have an uploaderEmail from the recording
 const {
-  data: uploader, 
+  data: uploader,
   isLoading: isUploaderLoading,
   isError: isUploaderError
 } = useQuery({
   queryKey: ['user', recording.value?.userId],
   queryFn: () => getUserInfo(accountStore.token!, recording.value?.userId!),
-  enabled, // Use the computed enabled value
-})
+  enabled // Use the computed enabled value
+});
 
 const queryClient = useQueryClient();
 
@@ -70,20 +73,28 @@ onBeforeRouteUpdate(async (to) => {
   const newRouteRecordingId = to.params.id; // Type: string | string[] | undefined
   if (typeof newRouteRecordingId === 'string') {
     // Invalidate queries associated with the new recording ID to ensure fresh data.
-    await queryClient.invalidateQueries({ queryKey: ['recordings', newRouteRecordingId as Numeric] });
-    await queryClient.invalidateQueries({ queryKey: ['filtered-recordings', newRouteRecordingId as Numeric] });
+    await queryClient.invalidateQueries({
+      queryKey: ['recordings', newRouteRecordingId as Numeric]
+    });
+    await queryClient.invalidateQueries({
+      queryKey: ['filtered-recordings', newRouteRecordingId as Numeric]
+    });
     // The 'user' query will reactively update based on changes to 'recording.value'.
   }
   // If partId changes were to trigger specific invalidations, they would be handled similarly.
 });
 
 // Watch for changes in the recording data to reset edited values if needed
-watch(recording, (newRecording) => {
-  if (newRecording) {
-    editedName.value = newRecording.name || '';
-    editedNote.value = newRecording.note || '';
-  }
-}, { immediate: true });
+watch(
+  recording,
+  (newRecording) => {
+    if (newRecording) {
+      editedName.value = newRecording.name || '';
+      editedNote.value = newRecording.note || '';
+    }
+  },
+  { immediate: true }
+);
 
 const toggleEdit = () => {
   if (!editing.value && recording.value) {
@@ -96,10 +107,12 @@ const toggleEdit = () => {
 
 const saveChanges = async () => {
   // editRecording({
-    
+
   // })
 
-  await queryClient.invalidateQueries({ queryKey: ['recording', recordingId.value] });
+  await queryClient.invalidateQueries({
+    queryKey: ['recording', recordingId.value]
+  });
   editing.value = false;
 };
 
@@ -120,32 +133,25 @@ const cancelEdit = () => {
 // onUnmounted(MapStore.unmove);
 
 // todo move when selecting diff recordings (onBeforeRouteUpdate)
-
 </script>
 
 <template>
   <h1 class="text-2xl font-semibold">
-    <template v-if="editing">
-      Upravování:
-    </template>
+    <template v-if="editing"> Upravování: </template>
     Nahrávka {{ recording?.name }}
   </h1>
 
-  <div
-    v-if="editing"
-    class="space-y-2"
-  >
+  <div v-if="editing" class="space-y-2">
     <div>
-      <label
-        for="name"
-        class="block text-sm font-medium text-gray-700"
-      >Název:</label>
+      <label for="name" class="block text-sm font-medium text-gray-700"
+        >Název:</label
+      >
       <input
         id="name"
         v-model="editedName"
         type="text"
         class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-      >
+      />
     </div>
   </div>
 
@@ -158,15 +164,17 @@ const cancelEdit = () => {
   <template v-else-if="recording">
     <div class="space-y-4">
       <!-- Metadata Section -->
-      <div class="flex flex-row justify-between w-full text-sm text-gray-600 space-y-1">
+      <div
+        class="flex flex-row justify-between w-full text-sm text-gray-600 space-y-1"
+      >
         <span v-if="uploader">
           <template v-if="uploader.nickname">{{ uploader.nickname }}</template>
-          <template v-else>{{ uploader.firstName }} {{ uploader.lastName }}</template>
+          <template v-else
+            >{{ uploader.firstName }} {{ uploader.lastName }}</template
+          >
           {{ uploader.city ? `(${uploader.city})` : '' }}
 
-          <template v-if="recording.byApp">
-            přes aplikaci
-          </template>
+          <template v-if="recording.byApp"> přes aplikaci </template>
         </span>
         <template v-if="recording.device">
           {{ recording.device }}
@@ -176,15 +184,9 @@ const cancelEdit = () => {
 
       <div v-if="filteredRec">
         <ul>
-          <li
-            v-for="(fr, idx) in filteredRec"
-            :key="fr?.id ?? idx"
-          >
+          <li v-for="(fr, idx) in filteredRec" :key="fr?.id ?? idx">
             <ul v-if="fr?.detectedDialects">
-              <li
-                v-for="dialect in fr.detectedDialects"
-                :key="dialect.id"
-              >
+              <li v-for="dialect in fr.detectedDialects" :key="dialect.id">
                 {{ dialect.userGuessDialect }} {{ dialect.confirmedDialect }}
               </li>
             </ul>
@@ -209,9 +211,7 @@ const cancelEdit = () => {
 
       <!-- Parts Section -->
       <div>
-        <h3 class="text-lg font-medium mb-2">
-          Části nahrávky
-        </h3>
+        <h3 class="text-lg font-medium mb-2">Části nahrávky</h3>
         <ul class="space-y-4">
           <li
             v-for="part in recording.parts"
@@ -226,10 +226,7 @@ const cancelEdit = () => {
             />
 
             <template v-if="accountStore.user?.role == 'admin'">
-              <button
-                class="primary text-sm p-1 px-2"
-                :disabled="editing"
-              >
+              <button class="primary text-sm p-1 px-2" :disabled="editing">
                 Smazat část
               </button>
             </template>
@@ -242,24 +239,29 @@ const cancelEdit = () => {
         :audio-urls="`${env.VITE_API_URL}/recordings/part/${recording.id}/${recordingPart.id}/sound`"
         :height="300"
         :readonly="true"
-        :selected="filteredRec.flatMap(fr => fr.detectedDialects.map(dd => ({
-            id: dd.id,
-            start: (new Date(fr.startDate).getTime() - new Date(recording.parts[0].startDate).getTime()) / 1000,
-            end: (new Date(fr.endDate).getTime() - new Date(recording.parts[0].startDate).getTime()) / 1000,
-            color: DialectColors[dd.confirmedDialect ?? dd.userGuessDialect]
-          })))"
+        :selected="
+          filteredRec.flatMap((fr) =>
+            fr.detectedDialects.map((dd) => ({
+              id: dd.id,
+              start:
+                (new Date(fr.startDate).getTime() -
+                  new Date(recording.parts[0].startDate).getTime()) /
+                1000,
+              end:
+                (new Date(fr.endDate).getTime() -
+                  new Date(recording.parts[0].startDate).getTime()) /
+                1000,
+              color: DialectColors[dd.confirmedDialect ?? dd.userGuessDialect]
+            }))
+          )
+        "
       >
         <template #range-tooltip="{ range, close }">
           <div class="p-2 bg-blue-100 border border-blue-300 rounded shadow-md">
-            <h4 class="font-bold">
-              Dialekt
-            </h4>
+            <h4 class="font-bold">Dialekt</h4>
             <p>Začátek: {{ range.start.toFixed(2) }}s</p>
             <p>Konec: {{ range.end.toFixed(2) }}s</p>
-            <button
-                class="text-blue-500 hover:underline mt-1"
-                @click="close"
-            >
+            <button class="text-blue-500 hover:underline mt-1" @click="close">
               Zavřít
             </button>
           </div>

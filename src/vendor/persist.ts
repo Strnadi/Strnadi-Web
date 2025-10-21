@@ -1,9 +1,9 @@
-import { watch } from "vue";
+import { watch } from 'vue';
 
 // @ts-expect-error Dotly has no type information
-import { get, set } from "dotly";
+import { get, set } from 'dotly';
 
-const DEFAULT_KEY = "reactive_persisted";
+const DEFAULT_KEY = 'reactive_persisted';
 
 export interface PersistOptions<T> {
   key: string;
@@ -15,7 +15,7 @@ export interface PersistOptions<T> {
 /* Persists a Vue reactive object */
 export const persist = <T>(object: T, options?: Partial<PersistOptions<T>>) => {
   if (!object) {
-    throw new Error("Please provide a reactive object");
+    throw new Error('Please provide a reactive object');
   }
 
   const _storage = options?.storage ?? window.localStorage;
@@ -28,7 +28,7 @@ export const persist = <T>(object: T, options?: Partial<PersistOptions<T>>) => {
 
   watch(
     object,
-    newObject => {
+    (newObject) => {
       syncLocalWithReactive(newObject, _storage, _key, _paths);
     },
     { deep: true }
@@ -57,10 +57,10 @@ const getStore = <T>(storage: Storage, key: string): T | null => {
   let _store = storage.getItem(key);
 
   try {
-    if (typeof _store === "string") {
+    if (typeof _store === 'string') {
       _store = JSON.parse(_store);
 
-      if (typeof _store === "object") {
+      if (typeof _store === 'object') {
         return _store;
       }
     }
@@ -74,9 +74,13 @@ const getStore = <T>(storage: Storage, key: string): T | null => {
 /**
  * Syncs reactive object with local store
  */
-const syncReactiveWithLocal = <T>(object: T, store: T, paths?: string[]): void => {
+const syncReactiveWithLocal = <T>(
+  object: T,
+  store: T,
+  paths?: string[]
+): void => {
   if (paths) {
-    paths.forEach(path => {
+    paths.forEach((path) => {
       const _value = get(store, path);
 
       if (_value !== undefined) {
@@ -91,11 +95,16 @@ const syncReactiveWithLocal = <T>(object: T, store: T, paths?: string[]): void =
 /**
  * Syncs local store with reactive object
  */
-const syncLocalWithReactive = (object: object, storage: Storage, key: string, paths?: string[]): void => {
+const syncLocalWithReactive = (
+  object: object,
+  storage: Storage,
+  key: string,
+  paths?: string[]
+): void => {
   let _store = {};
 
   if (paths) {
-    paths.forEach(path => {
+    paths.forEach((path) => {
       set(_store, path, get(object, path));
     });
   } else {

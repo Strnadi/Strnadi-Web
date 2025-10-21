@@ -4,7 +4,11 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { patchPasswordChange, patchUser, type UserUpdateRequest } from '@/api/account';
+import {
+  patchPasswordChange,
+  patchUser,
+  type UserUpdateRequest
+} from '@/api/account';
 import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue';
 import LocationSearch from '@/components/map/LocationSearch.vue';
 import { accountStore } from '@/state/AccountStore';
@@ -19,12 +23,19 @@ const town = ref(accountStore.user?.city ?? '');
 
 const form = ref<HTMLFormElement | null>(null);
 
-const password = ref("");
-const passwordAgain = ref("");
+const password = ref('');
+const passwordAgain = ref('');
 
 const { mutate, isPending, error } = useMutation({
-  mutationFn: ({ userInfo, token, userId }: { userInfo: UserUpdateRequest; token: string; userId: string | number }) =>
-    patchUser(token, userId, userInfo),
+  mutationFn: ({
+    userInfo,
+    token,
+    userId
+  }: {
+    userInfo: UserUpdateRequest;
+    token: string;
+    userId: string | number;
+  }) => patchUser(token, userId, userInfo),
 
   onSuccess: () => {
     accountStore.user!.firstName = name.value;
@@ -32,41 +43,47 @@ const { mutate, isPending, error } = useMutation({
     accountStore.user!.nickname = nickname.value;
     accountStore.user!.postCode = zipcode.value;
     accountStore.user!.city = town.value;
-  },
+  }
 });
 
 const { mutate: passwordChangeMutate } = useMutation({
-  mutationFn: ({ token, userId, newPassword }: {token: string, userId: string | number, newPassword: string}) =>
-    patchPasswordChange(token, userId, newPassword)
-})
+  mutationFn: ({
+    token,
+    userId,
+    newPassword
+  }: {
+    token: string;
+    userId: string | number;
+    newPassword: string;
+  }) => patchPasswordChange(token, userId, newPassword)
+});
 
 const submitPasswordChange = () => {
-  passwordChangeMutate({ token: accountStore.token!, userId: accountStore.user!.id, newPassword: password.value })
-}
+  passwordChangeMutate({
+    token: accountStore.token!,
+    userId: accountStore.user!.id,
+    newPassword: password.value
+  });
+};
 
 const submit = () => {
   const token = accountStore.token!;
-  mutate(
-    {
-      userInfo: {
-        firstName: name.value,
-        lastName: surname.value,
-        nickname: nickname.value,
-        postCode: zipcode.value,
-        city: town.value
-      },
-      token,
-      userId: accountStore.user!.id
-    }
-  );
-}
-
+  mutate({
+    userInfo: {
+      firstName: name.value,
+      lastName: surname.value,
+      nickname: nickname.value,
+      postCode: zipcode.value,
+      city: town.value
+    },
+    token,
+    userId: accountStore.user!.id
+  });
+};
 </script>
 
 <template>
-  <h1>
-    Osobní údaje
-  </h1>
+  <h1>Osobní údaje</h1>
   <template v-if="isPending">
     <p>Ukládání...</p>
   </template>
@@ -79,16 +96,9 @@ const submit = () => {
     <button @click="save" class="secondary p-2 w-full">Zkusit znovu</button>
   </template> -->
   <h2>Osobní údaje</h2>
-  <form
-    ref="form"
-    class="flex flex-col gap-y-2"
-    @submit.prevent="submit"
-  >
+  <form ref="form" class="flex flex-col gap-y-2" @submit.prevent="submit">
     <div>
-      <label
-        for="name"
-        class="block text-sm font-medium mb-1"
-      >Jméno</label>
+      <label for="name" class="block text-sm font-medium mb-1">Jméno</label>
       <input
         id="name"
         v-model="name"
@@ -97,13 +107,12 @@ const submit = () => {
         placeholder="Jméno"
         class="w-full p-2 border rounded"
         required
-      >
+      />
     </div>
     <div>
-      <label
-        for="surname"
-        class="block text-sm font-medium mb-1"
-      >Příjmení</label>
+      <label for="surname" class="block text-sm font-medium mb-1"
+        >Příjmení</label
+      >
       <input
         id="surname"
         v-model="surname"
@@ -112,13 +121,12 @@ const submit = () => {
         placeholder="Příjmení"
         class="w-full p-2 border rounded"
         required
-      >
+      />
     </div>
     <div>
-      <label
-        for="nickname"
-        class="block text-sm font-medium mb-1"
-      >Přezdívka</label>
+      <label for="nickname" class="block text-sm font-medium mb-1"
+        >Přezdívka</label
+      >
       <input
         id="nickname"
         v-model="nickname"
@@ -126,13 +134,10 @@ const submit = () => {
         type="text"
         placeholder="Přezdívka"
         class="w-full p-2 border rounded"
-      >
+      />
     </div>
     <div>
-      <label
-        for="zipcode"
-        class="block text-sm font-medium mb-1"
-      >PSČ</label>
+      <label for="zipcode" class="block text-sm font-medium mb-1">PSČ</label>
       <input
         id="zipcode"
         v-model="zipcode"
@@ -140,7 +145,7 @@ const submit = () => {
         type="number"
         placeholder="PSČ"
         class="w-full p-2 border rounded"
-      >
+      />
     </div>
     <LocationSearch
       v-model="town"
@@ -148,12 +153,10 @@ const submit = () => {
       class="w-full"
       :placeholder="'Obec, město'"
     />
-    <button class="secondary py-1 px-2 text-sm">
-      Uložit
-    </button>
+    <button class="secondary py-1 px-2 text-sm">Uložit</button>
   </form>
 
-  <hr class="my-4 px-8">
+  <hr class="my-4 px-8" />
 
   <h2>Heslo</h2>
   <div class="flex flex-col gap-y-2">

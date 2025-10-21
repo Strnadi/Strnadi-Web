@@ -6,7 +6,7 @@ meta:
 <script setup lang="ts">
 import { onBeforeRouteUpdate } from 'vue-router';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { useRouteParams } from '@vueuse/router'
+import { useRouteParams } from '@vueuse/router';
 import { getRecording, getFilteredRecording } from '@/api/recordings';
 import { getUserInfo } from '@/api/account';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
@@ -29,31 +29,34 @@ const editing = ref(false);
 const editedName = ref('');
 const editedNote = ref('');
 
-const { data: recording, isError, isLoading } = useQuery({
+const {
+  data: recording,
+  isError,
+  isLoading
+} = useQuery({
   queryKey: ['recordings', recordingId.value],
   queryFn: () => getRecording(recordingId.value, false)
-})
+});
 
 const { data: filteredRec } = useQuery({
   queryKey: ['filtered-recordings', recordingId.value],
   queryFn: () => getFilteredRecording(recordingId.value)
-})
+});
 
 const enabled = computed(() => !!recording.value?.userId);
-
 
 // todo select location in the map
 
 // Dependent query - only runs when we have an uploaderEmail from the recording
 const {
-  data: uploader, 
-  isLoading: isUploaderLoading, 
+  data: uploader,
+  isLoading: isUploaderLoading,
   isError: isUploaderError
 } = useQuery({
   queryKey: ['user', recording.value?.userId],
   queryFn: () => getUserInfo(accountStore.token!, recording.value?.userId!),
-  enabled, // Use the computed enabled value
-})
+  enabled // Use the computed enabled value
+});
 
 const queryClient = useQueryClient();
 
@@ -65,12 +68,16 @@ onBeforeRouteUpdate(async (to) => {
 });
 
 // Watch for changes in the recording data to reset edited values if needed
-watch(recording, (newRecording) => {
-  if (newRecording) {
-    editedName.value = newRecording.name || '';
-    editedNote.value = newRecording.note || '';
-  }
-}, { immediate: true });
+watch(
+  recording,
+  (newRecording) => {
+    if (newRecording) {
+      editedName.value = newRecording.name || '';
+      editedNote.value = newRecording.note || '';
+    }
+  },
+  { immediate: true }
+);
 
 const toggleEdit = () => {
   if (!editing.value && recording.value) {
@@ -83,10 +90,12 @@ const toggleEdit = () => {
 
 const saveChanges = async () => {
   // editRecording({
-    
+
   // })
 
-  await queryClient.invalidateQueries({ queryKey: ['recording', recordingId.value] });
+  await queryClient.invalidateQueries({
+    queryKey: ['recording', recordingId.value]
+  });
   editing.value = false;
 };
 
@@ -101,38 +110,38 @@ const cancelEdit = () => {
 
 // onUnmounted(MapStore.unmove);
 
-// todo move when selecting diff recordings (onBeforeRouteUpdate)
+// watch(recording, (currentValue) => {
+//   if(currentValue) {
+//     MapStore.move([
+//       currentValue.parts?.[0].gpsLatitudeStart,
+//       currentValue.parts?.[0].gpsLongitudeStart
+//     ], 17);
+//   }
+// }, { immediate: true });
 
+// todo move when selecting diff recordings (onBeforeRouteUpdate)
 </script>
 
 <template>
   <h1 class="text-2xl font-semibold">
-    <template v-if="editing">
-      Upravování:
-    </template>
+    <template v-if="editing"> Upravování: </template>
     <template v-if="recording?.name">
-      {{ recording.name }}  
+      {{ recording.name }}
     </template>
-    <template v-else>
-      Nahrávka #{{ recordingId }}
-    </template>
+    <template v-else> Nahrávka #{{ recordingId }} </template>
   </h1>
 
-  <div
-    v-if="editing"
-    class="space-y-2"
-  >
+  <div v-if="editing" class="space-y-2">
     <div>
-      <label
-        for="name"
-        class="block text-sm font-medium text-gray-700"
-      >Název:</label>
+      <label for="name" class="block text-sm font-medium text-gray-700"
+        >Název:</label
+      >
       <input
         id="name"
         v-model="editedName"
         type="text"
         class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-      >
+      />
     </div>
   </div>
 
@@ -145,33 +154,33 @@ const cancelEdit = () => {
   <template v-else-if="recording">
     <div class="space-y-4">
       <!-- Metadata Section -->
-      <div class="flex flex-row justify-between w-full text-sm text-gray-600 space-y-1">
+      <div
+        class="flex flex-row justify-between w-full text-sm text-gray-600 space-y-1"
+      >
         <span v-if="uploader">
           <template v-if="uploader.nickname">{{ uploader.nickname }}</template>
-          <template v-else>{{ uploader.firstName }} {{ uploader.lastName }}</template>
+          <template v-else
+            >{{ uploader.firstName }} {{ uploader.lastName }}</template
+          >
           {{ uploader.city ? `(${uploader.city})` : '' }}
 
-          <template v-if="recording.byApp">
-            přes aplikaci
-          </template>
+          <template v-if="recording.byApp"> přes aplikaci </template>
         </span>
         <template v-if="recording.device">
           {{ recording.device }}
         </template>
-        <span>{{ new Date(recording.parts?.[0]?.startDate ?? recording.createdAt!).toLocaleString() }}</span>
+        <span>{{
+          new Date(
+            recording.parts?.[0]?.startDate ?? recording.createdAt!
+          ).toLocaleString()
+        }}</span>
       </div>
 
       <div v-if="filteredRec">
         <ul>
-          <li
-            v-for="fr in filteredRec"
-            :key="fr.id"
-          >
+          <li v-for="fr in filteredRec" :key="fr.id">
             <ul>
-              <li
-                v-for="dialect in fr.detectedDialects"
-                :key="dialect.id"
-              >
+              <li v-for="dialect in fr.detectedDialects" :key="dialect.id">
                 {{ dialect.userGuessDialect }} {{ dialect.confirmedDialect }}
               </li>
             </ul>
@@ -196,9 +205,7 @@ const cancelEdit = () => {
 
       <!-- Parts Section -->
       <div>
-        <h3 class="text-lg font-medium mb-2">
-          Části nahrávky
-        </h3>
+        <h3 class="text-lg font-medium mb-2">Části nahrávky</h3>
         <ul class="space-y-4">
           <li
             v-for="part in recording.parts"
@@ -213,10 +220,7 @@ const cancelEdit = () => {
             />
 
             <template v-if="accountStore.user?.role == 'admin'">
-              <button
-                class="primary text-sm p-1 px-2"
-                :disabled="editing"
-              >
+              <button class="primary text-sm p-1 px-2" :disabled="editing">
                 Smazat část
               </button>
             </template>

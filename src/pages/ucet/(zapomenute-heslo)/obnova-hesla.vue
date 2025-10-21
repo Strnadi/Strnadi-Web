@@ -10,33 +10,41 @@ import { useMutation } from '@tanstack/vue-query';
 import { useRouteQuery } from '@vueuse/router';
 import { ref } from 'vue';
 
-const token = useRouteQuery("token");
-const userId = useRouteQuery("userId");
-const password = ref("");
-const passwordConfirm = ref("");
+const token = useRouteQuery('token');
+const userId = useRouteQuery('userId');
+const password = ref('');
+const passwordConfirm = ref('');
 
 const { mutate, isPending, isIdle, isSuccess, isError, error } = useMutation({
-  mutationFn: ({ token, userId, newPassword }: {token: string, userId: string, newPassword: string}) => patchPasswordChange(token, userId, newPassword)
-})
+  mutationFn: ({
+    token,
+    userId,
+    newPassword
+  }: {
+    token: string;
+    userId: string;
+    newPassword: string;
+  }) => patchPasswordChange(token, userId, newPassword)
+});
 
 const submitPasswordChange = () => {
-  if(!token.value || !userId.value) {
-    console.error("Token or userId is missing");
+  if (!token.value || !userId.value) {
+    console.error('Token or userId is missing');
     return;
   }
 
-  mutate({ token: token.value as string, userId: userId.value as string, newPassword: password.value})
-}
+  mutate({
+    token: token.value as string,
+    userId: userId.value as string,
+    newPassword: password.value
+  });
+};
 </script>
 
 <template>
-  <h1 class="text-center">
-    Reset hesla
-  </h1>
+  <h1 class="text-center">Reset hesla</h1>
   <div class="flex flex-col items-center gap-y-6 w-full">
-    <template v-if="isError">
-      Chyba: {{ error!.message }}
-    </template>
+    <template v-if="isError"> Chyba: {{ error!.message }} </template>
 
     <div class="flex flex-col items-center gap-y-6 w-full">
       <RevealablePasswordInput v-model="password">
@@ -48,7 +56,9 @@ const submitPasswordChange = () => {
       <button
         v-if="!(isPending || isSuccess)"
         class="secondary p-2 w-full"
-        :disabled="!(passwordConfirm && passwordConfirm === password && token && isIdle)"
+        :disabled="
+          !(passwordConfirm && passwordConfirm === password && token && isIdle)
+        "
         @click="submitPasswordChange"
       >
         Změnit heslo

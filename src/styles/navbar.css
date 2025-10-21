@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 .dropdown-item {
   @apply font-semibold block px-4 py-2 hover:bg-gray-100;

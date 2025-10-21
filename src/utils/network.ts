@@ -1,7 +1,7 @@
-import { unref, type Ref } from 'vue'
-import { useMutation, useQuery } from '@tanstack/vue-query'
+import { unref, type Ref } from 'vue';
+import { useMutation, useQuery } from '@tanstack/vue-query';
 
-type MaybeRef<T> = T | Ref<T>
+type MaybeRef<T> = T | Ref<T>;
 
 /**
  * useFetched
@@ -16,8 +16,8 @@ export const useFetched = <A extends unknown[], T>(
 ) =>
   useQuery<T>({
     queryKey: [fetcher.name, ...params],
-    queryFn: () => fetcher(...params.map(unref) as A)
-  })
+    queryFn: () => fetcher(...(params.map(unref) as A))
+  });
 
 export const useMutated = <A extends unknown[], T>(
   mutator: (...args: A) => never,
@@ -25,5 +25,5 @@ export const useMutated = <A extends unknown[], T>(
 ) =>
   useMutation<T>({
     mutationKey: [mutator.name],
-    mutationFn: () => mutator(...params.map(unref) as A)
-  })
+    mutationFn: () => mutator(...(params.map(unref) as A))
+  });

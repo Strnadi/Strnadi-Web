@@ -32,13 +32,13 @@
         <div
           v-if="
             showHoverLine &&
-              isLoaded &&
-              !isPanning &&
-              !isDraggingProgress &&
-              draggingRangeId === null &&
-              !isSelecting &&
-              !isSpacePanningActive &&
-              !isSpacebarPressed
+            isLoaded &&
+            !isPanning &&
+            !isDraggingProgress &&
+            draggingRangeId === null &&
+            !isSelecting &&
+            !isSpacePanningActive &&
+            !isSpacebarPressed
           "
           class="hover-line absolute top-0 h-full w-0.5 pointer-events-none"
           :style="{
@@ -50,10 +50,7 @@
         />
 
         <!-- Already‐committed ranges -->
-        <template
-          v-for="r in visibleRanges"
-          :key="r.id"
-        >
+        <template v-for="r in visibleRanges" :key="r.id">
           <div
             class="range-fill absolute opacity-50 rounded"
             :style="{
@@ -197,7 +194,10 @@
       v-if="isContextMenuVisible"
       ref="contextMenuRef"
       class="absolute bg-white border border-gray-300 rounded shadow-lg py-1 z-50"
-      :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }"
+      :style="{
+        top: `${contextMenuPosition.y}px`,
+        left: `${contextMenuPosition.x}px`
+      }"
       @click.stop
     >
       <ul>
@@ -216,7 +216,10 @@
       v-if="isRangeTooltipVisible && selectedRangeForTooltip"
       ref="rangeTooltipRef"
       class="absolute bg-white border border-gray-300 rounded shadow-lg p-2 z-[51]"
-      :style="{ top: `${rangeTooltipPosition.y}px`, left: `${rangeTooltipPosition.x}px` }"
+      :style="{
+        top: `${rangeTooltipPosition.y}px`,
+        left: `${rangeTooltipPosition.x}px`
+      }"
       @click.stop
     >
       <slot
@@ -272,7 +275,7 @@
           type="checkbox"
           :disabled="autoScroll"
           class="mr-1 align-middle"
-        >
+        />
         Jen zobrazená oblast
       </label>
       <label class="whitespace-nowrap text-sm">
@@ -281,7 +284,7 @@
           type="checkbox"
           :disabled="autoScroll || !isProgressInSelection"
           class="mr-1 align-middle"
-        >
+        />
         Jen výběr
       </label>
       <label class="whitespace-nowrap text-sm">
@@ -289,24 +292,17 @@
           v-model="loopPlayback"
           type="checkbox"
           class="mr-1 align-middle"
-        >
+        />
         Opakovat
       </label>
       <label class="whitespace-nowrap text-sm">
-        <input
-          v-model="autoScroll"
-          type="checkbox"
-          class="mr-1 align-middle"
-        >
+        <input v-model="autoScroll" type="checkbox" class="mr-1 align-middle" />
         Automatický posun
       </label>
     </div>
 
     <!-- Scrollbars -->
-    <div
-      v-if="isLoaded"
-      class="w-full px-2.5 mt-2.5 space-y-2"
-    >
+    <div v-if="isLoaded" class="w-full px-2.5 mt-2.5 space-y-2">
       <!-- Pan Scrollbar -->
       <div
         v-if="spectrogramData.length > 0 && maxOffsetIndex > 0"
@@ -379,10 +375,7 @@
               zIndex: 1
             }"
           />
-          <div
-            class="h-full bg-blue-400 rounded"
-            style="z-index: 2"
-          />
+          <div class="h-full bg-blue-400 rounded" style="z-index: 2" />
         </div>
       </div>
 
@@ -558,19 +551,27 @@ const isDraggingProgress = ref(false);
 
 // Ranges
 const ranges = ref<Range[]>([]);
-watch(() => props.selected, (newSelectedRanges) => {
-  // Ensure we're not in an update loop if props.selected is programmatically updated
-  // based on an emit from this component. A simple length/content check can help.
-  // A more robust way might involve comparing deep values if performance allows,
-  // or using a flag if emits cause direct prop updates.
-  if (JSON.stringify(newSelectedRanges) !== JSON.stringify(ranges.value)) {
-    ranges.value = JSON.parse(JSON.stringify(newSelectedRanges));
-  }
-}, { deep: true, immediate: true });
+watch(
+  () => props.selected,
+  (newSelectedRanges) => {
+    // Ensure we're not in an update loop if props.selected is programmatically updated
+    // based on an emit from this component. A simple length/content check can help.
+    // A more robust way might involve comparing deep values if performance allows,
+    // or using a flag if emits cause direct prop updates.
+    if (JSON.stringify(newSelectedRanges) !== JSON.stringify(ranges.value)) {
+      ranges.value = JSON.parse(JSON.stringify(newSelectedRanges));
+    }
+  },
+  { deep: true, immediate: true }
+);
 
-watch(ranges, (newRanges) => {
-  emit('update:selected', JSON.parse(JSON.stringify(newRanges)));
-}, { deep: true });
+watch(
+  ranges,
+  (newRanges) => {
+    emit('update:selected', JSON.parse(JSON.stringify(newRanges)));
+  },
+  { deep: true }
+);
 
 // Selection
 const isSelecting = ref(false);
@@ -694,7 +695,8 @@ function timeToIndex(t: number): number {
   while (lo < hi) {
     const mid = (lo + hi) >>> 1;
     const midElement = A[mid];
-    if (midElement && midElement.time < t) { // Added check for midElement
+    if (midElement && midElement.time < t) {
+      // Added check for midElement
       lo = mid + 1;
     } else {
       hi = mid;
@@ -755,8 +757,10 @@ function handleResize() {
   }
   // Update scrollbar track widths
   nextTick(() => {
-    if (panTrackRef.value) panTrackDOMWidth.value = panTrackRef.value.offsetWidth;
-    if (zoomTrackRef.value) zoomTrackDOMWidth.value = zoomTrackRef.value.offsetWidth;
+    if (panTrackRef.value)
+      panTrackDOMWidth.value = panTrackRef.value.offsetWidth;
+    if (zoomTrackRef.value)
+      zoomTrackDOMWidth.value = zoomTrackRef.value.offsetWidth;
   });
   debouncedRender();
 }
@@ -791,9 +795,9 @@ async function loadAndProcessAudio() {
     if (decodedBuffers.length > 1) {
       const firstBuffer = decodedBuffers[0];
       if (!firstBuffer) {
-          console.error("Error: First audio buffer is unexpectedly undefined.");
-          isLoading.value = false; // Stop loading indication
-          return; // Or throw new Error('Failed to process audio: first buffer missing');
+        console.error('Error: First audio buffer is unexpectedly undefined.');
+        isLoading.value = false; // Stop loading indication
+        return; // Or throw new Error('Failed to process audio: first buffer missing');
       }
       const numCh = firstBuffer.numberOfChannels;
       const sr = firstBuffer.sampleRate;
@@ -813,13 +817,14 @@ async function loadAndProcessAudio() {
       for (let i = 0; i < individualDurations.length - 1; i++) {
         const duration = individualDurations[i];
         if (duration !== undefined) {
-            cumulativeTime += duration;
-            spliceTimes.value.push(cumulativeTime);
+          cumulativeTime += duration;
+          spliceTimes.value.push(cumulativeTime);
         }
       }
     } else if (decodedBuffers.length === 1) {
       const firstBuffer = decodedBuffers[0];
-      if (firstBuffer !== undefined) { // Explicit check
+      if (firstBuffer !== undefined) {
+        // Explicit check
         audioBuffer.value = firstBuffer;
       }
       // No splices if only one buffer
@@ -918,9 +923,10 @@ async function generateSpectrogramDataOffline() {
     const vals = colData.values;
     for (let y = 0; y < rows; y++) {
       const v = vals[y];
-      if (v === undefined) { // Handle case where v might be undefined (e.g. y out of bounds for vals)
+      if (v === undefined) {
+        // Handle case where v might be undefined (e.g. y out of bounds for vals)
         const pi = (y * cols + x) * 4;
-        img.data[pi] = 0;     // Default to black
+        img.data[pi] = 0; // Default to black
         img.data[pi + 1] = 0;
         img.data[pi + 2] = 0;
         img.data[pi + 3] = 255; // Opaque
@@ -1086,9 +1092,10 @@ function drawAxes(v0: number, v1: number) {
     const baseY = tipY - markerHeight; // Base is above the tip, in the margin area
 
     for (const spliceTime of spliceTimes.value) {
-      if (spliceTime > v0 && spliceTime < v1) { // Check if spliceTime is within current view
+      if (spliceTime > v0 && spliceTime < v1) {
+        // Check if spliceTime is within current view
         const x = x0 + ((spliceTime - v0) / span) * (x1Val - x0);
-        
+
         ctx.beginPath();
         ctx.moveTo(x, tipY); // Tip of the triangle (points down)
         ctx.lineTo(x - markerBaseWidth / 2, baseY); // Top-left of base
@@ -1399,11 +1406,15 @@ function updateProgressLinePosition() {
     return;
   }
   const startElement = spectrogramData.value[sIdx];
-  const endElement = spectrogramData.value[Math.min(sIdx + win - 1, spectrogramData.value.length - 1)];
+  const endElement =
+    spectrogramData.value[
+      Math.min(sIdx + win - 1, spectrogramData.value.length - 1)
+    ];
 
   if (!startElement || !endElement) {
     // This case should ideally not be hit if prior checks are correct and array is not empty
-    if (progressLineRef.value) progressLineRef.value.style.left = `${margin.value.left}px`;
+    if (progressLineRef.value)
+      progressLineRef.value.style.left = `${margin.value.left}px`;
     return;
   }
   const vs = startElement.time;
@@ -1523,7 +1534,8 @@ function onCanvasClick(e: MouseEvent) {
   const isSimpleClick =
     Date.now() - mousedownTime < CLICK_THRESHOLD_MS &&
     Math.abs(e.clientX - mousedownX) < CLICK_THRESHOLD_PX;
-  if (isSimpleClick && zoomLevel.value === MIN_ZOOM_LEVEL) { // Changed from DEFAULT_BASE_ZOOM
+  if (isSimpleClick && zoomLevel.value === MIN_ZOOM_LEVEL) {
+    // Changed from DEFAULT_BASE_ZOOM
     onZoomClick(e);
   }
 }
@@ -1652,7 +1664,9 @@ function onRangeSelectStart(e: MouseEvent) {
   // If readonly, we don't start a selection (isSelecting.value remains false).
   // But we still need to listen for mouseup to handle a potential click-to-seek.
   if (props.readonly) {
-    document.addEventListener('mouseup', onRangeSelectEndHandler, { once: true });
+    document.addEventListener('mouseup', onRangeSelectEndHandler, {
+      once: true
+    });
     return; // Do not proceed to selection initiation logic
   }
 
@@ -1697,7 +1711,8 @@ function onRangeSelectEndHandler(e: MouseEvent) {
     const x0 = Math.min(selectStartXPx.value, selectCurrentXPx.value);
     const x1 = Math.max(selectStartXPx.value, selectCurrentXPx.value);
 
-    if (x1 - x0 >= CLICK_THRESHOLD_PX) { // If it was a drag, not a simple click
+    if (x1 - x0 >= CLICK_THRESHOLD_PX) {
+      // If it was a drag, not a simple click
       const dispW =
         containerWidth.value - margin.value.left - margin.value.right;
       if (dispW > 0 && canvasRef.value && spectrogramData.value.length > 0) {
@@ -1708,7 +1723,10 @@ function onRangeSelectEndHandler(e: MouseEvent) {
         const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
         if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
           const startElement = spectrogramData.value[sIdx];
-          const endElement = spectrogramData.value[Math.min(eIdx - 1, spectrogramData.value.length - 1)];
+          const endElement =
+            spectrogramData.value[
+              Math.min(eIdx - 1, spectrogramData.value.length - 1)
+            ];
           if (startElement && endElement) {
             const vs = startElement.time;
             const ve = endElement.time;
@@ -1737,7 +1755,7 @@ function onRangeSelectEndHandler(e: MouseEvent) {
   if (
     isClick &&
     !isSpacePanningActive.value && // Ensure not part of a space pan
-    !isSpacebarPressed.value &&    // Redundant if isSpacePanningActive is true, but safe
+    !isSpacebarPressed.value && // Redundant if isSpacePanningActive is true, but safe
     canvasRef.value
     // No !props.readonly check here, allowing seek in readonly mode
   ) {
@@ -1755,7 +1773,10 @@ function onRangeSelectEndHandler(e: MouseEvent) {
       const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
       if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
         const startElement = spectrogramData.value[sIdx];
-        const endElement = spectrogramData.value[Math.min(eIdx - 1, spectrogramData.value.length - 1)];
+        const endElement =
+          spectrogramData.value[
+            Math.min(eIdx - 1, spectrogramData.value.length - 1)
+          ];
         if (startElement && endElement) {
           const vs = startElement.time;
           const ve = endElement.time;
@@ -1800,7 +1821,8 @@ function onHandleMouseMoveHandler(e: MouseEvent) {
     const startElement = spectrogramData.value[sIdx];
     const endElement = spectrogramData.value[Math.max(sIdx, eIdx - 1)];
 
-    if (startElement && endElement) { // Check if elements are defined
+    if (startElement && endElement) {
+      // Check if elements are defined
       const vs = startElement.time;
       const ve = endElement.time;
       const dur = ve - vs;
@@ -1867,7 +1889,8 @@ function updateZoom(newZoom: number, centerPx?: number) {
 }
 
 function onZoomClick(e: MouseEvent) {
-  if (!canvasRef.value || !isLoaded.value || zoomLevel.value !== MIN_ZOOM_LEVEL) return; // Check against MIN_ZOOM_LEVEL
+  if (!canvasRef.value || !isLoaded.value || zoomLevel.value !== MIN_ZOOM_LEVEL)
+    return; // Check against MIN_ZOOM_LEVEL
   const rect = canvasRef.value.getBoundingClientRect();
   const x = clamp(
     e.clientX - rect.left,
@@ -2144,14 +2167,19 @@ onUnmounted(() => {
   // 2. Remove event listeners bound to window, document, or component's root element
   window.removeEventListener('resize', handleResize);
   window.removeEventListener('keydown', handleEscapeKey);
-  if (spectrogramContainerRef.value) { // Check if ref still exists
+  if (spectrogramContainerRef.value) {
+    // Check if ref still exists
     spectrogramContainerRef.value.removeEventListener('wheel', onWheel);
   }
 
   // Global listeners for UI interactions (context menu, tooltips, drags)
   document.removeEventListener('click', closeContextMenuOnClickOutside);
   document.removeEventListener('contextmenu', closeContextMenuOnClickOutside);
-  document.removeEventListener('click', handleClickOutsideRangeTooltipOnCapture, true);
+  document.removeEventListener(
+    'click',
+    handleClickOutsideRangeTooltipOnCapture,
+    true
+  );
 
   document.removeEventListener('mousemove', generalPanMoveHandler);
   document.removeEventListener('mouseup', onRegularPanEndHandler);
@@ -2234,7 +2262,7 @@ const canvasCursorClass = computed(() => ({
       draggingRangeId.value === null &&
       !isSpacePanningActive.value &&
       !isSelecting.value &&
-      !autoScroll.value) || 
+      !autoScroll.value) ||
     (isSpacebarPressed.value &&
       !isSpacePanningActive.value &&
       !isMiddleClickPanning.value &&
@@ -2359,10 +2387,7 @@ watch(
         liveAnalyser.value = internalAudioContext.value.createAnalyser();
         liveAnalyser.value.fftSize = 2048;
       }
-      if (
-        internalAudioContext.value?.destination &&
-        !gainNode.value
-      ) {
+      if (internalAudioContext.value?.destination && !gainNode.value) {
         gainNode.value = internalAudioContext.value.createGain();
         gainNode.value.gain.value = 1;
         gainNode.value.connect(internalAudioContext.value.destination);
@@ -2393,7 +2418,11 @@ const maxOffsetIndex = computed(() =>
 );
 
 const panThumbWidthPx = computed(() => {
-  if (!panTrackDOMWidth.value || !spectrogramData.value.length || !windowSize.value) {
+  if (
+    !panTrackDOMWidth.value ||
+    !spectrogramData.value.length ||
+    !windowSize.value
+  ) {
     return panTrackDOMWidth.value; // Full width if no data or track
   }
   const ratio = Math.min(1, windowSize.value / spectrogramData.value.length);
@@ -2419,11 +2448,15 @@ const panThumbStyle = computed(() => ({
   cursor: isDraggingPanThumb.value ? 'grabbing' : 'grab'
 }));
 
-const zoomRange = computed(() => Math.max(0, maxZoomLevel.value - MIN_ZOOM_LEVEL)); // Use MIN_ZOOM_LEVEL
+const zoomRange = computed(() =>
+  Math.max(0, maxZoomLevel.value - MIN_ZOOM_LEVEL)
+); // Use MIN_ZOOM_LEVEL
 
 // Logarithmic scale constants for zoom
 const LOG_MIN_ZOOM_LEVEL_EFFECTIVE = computed(() => Math.log(MIN_ZOOM_LEVEL));
-const LOG_MAX_ZOOM_LEVEL_EFFECTIVE = computed(() => Math.log(maxZoomLevel.value));
+const LOG_MAX_ZOOM_LEVEL_EFFECTIVE = computed(() =>
+  Math.log(maxZoomLevel.value)
+);
 
 const LOG_ZOOM_RANGE_EFFECTIVE = computed(() => {
   const logMin = LOG_MIN_ZOOM_LEVEL_EFFECTIVE.value;
@@ -2432,12 +2465,14 @@ const LOG_ZOOM_RANGE_EFFECTIVE = computed(() => {
 });
 
 const normalizedZoom = computed(() => {
-  if (LOG_ZOOM_RANGE_EFFECTIVE.value <= 1e-9) { // Handle zero or very small log range
-    return 0; 
+  if (LOG_ZOOM_RANGE_EFFECTIVE.value <= 1e-9) {
+    // Handle zero or very small log range
+    return 0;
   }
   const currentLogZoom = Math.log(zoomLevel.value);
   return clamp(
-    (currentLogZoom - LOG_MIN_ZOOM_LEVEL_EFFECTIVE.value) / LOG_ZOOM_RANGE_EFFECTIVE.value,
+    (currentLogZoom - LOG_MIN_ZOOM_LEVEL_EFFECTIVE.value) /
+      LOG_ZOOM_RANGE_EFFECTIVE.value,
     0,
     1
   );
@@ -2457,7 +2492,8 @@ const zoomThumbStyle = computed(() => ({
 }));
 
 const centerPxToMaintainForZoom = computed(() => {
-  const drawWidth = containerWidth.value - margin.value.left - margin.value.right;
+  const drawWidth =
+    containerWidth.value - margin.value.left - margin.value.right;
   if (drawWidth <= 0) return margin.value.left;
   return margin.value.left + drawWidth / 2;
 });
@@ -2478,7 +2514,8 @@ function onPanThumbMouseMove(e: MouseEvent) {
   if (scrollableTrackWidth <= 0) return;
 
   const offsetChangeRatio = deltaX / scrollableTrackWidth;
-  const newOffset = panDragInitialOffset + offsetChangeRatio * maxOffsetIndex.value;
+  const newOffset =
+    panDragInitialOffset + offsetChangeRatio * maxOffsetIndex.value;
   offsetIndex.value = clamp(newOffset, 0, maxOffsetIndex.value);
   renderSpectrogram();
 }
@@ -2489,8 +2526,13 @@ function onPanThumbMouseUp() {
 }
 
 function onPanTrackMouseDown(e: MouseEvent) {
-  if (!isLoaded.value || !panTrackRef.value || maxOffsetIndex.value <= 0) return;
-  if (e.target !== panTrackRef.value && e.target !== panTrackRef.value.firstChild) return; // Allow click on track or regions
+  if (!isLoaded.value || !panTrackRef.value || maxOffsetIndex.value <= 0)
+    return;
+  if (
+    e.target !== panTrackRef.value &&
+    e.target !== panTrackRef.value.firstChild
+  )
+    return; // Allow click on track or regions
 
   const rect = panTrackRef.value.getBoundingClientRect();
   const clickX = e.clientX - rect.left;
@@ -2528,9 +2570,11 @@ function onZoomThumbMouseMove(e: MouseEvent) {
   }
 
   const logPositionChangeRatio = deltaX / scrollableTrackWidth;
-  const newLogZoom = zoomDragInitialLogZoom + logPositionChangeRatio * LOG_ZOOM_RANGE_EFFECTIVE.value;
+  const newLogZoom =
+    zoomDragInitialLogZoom +
+    logPositionChangeRatio * LOG_ZOOM_RANGE_EFFECTIVE.value;
   const newLinearZoom = Math.exp(newLogZoom);
-  
+
   updateZoom(
     clamp(newLinearZoom, MIN_ZOOM_LEVEL, maxZoomLevel.value),
     centerPxToMaintainForZoom.value
@@ -2554,15 +2598,18 @@ function onZoomTrackMouseDown(e: MouseEvent) {
   const rect = zoomTrackRef.value.getBoundingClientRect();
   const clickX = e.clientX - rect.left;
   const scrollableTrackWidth = zoomTrackDOMWidth.value - Z_THUMB_W;
-  
+
   if (scrollableTrackWidth <= 0) {
-     const targetNormalizedLogPosition = (clickX < zoomTrackDOMWidth.value / 2) ? 0 : 1;
-     const newLogZoom = LOG_MIN_ZOOM_LEVEL_EFFECTIVE.value + targetNormalizedLogPosition * LOG_ZOOM_RANGE_EFFECTIVE.value;
-     const newLinearZoom = Math.exp(newLogZoom);
-     updateZoom(
-        clamp(newLinearZoom, MIN_ZOOM_LEVEL, maxZoomLevel.value),
-        centerPxToMaintainForZoom.value
-      );
+    const targetNormalizedLogPosition =
+      clickX < zoomTrackDOMWidth.value / 2 ? 0 : 1;
+    const newLogZoom =
+      LOG_MIN_ZOOM_LEVEL_EFFECTIVE.value +
+      targetNormalizedLogPosition * LOG_ZOOM_RANGE_EFFECTIVE.value;
+    const newLinearZoom = Math.exp(newLogZoom);
+    updateZoom(
+      clamp(newLinearZoom, MIN_ZOOM_LEVEL, maxZoomLevel.value),
+      centerPxToMaintainForZoom.value
+    );
     return;
   }
 
@@ -2572,7 +2619,9 @@ function onZoomTrackMouseDown(e: MouseEvent) {
     0,
     1
   );
-  const newLogZoom = LOG_MIN_ZOOM_LEVEL_EFFECTIVE.value + targetNormalizedLogPosition * LOG_ZOOM_RANGE_EFFECTIVE.value;
+  const newLogZoom =
+    LOG_MIN_ZOOM_LEVEL_EFFECTIVE.value +
+    targetNormalizedLogPosition * LOG_ZOOM_RANGE_EFFECTIVE.value;
   const newLinearZoom = Math.exp(newLogZoom);
 
   updateZoom(
@@ -2603,7 +2652,7 @@ const panBarRegions = computed(() => {
 
       const left = clampedStartPercent * trackWidth;
       const right = clampedEndPercent * trackWidth;
-      
+
       return {
         id: r.id,
         leftPx: left,
@@ -2629,10 +2678,10 @@ const panBarSpliceMarkers = computed(() => {
     const percent = spliceTime / audioDuration.value;
     const clampedPercent = clamp(percent, 0, 1); // Should already be within [0,1] if spliceTime <= audioDuration
     const left = clampedPercent * trackWidth;
-    
+
     return {
       id: `splice-${index}`, // Unique ID for v-for key
-      leftPx: left,
+      leftPx: left
     };
   });
 });
@@ -2671,20 +2720,26 @@ function onRangeContextMenu(event: MouseEvent, rangeId: Numeric) {
   if (isContextMenuVisible.value && contextMenuRangeId.value !== rangeId) {
     closeContextMenu();
   }
-  
+
   contextMenuRangeId.value = rangeId;
   contextMenuPosition.value = { x: event.pageX, y: event.pageY };
   isContextMenuVisible.value = true;
 
   nextTick(() => {
-    document.addEventListener('click', closeContextMenuOnClickOutside, { once: true });
-    document.addEventListener('contextmenu', closeContextMenuOnClickOutside, { once: true });
+    document.addEventListener('click', closeContextMenuOnClickOutside, {
+      once: true
+    });
+    document.addEventListener('contextmenu', closeContextMenuOnClickOutside, {
+      once: true
+    });
   });
 }
 
 function deleteRangeFromContextMenu() {
   if (contextMenuRangeId.value === null) return;
-  const index = ranges.value.findIndex(r => r.id === contextMenuRangeId.value);
+  const index = ranges.value.findIndex(
+    (r) => r.id === contextMenuRangeId.value
+  );
   if (index !== -1) {
     ranges.value.splice(index, 1);
     // The watcher on `ranges` will automatically emit 'update:selected'
@@ -2708,7 +2763,11 @@ function closeRangeTooltip() {
   if (!isRangeTooltipVisible.value) return;
   isRangeTooltipVisible.value = false;
   selectedRangeForTooltip.value = null;
-  document.removeEventListener('click', handleClickOutsideRangeTooltipOnCapture, true);
+  document.removeEventListener(
+    'click',
+    handleClickOutsideRangeTooltipOnCapture,
+    true
+  );
 }
 
 function handleClickOutsideRangeTooltipOnCapture(event: MouseEvent) {
@@ -2718,9 +2777,12 @@ function handleClickOutsideRangeTooltipOnCapture(event: MouseEvent) {
     !rangeTooltipRef.value.contains(event.target as Node)
   ) {
     // Check if the click target is another range fill. If so, handleRangeFillClick will manage opening the new tooltip.
-    const targetIsRangeFill = (event.target as HTMLElement)?.closest('.range-fill');
-    if (!targetIsRangeFill) { // Only close if not clicking another range fill which would open a new tooltip.
-        closeRangeTooltip();
+    const targetIsRangeFill = (event.target as HTMLElement)?.closest(
+      '.range-fill'
+    );
+    if (!targetIsRangeFill) {
+      // Only close if not clicking another range fill which would open a new tooltip.
+      closeRangeTooltip();
     }
   }
 }
@@ -2729,16 +2791,18 @@ function openRangeTooltip(range: Range, event: MouseEvent) {
   if (!props.readonly) return;
 
   // If clicking the same range that already has an open tooltip, toggle it (close it).
-  if (isRangeTooltipVisible.value && selectedRangeForTooltip.value?.id === range.id) {
+  if (
+    isRangeTooltipVisible.value &&
+    selectedRangeForTooltip.value?.id === range.id
+  ) {
     closeRangeTooltip();
     return;
   }
-  
+
   // Close context menu if it's open
   if (isContextMenuVisible.value) closeContextMenu();
   // Close any existing range tooltip first before opening a new one
   closeRangeTooltip();
-
 
   selectedRangeForTooltip.value = range;
   // Position tooltip slightly offset from cursor for better visibility
@@ -2750,13 +2814,17 @@ function openRangeTooltip(range: Range, event: MouseEvent) {
   isRangeTooltipVisible.value = true;
 
   nextTick(() => {
-    document.addEventListener('click', handleClickOutsideRangeTooltipOnCapture, true);
+    document.addEventListener(
+      'click',
+      handleClickOutsideRangeTooltipOnCapture,
+      true
+    );
   });
 }
 
 function handleRangeFillClick(rangeId: Numeric, event: MouseEvent) {
   // event.stopPropagation() is handled by @click.stop in template
-  const range = ranges.value.find(r => r.id === rangeId);
+  const range = ranges.value.find((r) => r.id === rangeId);
   if (!range) return;
 
   if (props.readonly) {
@@ -2766,13 +2834,16 @@ function handleRangeFillClick(rangeId: Numeric, event: MouseEvent) {
   // as the event is stopped. This prevents interference with underlying canvas click handlers.
 }
 
-watch(() => props.readonly, (isReadonly) => {
-  if (!isReadonly) {
-    if (isRangeTooltipVisible.value) closeRangeTooltip();
-  } else {
-    if (isContextMenuVisible.value) closeContextMenu();
+watch(
+  () => props.readonly,
+  (isReadonly) => {
+    if (!isReadonly) {
+      if (isRangeTooltipVisible.value) closeRangeTooltip();
+    } else {
+      if (isContextMenuVisible.value) closeContextMenu();
+    }
   }
-});
+);
 
 function resetAndCleanupAudioResources() {
   stopAudio(); // Stops current playback and disconnects audioSourceNode
@@ -2819,7 +2890,6 @@ function resetAndCleanupAudioResources() {
   totalBins.value = 0;
   cacheHeightBins.value = 0;
 
-
   // Reset interaction states
   isPanning.value = false;
   isSpacePanningActive.value = false;
@@ -2829,7 +2899,7 @@ function resetAndCleanupAudioResources() {
   isSelecting.value = false;
   selectStartXPx.value = 0;
   selectCurrentXPx.value = 0;
-  
+
   // Reset UI states
   showHoverLine.value = false;
   isContextMenuVisible.value = false;
@@ -2843,5 +2913,4 @@ function resetAndCleanupAudioResources() {
   loopPlayback.value = false;
   autoScroll.value = false;
 }
-
 </script>

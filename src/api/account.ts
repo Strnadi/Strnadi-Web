@@ -1,10 +1,9 @@
-import type { Numeric } from "@/types/basic";
-import axios from "axios";
-import type { JWTPayload } from "jose";
-import * as jose from "jose";
+import type { Numeric } from '@/types/basic';
+import axios from 'axios';
+import type { JWTPayload } from 'jose';
+import * as jose from 'jose';
 
-export interface JWTObject extends JWTPayload {
-};
+export interface JWTObject extends JWTPayload {}
 
 export interface User {
   id: number;
@@ -16,7 +15,7 @@ export interface User {
   consent: boolean;
   isEmailVerified: boolean;
   password: string;
-  role: "user" | "admin";
+  role: 'user' | 'admin';
   profilePicture: string | null;
   postCode: number | null;
   city: string | null;
@@ -54,65 +53,76 @@ export interface OAuth2SignUpResponse {
   lastName: string | null;
 }
 
-
-
-
-const genericPost = async<T> (path: string, data: T) => {
+const genericPost = async <T>(path: string, data: T) => {
   const response = await axios.post(`/auth/${path}`, data);
   return response.data;
-}
+};
 
 export const getUsers = async (token: string): Promise<User[]> => {
   const response = await axios.get(`/users`, {
     headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+      Authorization: `Bearer ${token}`
+    }
   });
 
-  return response.data as User[];  
-}
+  return response.data as User[];
+};
 
-export const getUserInfo = async (token: string, id: Numeric): Promise<User> => {
+export const getUserInfo = async (
+  token: string,
+  id: Numeric
+): Promise<User> => {
   const response = await axios.get(`/users/${id}`, {
     headers: {
-      'Authorization': `Bearer ${token ?? ''}`,
-    },
+      Authorization: `Bearer ${token ?? ''}`
+    }
   });
 
-  return response.data as User;  
-}
+  return response.data as User;
+};
 
 export const getUserId = async (token: string): Promise<Numeric> => {
   const response = await axios.get(`/users/get-id`, {
     headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+      Authorization: `Bearer ${token}`
+    }
   });
 
-  return response.data as Numeric;  
-}
+  return response.data as Numeric;
+};
 
 export const getCurrentUserInfo = async (token: string): Promise<User> => {
   const userId = await getUserId(token);
   return getUserInfo(token, userId);
-}
+};
 
-export const postLogin = async (loginData: LoginRequest): Promise<OAuth2Token> =>
-  genericPost("login", loginData);
+export const postLogin = async (
+  loginData: LoginRequest
+): Promise<OAuth2Token> => genericPost('login', loginData);
 
-export const postRegister = async (signUpData: SignUpRequest, signUpJwt?: string): Promise<OAuth2Token> => {
+export const postRegister = async (
+  signUpData: SignUpRequest,
+  signUpJwt?: string
+): Promise<OAuth2Token> => {
   const response = await axios.post(`/auth/sign-up`, signUpData, {
-    headers:  signUpJwt ? {
-      'Authorization': `Bearer ${signUpJwt}`,
-    } : {}
+    headers: signUpJwt
+      ? {
+          Authorization: `Bearer ${signUpJwt}`
+        }
+      : {}
   });
   return response.data;
-}
+};
 
-export const postGoogleLogin = async (loginInfo: { idToken: string }): Promise<OAuth2Token> =>
-  genericPost("login-google", loginInfo);
+export const postGoogleLogin = async (loginInfo: {
+  idToken: string;
+}): Promise<OAuth2Token> => genericPost('login-google', loginInfo);
 
-export const postAppleLogin = async (loginInfo: { idToken: string, givenName?: string, familyName?: string }): Promise<OAuth2Token> => {
+export const postAppleLogin = async (loginInfo: {
+  idToken: string;
+  givenName?: string;
+  familyName?: string;
+}): Promise<OAuth2Token> => {
   const token = jose.decodeJwt(loginInfo.idToken);
 
   const data = {
@@ -120,15 +130,15 @@ export const postAppleLogin = async (loginInfo: { idToken: string, givenName?: s
     email: token['email'],
     userIdentifier: token.sub,
     givenName: loginInfo.givenName ?? '',
-    familyName: loginInfo.familyName ?? '',
-  }
+    familyName: loginInfo.familyName ?? ''
+  };
 
-  return genericPost("apple", data);
-}
+  return genericPost('apple', data);
+};
 
-
-export const postGoogleSignup = async (signupInfo: { idToken: string }): Promise<OAuth2SignUpResponse> =>
-  genericPost("sign-up-google", signupInfo);
+export const postGoogleSignup = async (signupInfo: {
+  idToken: string;
+}): Promise<OAuth2SignUpResponse> => genericPost('sign-up-google', signupInfo);
 
 export const getUserExists = async (email: string): Promise<boolean> => {
   const response = await axios.get(`/users/exists?email=${email}`, {
@@ -136,48 +146,63 @@ export const getUserExists = async (email: string): Promise<boolean> => {
   });
 
   return response.status !== 200;
-}
+};
 
-export const patchUser = async (token: string, id: number | string, data: UserUpdateRequest): Promise<User> => {
+export const patchUser = async (
+  token: string,
+  id: number | string,
+  data: UserUpdateRequest
+): Promise<User> => {
   const response = await axios.patch(`/users/${id}`, data, {
     headers: {
-      'Authorization': `Bearer ${token}`
+      Authorization: `Bearer ${token}`
     }
   });
 
   return response.data;
-}
+};
 
 export const getPasswordResetRequest = async (email: string) => {
   await axios.get(`/auth/${email}/reset-password`);
-}
+};
 
 export const getResendVerifyEmail = async (userId: number) => {
   await axios.get(`/auth/${userId}/reset-password`);
-}
+};
 
 export const getRenewedJWT = async (oldJWT: string) => {
   const response = await axios.get(`/auth/renew-jwt`, {
     headers: {
-      'Authorization': `Bearer ${oldJWT}`
+      Authorization: `Bearer ${oldJWT}`
     }
   });
 
   return response.data as string;
-}
+};
 
-export const patchPasswordChange = async (token: string, id: number | string, newPassword: string) => {
-  await axios.patch(`/users/${id}/change-password`, { newPassword }, {
-    headers: {
-      'Authorization': `Bearer ${token}`
+export const patchPasswordChange = async (
+  token: string,
+  id: number | string,
+  newPassword: string
+) => {
+  await axios.patch(
+    `/users/${id}/change-password`,
+    { newPassword },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     }
-  });
-}
+  );
+};
 
-export const deleteAccount = async (token: string, userId: string | number): Promise<void> => {
+export const deleteAccount = async (
+  token: string,
+  userId: string | number
+): Promise<void> => {
   await axios.delete(`/users/${userId}`, {
     headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+      Authorization: `Bearer ${token}`
+    }
   });
-}
+};

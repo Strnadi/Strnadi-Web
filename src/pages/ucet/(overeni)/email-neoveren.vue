@@ -7,7 +7,8 @@ meta:
 import { computed } from 'vue';
 
 const isMobile = computed(() => {
-  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+  const userAgent =
+    navigator.userAgent || navigator.vendor || (window as any).opera;
   return /android|iPad|iPhone/i.test(userAgent);
 });
 </script>
@@ -15,7 +16,7 @@ const isMobile = computed(() => {
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
     <div class="flex flex-col items-center gap-y-3">
-      <img src="/logo-no-text.svg">
+      <img src="/logo-no-text.svg" />
       <h2>Nářečí českých strnadů</h2>
     </div>
     <span class="text-xl text-center">
@@ -25,7 +26,8 @@ const isMobile = computed(() => {
       v-if="isMobile"
       class="button-primary p-2 w-full text-center"
       href="com.delta.strnadi://"
-    >Zpět do aplikace</a>
+      >Zpět do aplikace</a
+    >
     <PrefetchLink
       v-else
       class="button-primary p-2 w-full text-center"

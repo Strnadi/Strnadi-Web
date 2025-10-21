@@ -1,32 +1,29 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 const props = defineProps({
   progress: { type: Number, default: 1.0 },
   totalSegments: { type: Number, default: 4 }
-})
+});
 
 const segments = computed(() =>
   Array.from({ length: props.totalSegments }, (_, i) => i)
-)
+);
 
 const calculateFillAmount = (segmentIndex: number) => {
   if (props.progress <= segmentIndex) {
-    return 0
+    return 0;
   } else if (props.progress >= segmentIndex + 1) {
-    return 1
+    return 1;
   }
-  return props.progress - segmentIndex
-}
+
+  return props.progress - segmentIndex;
+};
 </script>
 
 <template>
   <div class="segmented-progress-bar">
-    <div
-      v-for="segmentIndex in segments"
-      :key="segmentIndex"
-      class="segment"
-    >
+    <div v-for="segmentIndex in segments" :key="segmentIndex" class="segment">
       <div
         class="segment-fill"
         :style="{ width: `${calculateFillAmount(segmentIndex) * 100}%` }"
@@ -46,7 +43,7 @@ const calculateFillAmount = (segmentIndex: number) => {
   box-sizing: border-box;
   margin-top: 5px;
   margin-bottom: 5px;
-  overflow: hidden;   /* In case of partial fill, ensures neat edges */
+  overflow: hidden; /* In case of partial fill, ensures neat edges */
 }
 
 .segment {
