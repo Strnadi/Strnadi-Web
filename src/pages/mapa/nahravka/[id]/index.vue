@@ -15,6 +15,8 @@ import type { Numeric } from '@/types/basic';
 import Spectrogram from '@/components/Spectrogram.vue';
 import ToggleShow from '@/components/ToggleShow.vue';
 import { MapStore } from '@/views/map/RecordingsMap.vue';
+import MultiColorSquare from '@/components/MultiColorSquare.vue';
+import { DialectColors } from '@/views/map/RecordingsMap.vue';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
@@ -125,6 +127,17 @@ const cancelEdit = () => {
 <template>
   <h1 class="text-2xl font-semibold">
     <template v-if="editing"> Upravování: </template>
+    <!-- <template v-if="filteredRec">
+      <template v-for="fr in filteredRec">
+        <MultiColorSquare size="20px" :colors="fr.detectedDialects?.map(dd => {
+          let color = null;
+          if (dd.confirmedDialect && dd.confirmedDialect in DialectColors) {
+            color = DialectColors[dd.confirmedDialect as keyof typeof DialectColors];
+          }
+          return color;
+        }).filter(c => c !== null) ?? []" />
+      </template>
+    </template> -->
     <template v-if="recording?.name">
       {{ recording.name }}
     </template>
@@ -176,18 +189,6 @@ const cancelEdit = () => {
         }}</span>
       </div>
 
-      <div v-if="filteredRec">
-        <ul>
-          <li v-for="fr in filteredRec" :key="fr.id">
-            <ul>
-              <li v-for="dialect in fr.detectedDialects" :key="dialect.id">
-                {{ dialect.userGuessDialect }} {{ dialect.confirmedDialect }}
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </div>
-
       <blockquote
         v-if="!editing"
         class="p-3 bg-gray-50 border-l-4 border-gray-300 italic"
@@ -227,6 +228,15 @@ const cancelEdit = () => {
           </li>
         </ul>
       </div>
+
+      <template v-if="accountStore.user?.role === 'admin'">
+        <prefetch-link
+          :to="`./${recordingId}/upravit-dialekt`"
+          class="button-secondary py-2 px-4 max-sm:text-sm"
+        >
+          Upravit dialekty
+        </prefetch-link>
+      </template>
 
       <!-- <ToggleShow class="w-full">
         <template #toggle-button>

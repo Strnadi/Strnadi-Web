@@ -15,6 +15,7 @@ import {
 import { accountStore } from '@/state/AccountStore';
 import { useRouter } from 'vue-router';
 import ListDeselect from '@/components/ListDeselect.vue';
+import draggable from 'vuedraggable';
 
 const router = useRouter();
 
@@ -54,21 +55,35 @@ const { mutate: submitCategory } = useMutation({
 </script>
 
 <template>
-  <h1>Nová kategorie</h1>
-  <input v-model="name" type="text" placeholder="Název" />
-  <input v-model="label" type="text" placeholder="Popis" />
+  <div class="flex flex-col gap-y-2">
+    <h1>Nová kategorie</h1>
+    <input v-model="name" type="text" placeholder="Název" class="p-2" />
+    <input v-model="label" type="text" placeholder="Popis" class="p-2" />
+    <div>
+      <h2>Zahrnuté příspěvky</h2>
 
-  <div>
-    <h2>Zahrnuté příspěvky</h2>
-    <v-select
-      v-model="categoryArticles"
-      :options="articles"
-      :reduce="(article: Article) => article.id"
-      :components="{ ListDeselect }"
-      label="name"
-      multiple
-    />
+      <draggable v-if="categoryArticles" v-model="categoryArticles" item-key="id">
+        <template #item="{ element: article }">
+          <div class="flex flex-row gap-x-2">
+            <button>Smazat</button>
+            <span>{{ articles?.find(a => a.id === article)?.name }} (ID: {{ articles?.find(a => a.id === article)?.id }})</span>
+          </div>
+        </template>
+
+        <template #footer>
+          <v-select
+            v-model="categoryArticles"
+            :options="articles"
+            :reduce="(article: Article) => article.id"
+            :components="{ ListDeselect }"
+            label="name"
+            multiple
+          />
+
+        </template>
+      </draggable>
+
+    </div>
+    <button @click="submitCategory" class="primary p-2">Přidat</button>
   </div>
-
-  <button @click="submitCategory">Přidat</button>
 </template>

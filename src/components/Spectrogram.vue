@@ -185,7 +185,7 @@
         <div
           class="spinner w-10 h-10 border-4 border-gray-200 border-l-black rounded-full animate-spin"
         />
-        <span>Načítání...</span>
+        <span>Chviličku strpení prosím...</span>
       </div>
     </div>
 

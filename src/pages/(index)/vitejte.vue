@@ -43,7 +43,7 @@ const route = useRoute();
 
     <div class="flex flex-col w-full gap-x-1 gap-y-1">
       <PrefetchLink
-        to="/informace/projekt/podporovatele"
+        to="/informace/projekt/projekt-podporuji"
         class="button-secondary text-lg p-2 w-full text-center"
       >
         <TranslatedText identifier="buttons.supporters" />

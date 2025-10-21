@@ -150,7 +150,7 @@ const polygons = refDebounced(
     ...(zoom.value >= 12 && zoom.value < 14 ? makeGrid(5 / 60, 3 / 60) : []),
     ...(zoom.value >= 14 ? makeGrid(2.5 / 60, 1.5 / 60) : [])
   ]),
-  100
+  75
 );
 
 const oldCutoff = new Date(2024, 11, 31);
@@ -192,13 +192,14 @@ const markers = computed<Marker[]>(() => {
         const allFiltered = filteredRecordings.value
           ?.filter((fr) => {
             if (fr.recordingId !== rec.id) return false;
+
             const frStart = new Date(fr.startDate);
             const frEnd = new Date(fr.endDate);
-            // overlap check against any original part
+
             return parts.some((p) => {
               const pStart = new Date(p.startDate);
               const pEnd = new Date(p.endDate);
-              return frEnd >= pStart && frStart <= pEnd;
+              return frEnd >= pStart || frStart <= pEnd;
             });
           }) ?? [];
 
@@ -229,6 +230,10 @@ const markers = computed<Marker[]>(() => {
         const colors = dialectStrings.filter((c): c is string => c !== null);
         const finalColors = colors.length > 0 ? colors : ['#000000'];
 
+        if (rec.id === 58) {
+          console.log('Recording 58 colors:', allFiltered);
+        }
+
         const icon = divIcon({
           className: '',
           iconSize: [12, 12],
@@ -244,7 +249,7 @@ const markers = computed<Marker[]>(() => {
           position: [
             lastPart.gpsLatitudeStart,
             lastPart.gpsLongitudeStart
-          ],
+          ] as [number, number],
           data: {
             recording: rec,
             part: lastPart,
