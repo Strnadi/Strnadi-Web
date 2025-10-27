@@ -16,6 +16,55 @@ const goHome = () => {
   router.push('/');
 };
 
+
+function getZoom() {
+  // visualViewport is most reliable for scale on mobile/modern browsers
+  if (window.visualViewport && typeof window.visualViewport.scale === 'number') {
+    return window.visualViewport.scale; // 1 = 100%
+  }
+  // devicePixelRatio is often equal to zoom on desktop/mobile
+  if (window.devicePixelRatio) {
+    return window.devicePixelRatio;
+  }
+  // fallback: ratio of outer to inner width (desktop heuristics)
+  return window.outerWidth / window.innerWidth;
+}
+
+function applyUnzoom(wrapper) {
+  const zoom = window.devicePixelRatio;
+  console.log('Zoom level:', zoom);
+  const scale = 1 / zoom;
+
+  // Apply scale and correct width so layout doesn't collapse
+  // We set transform-origin to 0 0 to keep top-left anchored
+  wrapper.style.transformOrigin = '0 0';
+  wrapper.style.transform = `scale(${scale})`;
+
+  // To prevent horizontal scrollbars, expand the wrapper's width proportional to zoom:
+  wrapper.style.width = `${100 * zoom}%`;
+
+  // Optional: adjust height similarly (depends on your layout)
+  wrapper.style.height = `${100 * zoom}%`;
+
+  wrapper.style.top = `${100 * zoom}%`;
+}
+
+// Hook into events
+const wrapper = document.documentElement; // document.getElementById('page-wrapper');
+if (wrapper) {
+  // initial apply
+  applyUnzoom(wrapper);
+
+  // update when viewport changes -- use visualViewport if possible (more granular)
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => applyUnzoom(wrapper));
+    window.visualViewport.addEventListener('scroll', () => applyUnzoom(wrapper));
+  } else {
+    window.addEventListener('resize', () => applyUnzoom(wrapper));
+  }
+}
+
+
 // useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
 //
 //   if (recording && recordingPart) {

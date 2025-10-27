@@ -22,7 +22,7 @@ export const translations = {
       google_play:
         'Na obchodě Google Play se aplikace jmenuje Strnadi a je v předběžném přístupu.',
       apple:
-        'Vlastníci telefonů značky Apple si musí aplikaci stáhnout přes beta testovací aplikaci',
+        'V App Storu je aplikace dostupná pod jménem Strnadi.',
       development:
         'Aplikace, stejně jako web, stále prochází velmi bouřlivým vývojem. Za chyby se omlouváme. Těšte se na časté aktualizace a vylepšování.'
     },

@@ -29,7 +29,7 @@ const submit = () => {
     <div v-if="!isSuccess" class="flex flex-col items-center gap-y-6 w-full">
       <div class="w-full flex flex-col gap-y-1">
         <label for="email" class="block text-sm font-medium">E-Mail</label>
-        <input id="email" v-model="email" type="email" placeholder="E-Mail" />
+        <input id="email" v-model="email" type="email" class="p-2" placeholder="E-Mail" />
       </div>
       <button class="secondary p-2 w-full" @click="submit">Odeslat kód</button>
     </div>

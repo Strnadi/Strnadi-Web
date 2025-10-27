@@ -315,18 +315,6 @@ const autoScrollbar = {
   }
 };
 
-/*
-axios.defaults.onUploadProgress = (progressEvent) => {
-  const { loaded, total } = progressEvent;
-  const percentCompleted = Math.round((loaded * 100) / (total || 1));
-};
-
-axios.defaults.onDownloadProgress = (progressEvent) => {
-  const { loaded, total } = progressEvent;
-  const percentCompleted = Math.round((loaded * 100) / (total || 1));
-};
-*/
-
 app.use(router);
 app.use(firebasePlugin);
 app.use(VueQueryPlugin);

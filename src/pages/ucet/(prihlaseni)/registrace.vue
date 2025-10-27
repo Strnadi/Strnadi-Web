@@ -62,6 +62,7 @@ import TranslatedText from '@/components/TranslatedText.vue';
 import LocationSearch from '@/components/map/LocationSearch.vue';
 import DigitInput from '@/components/DigitInput.vue';
 
+const router = useRouter();
 const emailElement = ref<HTMLInputElement | null>(null);
 
 // 1) Pre‐fetch whether the email exists whenever email or agreement changes
@@ -77,6 +78,50 @@ watch(
     }
   }
 );
+
+const {
+  mutate: googleSignupMutate,
+  isPending,
+  isError,
+  error
+} = useMutation({
+  mutationFn: ({ idToken }: { idToken: string }) =>
+    postGoogleSignup({ idToken }),
+
+  onSuccess: (signupJWT: OAuth2SignUpResponse) => {
+    const userJWT: JWTObject = jose.decodeJwt(signupJWT.jwt);
+
+    if (!userJWT.sub) return;
+
+    if (signupJWT.firstName) registerStore.name = signupJWT.firstName;
+    if (signupJWT.lastName) registerStore.surname = signupJWT.lastName;
+    registerStore.email = userJWT.sub;
+    registerStore.isExternalSignup = true;
+    stepper.goToNext();
+  },
+
+  onError: (err) => {
+    error.value = err.message;
+  }
+});
+
+// set up the final registration mutation
+const {
+  mutate: registerMutate,
+  isPending: isRegPending,
+  isError: isRegError,
+  data: regData,
+  error: regError
+} = useMutation({
+  mutationFn: (data: SignUpRequest) =>
+    postRegister(data, registerStore.jwt ?? undefined),
+
+  onSuccess: (jwt: string) => {
+    accountStore.login(jwt);
+    registerStore.reset();
+    stepper.goToNext();
+  }
+});
 
 const stepper = useStepper({
   email: {
@@ -121,34 +166,14 @@ const stepper = useStepper({
     isValid: () => true
   },
 
+  'creating-account': {
+    title: 'Vytváření účtu',
+    isValid: () => true
+  },
+
   done: {
     title: 'Hotovo',
     isValid: () => true
-  }
-});
-
-const {
-  mutate: googleSignupMutate,
-  isPending,
-  error
-} = useMutation({
-  mutationFn: ({ idToken }: { idToken: string }) =>
-    postGoogleSignup({ idToken }),
-
-  onSuccess: (signupJWT: OAuth2SignUpResponse) => {
-    const userJWT: JWTObject = jose.decodeJwt(signupJWT.jwt);
-
-    if (!userJWT.sub) return;
-
-    if (signupJWT.firstName) registerStore.name = signupJWT.firstName;
-    if (signupJWT.lastName) registerStore.surname = signupJWT.lastName;
-    registerStore.email = userJWT.sub;
-    registerStore.isExternalSignup = true;
-    stepper.goToNext();
-  },
-
-  onError: (err) => {
-    error.value = err.message;
   }
 });
 
@@ -157,11 +182,16 @@ const googleSignup = (idToken: string) => {
 };
 
 function submit() {
+  if (stepper.isLast.value) {
+    router.push('/');
+    return;
+  }
+
   if (stepper.current.value.isValid()) {
     stepper.goToNext();
   }
 
-  if (stepper.current.value === stepper.steps.value.done) register();
+  if (stepper.current.value === stepper.steps.value['creating-account']) register();
 }
 
 function allStepsBeforeAreValid(index: number): boolean {
@@ -169,23 +199,6 @@ function allStepsBeforeAreValid(index: number): boolean {
     (_, i) => !stepper.at(i)?.isValid()
   );
 }
-
-// set up the final registration mutation
-const router = useRouter();
-const {
-  mutate: registerMutate,
-  isPending: isRegPending,
-  isError: isRegError,
-  data: regData,
-  error: regError
-} = useMutation({
-  mutationFn: (data: SignUpRequest) =>
-    postRegister(data, registerStore.jwt ?? undefined),
-  onSuccess: (jwt: string) => {
-    accountStore.login(jwt);
-    registerStore.reset();
-  }
-});
 
 const register = () => {
   registerMutate({
@@ -320,17 +333,10 @@ watch(
         <!-- location -->
         <div v-if="stepper.isCurrent('location')" class="flex flex-col gap-y-4">
           <div class="flex flex-col gap-y-1">
+            <h2>PSČ</h2>
             <DigitInput v-model="registerStore.postCode" :digits="5" />
-            <!-- <label for="postalCode">PSČ</label>
-            <input
-              id="postalCode"
-              v-model="registerStore.postCode"
-              type="number"
-              min="0"
-              max="99999"
-            > -->
             <p class="text-gray-600">
-              Nepovinné; pokus vyplníte, budete dostávat aktuality z vaší
+              Nepovinné; pokud vyplníte, budete dostávat aktuality z vaší
               lokality.
             </p>
           </div>
@@ -394,6 +400,16 @@ watch(
           <span>PSČ: {{ registerStore.postCode }}</span>
           <span>Město: {{ registerStore.city }}</span>
           <span>S podmínkami použití souhlasím.</span>
+        </div>
+
+        <div v-if="stepper.isCurrent('creating-account')">
+          <p v-if="isPending || isRegPending">Vytváření vašeho účtu, prosím vyčkejte…</p>
+          <template v-else-if="isRegError || isError">
+            <p>{{ (error ?? regError)!.message }}</p>
+            <button class="secondary p-2 w-full" @click="register">
+              Zkusit znovu
+            </button>
+          </template>
         </div>
 
         <!-- done -->
