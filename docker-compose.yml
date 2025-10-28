@@ -1,0 +1,30 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ENVIRONMENT: ${ENVIRONMENT:-production}
+        NGINX_FROM_IMAGE: nginx:mainline-alpine-slim
+        ENABLED_MODULES: brotli
+
+    labels:
+      - traefik.enable=true
+
+      - traefik.http.routers.strnadi-web-http.rule=Host(`${HOST}`)
+      - traefik.http.routers.strnadi-web-http.entrypoints=web
+      - traefik.http.routers.strnadi-web-http.middlewares=redirect-to-https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+
+      - traefik.http.routers.strnadi-web.rule=Host(`${HOST}`)
+      - traefik.http.routers.strnadi-web.entrypoints=websecure
+      - traefik.http.routers.strnadi-web.tls.certresolver=le
+      - traefik.http.services.strnadi-web.loadbalancer.server.port=80
+      - traefik.docker.network=proxy
+
+    environment:
+      - NODE_ENV=${ENVIRONMENT:-production}
+
+proxy:
+  external: true
+  name: proxy

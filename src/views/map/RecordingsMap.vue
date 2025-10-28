@@ -209,13 +209,14 @@ const markers = computed<Marker[]>(() => {
             let color: string | null = null;
             if (
               dd.confirmedDialect &&
-              dd.confirmedDialect in DialectColors
+              dd.confirmedDialect in DialectColors &&
+              dd.representant
             ) {
               color =
                 DialectColors[
                   dd.confirmedDialect as keyof typeof DialectColors
                 ];
-            } else if (
+            } /* else if (
               dd.userGuessDialect &&
               dd.userGuessDialect in DialectColors
             ) {
@@ -223,7 +224,7 @@ const markers = computed<Marker[]>(() => {
                 DialectColors[
                   dd.userGuessDialect as keyof typeof DialectColors
                 ];
-            }
+            } */
             return color;
           }) ?? []
         );

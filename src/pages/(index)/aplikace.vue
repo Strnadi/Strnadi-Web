@@ -36,7 +36,10 @@ const location = window.location.href;
 </script>
 
 <template>
-  <h1>Stažení aplikace</h1>
+  <div class="flex flex-row gap-x-2 content-center">
+    <img src="/WIP.png" width="50px" />
+    <h1>Stažení aplikace</h1>
+  </div>
 
   <div class="flex flex-col items-center gap-y-4">
     <div class="flex flex-col items-center gap-y-4">

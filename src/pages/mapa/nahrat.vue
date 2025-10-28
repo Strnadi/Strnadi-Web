@@ -158,11 +158,7 @@ const stepper = useStepper<Record<StepIdentifier, Step>>({
     isValid: () =>
       (uploadStore.parts?.length ?? 0) > 0 &&
       (uploadStore.parts?.every((part) => part.file) ?? false)
-  },
-
-  photos: {
-    title: 'Fotky',
-    isValid: () => true
+      && !isSubmitting.value && !uploadSuccess.value
   },
 
   location: {
@@ -178,12 +174,17 @@ const stepper = useStepper<Record<StepIdentifier, Step>>({
 
   info: {
     title: 'Informace o nahrávce',
-    isValid: () => !!uploadStore.dateTime && uploadStore.confirmUpload
+    isValid: () => !!uploadStore.dateTime && uploadStore.confirmUpload && !isSubmitting && !uploadSuccess
+  },
+
+  photos: {
+    title: 'Fotky',
+    isValid: () => !isSubmitting && !uploadSuccess
   },
 
   submit: {
     title: 'Odeslat',
-    isValid: () => true // Final step, always valid to view
+    isValid: () => !isSubmitting && !uploadSuccess // Final step, always valid to view
   }
 });
 
@@ -257,9 +258,9 @@ const submit = () => {
   stepper.goTo('file');
 
   // Redirect to map after a short delay
-  setTimeout(() => {
-    router.push('/');
-  }, 2000);
+  // setTimeout(() => {
+  //   router.push('/');
+  // }, 2000);
 };
 
 onUnmounted(removeMarkers);
@@ -380,35 +381,6 @@ const currentPartIndex = ref(0);
         </Dropzone>
       </template>
 
-      <!-- Photos Stage -->
-      <template v-if="stepper.isCurrent('photos')">
-        <Dropzone :multiple="true" :accept="photoAccept" @drop="onPhotoDrop">
-          <template #dragging>
-            <p><TranslatedText identifier="upload.drop_files_here" /></p>
-          </template>
-
-          <div class="flex flex-col items-center gap-y-1">
-            <p><TranslatedText identifier="upload.select_or_drag_photos" /></p>
-
-            <ul class="flex flex-col w-full" @click.stop>
-              <li
-                v-for="(file, index) in uploadStore.photos"
-                :key="file.name"
-                class="flex flex-row w-full items-center justify-between"
-              >
-                <img :src="makeURL(file)" class="h-[200px]" />
-                <button
-                  class="danger"
-                  @click="uploadStore.photos?.splice(index, 1)"
-                >
-                  <TranslatedText identifier="upload.remove" />
-                </button>
-              </li>
-            </ul>
-          </div>
-        </Dropzone>
-      </template>
-
       <!-- Location Stage -->
       <template v-if="stepper.isCurrent('location')">
         <div class="flex flex-col gap-y-4">
@@ -462,7 +434,7 @@ const currentPartIndex = ref(0);
                 id="title"
                 v-model="uploadStore.title"
                 type="text"
-                class="w-full"
+                class="w-full p-2"
               />
             </div>
             <div>
@@ -548,6 +520,35 @@ const currentPartIndex = ref(0);
             </p>
           </div>
         </div>
+      </template>
+
+      <!-- Photos Stage -->
+      <template v-if="stepper.isCurrent('photos')">
+        <Dropzone :multiple="true" :accept="photoAccept" @drop="onPhotoDrop">
+          <template #dragging>
+            <p><TranslatedText identifier="upload.drop_files_here" /></p>
+          </template>
+
+          <div class="flex flex-col items-center gap-y-1">
+            <p><TranslatedText identifier="upload.select_or_drag_photos" /></p>
+
+            <ul class="flex flex-col w-full" @click.stop>
+              <li
+                v-for="(file, index) in uploadStore.photos"
+                :key="file.name"
+                class="flex flex-row w-full items-center justify-between"
+              >
+                <img :src="makeURL(file)" class="h-[200px]" />
+                <button
+                  class="danger"
+                  @click="uploadStore.photos?.splice(index, 1)"
+                >
+                  <TranslatedText identifier="upload.remove" />
+                </button>
+              </li>
+            </ul>
+          </div>
+        </Dropzone>
       </template>
 
       <template v-if="stepper.isCurrent('submit')">

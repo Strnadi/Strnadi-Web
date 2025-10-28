@@ -62,9 +62,29 @@ RUN apk update \
     done \
     && echo "BUILT_MODULES=\"$BUILT_MODULES\"" > /tmp/packages/modules.env
 
-FROM ${NGINX_FROM_IMAGE}
+FROM ${NGINX_FROM_IMAGE} AS nginx-strnadi-custom
 RUN --mount=type=bind,target=/tmp/packages/,source=/tmp/packages/,from=builder \
     . /tmp/packages/modules.env \
     && for module in $BUILT_MODULES; do \
            apk add --no-cache --allow-untrusted /tmp/packages/nginx-module-${module}-${NGINX_VERSION}*.apk; \
        done
+
+FROM oven/bun:alpine AS build
+WORKDIR /usr/src/app
+
+COPY patches patches
+COPY package.json .env ./
+RUN bun install
+
+COPY src src
+COPY public public
+COPY plugins plugins
+COPY index.html tsconfig*.json vite.config.ts ./
+
+ARG ENVIRONMENT="production"
+ENV NODE_ENV=${ENVIRONMENT}
+RUN bun run build --mode $NODE_ENV
+
+FROM nginx-strnadi-custom
+COPY ./nginx.conf /etc/nginx/nginx.conf
+COPY --from=build /usr/src/app/dist /usr/share/nginx/html

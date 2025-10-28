@@ -38,6 +38,6 @@ if [ -n "$CONTAINER_ID" ]; then
   fi
 fi
 
-docker build --build-arg ENABLED_MODULES="brotli" -t nginx:strnadi-custom -f ./docker/nginx.dockerfile .
-docker build -t strnadi-web-$ENVIRONMENT --build-arg ENVIRONMENT=$ENVIRONMENT -f ./docker/Dockerfile .
-docker run -d -p $PORT:80 strnadi-web-$ENVIRONMENT
+docker compose -f docker-compose.yml build --no-cache
+docker compose -f docker-compose.yml down
+docker compose -f docker-compose.yml up -d
