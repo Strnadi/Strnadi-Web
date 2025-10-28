@@ -23,7 +23,7 @@ const closePopup = () => {
         <Close />
       </button>
 
-      <div v-auto-scrollbar class="relative w-full h-full">
+      <div v-auto-scrollbar class="relative">
         <component :is="Component" />
       </div>
       <div class="bottom-fade" />
@@ -42,9 +42,7 @@ aside.side {
   @apply sm:left-5;
   @apply sm:right-5;
   @apply min-w-0;
-  /*@apply flex;*/
   @apply w-full;
-  @apply max-h-full;
   @apply sm:w-1/2;
   @apply xl:w-1/3;
   @apply z-[7];
@@ -53,7 +51,7 @@ aside.side {
 }
 
 aside > div {
-  @apply /*grid grid-cols-[auto_1fr] */ overflow-y-auto h-fit max-h-[90vh] desktop:max-h-[80vh] items-center;
+  @apply /*grid grid-cols-[auto_1fr] */ overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
   @apply rounded-4xl;
   @apply p-8;
   @apply pb-20;

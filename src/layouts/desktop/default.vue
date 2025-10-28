@@ -16,20 +16,6 @@ const goHome = () => {
   router.push('/');
 };
 
-
-function getZoom() {
-  // visualViewport is most reliable for scale on mobile/modern browsers
-  if (window.visualViewport && typeof window.visualViewport.scale === 'number') {
-    return window.visualViewport.scale; // 1 = 100%
-  }
-  // devicePixelRatio is often equal to zoom on desktop/mobile
-  if (window.devicePixelRatio) {
-    return window.devicePixelRatio;
-  }
-  // fallback: ratio of outer to inner width (desktop heuristics)
-  return window.outerWidth / window.innerWidth;
-}
-
 // useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
 //
 //   if (recording && recordingPart) {
@@ -54,7 +40,7 @@ function getZoom() {
       <div class="flex w-screen h-screen"><span class="m-auto">Upusťte soubory pro nahrání</span></div>
     </template> -->
 
-  <div class="flex min-w-full min-h-full" @keyup.escape="goHome">
+  <div class="flex min-w-svw min-h-svh" @keyup.escape="goHome">
     <Navbar />
     <aside v-if="applicationStore.notifications.length" class="notifications">
       <ul class="flex flex-col-reverse gap-y-2">
@@ -71,10 +57,10 @@ function getZoom() {
         </li>
       </ul>
     </aside>
-    <!-- <div class="min-w-full min-h-full"> -->
+    <div class="flex flex-1">
       <Map />
       <MapControls />
-    <!-- </div> -->
+    </div>
   </div>
 
   <router-view />

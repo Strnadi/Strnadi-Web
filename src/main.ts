@@ -84,32 +84,9 @@ const handleResize = () => {
   if (currentIsDesktop !== initialIsDesktop) {
     window.location.reload();
   }
-
-  if (currentIsDesktop) {
-    const wrapper = document.querySelector("#app"); // document.getElementById('page-wrapper');
-    const zoom = window.devicePixelRatio;
-    console.log('Zoom level:', zoom);
-    const scale = 1 / zoom;
-
-    // Apply scale and correct width so layout doesn't collapse
-    // We set transform-origin to 0 0 to keep top-left anchored
-    wrapper.style.transformOrigin = '0 0';
-    wrapper.style.transform = `scale(${scale})`;
-
-    // To prevent horizontal scrollbars, expand the wrapper's width proportional to zoom:
-    wrapper.style.width = `${100 * zoom}vw`;
-
-    // Optional: adjust height similarly (depends on your layout)
-    wrapper.style.height = `${100 * zoom}vh`;
-
-    // wrapper.style.top = `${100 * zoom}%`;
-  }
 };
 
-window.addEventListener('resize', handleResize);
 desktopQuery.addEventListener('change', handleResize);
-handleResize();
-
 
 const removeUnlayoutedRoutes = (
   routes: RouteRecordRaw[],

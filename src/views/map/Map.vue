@@ -183,7 +183,7 @@ watch(
     <!-- These reactive variable changes will be catched in the store translated into flyTo calls  -->
     <l-map
       v-model:center="center"
-      class="w-full h-full"
+      class="w-screen h-screen"
       :zoom="zoom"
       :options="{ zoomControl: false }"
       @ready="onMapReady"
