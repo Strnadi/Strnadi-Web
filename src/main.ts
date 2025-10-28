@@ -87,20 +87,17 @@ const handleResize = () => {
 
   if (currentIsDesktop) {
     const wrapper = document.querySelector("#app"); // document.getElementById('page-wrapper');
-    const zoom = window.devicePixelRatio;
-    console.log('Zoom level:', zoom);
-    const scale = 1 / zoom;
 
     // Apply scale and correct width so layout doesn't collapse
     // We set transform-origin to 0 0 to keep top-left anchored
     wrapper.style.transformOrigin = '0 0';
-    wrapper.style.transform = `scale(${scale})`;
+    wrapper.style.transform = `scaleY(${screen.height / 1080})`;
 
     // To prevent horizontal scrollbars, expand the wrapper's width proportional to zoom:
-    wrapper.style.width = `${100 * zoom}vw`;
+    // wrapper.style.width = `${screen.width / 1920 * 100}vw`;
 
     // Optional: adjust height similarly (depends on your layout)
-    wrapper.style.height = `${100 * zoom}vh`;
+    // wrapper.style.height = `${screen.height / 1080 * 100}vh`;
 
     // wrapper.style.top = `${100 * zoom}%`;
   }
@@ -262,6 +259,7 @@ if (!import.meta.env.MODE) {
 routes = routes.guarded(welcomeGuard);
 
 // console.log(routes)
+// console.log((10 / document.querySelector("#decimeter").offsetWidth) * screen.width)
 
 const app = createApp(App);
 const router = createRouter({
