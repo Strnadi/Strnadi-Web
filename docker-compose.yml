@@ -25,6 +25,10 @@ services:
     environment:
       - NODE_ENV=${ENVIRONMENT:-production}
 
-proxy:
-  external: true
-  name: proxy
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: proxy
