@@ -6,6 +6,7 @@ import AccountIcon from '@/icons/interface/icon-profile.svg';
 import UploadIcon from '@/icons/interface/icon-upload.svg';
 import ListIcon from '@/icons/interface/icon-list.svg';
 import InfoIcon from '@/icons/interface/icon-info.svg';
+import DownloadIcon from '@/icons/interface/icon-download.svg';
 </script>
 
 <template>
@@ -38,6 +39,15 @@ import InfoIcon from '@/icons/interface/icon-info.svg';
       :class="{ 'bg-gray-100': $route.path.startsWith('/nahrat') }"
     >
       <UploadIcon />
+    </prefetch-link>
+
+    <prefetch-link
+      v-wave
+      to="/aplikace"
+      class="flex flex-1 justify-center items-center"
+      :class="{ 'bg-gray-100': $route.path.startsWith('/informace') }"
+    >
+      <DownloadIcon />
     </prefetch-link>
 
     <prefetch-link

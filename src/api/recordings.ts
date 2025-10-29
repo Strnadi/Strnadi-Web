@@ -37,6 +37,7 @@ export interface DetectedDialect {
   userGuessDialect: string | null;
   confirmedDialect: string | null;
   filteredRecordingPartId: number;
+  representant: boolean;
 }
 
 export interface FilteredPartModel {
