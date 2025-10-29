@@ -455,11 +455,10 @@ const currentPartIndex = ref(0);
               />
             </div>
             <div>
-              <label for="birdCount" class="block text-sm font-medium"
-                ><TranslatedText identifier="upload.bird_count_label" /> ({{
-                  uploadStore.birdCount
-                }})</label
-              >
+              <label for="birdCount" class="block text-sm font-medium">
+                <TranslatedText identifier="upload.bird_count_label" />
+                ({{ uploadStore.birdCount }})
+              </label>
               <input
                 id="birdCount"
                 v-model="uploadStore.birdCount"

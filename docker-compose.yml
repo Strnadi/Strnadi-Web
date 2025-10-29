@@ -1,5 +1,8 @@
+name: ${CONTAINER}
+
 services:
   web:
+    container_name: ${CONTAINER}
     build:
       context: .
       dockerfile: Dockerfile
@@ -11,15 +14,15 @@ services:
     labels:
       - traefik.enable=true
 
-      - traefik.http.routers.strnadi-web-http.rule=Host(`${HOST}`)
-      - traefik.http.routers.strnadi-web-http.entrypoints=web
-      - traefik.http.routers.strnadi-web-http.middlewares=redirect-to-https
+      - traefik.http.routers.${CONTAINER}-http.rule=Host(`${HOST}`)
+      - traefik.http.routers.${CONTAINER}-http.entrypoints=web
+      - traefik.http.routers.${CONTAINER}-http.middlewares=redirect-to-https
       - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
 
-      - traefik.http.routers.strnadi-web.rule=Host(`${HOST}`)
-      - traefik.http.routers.strnadi-web.entrypoints=websecure
-      - traefik.http.routers.strnadi-web.tls.certresolver=le
-      - traefik.http.services.strnadi-web.loadbalancer.server.port=80
+      - traefik.http.routers.${CONTAINER}.rule=Host(`${HOST}`)
+      - traefik.http.routers.${CONTAINER}.entrypoints=websecure
+      - traefik.http.routers.${CONTAINER}.tls.certresolver=le
+      - traefik.http.services.${CONTAINER}.loadbalancer.server.port=80
       - traefik.docker.network=proxy
 
     environment:
