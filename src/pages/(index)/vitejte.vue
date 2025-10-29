@@ -12,7 +12,16 @@ const route = useRoute();
 
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
-    <img src="/WIP.png" width="150px" />
+    <div class="flex flex-row items-center gap-x-10">
+      <img src="/WIP.png" width="150px" />
+      <div class="flex flex-col">
+        <h4>Kontakty</h4>
+        <a external="true" href="mailto:info@strnadi.cz" class="text-sm">info@strnadi.cz</a>
+        <a external="true" href="mailto:developers@strnadi.cz" class="text-sm"
+          >developers@strnadi.cz</a
+        >
+      </div>
+    </div>
     <h1 class="text-center">
       <TranslatedText identifier="project_name" />
     </h1>
@@ -54,16 +63,6 @@ const route = useRoute();
       >
         <TranslatedText identifier="buttons.about_us" />
       </PrefetchLink>
-    </div>
-
-    <h2 class="self-start">
-      <TranslatedText identifier="buttons.contacts" />
-    </h2>
-    <div class="flex flex-row gap-x-4">
-      <a external="true" href="mailto:info@strnadi.cz">info@strnadi.cz</a>
-      <a external="true" href="mailto:developers@strnadi.cz"
-        >developers@strnadi.cz</a
-      >
     </div>
   </div>
 </template>
