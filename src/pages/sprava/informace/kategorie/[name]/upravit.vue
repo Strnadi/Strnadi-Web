@@ -17,6 +17,7 @@ import ListDeselect from '@/components/ListDeselect.vue';
 import draggable from 'vuedraggable';
 import { accountStore } from '@/state/AccountStore.ts';
 import { useRouter } from 'vue-router';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
 
 const name = useRouteParams<string>('name');
 const router = useRouter();
@@ -59,28 +60,33 @@ const { mutate: mutateCategory } = useMutation({
 
 <template>
   <div class="flex flex-col w-full gap-y-2" @dragenter.prevent.stop>
-    <h1>Úprava kategorie {{ newName }}</h1>
+    <h1>
+      <TranslatedText identifier="admin.articles.edit_category_title" />
+      {{ newName }}
+    </h1>
     <div class="w-full">
-      <label for="title" class="block text-sm font-medium mb-1"
-        >Nadpis kategorie</label
-      >
+      <label for="title" class="block text-sm font-medium mb-1">
+        <TranslatedText identifier="admin.articles.category_name_label" />
+      </label>
       <input
         id="title"
         v-model="newName"
         type="text"
-        placeholder="Nadpis"
+        :placeholder="t('placeholders.title')"
         class="w-full p-2 border rounded"
       />
     </div>
     <div class="w-full">
-      <label for="description" class="block text-sm font-medium mb-1"
-        >Popis kategorie</label
-      >
+      <label for="description" class="block text-sm font-medium mb-1">
+        <TranslatedText
+          identifier="admin.articles.category_description_label"
+        />
+      </label>
       <input
         id="description"
         v-model="description"
         type="text"
-        placeholder="Popisek"
+        :placeholder="t('placeholders.description')"
         class="w-full p-2 border rounded"
       />
     </div>
@@ -88,7 +94,9 @@ const { mutate: mutateCategory } = useMutation({
     <draggable v-if="categoryArticles" v-model="categoryArticles" item-key="id">
       <template #item="{ element: article }">
         <div class="flex flex-row gap-x-2">
-          <button>Smazat</button>
+          <button>
+            <TranslatedText identifier="buttons.delete" />
+          </button>
           <span>{{ article.name }} (ID: {{ article.id }})</span>
         </div>
       </template>
@@ -105,7 +113,8 @@ const { mutate: mutateCategory } = useMutation({
         </div>
       </template>
     </draggable>
-
-    <button class="primary p-2" @click="mutateCategory">Uložit</button>
+    <button class="primary p-2" @click="mutateCategory">
+      <TranslatedText identifier="buttons.save" />
+    </button>
   </div>
 </template>

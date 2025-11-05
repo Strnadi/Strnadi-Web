@@ -19,6 +19,16 @@ import type { RecordingModel } from '@/api/recordings';
 import { getUserInfo } from '@/api/account';
 import { accountStore } from '@/state/AccountStore';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
+import { DialectColors } from '@/views/map/RecordingsMap.vue';
+
+// Helper to format a millisecond duration as "mm:ss,SSS"
+function formatDuration(durationMs: number): string {
+  const minutes = Math.floor(durationMs / 60000);
+  const seconds = Math.floor((durationMs % 60000) / 1000);
+  const millis = durationMs % 1000;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')},${String(millis).padStart(3, '0')}`;
+}
 
 const zipFileName = `strnadi-${new Date().toUTCString()}.zip`;
 
@@ -60,7 +70,7 @@ function isPartSelected(recordingId: number, partId: number): boolean {
 
 async function downloadSelectedRecordings() {
   if (!hasSelectedItems.value) {
-    alert('Nebyla vybrána žádná část nahrávky.');
+    alert(t('admin.recordings.alerts.no_part_selected'));
     return;
   }
 
@@ -105,7 +115,7 @@ async function downloadSelectedRecordings() {
       recordingMetaContent += `Note: ${recording.note ?? 'N/A'}\n`;
       recordingFolder.file('meta.txt', recordingMetaContent);
 
-      for (const { partId } of partsToDownload) {
+      for (const { partId } of partsToDownload ?? []) {
         const part = recording.parts?.find((p) => p.id === partId);
         if (!part) {
           console.warn(
@@ -174,7 +184,7 @@ async function downloadSelectedRecordings() {
     URL.revokeObjectURL(downloadUrl);
   } catch (error) {
     console.error('Error creating or downloading zip file:', error);
-    alert('Došlo k chybě při vytváření ZIP souboru.');
+    alert(t('admin.recordings.alerts.zip_failed'));
   } finally {
     isDownloading.value = false;
   }
@@ -182,23 +192,36 @@ async function downloadSelectedRecordings() {
 </script>
 
 <template>
-  <h1>Všechny nahrávky</h1>
+  <h1>
+    <TranslatedText identifier="admin.recordings.title" />
+  </h1>
 
   <template v-if="isLoading">
-    <p>Načítání...</p>
+    <p>
+      <TranslatedText identifier="states.loading" />
+    </p>
   </template>
 
   <template v-else-if="isError">
-    <h1>Chyba</h1>
-    <p>Nelze načíst nahrávky.</p>
+    <h1>
+      <TranslatedText identifier="common.error_prefix" />
+    </h1>
+    <p>
+      <TranslatedText identifier="errors.recordings.loading" />
+    </p>
   </template>
 
-  <p v-else-if="!recordings || recordings.length === 0">Zatím zde nic není.</p>
+  <p v-else-if="!recordings || recordings.length === 0">
+    <TranslatedText identifier="empty" />
+  </p>
 
   <template v-else>
-    <p>Celkový počet nahrávek: {{ recordings.length }}</p>
     <p>
-      Celkový počet částí:
+      <TranslatedText identifier="admin.recordings.total_recordings_label" />
+      {{ recordings.length }}
+    </p>
+    <p>
+      <TranslatedText identifier="admin.recordings.total_parts_label" />
       {{
         recordings.reduce(
           (acc, recording) => acc + (recording.parts?.length || 0),
@@ -212,7 +235,13 @@ async function downloadSelectedRecordings() {
       :disabled="!hasSelectedItems || isDownloading"
       @click="downloadSelectedRecordings"
     >
-      {{ isDownloading ? 'Stahování...' : 'Stáhnout vybrané' }}
+      <TranslatedText
+        :identifier="
+          isDownloading
+            ? 'admin.recordings.downloading'
+            : 'admin.recordings.download_selected'
+        "
+      />
     </button>
 
     <ul class="flex flex-col-reverse flex-wrap gap-x-3 gap-y-3">
@@ -221,9 +250,25 @@ async function downloadSelectedRecordings() {
         :key="recording.id"
         class="flex flex-col border p-3 rounded-md shadow-sm"
       >
-        <h2 class="text-lg font-semibold mb-1">
-          {{ recording.name || `Nahrávka ID: ${recording.id}` }}
-        </h2>
+        <div class="flex flex-row justify-between items-center">
+          <div class="flex flex-row gap-x-2 items-center">
+            <input
+              type="checkbox"
+              class="form-checkbox h-5 w-5 text-blue-600"
+              :checked="recordings.filter(r => r.id === recording.id).every(r => r.parts && r.parts.length > 0 && r.parts?.every(p => isPartSelected(r.id, p.id)))"
+              @change="recordings.filter(r => r.id === recording.id).forEach(r => r.parts?.forEach(p => togglePartSelection(r.id, p.id)))"
+            />
+            <h2 class="text-lg font-semibold mb-1">
+            {{
+              recording.name || `${t('recordings.id_prefix')} ${recording.id}`
+            }}
+            </h2>
+          </div>
+
+          <prefetch-link :to="`/mapa/nahravka/${recording.id}/upravit-dialekt`" class="button-secondary p-2 px-4">
+            <TranslatedText identifier="admin.recordings.edit_dialects" />
+          </prefetch-link>
+        </div>
         <div class="flex flex-row justify-between">
           <!-- <small class="mb-2 text-gray-600">ID: {{ (await getUserInfo(accountStore.user!.id, recording.userId)) }}</small> -->
           <small class="mb-2 text-gray-600">ID: {{ recording.id }}</small>
@@ -240,7 +285,9 @@ async function downloadSelectedRecordings() {
               class="form-checkbox h-5 w-5 text-blue-600"
               @change="togglePartSelection(recording.id, part.id)"
             />
-            <span class="text-sm">Část #{{ part.id }}</span>
+            <span class="text-sm">
+              {{ t('admin.recordings.part_prefix') }}{{ part.id }}
+            </span>
             <TextualCoords
               v-if="
                 part.gpsLatitudeStart !== undefined &&
@@ -251,18 +298,30 @@ async function downloadSelectedRecordings() {
               type="municipality_part"
               class="text-xs text-gray-500"
             />
-            <span v-else class="text-xs text-gray-400">(GPS data chybí)</span>
+            <span v-else class="text-xs text-gray-400">
+              <TranslatedText identifier="admin.recordings.no_gps_data" />
+            </span>
           </li>
         </ul>
         <p v-else class="text-sm text-gray-500">
-          Tato nahrávka nemá žádné části.
+          <TranslatedText identifier="admin.recordings.no_parts" />
         </p>
 
         <hr />
 
-        <ul v-for="fr in filteredRecordings" :key="fr.id">
-          <li>
-            <!-- <MultiColorSquare size="16px" :colors="fr.detectedDialects.map(d => d.confirmedDialectColor)" /> -->
+        <ul>
+          <li
+            v-for="fr in filteredRecordings?.filter(fr => fr.recordingId === recording.id)"
+            :key="fr.id"
+            class="flex flex-row gap-x-2 items-center py-1 border-t border-gray-200 first:border-t-0"
+          >
+            <MultiColorSquare size="16px" :colors="fr.detectedDialects?.map(d => DialectColors[d.confirmedDialect as keyof typeof DialectColors]) ?? []" />
+            <span class="text-sm">
+              {{ formatDuration(new Date(fr.startDate).getTime() - new Date(recording.parts?.[0]?.startDate ?? 0).getTime()) }} - {{ formatDuration(new Date(fr.endDate).getTime() - new Date(recording.parts?.[0]?.startDate ?? 0).getTime()) }}
+            </span>
+            <span class="text-sm">
+              {{ fr.representantFlag ? 'Reprezentant' : 'Nereprezentant' }}
+            </span>
           </li>
         </ul>
       </li>

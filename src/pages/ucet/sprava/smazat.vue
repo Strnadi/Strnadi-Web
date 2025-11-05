@@ -4,20 +4,24 @@ meta:
 </route>
 
 <template>
-  <h1>Smazání účtu</h1>
-  <h2>Opravdu si chcete smazat účet? Tuto akci nelze vrátit zpět.</h2>
+  <h1>
+    <TranslatedText identifier="account.delete.title" />
+  </h1>
+  <h2>
+    <TranslatedText identifier="account.delete.prompt" />
+  </h2>
 
   <div class="flex flex-row items-center gap-x-2">
     <input id="agreement" v-model="enabled" type="checkbox" />
     <label for="agreement">
-      <span class="text-sm"
-        >Opravdu si chci smazat účet. Nahrávky zůstávají v databázi.</span
-      >
+      <span class="text-sm">
+        <TranslatedText identifier="account.delete.confirmation_label" />
+      </span>
     </label>
   </div>
 
   <button class="primary p-2" :disabled="!enabled" @click="() => mutate()">
-    Smazat účet
+    <TranslatedText identifier="buttons.delete_account" />
   </button>
 </template>
 
@@ -27,6 +31,7 @@ import { accountStore } from '@/state/AccountStore';
 import { useMutation } from '@tanstack/vue-query';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import TranslatedText from '@/components/TranslatedText.vue';
 
 const enabled = ref(false);
 

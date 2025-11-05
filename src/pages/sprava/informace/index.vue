@@ -7,6 +7,7 @@ meta:
 import { getArticleCategories, getArticles } from '@/api/articles';
 import { useQuery } from '@tanstack/vue-query';
 import { computed } from 'vue';
+import TranslatedText from '@/components/TranslatedText.vue';
 
 const { data: categories } = useQuery({
   queryKey: ['categories'],
@@ -35,7 +36,9 @@ const uncategorizedArticles = computed(() => {
 </script>
 
 <template>
-  <h1>Správa informací</h1>
+  <h1>
+    <TranslatedText identifier="admin.articles.manage_title" />
+  </h1>
 
   <div class="flex flex-col gap-y-4">
     <!-- Categories Management Header -->
@@ -44,13 +47,13 @@ const uncategorizedArticles = computed(() => {
         to="/sprava/informace/kategorie/nova"
         class="button-secondary px-2 py-1"
       >
-        Nová kategorie
+        <TranslatedText identifier="admin.articles.new_category" />
       </router-link>
       <router-link
         to="/sprava/informace/prispevky/novy"
         class="button-secondary px-2 py-1 text-sm"
       >
-        Nový příspěvek
+        <TranslatedText identifier="admin.articles.new_article" />
       </router-link>
     </div>
 
@@ -76,14 +79,14 @@ const uncategorizedArticles = computed(() => {
               class="button-secondary m-auto p-2"
               @click.stop
             >
-              Upravit
+              <TranslatedText identifier="buttons.edit" />
             </router-link>
             <router-link
               :to="`/sprava/informace/kategorie/${category.name}/smazat`"
               class="button-danger m-auto p-2"
               @click.stop
             >
-              Smazat
+              <TranslatedText identifier="buttons.delete" />
             </router-link>
           </div>
         </summary>
@@ -122,7 +125,7 @@ const uncategorizedArticles = computed(() => {
             </li>
           </ul>
           <p v-else class="text-gray-500 italic">
-            Žádné příspěvky v této kategorii
+            <TranslatedText identifier="admin.articles.no_articles_in_category" />
           </p>
         </div>
       </details>
@@ -136,10 +139,14 @@ const uncategorizedArticles = computed(() => {
           class="flex flex-row justify-between gap-x-2 p-3 cursor-pointer hover:bg-gray-50"
         >
           <div class="flex flex-col w-full justify-between">
-            <span class="font-semibold">Nezařazené příspěvky</span>
-            <span class="italic text-sm text-gray-600"
-              >Příspěvky bez kategorie</span
-            >
+            <span class="font-semibold">
+              <TranslatedText identifier="admin.articles.uncategorized.title" />
+            </span>
+            <span class="italic text-sm text-gray-600">
+              <TranslatedText
+                identifier="admin.articles.uncategorized.description"
+              />
+            </span>
           </div>
         </summary>
 
@@ -162,13 +169,13 @@ const uncategorizedArticles = computed(() => {
                   :to="`/sprava/informace/prispevky/${article.id}/upravit`"
                   class="button-secondary m-auto p-2"
                 >
-                  Upravit
+                  <TranslatedText identifier="buttons.edit" />
                 </router-link>
                 <router-link
                   :to="`/sprava/informace/prispevky/${article.id}/smazat`"
                   class="button-danger m-auto p-2"
                 >
-                  Smazat
+                  <TranslatedText identifier="buttons.delete" />
                 </router-link>
               </div>
             </li>

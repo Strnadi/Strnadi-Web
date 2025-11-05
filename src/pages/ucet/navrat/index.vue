@@ -8,6 +8,7 @@ import { onMounted } from 'vue';
 import { useCountdown } from '@vueuse/core';
 import { type OAuthPopupResult } from '@/components/OAuthButton.vue';
 import * as jose from 'jose';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
 
 const SuccessTimeout = 5; // seconds
 
@@ -63,7 +64,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <h1>Návrat do aplikace</h1>
-  <span>Nyní se můžete bezpečně vrátit zpět do aplikace.</span>
-  <span>Toto okno se zavře automaticky za {{ remaining }}.</span>
+  <h1>
+    <TranslatedText identifier="account.return.title" />
+  </h1>
+  <span>
+    <TranslatedText identifier="account.return.message" />
+  </span>
+  <span>
+    {{ t('account.return.auto_close') }} {{ remaining }}s.
+  </span>
 </template>

@@ -14,7 +14,7 @@ import { registerStore } from '@/pages/ucet/(prihlaseni)/registrace.vue';
 
 import AuthButtons from '@/views/AuthButtons.vue';
 import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue';
-import TranslatedText from '@/components/TranslatedText.vue';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
 
 const router = useRouter();
 
@@ -116,23 +116,30 @@ const errorHandler = (error: string) => {
 </script>
 
 <template>
-  <h1>Přihlášení</h1>
+  <h1>
+    <TranslatedText identifier="auth.login.title" />
+  </h1>
   <div class="flex flex-col items-center gap-y-6">
-    <div v-if="error">Chyba: {{ error }}</div>
-    <div v-if="isPending">Načítání...</div>
+    <div v-if="error">
+      <TranslatedText identifier="common.error_prefix" />
+      <span class="ml-1">{{ error }}</span>
+    </div>
+    <div v-if="isPending">
+      <TranslatedText identifier="states.loading" />
+    </div>
     <div v-else class="flex flex-col items-center gap-y-6 w-full">
       <div class="flex flex-col items-center gap-y-2 max-lg:w-full">
         <div class="flex flex-col gap-x-2 gap-y-4 w-full">
           <div class="w-full">
-            <label for="email" class="block text-sm font-medium mb-1"
-              >E-Mail</label
-            >
+            <label for="email" class="block text-sm font-medium mb-1">
+              <TranslatedText identifier="labels.email" />
+            </label>
             <input
               id="email"
               v-model="email"
               name="mail"
               type="email"
-              placeholder="E-Mail"
+              :placeholder="t('placeholders.email')"
               class="w-full p-2 border rounded"
             />
           </div>
@@ -140,7 +147,7 @@ const errorHandler = (error: string) => {
             <RevealablePasswordInput
               v-model="password"
               name="pass"
-              placeholder="Heslo"
+              :placeholder="t('placeholders.password')"
               class="w-full p-2 border rounded"
             >
               <div

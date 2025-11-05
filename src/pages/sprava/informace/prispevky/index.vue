@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getArticles } from '@/api/articles';
 import { useQuery } from '@tanstack/vue-query';
+import TranslatedText from '@/components/TranslatedText.vue';
 
 const { data: articles } = useQuery({
   queryKey: ['articles'],
@@ -10,12 +11,14 @@ const { data: articles } = useQuery({
 
 <template>
   <div class="flex flex-row items-center justify-between">
-    <h2>Příspěvky</h2>
+    <h2>
+      <TranslatedText identifier="admin.articles.posts_title" />
+    </h2>
     <router-link
       to="/sprava/informace/prispevky/novy"
       class="button-secondary px-2 py-1"
     >
-      Nový příspěvek
+      <TranslatedText identifier="admin.articles.new_article" />
     </router-link>
   </div>
   <ul class="flex flex-col gap-y-3">
@@ -35,13 +38,13 @@ const { data: articles } = useQuery({
           :to="`/sprava/informace/prispevky/${article.id}/upravit`"
           class="button-secondary m-auto p-2"
         >
-          Upravit
+          <TranslatedText identifier="buttons.edit" />
         </router-link>
         <router-link
           :to="`/sprava/informace/prispevky/${article.id}/smazat`"
           class="button-danger m-auto p-2"
         >
-          Smazat
+          <TranslatedText identifier="buttons.delete" />
         </router-link>
       </div>
     </li>

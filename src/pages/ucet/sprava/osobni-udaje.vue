@@ -14,6 +14,7 @@ import LocationSearch from '@/components/map/LocationSearch.vue';
 import { accountStore } from '@/state/AccountStore';
 import { useMutation } from '@tanstack/vue-query';
 import { ref } from 'vue';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
 
 const name = ref(accountStore.user?.firstName ?? '');
 const surname = ref(accountStore.user?.lastName ?? '');
@@ -83,67 +84,80 @@ const submit = () => {
 </script>
 
 <template>
-  <h1>Osobní údaje</h1>
+  <h1>
+    <TranslatedText identifier="account.personal_data.title" />
+  </h1>
   <template v-if="isPending">
-    <p>Ukládání...</p>
+    <p>
+      <TranslatedText identifier="states.saving" />
+    </p>
   </template>
   <template v-if="error">
-    <p>Chyba: {{ error!.message }}</p>
+    <p>
+      <TranslatedText identifier="common.error_prefix" />
+      <span class="ml-1">{{ error!.message }}</span>
+    </p>
   </template>
   <!-- <template v-if="error">
     <h1>Chyba</h1>
     <p>{{ error!.message }}</p>
     <button @click="save" class="secondary p-2 w-full">Zkusit znovu</button>
   </template> -->
-  <h2>Osobní údaje</h2>
+  <h2>
+    <TranslatedText identifier="account.personal_data.title" />
+  </h2>
   <form ref="form" class="flex flex-col gap-y-2" @submit.prevent="submit">
     <div>
-      <label for="name" class="block text-sm font-medium mb-1">Jméno</label>
+      <label for="name" class="block text-sm font-medium mb-1">
+        <TranslatedText identifier="labels.name" />
+      </label>
       <input
         id="name"
         v-model="name"
         name="name"
         type="text"
-        placeholder="Jméno"
+        :placeholder="t('placeholders.name')"
         class="w-full p-2 border rounded"
         required
       />
     </div>
     <div>
-      <label for="surname" class="block text-sm font-medium mb-1"
-        >Příjmení</label
-      >
+      <label for="surname" class="block text-sm font-medium mb-1">
+        <TranslatedText identifier="labels.surname" />
+      </label>
       <input
         id="surname"
         v-model="surname"
         name="surname"
         type="text"
-        placeholder="Příjmení"
+        :placeholder="t('placeholders.surname')"
         class="w-full p-2 border rounded"
         required
       />
     </div>
     <div>
-      <label for="nickname" class="block text-sm font-medium mb-1"
-        >Přezdívka</label
-      >
+      <label for="nickname" class="block text-sm font-medium mb-1">
+        <TranslatedText identifier="labels.nickname" />
+      </label>
       <input
         id="nickname"
         v-model="nickname"
         name="nickname"
         type="text"
-        placeholder="Přezdívka"
+        :placeholder="t('placeholders.nickname')"
         class="w-full p-2 border rounded"
       />
     </div>
     <div>
-      <label for="zipcode" class="block text-sm font-medium mb-1">PSČ</label>
+      <label for="zipcode" class="block text-sm font-medium mb-1">
+        <TranslatedText identifier="labels.postal_code" />
+      </label>
       <input
         id="zipcode"
         v-model="zipcode"
         name="zipcode"
         type="number"
-        placeholder="PSČ"
+        :placeholder="t('placeholders.postal_code')"
         class="w-full p-2 border rounded"
       />
     </div>
@@ -151,27 +165,33 @@ const submit = () => {
       v-model="town"
       v-model:text="town"
       class="w-full"
-      :placeholder="'Obec, město'"
+      :placeholder="t('placeholders.city')"
     />
-    <button class="secondary py-1 px-2 text-sm">Uložit</button>
+    <button class="secondary py-1 px-2 text-sm">
+      <TranslatedText identifier="buttons.save" />
+    </button>
   </form>
 
   <hr class="my-4 px-8" />
 
-  <h2>Heslo</h2>
+  <h2>
+    <TranslatedText
+      identifier="account.personal_data.password_section_title"
+    />
+  </h2>
   <div class="flex flex-col gap-y-2">
     <RevealablePasswordInput v-model="password">
-      Heslo
+      <TranslatedText identifier="labels.password" />
     </RevealablePasswordInput>
     <RevealablePasswordInput v-model="passwordAgain">
-      Heslo znovu
+      <TranslatedText identifier="labels.password_confirm" />
     </RevealablePasswordInput>
     <button
       class="primary p-2 w-full"
       :disabled="!passwordAgain || passwordAgain !== password"
       @click="submitPasswordChange"
     >
-      Změnit heslo
+      <TranslatedText identifier="buttons.change_password" />
     </button>
   </div>
 </template>

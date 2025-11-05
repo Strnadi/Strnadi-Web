@@ -25,7 +25,9 @@ console.log('Here');
 </script>
 
 <template>
-  <h1>Moje nahrávky</h1>
+  <h1>
+    <TranslatedText identifier="account.my_recordings.title" />
+  </h1>
   <template v-if="isLoading">
     <TranslatedText identifier="loading" />...
   </template>
@@ -41,7 +43,9 @@ console.log('Here');
         >
           <div class="flex flex-row justify-between">
             <span class="text-lg font-bold">{{ rec.name }}</span>
-            <span class="text-lime-400">Nahráno</span>
+            <span class="text-lime-400">
+              <TranslatedText identifier="recordings.status.uploaded" />
+            </span>
           </div>
           <div class="flex flex-row justify-between">
             <span />

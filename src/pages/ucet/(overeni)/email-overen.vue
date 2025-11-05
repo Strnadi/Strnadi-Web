@@ -5,6 +5,7 @@ meta:
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import TranslatedText from '@/components/TranslatedText.vue';
 
 const isMobile = computed(() => {
   const userAgent =
@@ -17,14 +18,20 @@ const isMobile = computed(() => {
   <div class="flex flex-col items-center gap-y-6 w-full">
     <div class="flex flex-col items-center gap-y-3">
       <img src="/logo-no-text.svg" />
-      <h2>Nářečí českých strnadů</h2>
+      <h2>
+        <TranslatedText identifier="project_name" />
+      </h2>
     </div>
-    <span class="text-xl text-center"> Váš e-mail byl úspěšně ověřen. </span>
+    <span class="text-xl text-center">
+      <TranslatedText identifier="verification.email.success_message" />
+    </span>
     <a
       v-if="isMobile"
       class="button-primary p-2 w-full text-center"
       href="com.delta.strnadi://"
-      >Zpět do aplikace</a
+      >
+      <TranslatedText identifier="buttons.back_to_app" />
+    </a
     >
     <PrefetchLink
       v-else
@@ -32,7 +39,7 @@ const isMobile = computed(() => {
       :replace="true"
       to="/"
     >
-      Dokončit registraci
+      <TranslatedText identifier="buttons.complete_registration" />
     </PrefetchLink>
   </div>
 </template>

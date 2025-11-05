@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Close from '@/icons/interface/icon-close.svg';
+import Back from '@/icons/interface/icon-back.svg';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -17,6 +18,13 @@ const closePopup = () => {
   <router-view v-slot="{ Component }">
     <Transition>
       <aside class="center" @keydown.escape="closePopup">
+        <button
+          class="small absolute top-5 left-5 z-10 rounded-2xl"
+          @click="goBack"
+        >
+          <Back />
+        </button>
+
         <button
           class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl"
           @click="closePopup"
@@ -45,6 +53,7 @@ aside.center {
   @apply right-0;
   @apply mx-auto;
   @apply w-fit;
+  @apply max-w-fit;
   @apply desktop:max-w-3/4;
   @apply z-[7];
   @apply rounded-lg;

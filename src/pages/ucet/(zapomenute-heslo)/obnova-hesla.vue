@@ -9,6 +9,7 @@ import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue';
 import { useMutation } from '@tanstack/vue-query';
 import { useRouteQuery } from '@vueuse/router';
 import { ref } from 'vue';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
 
 const token = useRouteQuery('token');
 const userId = useRouteQuery('userId');
@@ -42,16 +43,21 @@ const submitPasswordChange = () => {
 </script>
 
 <template>
-  <h1 class="text-center">Reset hesla</h1>
+  <h1 class="text-center">
+    <TranslatedText identifier="auth.reset_password.reset_title" />
+  </h1>
   <div class="flex flex-col items-center gap-y-6 w-full">
-    <template v-if="isError"> Chyba: {{ error!.message }} </template>
+    <template v-if="isError">
+      <TranslatedText identifier="common.error_prefix" />
+      <span class="ml-1">{{ error!.message }}</span>
+    </template>
 
     <div class="flex flex-col items-center gap-y-6 w-full">
       <RevealablePasswordInput v-model="password">
-        Heslo
+        <TranslatedText identifier="labels.password" />
       </RevealablePasswordInput>
       <RevealablePasswordInput v-model="passwordConfirm">
-        Heslo znovu
+        <TranslatedText identifier="labels.password_confirm" />
       </RevealablePasswordInput>
       <button
         v-if="!(isPending || isSuccess)"
@@ -61,14 +67,14 @@ const submitPasswordChange = () => {
         "
         @click="submitPasswordChange"
       >
-        Změnit heslo
+        <TranslatedText identifier="buttons.change_password" />
       </button>
       <prefetch-link
         v-else-if="isSuccess"
         to="/"
         class="button-secondary p-2 w-full"
       >
-        Přejít domů
+        <TranslatedText identifier="buttons.go_home" />
       </prefetch-link>
     </div>
   </div>

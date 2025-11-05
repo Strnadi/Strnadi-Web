@@ -16,6 +16,7 @@ import { accountStore } from '@/state/AccountStore';
 import { useRouter } from 'vue-router';
 import ListDeselect from '@/components/ListDeselect.vue';
 import draggable from 'vuedraggable';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
 
 const router = useRouter();
 
@@ -56,16 +57,32 @@ const { mutate: submitCategory } = useMutation({
 
 <template>
   <div class="flex flex-col gap-y-2">
-    <h1>Nová kategorie</h1>
-    <input v-model="name" type="text" placeholder="Název" class="p-2" />
-    <input v-model="label" type="text" placeholder="Popis" class="p-2" />
+    <h1>
+      <TranslatedText identifier="admin.articles.new_category" />
+    </h1>
+    <input
+      v-model="name"
+      type="text"
+      :placeholder="t('placeholders.title')"
+      class="p-2"
+    />
+    <input
+      v-model="label"
+      type="text"
+      :placeholder="t('placeholders.description')"
+      class="p-2"
+    />
     <div>
-      <h2>Zahrnuté příspěvky</h2>
+      <h2>
+        <TranslatedText identifier="admin.articles.included_articles" />
+      </h2>
 
       <draggable v-if="categoryArticles" v-model="categoryArticles" item-key="id">
         <template #item="{ element: article }">
           <div class="flex flex-row gap-x-2">
-            <button>Smazat</button>
+            <button>
+              <TranslatedText identifier="buttons.delete" />
+            </button>
             <span>{{ articles?.find(a => a.id === article)?.name }} (ID: {{ articles?.find(a => a.id === article)?.id }})</span>
           </div>
         </template>
@@ -84,6 +101,8 @@ const { mutate: submitCategory } = useMutation({
       </draggable>
 
     </div>
-    <button @click="submitCategory" class="primary p-2">Přidat</button>
+    <button @click="submitCategory" class="primary p-2">
+      <TranslatedText identifier="buttons.add" />
+    </button>
   </div>
 </template>

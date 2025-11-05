@@ -15,7 +15,7 @@
     >
       <canvas
         ref="canvasRef"
-        class="absolute top-0 left-0 block"
+        class="absolute top-0 left-0 block -scale-y-100"
         :width="containerWidth"
         :height="containerHeight"
         :class="canvasCursorClass"
@@ -154,18 +154,97 @@
         </template>
 
         <!-- Live‐drag selection box -->
-        <div
-          v-if="isSelecting"
-          class="range-fill temp absolute pointer-events-none rounded"
-          :style="{
-            left: `${Math.min(selectStartXPx, selectCurrentXPx)}px`,
-            width: `${Math.abs(selectCurrentXPx - selectStartXPx)}px`,
-            backgroundColor: nextRangeColor,
-            top: `${margin.top}px`,
-            height: `${containerHeight - margin.top - margin.bottom}px`,
-            zIndex: 40
-          }"
-        />
+        <template v-if="isSelecting">
+          <div
+            class="range-fill temp absolute pointer-events-none rounded"
+            :style="{
+              left: `${Math.min(selectStartXPx, selectCurrentXPx)}px`,
+              width: `${Math.abs(selectCurrentXPx - selectStartXPx)}px`,
+              backgroundColor: nextRangeColor,
+              top: `${margin.top}px`,
+              height: `${containerHeight - margin.top - margin.bottom}px`,
+              zIndex: 40
+            }"
+          />
+          <!-- Start handle for temporary selection -->
+          <div
+            class="range-handle start absolute opacity-70 transition-opacity pointer-events-none"
+            :style="{
+              left: `${Math.min(selectStartXPx, selectCurrentXPx)}px`,
+              top: `${margin.top}px`,
+              height: `${containerHeight - margin.top - margin.bottom}px`,
+              transform: 'translateX(-50%)',
+              width: props.readonly ? '2px' : '20px',
+              background: props.readonly ? nextRangeColor : 'transparent',
+              zIndex: 41
+            }"
+          >
+            <template v-if="!props.readonly">
+              <div class="relative w-full h-full">
+                <!-- Vertical connecting line -->
+                <div
+                  class="absolute top-0 left-1/2 -translate-x-1/2 h-full"
+                  :style="{
+                    width: '2px',
+                    backgroundColor: nextRangeColor
+                  }"
+                />
+                <!-- Capsule -->
+                <div
+                  class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                  :style="{
+                    width: '16px',
+                    height: `${(containerHeight - margin.top - margin.bottom) * (2 / 3)}px`,
+                    backgroundColor: 'white',
+                    border: `2px solid ${nextRangeColor}`,
+                    borderRadius: '10px',
+                    boxSizing: 'content-box',
+                    zIndex: 1
+                  }"
+                />
+              </div>
+            </template>
+          </div>
+          <!-- End handle for temporary selection -->
+          <div
+            class="range-handle end absolute opacity-70 transition-opacity pointer-events-none"
+            :style="{
+              left: `${Math.min(selectStartXPx, selectCurrentXPx) + Math.abs(selectCurrentXPx - selectStartXPx)}px`,
+              top: `${margin.top}px`,
+              height: `${containerHeight - margin.top - margin.bottom}px`,
+              transform: 'translateX(-50%)',
+              width: props.readonly ? '2px' : '20px',
+              background: props.readonly ? nextRangeColor : 'transparent',
+              zIndex: 41
+            }"
+          >
+            <template v-if="!props.readonly">
+              <div class="relative w-full h-full">
+                <!-- Vertical connecting line -->
+                <div
+                  class="absolute top-0 left-1/2 -translate-x-1/2 h-full"
+                  :style="{
+                    width: '2px',
+                    backgroundColor: nextRangeColor
+                  }"
+                />
+                <!-- Capsule -->
+                <div
+                  class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                  :style="{
+                    width: '16px',
+                    height: `${(containerHeight - margin.top - margin.bottom) * (2 / 3)}px`,
+                    backgroundColor: 'white',
+                    border: `2px solid ${nextRangeColor}`,
+                    borderRadius: '10px',
+                    boxSizing: 'content-box',
+                    zIndex: 1
+                  }"
+                />
+              </div>
+            </template>
+          </div>
+        </template>
       </div>
 
       <!-- Progress line -->
@@ -185,7 +264,7 @@
         <div
           class="spinner w-10 h-10 border-4 border-gray-200 border-l-black rounded-full animate-spin"
         />
-        <span>Chviličku strpení prosím...</span>
+        <span>Načítání...</span>
       </div>
     </div>
 
@@ -239,28 +318,28 @@
         :disabled="isPlaying || !isLoaded"
         @click="playAudio"
       >
-        {{ isPaused || currentTime > 0 ? 'Pokračovat' : 'Přehrát' }}
+        {{ isPaused || currentTime > 0 ? t('common.buttons.resume') : t('common.buttons.play') }}
       </button>
       <button
         class="px-3 py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300"
         :disabled="!isPlaying || !isLoaded"
         @click="pauseAudio"
       >
-        Pozastavit
+        {{ t('common.buttons.pause') }}
       </button>
       <button
         class="px-3 py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300"
         :disabled="!isLoaded || (!isPlaying && !isPaused)"
         @click="stopAudio"
       >
-        Zastavit
+        {{ t('common.buttons.stop') }}
       </button>
       <button
         class="px-3 py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300"
         :disabled="!isLoaded"
         @click="rewindToAbsoluteStart"
       >
-        Přehrát znovu
+        {{ t('common.buttons.rewind') }}
       </button>
     </div>
 
@@ -276,7 +355,7 @@
           :disabled="autoScroll"
           class="mr-1 align-middle"
         />
-        Jen zobrazená oblast
+        {{ t('common.playback_options.play_in_viewport_only') }}
       </label>
       <label class="whitespace-nowrap text-sm">
         <input
@@ -285,7 +364,7 @@
           :disabled="autoScroll || !isProgressInSelection"
           class="mr-1 align-middle"
         />
-        Jen výběr
+        {{ t('common.playback_options.play_in_selection_only') }}
       </label>
       <label class="whitespace-nowrap text-sm">
         <input
@@ -293,11 +372,11 @@
           type="checkbox"
           class="mr-1 align-middle"
         />
-        Opakovat
+        {{ t('common.playback_options.loop_playback') }}
       </label>
       <label class="whitespace-nowrap text-sm">
         <input v-model="autoScroll" type="checkbox" class="mr-1 align-middle" />
-        Automatický posun
+        {{ t('common.playback_options.auto_scroll') }}
       </label>
     </div>
 
@@ -308,7 +387,7 @@
         v-if="spectrogramData.length > 0 && maxOffsetIndex > 0"
         class="pan-scrollbar h-5 flex items-center space-x-2"
       >
-        <span class="text-xs w-10 text-right shrink-0">Posun:</span>
+        <span class="text-xs w-10 text-right shrink-0">{{ t('common.playback_options.pan_scrollbar_label') }}:</span>
         <div
           ref="panTrackRef"
           class="pan-track flex-1 h-3 bg-gray-300 rounded relative cursor-pointer"
@@ -348,7 +427,7 @@
         v-else-if="spectrogramData.length > 0"
         class="pan-scrollbar h-5 flex items-center space-x-2"
       >
-        <span class="text-xs w-10 text-right shrink-0">Posun:</span>
+        <span class="text-xs w-10 text-right shrink-0">{{ t('common.playback_options.pan_scrollbar_label') }}:</span>
         <div
           ref="panTrackRef"
           class="pan-track flex-1 h-3 bg-gray-300 rounded relative"
@@ -384,7 +463,7 @@
         v-if="zoomRange > 0"
         class="zoom-scrollbar h-5 flex items-center space-x-2"
       >
-        <span class="text-xs w-10 text-right shrink-0">Zvětšení:</span>
+        <span class="text-xs w-10 text-right shrink-0">{{ t('common.playback_options.zoom_scrollbar_label') }}:</span>
         <div
           ref="zoomTrackRef"
           class="zoom-track flex-1 h-3 bg-gray-300 rounded relative cursor-pointer"
@@ -401,7 +480,7 @@
         v-else-if="isLoaded"
         class="zoom-scrollbar h-5 flex items-center space-x-2"
       >
-        <span class="text-xs w-10 text-right shrink-0">Zoom:</span>
+        <span class="text-xs w-10 text-right shrink-0">{{ t('common.playback_options.zoom_scrollbar_label') }}:</span>
         <div
           ref="zoomTrackRef"
           class="zoom-track flex-1 h-3 bg-gray-300 rounded relative"
@@ -430,6 +509,7 @@ import {
 } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
 import type { Numeric } from '@/types/basic';
+import { t } from '@/components/TranslatedText.vue';
 
 interface Range {
   id: Numeric;
@@ -438,8 +518,12 @@ interface Range {
   color: string;
 }
 
-const DEFAULT_BASE_ZOOM = 5;
+const DEFAULT_BASE_ZOOM = 1;
 const MIN_ZOOM_LEVEL = 1; // New constant for minimum zoom out
+// Maximum safe canvas width before browsers start throwing errors (varies by engine)
+const CANVAS_COL_LIMIT = 8192;
+// Width (in spectrogram columns) of each off-screen tile when the spectrogram is too wide
+const TILE_COLS = 2048;
 
 interface Props {
   audioUrls: string | string[];
@@ -451,7 +535,9 @@ interface Props {
   maxFrequency?: number;
   colorScheme?: string[];
   sampleSize?: number;
+  selectionColorResolver?: (ranges: Range[]) => string;
   readonly?: boolean; // Add readonly prop
+  currentTime?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -473,12 +559,51 @@ const props = withDefaults(defineProps<Props>(), {
     '#000000'
   ],
   sampleSize: 256,
-  readonly: false // Default readonly to false
+  readonly: false, // Default readonly to false
+  currentTime: 0
 });
 
 const emit = defineEmits<{
   'update:selected': [range: Range[]];
+  'update:currentTime': [currentTime: number];
 }>();
+
+// Helper function to set alpha on any color format
+function setColorAlpha(color: string, alpha: number): string {
+  // Create a temporary canvas element to parse the color
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return color;
+  
+  ctx.fillStyle = color;
+  const parsedColor = ctx.fillStyle;
+  
+  // Try to extract RGB values from various formats
+  const rgbMatch = parsedColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (rgbMatch) {
+    return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${alpha})`;
+  }
+  
+  // Try HSL format
+  const hslMatch = parsedColor.match(/hsla?\((\d+),\s*(\d+)%,\s*(\d+)%/);
+  if (hslMatch) {
+    return `hsla(${hslMatch[1]}, ${hslMatch[2]}%, ${hslMatch[3]}%, ${alpha})`;
+  }
+  
+  // Fallback: try to convert using canvas and get computed style
+  const tempDiv = document.createElement('div');
+  tempDiv.style.color = color;
+  document.body.appendChild(tempDiv);
+  const computed = window.getComputedStyle(tempDiv).color;
+  document.body.removeChild(tempDiv);
+  
+  const computedRgb = computed.match(/\d+/g);
+  if (computedRgb && computedRgb.length >= 3) {
+    return `rgba(${computedRgb[0]}, ${computedRgb[1]}, ${computedRgb[2]}, ${alpha})`;
+  }
+  
+  return color; // Fallback to original if parsing fails
+}
 
 // Refs and state
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -492,12 +617,29 @@ const isLoading = ref(false);
 const isPlaying = ref(false);
 const isPaused = ref(false);
 const startTime = ref(0);
-const currentTime = ref(0);
+const currentTime = ref(props.currentTime);
+
+watch(currentTime, (newCurrentTime?: number) => {
+  if (newCurrentTime !== undefined) {
+    emit('update:currentTime', newCurrentTime ?? 0);
+  }
+}, { immediate: true });
+
 const audioDuration = ref(0);
 const spectrogramData = ref<{ time: number }[]>([]);
 const cacheCanvas = ref<HTMLCanvasElement | null>(null);
+// Split spectrogram into multiple off-screen tile canvases to avoid hitting the
+// browser maximum canvas size limit. Each tile has width ≤ TILE_COLS.
+const cacheCanvases = ref<HTMLCanvasElement[]>([]);
 const cacheHeightBins = ref(0);
 const totalBins = ref(0);
+
+const isContextMenuVisible = ref(false);
+const contextMenuPosition = ref({ x: 0, y: 0 });
+const contextMenuRangeId = ref<Numeric | null>(null);
+const isRangeTooltipVisible = ref(false);
+const selectedRangeForTooltip = ref<Range | null>(null);
+const rangeTooltipPosition = ref({ x: 0, y: 0 });
 
 // AudioContext + nodes
 const internalAudioContext = ref<AudioContext | null>(null);
@@ -589,17 +731,18 @@ const draggingHandle = ref<'start' | 'end' | null>(null);
 // Hover line
 const showHoverLine = ref(false);
 const hoverLineX = ref(0);
-const nextRangeColor = ref(`hsla(${Math.random() * 360},70%,50%,0.4)`);
-
-// Context Menu State
-const isContextMenuVisible = ref(false);
-const contextMenuPosition = ref({ x: 0, y: 0 });
-const contextMenuRangeId = ref<Numeric | null>(null); // Changed from number
-
-// State for Range Tooltip
-const isRangeTooltipVisible = ref(false);
-const selectedRangeForTooltip = ref<Range | null>(null);
-const rangeTooltipPosition = ref({ x: 0, y: 0 });
+const nextRangeColor = ref<string>('');
+// Initialize nextRangeColor
+function updateNextRangeColor(ranges: Range[]) {
+  const color = props.selectionColorResolver ? props.selectionColorResolver(ranges) : `hsla(${Math.random() * 360},70%,50%,0.4)`;
+  nextRangeColor.value = props.selectionColorResolver ? setColorAlpha(color, 0.6) : color;
+}
+// Initialize with current selected ranges
+updateNextRangeColor(props.selected);
+// Watch for changes in selected ranges
+watch(() => props.selected, (newSelected) => {
+  updateNextRangeColor(newSelected);
+}, { deep: true });
 
 const hoverLineColor = computed(() => {
   if (props.readonly) {
@@ -912,36 +1055,51 @@ async function generateSpectrogramDataOffline() {
 
   const cols = temp.length,
     rows = cacheHeightBins.value;
-  const offCanvas = document.createElement('canvas');
-  offCanvas.width = cols;
-  offCanvas.height = rows;
-  const ctx2 = offCanvas.getContext('2d', { willReadFrequently: true })!;
-  const img = ctx2.createImageData(cols, rows);
-  for (let x = 0; x < cols; x++) {
-    const colData = temp[x];
-    if (!colData) continue;
-    const vals = colData.values;
-    for (let y = 0; y < rows; y++) {
-      const v = vals[y];
-      if (v === undefined) {
-        // Handle case where v might be undefined (e.g. y out of bounds for vals)
-        const pi = (y * cols + x) * 4;
-        img.data[pi] = 0; // Default to black
-        img.data[pi + 1] = 0;
-        img.data[pi + 2] = 0;
-        img.data[pi + 3] = 255; // Opaque
-        continue;
-      }
-      const pi = (y * cols + x) * 4,
-        ci = v * 4;
-      img.data[pi] = palette[ci] ?? 0; // Default to 0 if TypeScript thinks it could be undefined
-      img.data[pi + 1] = palette[ci + 1] ?? 0;
-      img.data[pi + 2] = palette[ci + 2] ?? 0;
-      img.data[pi + 3] = 255;
+  // Prepare tiled canvases to avoid exceeding maximum canvas size.
+  cacheCanvases.value = [];
+  if (cols <= CANVAS_COL_LIMIT) {
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = cols;
+    offCanvas.height = rows;
+    cacheCanvases.value.push(offCanvas);
+  } else {
+    // Split into multiple canvas tiles each with width TILE_COLS (except last).
+    const numTiles = Math.ceil(cols / TILE_COLS);
+    for (let i = 0; i < numTiles; i++) {
+      const width = i === numTiles - 1 ? cols - i * TILE_COLS : TILE_COLS;
+      const tile = document.createElement('canvas');
+      tile.width = width;
+      tile.height = rows;
+      cacheCanvases.value.push(tile);
     }
   }
-  ctx2.putImageData(img, 0, 0);
-  cacheCanvas.value = offCanvas;
+
+  // Draw pixel data into each tile
+  let globalX = 0; // current column in overall spectrogram
+  for (const tile of cacheCanvases.value) {
+    const ctx2 = tile.getContext('2d', { willReadFrequently: true })!;
+    const img = ctx2.createImageData(tile.width, rows);
+    for (let x = 0; x < tile.width; x++) {
+      const overallX = globalX + x;
+      const colData = temp[overallX];
+      if (!colData) continue;
+      const vals = colData.values;
+      for (let y = 0; y < rows; y++) {
+        const v = vals[y] ?? 0;
+        const pi = (y * tile.width + x) * 4,
+          ci = v * 4;
+        img.data[pi] = palette[ci] ?? 0;
+        img.data[pi + 1] = palette[ci + 1] ?? 0;
+        img.data[pi + 2] = palette[ci + 2] ?? 0;
+        img.data[pi + 3] = 255;
+      }
+    }
+    ctx2.putImageData(img, 0, 0);
+    globalX += tile.width;
+  }
+
+  // For backward compatibility, keep first tile as cacheCanvas for smaller callers
+  cacheCanvas.value = cacheCanvases.value[0] ?? null;
 
   offsetIndex.value = 0;
   zoomLevel.value = DEFAULT_BASE_ZOOM;
@@ -984,30 +1142,49 @@ function renderSpectrogram() {
   const dispW = containerWidth.value - margin.value.left - margin.value.right;
   const dispH = containerHeight.value - margin.value.top - margin.value.bottom;
   if (dispW <= 0 || dispH <= 0) return;
-  const totalCols = cacheCanvas.value.width;
+  const totalCols = spectrogramData.value.length; // Number of columns equals spectrogram data length
   const sIdx = Math.floor(offsetIndex.value);
   const num = Math.floor(windowSize.value);
 
   ctx.clearRect(0, 0, containerWidth.value, containerHeight.value);
   ctx.imageSmoothingEnabled = false;
+
   if (sIdx < totalCols && num > 0 && sIdx >= 0) {
-    ctx.drawImage(
-      cacheCanvas.value,
-      sIdx,
-      0,
-      Math.min(num, totalCols - sIdx),
-      cacheHeightBins.value,
-      margin.value.left,
-      margin.value.top,
-      dispW,
-      dispH
-    );
+    let remaining = Math.min(num, totalCols - sIdx);
+    let destX = margin.value.left;
+    let srcStart = sIdx;
+    while (remaining > 0) {
+      // Determine which tile contains srcStart
+      const tileIndex = Math.floor(srcStart / TILE_COLS);
+      const tile = cacheCanvases.value[tileIndex];
+      if (!tile) break;
+      const tileOffset = srcStart - tileIndex * TILE_COLS;
+      const drawCols = Math.min(remaining, tile.width - tileOffset);
+
+      ctx.drawImage(
+        tile,
+        tileOffset,
+        0,
+        drawCols,
+        cacheHeightBins.value,
+        destX,
+        margin.value.top,
+        (drawCols / num) * dispW,
+        dispH
+      );
+
+      remaining -= drawCols;
+      srcStart += drawCols;
+      const destW = (drawCols / num) * dispW;
+      destX += destW;
+    }
   }
+
   const v0 = spectrogramData.value[sIdx]?.time || 0;
   const v1 =
     spectrogramData.value[Math.min(sIdx + num - 1, totalCols - 1)]?.time ||
     audioDuration.value;
-  drawAxes(v0, v1);
+  // drawAxes(v0, v1);
   updateProgressLinePosition();
 }
 
@@ -1740,7 +1917,7 @@ function onRangeSelectEndHandler(e: MouseEvent) {
                 color: usedColor
               });
               // now generate a fresh color for the *next* range
-              nextRangeColor.value = `hsla(${Math.random() * 360},70%,50%,0.4)`;
+              updateNextRangeColor(ranges.value);
             }
           }
         }
@@ -2722,7 +2899,7 @@ function onRangeContextMenu(event: MouseEvent, rangeId: Numeric) {
   }
 
   contextMenuRangeId.value = rangeId;
-  contextMenuPosition.value = { x: event.pageX, y: event.pageY };
+  contextMenuPosition.value = { x: 0, y: event.pageY };
   isContextMenuVisible.value = true;
 
   nextTick(() => {

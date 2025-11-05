@@ -1,7 +1,8 @@
 import { reactive } from 'vue';
-import type {
-  RecordingUploadReq,
-  RecordingPartUploadParams
+import {
+  type RecordingUploadReq,
+  type RecordingPartUploadParams,
+  postRecording
 } from '@/api/recordings';
 import { postPhoto } from '@/api/photos';
 import axios from 'axios';
@@ -111,29 +112,7 @@ export const uploadQueueStore = reactive({
       });
     };
 
-    // Step 1: Upload recording metadata
-    task.currentStep = 'Nahrávání metadat...';
-    const uploadedRecordingId = (
-      await axios.post(`/recordings`, task.recording, {
-        headers: { Authorization: `Bearer ${task.token}` }
-      })
-    ).data;
-    completedSteps++;
-    updateProgress();
-
-    // Step 2: Upload each part
-    const toBase64 = (content: ArrayBuffer) =>
-      btoa(
-        new Uint8Array(content).reduce(
-          (data, byte) => data + String.fromCharCode(byte),
-          ''
-        )
-      );
-
-    for (let i = 0; i < task.parts.length; i++) {
-      const part = task.parts[i]!;
-      task.currentStep = `Nahrávání části ${i + 1}/${task.parts.length}...`;
-
+    const modifiedParts = await Promise.all(task.parts.map(async part => {
       // Calculate end date based on audio duration
       let endDate = part.endDate;
       try {
@@ -145,45 +124,13 @@ export const uploadQueueStore = reactive({
         console.warn('Failed to get audio duration, using original endDate', error);
       }
 
-      await axios.post(
-        `/recordings/part`,
-        {
-          startDate: part.startDate,
-          endDate: endDate,
-          gpsLatitudeStart: part.gpsLatitudeStart,
-          gpsLatitudeEnd: part.gpsLatitudeEnd,
-          gpsLongitudeStart: part.gpsLongitudeStart,
-          gpsLongitudeEnd: part.gpsLongitudeEnd,
-          recordingId: uploadedRecordingId,
-          dataBase64: toBase64(await part.data.arrayBuffer())
-        },
-        {
-          headers: { Authorization: `Bearer ${task.token}` }
-        }
-      );
+      return {
+        ...part,
+        endDate: endDate
+      };
+    }));
 
-      completedSteps++;
-      updateProgress();
-
-      //   queryClient.invalidateQueries({ queryKey: ["all-recordings"] });
-    }
-
-    // Step 3: Upload photos
-    if (task.photos) {
-      for (let i = 0; i < task.photos.length; i++) {
-        const photo = task.photos[i]!;
-        task.currentStep = `Nahrávání fotky ${i + 1}/${task.photos.length}...`;
-
-        await postPhoto({
-          recordingId: uploadedRecordingId,
-          format: photo.type,
-          photosBase64: toBase64(await photo.arrayBuffer())
-        });
-
-        completedSteps++;
-        updateProgress();
-      }
-    }
+    await postRecording(task.token, task.recording, modifiedParts, task.photos);
   },
 
   removeTask(taskId: string) {

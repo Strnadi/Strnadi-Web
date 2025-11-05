@@ -210,7 +210,7 @@ const markers = computed<Marker[]>(() => {
             if (
               dd.confirmedDialect &&
               dd.confirmedDialect in DialectColors &&
-              dd.representant
+              fp.representantFlag
             ) {
               color =
                 DialectColors[
@@ -228,12 +228,13 @@ const markers = computed<Marker[]>(() => {
             return color;
           }) ?? []
         );
-        const colors = dialectStrings.filter((c): c is string => c !== null);
+        // const colors = dialectStrings.filter((c): c is string => c !== null);
+        const colors = dialectStrings;
         const finalColors = colors.length > 0 ? colors : ['#000000'];
 
-        if (rec.id === 58) {
-          console.log('Recording 58 colors:', allFiltered);
-        }
+        // if (rec.id === 58) {
+        //   console.log('Recording 58 colors:', allFiltered);
+        // }
 
         const icon = divIcon({
           className: '',
