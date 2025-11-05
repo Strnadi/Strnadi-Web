@@ -84,7 +84,8 @@ export const uploadStore = reactive({
 import Dropzone from '@/components/Dropzone.vue';
 import MaterialIcon from '@/components/MaterialIcon.vue';
 import TextualCoords from '@/components/map/TextualCoords.vue';
-import TranslatedText from '@/components/TranslatedText.vue';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
+import type { TranslationIdentifier } from '@/constants/Translations';
 
 const queryClient = useQueryClient();
 const router = useRouter();
@@ -99,7 +100,7 @@ const photoAccept = 'image/*';
 type StepIdentifier = 'file' | 'photos' | 'location' | 'info' | 'submit';
 
 interface Step {
-  title: string;
+  title: TranslationIdentifier;
   isValid: () => boolean;
   before?: () => void;
   after?: () => void;
@@ -154,7 +155,7 @@ const handleMapClick = (event: MapClickEvent) => {
 // Define the steps for the upload process
 const stepper = useStepper<Record<StepIdentifier, Step>>({
   file: {
-    title: 'Soubory',
+    title: 'upload.steps.file',
     isValid: () =>
       (uploadStore.parts?.length ?? 0) > 0 &&
       (uploadStore.parts?.every((part) => part.file) ?? false)
@@ -162,7 +163,7 @@ const stepper = useStepper<Record<StepIdentifier, Step>>({
   },
 
   location: {
-    title: 'Poloha',
+    title: 'upload.steps.location',
     isValid: () => uploadStore.parts?.every((part) => part.location) ?? false,
     before: () => {
       MapEvents.on('click', handleMapClick);
@@ -173,18 +174,18 @@ const stepper = useStepper<Record<StepIdentifier, Step>>({
   },
 
   info: {
-    title: 'Informace o nahrávce',
-    isValid: () => !!uploadStore.dateTime && uploadStore.confirmUpload && !isSubmitting && !uploadSuccess
+    title: 'upload.steps.info',
+    isValid: () => !!uploadStore.dateTime && uploadStore.confirmUpload && !isSubmitting.value && !uploadSuccess.value
   },
 
   photos: {
-    title: 'Fotky',
-    isValid: () => !isSubmitting && !uploadSuccess
+    title: 'upload.steps.photos',
+    isValid: () => !isSubmitting.value && !uploadSuccess.value
   },
 
   submit: {
-    title: 'Odeslat',
-    isValid: () => !isSubmitting && !uploadSuccess // Final step, always valid to view
+    title: 'upload.steps.submit',
+    isValid: () => !isSubmitting.value && !uploadSuccess.value // Final step, always valid to view
   }
 });
 
@@ -280,7 +281,7 @@ function submitOrNext() {
 
 const onSoundDrop = (acceptedFiles: File[]) => {
   if (acceptedFiles.length === 0) {
-    error.value = 'Žádné validní soubory nebyly vybrány.';
+    error.value = t('upload.errors.no_valid_files');
     return;
   }
 
@@ -340,7 +341,9 @@ const currentPartIndex = ref(0);
   </template>
 
   <template v-else>
-    <h1 class="text-lg font-bold mb-4" v-text="stepper.current.value.title" />
+    <h1 class="text-lg font-bold mb-4">
+      <TranslatedText :identifier="stepper.current.value.title" />
+    </h1>
 
     <form @submit.prevent="submitOrNext">
       <template v-if="stepper.isCurrent('file')">
@@ -555,16 +558,19 @@ const currentPartIndex = ref(0);
           <template v-if="uploadSuccess">
             <div class="text-6xl">✅</div>
             <p class="text-xl font-semibold text-green-600">
-              Nahrávka byla zařazena do fronty
+              <TranslatedText identifier="upload.success.queued" />
             </p>
             <p class="text-sm text-gray-600">
-              Nahrávání probíhá na pozadí. Můžete pokračovat v používání
-              aplikace.
+              <TranslatedText identifier="upload.success.background" />
             </p>
-            <p class="text-sm text-gray-600">Sledujte průběh v horní liště.</p>
+            <p class="text-sm text-gray-600">
+              <TranslatedText identifier="upload.success.track_status" />
+            </p>
           </template>
           <template v-else>
-            <p>Příprava nahrávky...</p>
+            <p>
+              <TranslatedText identifier="upload.preparing" />
+            </p>
           </template>
         </div>
       </template>
@@ -603,12 +609,13 @@ const currentPartIndex = ref(0);
           class="text-sm text-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
           :class="{
             'text-gray-900 font-bold': stepper.isCurrent(id),
-            'text-green-600': stepper.isAfter(id) && step.isValid(), // Mark completed steps
-            'text-red-600': stepper.isAfter(id) && !step.isValid() // Mark invalid past steps
+            'text-green-600': stepper.isAfter(id) && step.isValid(),
+            'text-red-600': stepper.isAfter(id) && !step.isValid()
           }"
           @click="stepper.goTo(id)"
-          v-text="step.title"
-        />
+        >
+          <TranslatedText :identifier="step.title" />
+        </button>
       </div>
     </div>
   </template>

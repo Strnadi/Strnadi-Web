@@ -6,10 +6,13 @@ meta:
 <script setup lang="ts">
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
+import TranslatedText from '@/components/TranslatedText.vue';
 </script>
 
 <template>
-  <h1>Nápověda k mapě</h1>
+  <h1>
+    <TranslatedText identifier="pages.map.legend.title" />
+  </h1>
 
   <div class="flex flex-row gap-x-2 gap-y-2 flex-wrap">
     <div
@@ -19,8 +22,8 @@ import MultiColorSquare from '@/components/MultiColorSquare.vue';
     >
       <multi-color-square
         :colors="[icon]"
-        size="32px"
-        class="m-1 !border-transparent rounded-md"
+        size="16px"
+        class="m-1 border-transparent! rounded-md"
       />
       <span class="text-sm font-medium">{{ key }}</span>
     </div>

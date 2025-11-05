@@ -28,7 +28,6 @@ export interface MapProps {
 import { ref, watch } from 'vue';
 import { useGeolocation } from '@vueuse/core';
 import { type Map as LeafletMap, type LeafletMouseEvent, Icon } from 'leaflet';
-import * as L from 'leaflet';
 
 import {
   LMap,
@@ -40,10 +39,6 @@ import {
   LControlZoom
 } from '@vue-leaflet/vue-leaflet';
 import 'leaflet/dist/leaflet.css';
-// @ts-ignore: leaflet.markercluster plugin
-import 'leaflet.markercluster';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 
 const env = import.meta.env;
 let leafletMap: LeafletMap | null = null;
@@ -52,7 +47,6 @@ const hoveredPolygon = ref<(number | string) | null>(null);
 const hoveredMarker = ref<(number | string) | null>(null);
 
 const { coords, isSupported: isGeolocationSupported } = useGeolocation();
-const markerClusterGroup = ref<any>(null);
 const iconCurrent = new Icon({
   iconUrl: '/dialects/current-location.svg',
   iconSize: [24, 24],
@@ -111,70 +105,12 @@ function updateZoom(newZoom: number) {
   emit('update:zoom', newZoom);
 }
 
-// Add markers to cluster group
-function addClusterMarkers() {
-  if (!leafletMap || !markerClusterGroup.value) return;
-  markerClusterGroup.value.clearLayers();
-  props.markers.forEach((marker) => {
-    const m = L.marker(marker.position, { icon: marker.icon });
-    (m as any).markerData = marker;
-    m.on('click', (e) => emit('click', { event: e, marker }));
-    m.on('mouseover', () => (hoveredMarker.value = marker.id));
-    m.on('mouseout', () => (hoveredMarker.value = null));
-    markerClusterGroup.value.addLayer(m);
-  });
-}
-
 function onMapReady(mapComp: any) {
   leafletMap = mapComp.mapObject ?? mapComp;
-  // initialize marker clustering
-  // initialize marker clustering with spiderfy on click
-  markerClusterGroup.value = (L as any).markerClusterGroup({ zoomToBoundsOnClick: false, spiderfyOnClick: true });
-  leafletMap!.addLayer(markerClusterGroup.value);
-  // Add initial markers
-  addClusterMarkers();
-  // Handle cluster clicks: show picker with individual markers
-  markerClusterGroup.value.on('clusterclick', (e: any) => {
-    const clusterMarkers = e.layer.getAllChildMarkers();
-    const listItems = clusterMarkers.map((m: any, idx: number) =>
-      `<li data-idx="${idx}" style="cursor:pointer;padding:4px;">${(m as any).markerData.id}</li>`
-    ).join('');
-    const popup = L.popup({ closeOnClick: true, autoClose: true })
-      .setLatLng(e.latlng)
-      .setContent(`<ul class=\"cluster-picker\">${listItems}</ul>`)
-      .openOn(leafletMap!);
-    setTimeout(() => {
-      document.querySelectorAll('.cluster-picker li').forEach(item =>
-        item.addEventListener('click', () => {
-          const idx = Number(item.getAttribute('data-idx'));
-          const m = clusterMarkers[idx];
-          const marker = (m as any).markerData;
-          emit('click', { event: { latlng: m.getLatLng() } as any, marker });
-          leafletMap!.closePopup();
-        })
-      );
-    }, 0);
-  });
   updateBounds();
 }
 
 watch([zoom, center], updateBounds);
-// update cluster markers when props.markers change
-watch(
-  () => props.markers,
-  (newMarkers) => {
-    if (!leafletMap || !markerClusterGroup.value) return;
-    markerClusterGroup.value.clearLayers();
-    newMarkers.forEach((marker) => {
-      const m = L.marker(marker.position, { icon: marker.icon });
-      m.on('click', (e) => emit('click', { event: e, marker }));
-      m.on('mouseover', () => (hoveredMarker.value = marker.id));
-      m.on('mouseout', () => (hoveredMarker.value = null));
-      markerClusterGroup.value.addLayer(m);
-    });
-  },
-  { immediate: true, deep: true }
-);
 </script>
 
 <template>
@@ -183,7 +119,7 @@ watch(
     <!-- These reactive variable changes will be catched in the store translated into flyTo calls  -->
     <l-map
       v-model:center="center"
-      class="w-screen h-screen"
+      class="flex-1"
       :zoom="zoom"
       :options="{ zoomControl: false }"
       @ready="onMapReady"
@@ -223,6 +159,17 @@ watch(
         @mouseover="hoveredPolygon = polygon.id"
         @mouseleave="hoveredPolygon = null"
         @click="(event: LeafletMouseEvent) => emit('click', { event, polygon })"
+      />
+
+      <!-- Markers -->
+      <l-marker
+        v-for="marker in markers"
+        :key="marker.id"
+        :icon="marker.icon"
+        :lat-lng="marker.position"
+        @click="(event: LeafletMouseEvent) => emit('click', { event, marker })"
+        @mouseover="hoveredMarker = marker.id"
+        @mouseout="hoveredMarker = null"
       />
 
       <!-- Current Location -->

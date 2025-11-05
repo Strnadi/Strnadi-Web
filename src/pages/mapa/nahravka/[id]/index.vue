@@ -17,6 +17,7 @@ import ToggleShow from '@/components/ToggleShow.vue';
 import { MapStore } from '@/views/map/RecordingsMap.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
@@ -126,7 +127,9 @@ const cancelEdit = () => {
 
 <template>
   <h1 class="text-2xl font-semibold">
-    <template v-if="editing"> Upravování: </template>
+    <span v-if="editing" class="mr-1">
+      <TranslatedText identifier="recordings.detail.editing_prefix" />
+    </span>
     <!-- <template v-if="filteredRec">
       <template v-for="fr in filteredRec">
         <MultiColorSquare size="20px" :colors="fr.detectedDialects?.map(dd => {
@@ -141,14 +144,16 @@ const cancelEdit = () => {
     <template v-if="recording?.name">
       {{ recording.name }}
     </template>
-    <template v-else> Nahrávka #{{ recordingId }} </template>
+    <template v-else>
+      {{ t('recordings.detail.fallback_prefix') }}{{ recordingId }}
+    </template>
   </h1>
 
   <div v-if="editing" class="space-y-2">
     <div>
-      <label for="name" class="block text-sm font-medium text-gray-700"
-        >Název:</label
-      >
+      <label for="name" class="block text-sm font-medium text-gray-700">
+        <TranslatedText identifier="labels.title" />:
+      </label>
       <input
         id="name"
         v-model="editedName"
@@ -159,10 +164,17 @@ const cancelEdit = () => {
   </div>
 
   <template v-if="isError">
-    <span class="text-xl text-red-600">Chyba: Nelze získat nahrávku.</span>
+    <span class="text-xl text-red-600">
+      <TranslatedText identifier="common.error_prefix" />
+      <span class="ml-1">
+        <TranslatedText identifier="errors.recordings.loading_single" />
+      </span>
+    </span>
   </template>
   <template v-if="isLoading">
-    <span class="text-gray-500">Načítání...</span>
+    <span class="text-gray-500">
+      <TranslatedText identifier="states.loading" />
+    </span>
   </template>
   <template v-else-if="recording">
     <div class="space-y-4">
@@ -177,7 +189,9 @@ const cancelEdit = () => {
           >
           {{ uploader.city ? `(${uploader.city})` : '' }}
 
-          <template v-if="recording.byApp"> přes aplikaci </template>
+          <template v-if="recording.byApp">
+            <TranslatedText identifier="recordings.detail.by_app_suffix" />
+          </template>
         </span>
         <template v-if="recording.device">
           {{ recording.device }}
@@ -193,7 +207,7 @@ const cancelEdit = () => {
         v-if="!editing"
         class="p-3 bg-gray-50 border-l-4 border-gray-300 italic"
       >
-        {{ recording.note || 'Žádná poznámka.' }}
+        {{ recording.note || t('recordings.detail.no_note') }}
       </blockquote>
       <div v-else>
         <textarea
@@ -206,7 +220,9 @@ const cancelEdit = () => {
 
       <!-- Parts Section -->
       <div>
-        <h3 class="text-lg font-medium mb-2">Části nahrávky</h3>
+        <h3 class="text-lg font-medium mb-2">
+          <TranslatedText identifier="recordings.detail.parts_heading" />
+        </h3>
         <ul class="space-y-4">
           <li
             v-for="part in recording.parts"
@@ -222,21 +238,42 @@ const cancelEdit = () => {
 
             <template v-if="accountStore.user?.role == 'admin'">
               <button class="primary text-sm p-1 px-2" :disabled="editing">
-                Smazat část
+                <TranslatedText identifier="recordings.detail.delete_part" />
               </button>
             </template>
           </li>
         </ul>
       </div>
 
-      <template v-if="accountStore.user?.role === 'admin'">
-        <prefetch-link
-          :to="`./${recordingId}/upravit-dialekt`"
-          class="button-secondary py-2 px-4 max-sm:text-sm"
-        >
-          Upravit dialekty
-        </prefetch-link>
-      </template>
+      <prefetch-link
+        v-if="accountStore.user?.role === 'admin' || accountStore.user?.id === recording.userId"
+        :to="`./${recordingId}/upravit-dialekt`"
+        class="button-secondary py-2 px-4 max-sm:text-sm"
+      >
+        <TranslatedText identifier="admin.recordings.edit_dialects" />
+      </prefetch-link>
+
+      <prefetch-link
+        v-if="accountStore.user?.role == 'admin' || accountStore.user?.id == recording?.userId"
+        :to="`./${recordingId}/upravit`"
+        class="button-secondary py-2 px-4 max-sm:text-sm"
+      >
+        <TranslatedText identifier="buttons.edit" />
+      </prefetch-link>
+      <prefetch-link
+        v-if="accountStore.user?.role == 'admin'"
+        :to="`./${recordingId}/smazat`"
+        class="button-primary py-2 px-4 max-sm:text-sm"
+      >
+        <TranslatedText identifier="recordings.detail.delete_recording" />
+      </prefetch-link>
+      <prefetch-link
+        v-else-if="accountStore.user?.role == 'user' && accountStore.user?.id == recording.userId"
+        :to="`./${recordingId}/smazat`"
+        class="button-secondary py-2 px-4 max-sm:text-sm"
+      >
+        <TranslatedText identifier="recordings.detail.request_delete" />
+      </prefetch-link>
 
       <!-- <ToggleShow class="w-full">
         <template #toggle-button>
@@ -285,13 +322,13 @@ const cancelEdit = () => {
             class="success p-2"
             @click="saveChanges"
           >
-            Uložit změny
+            Save changes
           </button>
           <button
             class="secondary p-2"
             @click="cancelEdit"
           >
-            Zrušit
+            Cancel
           </button>
         </template>
 
@@ -301,19 +338,19 @@ const cancelEdit = () => {
             class="secondary p-2 ml-4 flex-shrink-0"
             @click="toggleEdit"
           >
-            Upravit
+            Edit
           </button>
           <button
             v-if="accountStore.user?.role == 'admin'"
             class="primary p-2"
           >
-            Smazat nahrávku
+            Delete recording
           </button>
           <button
             v-else-if="accountStore.user?.role == 'user' && accountStore.user?.id == recording.userId"
             class="secondary p-2"
           >
-            Požádat o smazání
+            Request deletion
           </button>
         </template>
       </template> -->
@@ -321,6 +358,8 @@ const cancelEdit = () => {
   </template>
   <template v-else>
     <!-- Fallback if recording is null after loading -->
-    <span class="text-gray-500">Nahrávka nebyla nalezena.</span>
+    <span class="text-gray-500">
+      <TranslatedText identifier="recordings.detail.not_found" />
+    </span>
   </template>
 </template>

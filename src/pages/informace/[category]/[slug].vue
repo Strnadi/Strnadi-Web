@@ -13,6 +13,7 @@ import { changeImage } from '@/plugins/markdown-it/images';
 import { changeLink } from '@/plugins/markdown-it/links';
 import { getArticleByCategory, getArticleFile } from '@/api/articles';
 import { kebabize } from '@/utils/strings';
+import { applicationStore } from '@/state/ApplicationStore';
 
 const env = import.meta.env;
 
@@ -31,9 +32,9 @@ const id = computed(
 );
 
 const { data: markdown } = useQuery({
-  queryKey: ['articles', category, slug],
+  queryKey: ['articles', category, slug, applicationStore.language],
   queryFn: () => {
-    return getArticleFile(id.value, 'Text.md');
+    return getArticleFile(id.value, applicationStore.language + '.md');
   },
   enabled: computed(() => !!id.value)
 });

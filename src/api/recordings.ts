@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { postPhoto } from './photos';
-import { authorizedPatch } from './utils';
+import { authorizedPatch, authorizedDelete, authorizedPost } from './utils';
 import type { Numeric } from '@/types/basic';
 
 export interface RecordingPartModel {
@@ -37,7 +37,6 @@ export interface DetectedDialect {
   userGuessDialect: string | null;
   confirmedDialect: string | null;
   filteredRecordingPartId: number;
-  representant: boolean;
 }
 
 export interface FilteredPartModel {
@@ -47,6 +46,7 @@ export interface FilteredPartModel {
   state: number;
   recordingId: number;
   detectedDialects: DetectedDialect[] | null;
+  representantFlag: boolean;
 }
 
 export interface RecordingUploadReq {
@@ -99,26 +99,28 @@ export const postRecording = async (
     })
   ).data;
 
-  for await (const part of recordingParts) {
+  for (const part of recordingParts) {
+
+    const formData = new FormData();
+    formData.append('startDate', part.startDate);
+    formData.append('endDate', part.endDate);
+    formData.append('gpsLatitudeStart', part.gpsLatitudeStart.toString());
+    formData.append('gpsLatitudeEnd', part.gpsLatitudeEnd.toString());
+    formData.append('gpsLongitudeStart', part.gpsLongitudeStart.toString());
+    formData.append('gpsLongitudeEnd', part.gpsLongitudeEnd.toString());
+    formData.append('recordingId', uploadedRecordingId.toString());
+    formData.append('file', part.data);
+    
     await axios.post(
-      `/recordings/part`,
-      {
-        startDate: part.startDate,
-        endDate: part.endDate,
-        gpsLatitudeStart: part.gpsLatitudeStart,
-        gpsLatitudeEnd: part.gpsLatitudeEnd,
-        gpsLongitudeStart: part.gpsLongitudeStart,
-        gpsLongitudeEnd: part.gpsLongitudeEnd,
-        recordingId: uploadedRecordingId,
-        dataBase64: toBase64(await part.data.arrayBuffer())
-      } as RecordingPartUploadReq,
+      `/recordings/part-new`,
+      formData,
       {
         headers: { Authorization: `Bearer ${token}` }
       }
     );
   }
 
-  for await (const photo of photos ?? []) {
+  for (const photo of photos ?? []) {
     await postPhoto({
       recordingId: uploadedRecordingId,
       format: photo.type,
@@ -142,6 +144,18 @@ export const patchRecording = async (
   id: Numeric,
   patchedRec: Omit<RecordingUploadReq, 'createdAt'>
 ): Promise<void> => authorizedPatch(`/recordings/${id}`, token, patchedRec);
+
+// Add deleteRecording and deleteRecordingPart API calls
+export const deleteRecording = async (
+  token: string,
+  id: Numeric
+): Promise<void> => authorizedDelete(`/recordings/${id}`, token);
+
+export const deleteRecordingPart = async (
+  token: string,
+  recordingId: Numeric,
+  partId: Numeric
+): Promise<void> => authorizedDelete(`/recordings/part/${recordingId}/${partId}`, token);
 
 export const getRecordings = async ({
   audio = false,
@@ -172,15 +186,12 @@ export const getFilteredRecording = async (
   return response.data as FilteredPartModel[];
 };
 
-// export const getFilteredRecordings = async (token: string): Promise<RecordingModel[]> => {
-// 	try {
-// 		const response = await axios.get(`/recordings/filtered`, {
-// 			headers: { "Authorization": `Bearer ${token}` }
-// 		});
-
-// 		return response.data as RecordingModel[];
-// 	} catch (e) {
-// 		const error = e as AxiosError;
-// 		throw new ApiError(error.code, error.response?.status);
-// 	}
-// }
+export const postFilteredPart = async (
+  token: string,
+  filteredPart: {
+    recordingId: number;
+    startDate: string;
+    endDate: string;
+    dialectCode: string;
+  }
+): Promise<void> => authorizedPost(`/recordings/filtered`, token, filteredPart);

@@ -20,23 +20,22 @@ const user = accountStore.user!;
       </div>
     </template>
     <li>
-      <PrefetchLink to="/ucet/muj-ucet">
-        <div class="dropdown-item">Profil</div>
+      <PrefetchLink to="/ucet/muj-ucet" class="dropdown-item" v-wave>
+        Můj profil
       </PrefetchLink>
     </li>
     <li>
-      <PrefetchLink to="/ucet/sprava/moje-nahravky" class="dropdown-item">
-        <!-- <List /> -->
+      <PrefetchLink to="/ucet/sprava/moje-nahravky" class="dropdown-item" v-wave>
         Moje záznamy
       </PrefetchLink>
     </li>
     <li v-if="accountStore.user?.role === 'admin'">
-      <PrefetchLink to="/sprava">
-        <div class="dropdown-item">Admin</div>
+      <PrefetchLink to="/sprava" class="dropdown-item" v-wave>
+        Administrace systému
       </PrefetchLink>
     </li>
-    <li class="cursor-pointer" @click="accountStore.logout">
-      <div class="dropdown-item">Odhlásit se</div>
+    <li class="cursor-pointer dropdown-item" @click="accountStore.logout" v-wave>
+      Odhlásit se
     </li>
   </Dropdown>
 </template>

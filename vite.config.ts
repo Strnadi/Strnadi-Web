@@ -137,11 +137,11 @@ export default defineConfig({
     vueDevTools({
       launchEditor: "subl4"
     }),
-    // Visualizer({
-    //   gzipSize: true,
-    //   open: false,
-    //   template: "sunburst",
-    // }),
+    Visualizer({
+      gzipSize: true,
+      open: false,
+      template: "sunburst",
+    }),
     {
       name: 'configure-server',
       configureServer(server) {

@@ -58,9 +58,10 @@ import {
 import { useStepper } from '@vueuse/core';
 import AuthButtons from '@/views/AuthButtons.vue';
 import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue';
-import TranslatedText from '@/components/TranslatedText.vue';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import LocationSearch from '@/components/map/LocationSearch.vue';
 import DigitInput from '@/components/DigitInput.vue';
+import type { TranslationIdentifier } from '@/constants/Translations';
 
 const router = useRouter();
 const emailElement = ref<HTMLInputElement | null>(null);
@@ -123,9 +124,9 @@ const {
   }
 });
 
-const stepper = useStepper({
+const stepper = useStepper<Record<string, { title: TranslationIdentifier; isValid: () => boolean }>>({
   email: {
-    title: 'E-mail',
+    title: 'auth.register.steps.email',
     isValid: () =>
       emailElement.value &&
       !!registerStore.email &&
@@ -136,18 +137,18 @@ const stepper = useStepper({
   },
 
   'personal-info': {
-    title: 'Osobní údaje',
+    title: 'auth.register.steps.personal_info',
     isValid: () =>
       registerStore.name.trim() !== '' && registerStore.surname.trim() !== ''
   },
 
   location: {
-    title: 'Umístění',
+    title: 'auth.register.steps.location',
     isValid: () => true
   },
 
   password: {
-    title: 'Heslo',
+    title: 'auth.register.steps.password',
     isValid: () => {
       const { password, passwordConfirm } = registerStore;
       return (
@@ -162,17 +163,17 @@ const stepper = useStepper({
   },
 
   'final-confirm': {
-    title: 'Potvrzení',
+    title: 'auth.register.steps.confirmation',
     isValid: () => true
   },
 
   'creating-account': {
-    title: 'Vytváření účtu',
+    title: 'auth.register.steps.creating_account',
     isValid: () => true
   },
 
   done: {
-    title: 'Hotovo',
+    title: 'auth.register.steps.done',
     isValid: () => true
   }
 });
@@ -231,7 +232,9 @@ watch(
 </script>
 
 <template>
-  <h1 class="text-lg font-bold" v-text="stepper.current.value.title" />
+  <h1 class="text-lg font-bold">
+    <TranslatedText :identifier="stepper.current.value.title" />
+  </h1>
 
   <form @submit.prevent="submit">
     <div class="flex flex-col justify-center gap-2 mt-2">
@@ -240,11 +243,18 @@ watch(
           <div class="flex flex-col gap-y-4">
             <template v-if="registerStore.userExists">
               <p class="text-red-600">
-                Tento e-mail je již registrován. Pokud si nepamatujete své
-                heslo, můžete si ho
+                <TranslatedText
+                  identifier="auth.register.email_exists.prefix"
+                />
                 <PrefetchLink to="/ucet/zapomenute-heslo" class="underline"
-                  >obnovit zde</PrefetchLink
-                >.
+                  >
+                  <TranslatedText
+                    identifier="auth.register.email_exists.link"
+                  />
+                </PrefetchLink>
+                <TranslatedText
+                  identifier="auth.register.email_exists.suffix"
+                />
               </p>
             </template>
 
@@ -253,7 +263,9 @@ watch(
                 <div
                   class="text-sm font-medium mb-1 flex flex-row justify-between"
                 >
-                  <span>E-mail</span>
+                  <span>
+                    <TranslatedText identifier="labels.email" />
+                  </span>
                   <PrefetchLink to="/ucet/zapomenute-heslo">
                     <TranslatedText identifier="buttons.forgotten_password" />?
                   </PrefetchLink>
@@ -266,7 +278,7 @@ watch(
                 type="email"
                 class="p-2"
                 required
-                placeholder="E-Mail"
+                :placeholder="t('placeholders.email')"
               />
             </div>
             <div class="flex flex-row items-center gap-x-2 m-4">
@@ -276,12 +288,22 @@ watch(
                 type="checkbox"
               />
               <label for="agreement">
-                <span class="text-sm"
-                  >Zapojením do projektu občanské vědy Nářečí českých strnadů
-                  <PrefetchLink to="/podminky-pouziti" class="underline"
-                    >souhlasím s podmínkami</PrefetchLink
-                  ></span
-                >
+                <span class="text-sm">
+                  <TranslatedText
+                    identifier="auth.register.agreement.prefix"
+                  />
+                  <span class="mx-1">
+                    <TranslatedText identifier="project_name" />
+                  </span>
+                  <PrefetchLink to="/podminky-pouziti" class="underline">
+                    <TranslatedText
+                      identifier="auth.register.agreement.link"
+                    />
+                  </PrefetchLink>
+                  <TranslatedText
+                    identifier="auth.register.agreement.suffix"
+                  />
+                </span>
               </label>
             </div>
             <AuthButtons
@@ -297,7 +319,9 @@ watch(
           class="flex flex-col gap-y-4"
         >
           <div class="flex flex-col gap-y-1">
-            <label for="name">Jméno</label>
+            <label for="name">
+              <TranslatedText identifier="labels.name" />
+            </label>
             <input
               id="name"
               class="p-2"
@@ -307,7 +331,9 @@ watch(
             />
           </div>
           <div class="flex flex-col gap-y-1">
-            <label for="surname">Příjmení</label>
+            <label for="surname">
+              <TranslatedText identifier="labels.surname" />
+            </label>
             <input
               id="surname"
               class="p-2"
@@ -317,7 +343,9 @@ watch(
             />
           </div>
           <div class="flex flex-col gap-y-1">
-            <label for="nickname">Přezdívka (nepovinné)</label>
+            <label for="nickname">
+              <TranslatedText identifier="labels.nickname_optional" />
+            </label>
             <input
               id="nickname"
               class="p-2"
@@ -325,7 +353,7 @@ watch(
               type="text"
             />
             <p class="text-gray-600 text-sm">
-              Pokud nevyplníte, na webu bude zobrazováno Vaše celé jméno.
+              <TranslatedText identifier="auth.register.nickname_hint" />
             </p>
           </div>
         </div>
@@ -333,22 +361,27 @@ watch(
         <!-- location -->
         <div v-if="stepper.isCurrent('location')" class="flex flex-col gap-y-4">
           <div class="flex flex-col gap-y-1">
-            <h2>PSČ</h2>
+            <h2>
+              <TranslatedText identifier="labels.postal_code" />
+            </h2>
             <DigitInput v-model="registerStore.postCode" :digits="5" />
             <p class="text-gray-600">
-              Nepovinné; pokud vyplníte, budete dostávat aktuality z vaší
-              lokality.
+              <TranslatedText
+                identifier="auth.register.postal_code_hint"
+              />
             </p>
           </div>
           <div class="flex flex-col gap-y-1">
-            <label for="city">Město</label>
+            <label for="city">
+              <TranslatedText identifier="labels.city" />
+            </label>
             <LocationSearch
               id="city"
               class="p-2"
               v-model:text="registerStore.city"
             />
             <p class="text-gray-600">
-              Nepovinné, bude zobrazováno na vašem profilu.
+              <TranslatedText identifier="auth.register.city_hint" />
             </p>
           </div>
         </div>
@@ -356,7 +389,7 @@ watch(
         <!-- password -->
         <div v-if="stepper.isCurrent('password')" class="flex flex-col gap-y-4">
           <p class="text-gray-600">
-            Heslo musí mít minimálně 8 znaků, 1 velké písmeno a 1 číslici.
+            <TranslatedText identifier="auth.register.password_hint" />
           </p>
           <template
             v-if="
@@ -365,7 +398,9 @@ watch(
               registerStore.passwordConfirm === registerStore.password
             "
           >
-            <span>Heslo nesplňuje požadavky</span>
+            <span>
+              <TranslatedText identifier="auth.register.password_invalid" />
+            </span>
           </template>
           <template
             v-if="
@@ -373,16 +408,18 @@ watch(
               registerStore.passwordConfirm !== ''
             "
           >
-            <span>Hesla nejsou stejná</span>
+            <span>
+              <TranslatedText identifier="auth.register.password_mismatch" />
+            </span>
           </template>
           <RevealablePasswordInput
             v-model="registerStore.password"
-            label="Heslo"
+            :label="t('labels.password')"
             class="p-2"
           />
           <RevealablePasswordInput
             v-model="registerStore.passwordConfirm"
-            label="Heslo znovu"
+            :label="t('labels.password_confirm')"
             class="p-2"
           />
         </div>
@@ -392,22 +429,46 @@ watch(
           v-if="stepper.isCurrent('final-confirm')"
           class="flex flex-col gap-y-2"
         >
-          <h2>Je takto všechno správně?</h2>
-          <span>E-mail: {{ registerStore.email }}</span>
-          <span>Jméno: {{ registerStore.name }}</span>
-          <span>Příjmení: {{ registerStore.surname }}</span>
-          <span>Přezdívka: {{ registerStore.nickname }}</span>
-          <span>PSČ: {{ registerStore.postCode }}</span>
-          <span>Město: {{ registerStore.city }}</span>
-          <span>S podmínkami použití souhlasím.</span>
+          <h2>
+            <TranslatedText identifier="auth.register.summary.title" />
+          </h2>
+          <span>
+            <TranslatedText identifier="auth.register.summary.email" />
+            {{ registerStore.email }}
+          </span>
+          <span>
+            <TranslatedText identifier="auth.register.summary.name" />
+            {{ registerStore.name }}
+          </span>
+          <span>
+            <TranslatedText identifier="auth.register.summary.surname" />
+            {{ registerStore.surname }}
+          </span>
+          <span>
+            <TranslatedText identifier="auth.register.summary.nickname" />
+            {{ registerStore.nickname }}
+          </span>
+          <span>
+            <TranslatedText identifier="auth.register.summary.postal_code" />
+            {{ registerStore.postCode }}
+          </span>
+          <span>
+            <TranslatedText identifier="auth.register.summary.city" />
+            {{ registerStore.city }}
+          </span>
+          <span>
+            <TranslatedText identifier="auth.register.summary.terms" />
+          </span>
         </div>
 
         <div v-if="stepper.isCurrent('creating-account')">
-          <p v-if="isPending || isRegPending">Vytváření vašeho účtu, prosím vyčkejte…</p>
+          <p v-if="isPending || isRegPending">
+            <TranslatedText identifier="auth.register.status.creating_account_wait" />
+          </p>
           <template v-else-if="isRegError || isError">
             <p>{{ (error ?? regError)!.message }}</p>
             <button class="secondary p-2 w-full" @click="register">
-              Zkusit znovu
+              <TranslatedText identifier="buttons.retry" />
             </button>
           </template>
         </div>
@@ -415,21 +476,23 @@ watch(
         <!-- done -->
         <div v-if="stepper.isCurrent('done')" class="flex flex-col gap-y-4">
           <template v-if="isRegPending">
-            <p>Vytváření účtu…</p>
+            <p>
+              <TranslatedText identifier="auth.register.status.creating_account" />
+            </p>
           </template>
           <template v-else-if="isRegError">
             <p>{{ regError!.message }}</p>
             <button class="secondary p-2 w-full" @click="register">
-              Zkusit znovu
+              <TranslatedText identifier="buttons.retry" />
             </button>
           </template>
           <template v-else>
-            <h2>Gratulace! Váš účet byl založen.</h2>
-            <span class="font-medium"
-              >Na vaši e-mailovou adresu vám krátce přijde odkaz, pomocí
-              kterého<br />
-              si ověříte váš účet.</span
-            >
+            <h2>
+              <TranslatedText identifier="auth.register.status.success_title" />
+            </h2>
+            <span class="font-medium">
+              <TranslatedText identifier="auth.register.status.success_message" />
+            </span>
           </template>
         </div>
       </div>
@@ -440,8 +503,12 @@ watch(
           class="primary p-2 my-2 w-full"
           type="submit"
         >
-          <template v-if="!stepper.isLast.value"> Další </template>
-          <template v-else> Zavřít </template>
+          <template v-if="!stepper.isLast.value">
+            <TranslatedText identifier="buttons.next" />
+          </template>
+          <template v-else>
+            <TranslatedText identifier="buttons.close" />
+          </template>
         </button>
       </div>
     </div>
@@ -457,8 +524,9 @@ watch(
           'text-yellow-500': stepper.isAfter(id)
         }"
         @click="stepper.goTo(id)"
-        v-text="step.title"
-      />
+      >
+        <TranslatedText :identifier="step.title" />
+      </button>
     </div>
   </div>
 </template>

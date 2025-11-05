@@ -40,7 +40,9 @@ const location = window.location.href;
 <template>
   <div class="flex flex-row gap-x-2 content-center">
     <!-- <img src="/WIP.png" width="50px" /> -->
-    <h1>Stažení aplikace</h1>
+    <h1>
+      <TranslatedText identifier="pages.application.title" />
+    </h1>
   </div>
 
   <div class="flex flex-col items-center gap-y-4">
@@ -83,7 +85,9 @@ const location = window.location.href;
         <a href="https://www.instagram.com/p/DKzadiSK_OP">
           <div class="flex flex-col items-center">
             <img src="https://upload.wikimedia.org/wikipedia/commons/9/95/Instagram_logo_2022.svg" width="40px">
-            <span>Jak stáhnout aplikaci?</span>
+            <span>
+              <TranslatedText identifier="pages.application.how_to_download" />
+            </span>
           </div>
         </a>
       </div>

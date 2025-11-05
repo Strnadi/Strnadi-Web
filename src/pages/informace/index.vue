@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { getArticleCategories } from '@/api/articles';
 
 import { kebabize } from '@/utils/strings';
+import TranslatedText from '@/components/TranslatedText.vue';
 
 const { data: categories } = useQuery({
   queryKey: ['articles'],
@@ -16,7 +17,9 @@ const { data: categories } = useQuery({
 </script>
 
 <template>
-  <h1>Informace</h1>
+  <h1>
+    <TranslatedText identifier="pages.information.title" />
+  </h1>
 
   <ul class="flex flex-col">
     <li v-for="category in categories" :key="category.name">

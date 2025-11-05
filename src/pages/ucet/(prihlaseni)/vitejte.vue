@@ -24,21 +24,25 @@ import TranslatedText from '@/components/TranslatedText.vue';
         to="/ucet/prihlaseni"
         class="button-primary p-2 w-full"
       >
-        Přihlásit se
+        <TranslatedText identifier="buttons.login" />
       </PrefetchLink>
       <PrefetchLink
         :replace="true"
         to="/ucet/registrace"
         class="button-secondary p-2 w-full"
       >
-        Založit účet
+        <TranslatedText identifier="buttons.register" />
       </PrefetchLink>
     </div>
 
     <HorizontalLineWithText>
-      <span class="text-sm text-gray-500">Nebo</span>
+      <span class="text-sm text-gray-500">
+        <TranslatedText identifier="common.or" />
+      </span>
     </HorizontalLineWithText>
 
-    <router-link to="/" class="p-2"> Pokračovat bez účtu </router-link>
+    <router-link to="/" class="p-2">
+      <TranslatedText identifier="auth.welcome.continue_without_account" />
+    </router-link>
   </div>
 </template>

@@ -6,6 +6,7 @@ meta:
 <script setup lang="ts">
 import { accountStore } from '@/state/AccountStore';
 import { computed } from 'vue';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
 
 // Compute if the user has both first and last name
 const hasFullName = computed(
@@ -20,14 +21,16 @@ const displayName = computed(() => {
   return (
     accountStore.user?.nickname ||
     accountStore.user?.email?.split('@')[0] ||
-    'Uživatel'
+    t('labels.user')
   );
 });
 </script>
 
 <template>
   <div class="profile-container">
-    <h1 class="text-2xl font-bold mb-6">Můj profil</h1>
+    <h1 class="text-2xl font-bold mb-6">
+      <TranslatedText identifier="account.profile.title" />
+    </h1>
 
     <!-- User info card -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
@@ -35,7 +38,12 @@ const displayName = computed(() => {
         class="flex flex-col md:flex-row justify-between items-start md:items-center"
       >
         <div class="flex flex-col">
-          <span class="text-xl font-medium">{{ displayName }}</span>
+          <span class="text-xl font-medium">
+            {{ displayName }}
+            <template v-if="accountStore.user?.nickname">
+              ({{ accountStore.user?.nickname }})
+            </template>
+          </span>
           <span class="text-gray-600">{{ accountStore.user?.email }}</span>
 
           <div
@@ -44,13 +52,13 @@ const displayName = computed(() => {
           >
             <span
               class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
-              >Ověřený email</span
+              ><TranslatedText identifier="account.profile.email_verified_badge" /></span
             >
           </div>
           <div class="flex items-center mt-2" v-else>
             <span
               class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full"
-              >Neověřený email</span
+              ><TranslatedText identifier="account.profile.email_unverified_badge" /></span
             >
           </div>
         </div>
@@ -62,7 +70,9 @@ const displayName = computed(() => {
               >({{ accountStore.user?.postCode }})</span
             >
           </span>
-          <span v-else class="text-gray-400 text-sm">Není uvedeno místo</span>
+          <span v-else class="text-gray-400 text-sm">
+            <TranslatedText identifier="account.profile.no_location" />
+          </span>
         </div>
       </div>
     </div>
@@ -70,52 +80,74 @@ const displayName = computed(() => {
     <!-- Navigation links -->
     <div class="grid md:grid-cols-2 gap-3 mb-6">
       <prefetch-link to="/ucet/sprava/moje-nahravky" class="link">
-        <span class="font-medium">Moje nahrávky</span>
-        <span class="text-sm text-gray-600"
-          >Správa a přehled nahraných záznamů</span
-        >
+        <span class="font-medium">
+          <TranslatedText identifier="account.profile.my_recordings" />
+        </span>
+        <span class="text-sm text-gray-600">
+          <TranslatedText
+            identifier="account.profile.my_recordings_description"
+          />
+        </span>
       </prefetch-link>
 
       <prefetch-link to="/ucet/sprava/osobni-udaje" class="link">
-        <span class="font-medium">Osobní údaje</span>
-        <span class="text-sm text-gray-600">Úprava osobních informací</span>
+        <span class="font-medium">
+          <TranslatedText identifier="account.profile.personal_data" />
+        </span>
+        <span class="text-sm text-gray-600">
+          <TranslatedText
+            identifier="account.profile.personal_data_description"
+          />
+        </span>
       </prefetch-link>
 
       <!-- <prefetch-link
         to="/ucet/sprava/oznameni"
         class="link"
       >
-        <span class="font-medium">Oznámení</span>
-        <span class="text-sm text-gray-600">Správa notifikací</span>
+        <span class="font-medium">Notifications</span>
+        <span class="text-sm text-gray-600">Manage notifications</span>
       </prefetch-link> -->
 
-      <prefetch-link
+      <!-- <prefetch-link
         v-if="accountStore.user?.role === 'admin'"
         to="/sprava"
         class="link bg-blue-50 border-blue-200"
       >
-        <span class="font-medium">Administrace</span>
-        <span class="text-sm text-gray-600">Správa systému</span>
-      </prefetch-link>
+        <span class="font-medium">
+          <TranslatedText identifier="account.profile.administration" />
+        </span>
+        <span class="text-sm text-gray-600">
+          <TranslatedText
+            identifier="account.profile.administration_description"
+          />
+        </span>
+      </prefetch-link> -->
     </div>
 
     <!-- Account actions -->
     <div class="mt-4 border-t border-gray-200 pt-4">
-      <h2 class="text-lg font-medium mb-3">Nastavení účtu</h2>
+      <h2 class="text-lg font-medium mb-3">
+        <TranslatedText identifier="account.settings.title" />
+      </h2>
 
       <prefetch-link
         v-if="!accountStore.user?.isEmailVerified"
         to="/ucet/sprava/overeni-emailu"
         class="flex items-center p-3 mb-3 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100"
       >
-        <span class="font-medium">Odeslat znovu ověřovací e-mail</span>
+        <span class="font-medium">
+          <TranslatedText identifier="account.settings.resend_verification" />
+        </span>
       </prefetch-link>
 
       <prefetch-link
         to="/ucet/sprava/smazat"
         class="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100"
       >
-        <span class="text-red-600 font-medium">Smazat účet</span>
+        <span class="text-red-600 font-medium">
+          <TranslatedText identifier="buttons.delete_account" />
+        </span>
       </prefetch-link>
     </div>
 
@@ -125,7 +157,7 @@ const displayName = computed(() => {
         @click="accountStore.logout()"
         class="button-secondary p-2 w-full"
       >
-        Odhlásit se
+        <TranslatedText identifier="buttons.logout" />
       </button>
     </div>
   </div>

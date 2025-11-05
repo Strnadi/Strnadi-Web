@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Close from '@/icons/interface/icon-close.svg';
+import Back from '@/icons/interface/icon-back.svg';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -16,6 +17,13 @@ const closePopup = () => {
 <template>
   <router-view v-slot="{ Component }">
     <aside class="side relative">
+      <button
+        class="small absolute top-5 left-5 z-10 rounded-2xl"
+        @click="goBack"
+      >
+        <Back />
+      </button>
+
       <button
         class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl"
         @click="closePopup"
@@ -51,7 +59,7 @@ aside.side {
 }
 
 aside > div {
-  @apply /*grid grid-cols-[auto_1fr] */ overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
+  @apply /*grid grid-cols-[auto_1fr] */ flex flex-col overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
   @apply rounded-4xl;
   @apply p-8;
   @apply pb-20;
@@ -70,9 +78,9 @@ aside > div > button.big {
   @apply py-1 -ml-3 mr-4 self-start flex flex-row items-center border-none bg-transparent;
 }
 
-aside > div :not(button:first-of-type, h1:first-of-type) {
+/*aside > div :not(button:first-of-type, h1:first-of-type) {
   @apply col-span-2;
-}
+}*/
 
 .v-enter-active,
 .v-leave-active {

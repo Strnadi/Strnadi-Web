@@ -15,7 +15,9 @@ const route = useRoute();
     <div class="flex flex-row items-center gap-x-10">
       <img src="/WIP.png" width="150px" />
       <div class="flex flex-col">
-        <h4>Kontakty</h4>
+        <h4>
+          <TranslatedText identifier="buttons.contacts" />
+        </h4>
         <a external="true" href="mailto:info@strnadi.cz" class="text-sm">info@strnadi.cz</a>
         <a external="true" href="mailto:developers@strnadi.cz" class="text-sm"
           >developers@strnadi.cz</a
@@ -45,7 +47,7 @@ const route = useRoute();
     </router-link>
 
     <!-- <div class="self-start">
-      <h2 class="text-xl">Foto týdne</h2>
+      <h2 class="text-xl">Photo of the Week</h2>
     </div> -->
 
     <hr />
