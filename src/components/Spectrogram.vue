@@ -249,6 +249,7 @@
 
       <!-- Progress line -->
       <div
+        v-if="!props.noControls"
         v-show="isLoaded"
         ref="progressLineRef"
         class="progress-line absolute top-0 w-0.5 h-full bg-red-600 cursor-col-resize"
@@ -310,7 +311,7 @@
 
     <!-- Playback controls if no external audio element -->
     <div
-      v-if="!props.audioElementProp"
+      v-if="!props.audioElementProp && !props.noControls"
       class="controls-container flex justify-center gap-2.5 w-full mt-2.5"
     >
       <button
@@ -345,7 +346,7 @@
 
     <!-- Playback options -->
     <div
-      v-if="isLoaded"
+      v-if="isLoaded && !props.noControls"
       class="playback-options-container w-full flex items-center justify-center gap-x-4 gap-y-2 mt-1 px-2.5 flex-wrap"
     >
       <label class="whitespace-nowrap text-sm">
@@ -381,7 +382,7 @@
     </div>
 
     <!-- Scrollbars -->
-    <div v-if="isLoaded" class="w-full px-2.5 mt-2.5 space-y-2">
+    <div v-if="isLoaded && !props.noControls" class="w-full px-2.5 mt-2.5 space-y-2">
       <!-- Pan Scrollbar -->
       <div
         v-if="spectrogramData.length > 0 && maxOffsetIndex > 0"
@@ -538,6 +539,7 @@ interface Props {
   selectionColorResolver?: (ranges: Range[]) => string;
   readonly?: boolean; // Add readonly prop
   currentTime?: number;
+  noControls?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -560,7 +562,8 @@ const props = withDefaults(defineProps<Props>(), {
   ],
   sampleSize: 256,
   readonly: false, // Default readonly to false
-  currentTime: 0
+  currentTime: 0,
+  noControls: false
 });
 
 const emit = defineEmits<{
@@ -738,16 +741,17 @@ function updateNextRangeColor(ranges: Range[]) {
   nextRangeColor.value = props.selectionColorResolver ? setColorAlpha(color, 0.6) : color;
 }
 // Initialize with current selected ranges
-updateNextRangeColor(props.selected);
+// updateNextRangeColor(props.selected);
 // Watch for changes in selected ranges
 watch(() => props.selected, (newSelected) => {
   updateNextRangeColor(newSelected);
-}, { deep: true });
+}, { deep: true, immediate: true });
 
 const hoverLineColor = computed(() => {
   if (props.readonly) {
     return 'rgb(220 38 38)'; // Tailwind's red-600
   }
+  updateNextRangeColor(props.selected);
   return nextRangeColor.value;
 });
 
@@ -1660,7 +1664,9 @@ function onSpectrogramMouseMove(e: MouseEvent) {
 }
 
 function onSpectrogramMouseEnter() {
-  showHoverLine.value = true;
+  if (!props.noControls) {
+    showHoverLine.value = true;
+  }
 }
 
 function onCanvasMouseDown(e: MouseEvent) {

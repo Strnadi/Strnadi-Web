@@ -118,7 +118,6 @@ const submit = () => {
         type="text"
         :placeholder="t('placeholders.name')"
         class="w-full p-2 border rounded"
-        required
       />
     </div>
     <div>
@@ -132,7 +131,6 @@ const submit = () => {
         type="text"
         :placeholder="t('placeholders.surname')"
         class="w-full p-2 border rounded"
-        required
       />
     </div>
     <div>

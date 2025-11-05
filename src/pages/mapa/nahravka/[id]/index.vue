@@ -18,6 +18,7 @@ import { MapStore } from '@/views/map/RecordingsMap.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
+import type { FilteredPartModel } from '@/api/recordings';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
@@ -106,6 +107,31 @@ const cancelEdit = () => {
   editing.value = false;
   // Optionally reset fields if needed, though toggleEdit already does this when starting
 };
+
+const segments = ref<{
+  id: number;
+  start: number;
+  end: number;
+  color: string;
+}[]>([]);
+
+watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
+  if (newFilteredRec) {
+    const firstPart = recording.value?.parts?.[0];
+
+    if (!firstPart) return;
+
+    let i = 0;
+
+    segments.value = newFilteredRec.map((fr) => ({
+      id: fr.id * 1000 + i++,
+      start:  Number((new Date(fr.startDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000),
+      end: Number((new Date(fr.endDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000),
+      color: DialectColors[fr.detectedDialects?.[0]?.confirmedDialect as keyof typeof DialectColors] ?? '#000000'
+    }));
+  }
+});
+
 
 // onMounted(() => {
 //   MapStore.move([ recordingPart.gpsLatitudeStart, recordingPart.gpsLongitudeStart ], 17);
@@ -217,6 +243,15 @@ const cancelEdit = () => {
           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
         />
       </div>
+
+      <Spectrogram
+        v-if="recording"
+        :audio-urls="recording.parts?.map(p => `${env.VITE_API_URL}/recordings/part/${recording.id}/${p.id}/sound`) ?? []"
+        :height="300"
+        :readonly="true"
+        :no-controls="true"
+        :selected="segments"
+      />
 
       <!-- Parts Section -->
       <div>

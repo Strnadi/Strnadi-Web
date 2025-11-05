@@ -53,6 +53,15 @@ watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
   }
 });
 
+watch(selectedColor, (newColor) => {
+  if (!newColor || !currentTime.value) return;
+
+  const segment = segments.value.find(segment => segment.start >= currentTime.value && segment.end <= currentTime.value);
+  if (segment) {
+    segment.color = newColor;
+  }
+}, { immediate: true });
+
 const saveDialects = async () => {
   if (!accountStore.token) return;
   if (!recording.value) return;

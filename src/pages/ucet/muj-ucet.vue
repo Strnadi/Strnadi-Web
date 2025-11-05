@@ -39,8 +39,8 @@ const displayName = computed(() => {
       >
         <div class="flex flex-col">
           <span class="text-xl font-medium">
-            {{ displayName }}
-            <template v-if="accountStore.user?.nickname">
+            {{ displayName || accountStore.user?.nickname }}
+            <template v-if="accountStore.user?.nickname && !displayName">
               ({{ accountStore.user?.nickname }})
             </template>
           </span>

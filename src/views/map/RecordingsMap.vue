@@ -208,6 +208,7 @@ const markers = computed<Marker[]>(() => {
           fp.detectedDialects?.map((dd) => {
             let color: string | null = null;
             if (
+              // dd.
               dd.confirmedDialect &&
               dd.confirmedDialect in DialectColors &&
               fp.representantFlag

@@ -112,14 +112,16 @@ export const uploadQueueStore = reactive({
       });
     };
 
+    let lastEndDate: Date | undefined;
     const modifiedParts = await Promise.all(task.parts.map(async part => {
       // Calculate end date based on audio duration
       let endDate = part.endDate;
       try {
         const duration = await getAudioDuration(part.data);
-        const startDate = new Date(part.startDate);
-        const calculatedEndDate = new Date(startDate.getTime() + duration * 1000);
+        const startDate = new Date(new Date(part.startDate).getTime() + (lastEndDate?.getTime() ?? 0)).toISOString();
+        const calculatedEndDate = new Date(new Date(startDate).getTime() + (duration * 1000));
         endDate = calculatedEndDate.toISOString();
+        lastEndDate = calculatedEndDate;
       } catch (error) {
         console.warn('Failed to get audio duration, using original endDate', error);
       }
