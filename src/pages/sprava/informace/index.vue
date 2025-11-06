@@ -8,6 +8,7 @@ import { getArticleCategories, getArticles } from '@/api/articles';
 import { useQuery } from '@tanstack/vue-query';
 import { computed } from 'vue';
 import TranslatedText from '@/components/TranslatedText.vue';
+import DropdownIcon from '@/icons/interface/dropdown.svg';
 
 const { data: categories } = useQuery({
   queryKey: ['categories'],
@@ -62,16 +63,19 @@ const uncategorizedArticles = computed(() => {
       <details
         v-for="category in categories"
         :key="category.name"
-        class="border rounded-md"
+        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
       >
         <summary
           class="flex flex-row justify-between gap-x-2 p-3 cursor-pointer hover:bg-gray-50"
         >
-          <div class="flex flex-col w-full justify-between">
-            <span class="font-semibold">{{ category.label }}</span>
-            <span class="italic text-sm text-gray-600">{{
-              category.name
-            }}</span>
+          <div class="flex flex-row content-center items-center gap-x-2">
+            <DropdownIcon class="w-[64px] h-[32px]" />
+            <div class="flex flex-col w-full justify-between">
+              <span class="font-semibold">{{ category.label }}</span>
+              <span class="italic text-sm text-gray-600">{{
+                category.name
+              }}</span>
+            </div>
           </div>
           <div class="flex flex-row gap-x-2 shrink-0">
             <router-link
@@ -133,7 +137,7 @@ const uncategorizedArticles = computed(() => {
       <!-- Uncategorized Articles -->
       <details
         v-if="uncategorizedArticles.length > 0"
-        class="border rounded-md border-dashed"
+        class="bg-white rounded-lg shadow-sm border border-gray-200 border-dashed p-4"
       >
         <summary
           class="flex flex-row justify-between gap-x-2 p-3 cursor-pointer hover:bg-gray-50"

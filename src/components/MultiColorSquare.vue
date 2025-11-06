@@ -1,5 +1,7 @@
 <template>
-  <div :style="squareStyle" class="inline-block box-border" />
+  <div :style="squareStyle" class="inline-block box-border">
+    <div v-if="dot === 'true'" class="absolute m-auto top-0 left-0 right-0 bottom-0 w-1/2 h-1/2 bg-black rounded-full" />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -9,6 +11,8 @@ const props = defineProps<{
   colors: string[] | string;
   size: string;
   gradient?: boolean;
+  dot?: string; // dot in the center of the square above the background
+  questionmark?: string; // question mark in the center of the square above the background
 }>();
 
 const parsedColors = computed<string[]>(() => {

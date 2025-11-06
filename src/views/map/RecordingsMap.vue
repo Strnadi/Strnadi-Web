@@ -3,7 +3,7 @@ import mitt from '@/vendor/mitt';
 import { reactive } from 'vue';
 import { type LeafletMouseEvent } from 'leaflet';
 import type { Polygon, Marker } from '@/views/map/Map.vue';
-import { refDebounced } from '@vueuse/core';
+import { computedAsync, refDebounced } from '@vueuse/core';
 
 // let positionStack = ref([
 //   [ 49.9, 15.5, 8.25 ]
@@ -20,18 +20,7 @@ export interface MapClickEvent {
   square?: string;
 }
 
-export const DialectColors = {
-  BC: '#FDE441',
-  BE: '#52DC4D',
-  BD: '#666666',
-  BhBl: '#8ED0FF',
-  BlBh: '#4E68F0',
-  XB: '#F04D4D',
-  Neznámý: '#aaaaaa',
-  'Bez dialektu': '#000000',
-  XlB: "#F04D4D",
-  XsB: "#F04D4D"
-};
+export const DialectColors = computedAsync(async () => await getDialectColors());
 
 export const MapEvents = mitt<{
   click: MapClickEvent;
@@ -69,7 +58,7 @@ export const MapStore = reactive<{
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { getRecordings, getFilteredRecordings } from '@/api/recordings';
+import { getRecordings, getFilteredRecordings, getDialectColors } from '@/api/recordings';
 
 import { accountStore } from '@/state/AccountStore';
 
@@ -205,50 +194,57 @@ const markers = computed<Marker[]>(() => {
             });
           }) ?? [];
 
-        // build color list
-        const dialectStrings = allFiltered.flatMap((fp) =>
-          fp.detectedDialects?.map((dd) => {
-            console.log("Detected dialect:", dd);
-            let color: string | null = null;
-            if (
-              // dd.
-              dd.confirmedDialect &&
-              dd.confirmedDialect in DialectColors &&
-              fp.representantFlag
-            ) {
-              color =
-                DialectColors[
-                  dd.confirmedDialect as keyof typeof DialectColors
-                ];
-            } else if (
-              dd.predictedDialect &&
-              dd.predictedDialect in DialectColors
-            ) {
-              console.log("Predicted dialect:", dd.predictedDialect);
-              color =
-                DialectColors[
-                  dd.predictedDialect as keyof typeof DialectColors
-                ];
-            }
+        let dialectStrings: string[] = [];
+        let fromModel = false;
+        let fromUser = false;
 
-            return color;
-          }) ?? []
-        );
-        // const colors = dialectStrings.filter((c): c is string => c !== null);
-        const colors = dialectStrings;
-        const finalColors = colors.length > 0 ? colors : ['#000000'];
+        if (allFiltered.some(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.confirmedDialect))) {
+          dialectStrings = allFiltered
+                          .filter(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.confirmedDialect))
+                          .flatMap(fp => fp.detectedDialects?.map(dd => dd.confirmedDialect) ?? []);
 
-        // if (rec.id === 58) {
-        //   console.log('Recording 58 colors:', allFiltered);
-        // }
+          if (dialectStrings.length > 0) {
+            fromModel = false;
+            fromUser = false;
+          }
+        }
+
+        else if (allFiltered.some(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.predictedDialect))) {
+          dialectStrings = allFiltered
+                          .filter(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.predictedDialect))
+                          .flatMap(fp => fp.detectedDialects?.map(dd => dd.predictedDialect) ?? []);
+
+          if (dialectStrings.length > 0) {
+            fromModel = true;
+            fromUser = false;
+          }
+        }
+
+        else if (allFiltered.some(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.userGuessDialect))) {
+          dialectStrings = allFiltered
+                          .filter(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.userGuessDialect))
+                          .flatMap(fp => fp.detectedDialects?.map(dd => dd.userGuessDialect) ?? []);
+          
+          if (dialectStrings.length > 0) {
+            fromUser = true;
+            fromModel = false;
+          }
+        }
+
+        else {
+          dialectStrings = ['None'];
+          fromModel = false;
+          fromUser = false;
+        }
+
+        const colors = dialectStrings.map(ds => DialectColors.value?.[ds as keyof typeof DialectColors.value] ?? '#000000');
+        console.log(colors)
 
         const icon = divIcon({
           className: '',
           iconSize: [12, 12],
           iconAnchor: [6, 6],
-          html: `<multi-color-square size="100%" colors='${JSON.stringify(
-            finalColors
-          )}'></multi-color-square>`
+          html: `<multi-color-square size="100%" dot="${fromModel}" questionmark="${fromUser}" colors='${JSON.stringify(colors)}'></multi-color-square>`
         });
 
         return {
@@ -313,6 +309,7 @@ const onClick = ({
 
 <template>
   <Map
+    v-if="DialectColors"
     v-model:bounds="viewBounds"
     v-model:zoom="zoom"
     :scale-bar="MapStore.scale"

@@ -155,6 +155,10 @@ export const translations = {
       },
       user_profile: {
         title: 'Profil uživatele',
+        admin: {
+          actions_section: 'Akce',
+          delete_account_button: 'Smazat účet'
+        },
         details_section: 'Podrobnosti',
         contact_section: 'Kontakt',
         location_label: 'Lokalita',
@@ -576,6 +580,10 @@ export const translations = {
       },
       user_profile: {
         title: 'User profile',
+        admin: {
+          actions_section: 'Actions',
+          delete_account_button: 'Delete account'
+        },
         details_section: 'Details',
         contact_section: 'Contact',
         location_label: 'Location',
