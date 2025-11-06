@@ -315,7 +315,7 @@ async function downloadSelectedRecordings() {
             :key="fr.id"
             class="flex flex-row gap-x-2 items-center py-1 border-t border-gray-200 first:border-t-0"
           >
-            <MultiColorSquare size="16px" :colors="fr.detectedDialects?.map(d => DialectColors[d.confirmedDialect as keyof typeof DialectColors]) ?? []" />
+            <MultiColorSquare size="16px" :colors="fr.detectedDialects?.map(d => DialectColors.value?.[d.confirmedDialect as keyof typeof DialectColors.value] ?? '') ?? []" />
             <span class="text-sm">
               {{ formatDuration(new Date(fr.startDate).getTime() - new Date(recording.parts?.[0]?.startDate ?? 0).getTime()) }} - {{ formatDuration(new Date(fr.endDate).getTime() - new Date(recording.parts?.[0]?.startDate ?? 0).getTime()) }}
             </span>

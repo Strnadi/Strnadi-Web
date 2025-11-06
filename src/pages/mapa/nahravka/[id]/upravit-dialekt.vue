@@ -17,7 +17,7 @@ import { accountStore } from '@/state/AccountStore';
 const env = import.meta.env;
 const id = useRouteParams<Numeric>('id');
 
-const selectedColor = ref(DialectColors.BC);
+const selectedColor = ref("BC");
 
 const {
   data: recording,
@@ -34,6 +34,9 @@ const segments = ref<{
   start: number;
   end: number;
   color: string;
+  userGuessDialect?: string | null;
+  confirmedDialect?: string | null;
+  predictedDialect?: string | null;
 }[]>([]);
 
 watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
@@ -48,7 +51,14 @@ watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
       id: fr.id * 1000 + i++,
       start:  Number((new Date(fr.startDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000),
       end: Number((new Date(fr.endDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000),
-      color: DialectColors[fr.detectedDialects?.[0]?.confirmedDialect as keyof typeof DialectColors] ?? '#000000'
+      color: DialectColors.value?.[
+        fr.detectedDialects?.[0]?.confirmedDialect ??
+        fr.detectedDialects?.[0]?.predictedDialect ??
+        fr.detectedDialects?.[0]?.userGuessDialect ?? 'None'
+      ] ?? '#000000',
+      userGuessDialect: fr.detectedDialects?.[0]?.userGuessDialect ?? null,
+      confirmedDialect: fr.detectedDialects?.[0]?.confirmedDialect ?? null,
+      predictedDialect: fr.detectedDialects?.[0]?.predictedDialect ?? null,
     }));
   }
 });
@@ -73,10 +83,16 @@ const saveDialects = async () => {
     recordingId: recording.value.id,
     startDate: new Date(new Date(firstPart.startDate).getTime() + segment.start * 1000).toISOString(),
     endDate: new Date(new Date(firstPart.startDate).getTime() + segment.end * 1000).toISOString(),
-    dialectCode: Object.keys(DialectColors).find((key) => DialectColors[key as keyof typeof DialectColors] === segment.color) ?? 'Neznámý',
+    dialectCode: Object.keys(DialectColors).find((key) => DialectColors.value?.[key as keyof typeof DialectColors.value] === segment.color) ?? 'Unknown',
+    confirmedDialect: segment.confirmedDialect ?? null,
+    predictedDialect: segment.predictedDialect ?? null,
+    userGuessDialect: segment.userGuessDialect ?? null,
   }));
 
   for (const filteredPart of filteredParts) {
+
+
+
     await postFilteredPart(accountStore.token!, filteredPart);
   }
 
@@ -110,7 +126,8 @@ const saveDialects = async () => {
           )
         "
         :height="400"
-        :max-frequency="9000"
+        :max-frequency="10000"
+        :min-frequency="3000"
         :selection-color-resolver="() => selectedColor"
         v-model:currentTime="currentTime"
       />

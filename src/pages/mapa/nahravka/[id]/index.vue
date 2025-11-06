@@ -128,8 +128,8 @@ watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
       id: fr.id * 1000 + i++,
       start:  Number((new Date(fr.startDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000),
       end: Number((new Date(fr.endDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000),
-      color: DialectColors[
-        (fr.detectedDialects?.[0]?.confirmedDialect ?? fr.detectedDialects?.[0]?.predictedDialect ?? fr.detectedDialects?.[0]?.userGuessDialect) as keyof typeof DialectColors
+      color: DialectColors.value?.[
+        (fr.detectedDialects?.[0]?.confirmedDialect ?? fr.detectedDialects?.[0]?.predictedDialect ?? fr.detectedDialects?.[0]?.userGuessDialect) as keyof typeof DialectColors.value
       ] ?? '#000000'
     }));
   }
@@ -164,7 +164,7 @@ watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
         <MultiColorSquare size="20px" :colors="fr.detectedDialects?.map(dd => {
           let color = null;
           if (dd.confirmedDialect && dd.confirmedDialect in DialectColors) {
-            color = DialectColors[dd.confirmedDialect as keyof typeof DialectColors];
+            color = DialectColors.valuedd.confirmedDialect as keyof typeof DialectColors];
           }
           return color;
         }).filter(c => c !== null) ?? []" />

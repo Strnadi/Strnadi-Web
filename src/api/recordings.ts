@@ -198,3 +198,30 @@ export const postFilteredPart = async (
     dialectCode: string;
   }
 ): Promise<void> => authorizedPost(`/recordings/filtered`, token, filteredPart);
+
+export const patchFilteredPart = async (
+  token: string,
+  id: Numeric,
+  patchedFilteredPart: Omit<FilteredPartModel, 'id'>
+): Promise<void> => authorizedPatch(`/recordings/filtered/${id}`, token, patchedFilteredPart);
+
+export const deleteFilteredPart = async (
+  token: string,
+  id: Numeric
+): Promise<void> => authorizedDelete(`/recordings/filtered/${id}`, token);
+
+export const getDialectColors = async (): Promise<Record<string, string>> => {
+
+  // const forNow = [{"id":11,"dialectCode":"Jiné","color":""},{"id":3,"dialectCode":"BC","color":"#FDE441"},{"id":4,"dialectCode":"BE","color":"#52DC4D"},{"id":5,"dialectCode":"BD","color":"#666666"},{"id":6,"dialectCode":"BhBl","color":"#8ED0FF"},{"id":7,"dialectCode":"BlBh","color":"#4E68F0"},{"id":8,"dialectCode":"XB","color":"#F04D4D"},{"id":12,"dialectCode":"Neznámý","color":"#aaaaaa"},{"id":13,"dialectCode":"Bez dialektu","color":"#000000"},{"id":1,"dialectCode":"B","color":"#47f5f2"},{"id":2,"dialectCode":"X","color":"#00ff88"},{"id":9,"dialectCode":"XlB","color":"#e5ff00"},{"id":10,"dialectCode":"XsB","color":"#ffb06b"},{"id":14,"dialectCode":"3S","color":"#030303"},{"id":15,"dialectCode":"BBe","color":"#bbebbe"},{"id":16,"dialectCode":"Nedokončený","color":"#3b4e5f"},{"id":17,"dialectCode":"Unfinished","color":"#3b4e5f"}];
+
+  const response = await axios.get(`${import.meta.env.VITE_API_URL}/recordings/dialects`);
+  console.log(response.data)
+
+  const mapping = {};
+
+  for (const dialect of response.data) {
+    mapping[dialect.dialectCode] = dialect.color;
+  }
+
+  return mapping;
+};

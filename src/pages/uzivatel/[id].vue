@@ -230,7 +230,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
               <li v-for="recording in recordingsList" :key="recording.id">
                 <prefetch-link
                   :to="`/mapa/nahravka/${recording.id}`"
-                  class="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-lime-400 hover:shadow-md"
+                  class="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-yellow-400 hover:shadow-md"
                 >
                   <div class="flex items-center justify-between">
                     <p class="text-lg font-semibold text-gray-900">
@@ -269,6 +269,17 @@ const recordingsCount = computed(() => recordingsList.value.length);
               <TranslatedText identifier="empty" />
             </p>
           </template>
+        </section>
+
+        <section class="space-y-4">
+          <h2 class="text-xl font-semibold">
+            <TranslatedText identifier="pages.user_profile.admin.actions_section" />
+          </h2>
+          <div class="flex flex-row">
+            <button class="secondary danger p-2">
+              <TranslatedText identifier="pages.user_profile.admin.delete_account_button" />
+            </button>
+          </div>
         </section>
       </div>
     </template>

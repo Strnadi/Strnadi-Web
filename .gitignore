@@ -28,7 +28,7 @@ dist-ssr
 
 
 .env*
-bun.lock
+# bun.lock
 stats.html
 
 typed-router.d.ts

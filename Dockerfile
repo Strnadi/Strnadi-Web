@@ -73,8 +73,8 @@ FROM oven/bun:alpine AS build
 WORKDIR /usr/src/app
 
 COPY patches patches
-COPY package.json .env ./
-RUN bun install
+COPY package.json bun.lock .env ./
+RUN bun install --frozen-lockfile
 
 COPY src src
 COPY public public

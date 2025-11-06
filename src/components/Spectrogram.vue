@@ -569,11 +569,11 @@ const props = withDefaults(defineProps<Props>(), {
     '#252525',
     '#000000'
   ],
-  sampleSize: 256,
+  sampleSize: 1024,
   readonly: false, // Default readonly to false
   currentTime: 0,
   noControls: false,
-  downloadOnlySelections: true,
+  downloadOnlySelections: false, // todo
 });
 
 const emit = defineEmits<{
@@ -964,11 +964,17 @@ async function loadAndProcessAudio() {
         return;
       }
       const dur = header.dataSize / bytesPerSecond(header);
+      console.log(dur);
       metas.push({ url, header, duration: dur });
     }
 
     // Ensure all files share same audio format
-    const refFmt = metas[0].header;
+    const refFmt = metas[0]?.header;
+    if (!refFmt) {
+      console.warn('No header found, fallback to full download');
+      await legacyFullDownload(audioCtx, urls);
+      return;
+    }
     for (const m of metas) {
       if (
         m.header.sampleRate !== refFmt.sampleRate ||
