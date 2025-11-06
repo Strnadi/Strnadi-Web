@@ -29,7 +29,7 @@ const { data: users, isLoading } = useQuery({
         v-for="user in users"
         :key="user.id"
         :to="`/uzivatel/${user.id}`"
-        class="flex flex-col border-2 border-gray-200 hover:bg-gray-300 p-2 rounded-lg"
+        class="flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition duration-200"
       >
         <span>{{ user.firstName }} {{ user.lastName }}</span>
         <div class="flex flex-row justify-between">

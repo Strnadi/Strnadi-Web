@@ -248,7 +248,7 @@ async function downloadSelectedRecordings() {
       <li
         v-for="recording in recordings"
         :key="recording.id"
-        class="flex flex-col border p-3 rounded-md shadow-sm"
+        class="flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-4"
       >
         <div class="flex flex-row justify-between items-center">
           <div class="flex flex-row gap-x-2 items-center">

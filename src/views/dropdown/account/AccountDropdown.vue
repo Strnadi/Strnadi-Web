@@ -15,7 +15,12 @@ const user = accountStore.user!;
         <ProfileIcon v-if="!user.profilePicture" />
         <img v-else :src="user.profilePicture" />
 
-        {{ user.firstName }} {{ user.lastName }}
+        <template v-if="user.nickname && !user.firstName && !user.lastName">
+          @{{ user.nickname }}
+        </template>
+        <template v-else>
+          {{ user.firstName }} {{ user.lastName }}
+        </template>
         <DropdownIcon />
       </div>
     </template>

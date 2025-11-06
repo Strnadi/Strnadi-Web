@@ -26,11 +26,11 @@ async function confirmDelete() {
   try {
     isDeleting.value = true;
     await deleteRecording(accountStore.token!, recordingId.value);
-    alert(t('recordings.messages.deleted'));
+    // alert(t('recordings.messages.deleted'));
     router.push('/mapa');
   } catch (e) {
     console.error(e);
-    alert(t('errors.recordings.delete_failed'));
+    // alert(t('errors.recordings.delete_failed'));
   } finally {
     isDeleting.value = false;
   }

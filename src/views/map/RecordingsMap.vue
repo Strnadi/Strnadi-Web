@@ -28,7 +28,9 @@ export const DialectColors = {
   BlBh: '#4E68F0',
   XB: '#F04D4D',
   Neznámý: '#aaaaaa',
-  'Bez dialektu': '#000000'
+  'Bez dialektu': '#000000',
+  XlB: "#F04D4D",
+  XsB: "#F04D4D"
 };
 
 export const MapEvents = mitt<{
@@ -206,8 +208,10 @@ const markers = computed<Marker[]>(() => {
         // build color list
         const dialectStrings = allFiltered.flatMap((fp) =>
           fp.detectedDialects?.map((dd) => {
+            console.log("Detected dialect:", dd);
             let color: string | null = null;
             if (
+              // dd.
               dd.confirmedDialect &&
               dd.confirmedDialect in DialectColors &&
               fp.representantFlag
@@ -216,15 +220,17 @@ const markers = computed<Marker[]>(() => {
                 DialectColors[
                   dd.confirmedDialect as keyof typeof DialectColors
                 ];
-            } /* else if (
-              dd.userGuessDialect &&
-              dd.userGuessDialect in DialectColors
+            } else if (
+              dd.predictedDialect &&
+              dd.predictedDialect in DialectColors
             ) {
+              console.log("Predicted dialect:", dd.predictedDialect);
               color =
                 DialectColors[
-                  dd.userGuessDialect as keyof typeof DialectColors
+                  dd.predictedDialect as keyof typeof DialectColors
                 ];
-            } */
+            }
+
             return color;
           }) ?? []
         );

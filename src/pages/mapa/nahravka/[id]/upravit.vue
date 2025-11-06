@@ -34,24 +34,23 @@ watch(recording, (rec) => {
 const saving = ref(false);
 async function save() {
   if (!accountStore.token) {
-    alert(t('errors.auth.not_logged_in'));
+    // alert(t('errors.auth.not_logged_in'));
     return;
   }
   try {
     saving.value = true;
     await patchRecording(accountStore.token, recordingId.value, {
       byApp: recording.value?.byApp ?? false,
-      createdAt: recording.value?.createdAt ?? new Date().toISOString(), // not used in patch
       device: recording.value?.device ?? '',
       estimatedBirdsCount: recording.value?.estimatedBirdsCount ?? 0,
       name: name.value,
       note: note.value
     });
-    alert(t('recordings.messages.updated'));
+    // alert(t('recordings.messages.updated'));
     router.back();
   } catch (e) {
     console.error(e);
-    alert(t('errors.recordings.update_failed'));
+    // alert(t('errors.recordings.update_failed'));
   } finally {
     saving.value = false;
   }

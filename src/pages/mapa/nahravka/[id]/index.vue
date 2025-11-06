@@ -18,6 +18,8 @@ import { MapStore } from '@/views/map/RecordingsMap.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
+import type { FilteredPartModel } from '@/api/recordings';
+import UserCard from '@/views/UserCard.vue';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
@@ -41,7 +43,7 @@ const {
   queryFn: () => getRecording(recordingId.value, false)
 });
 
-const { data: filteredRec } = useQuery({
+const { data: filteredRec, isLoading: isFilteredRecLoading } = useQuery({
   queryKey: ['filtered-recordings', recordingId.value],
   queryFn: () => getFilteredRecording(recordingId.value)
 });
@@ -57,7 +59,7 @@ const {
   isError: isUploaderError
 } = useQuery({
   queryKey: ['user', recording.value?.userId],
-  queryFn: () => getUserInfo(accountStore.token!, recording.value?.userId!),
+  queryFn: () => getUserInfo(recording.value?.userId!, accountStore.token ?? undefined),
   enabled // Use the computed enabled value
 });
 
@@ -106,6 +108,33 @@ const cancelEdit = () => {
   editing.value = false;
   // Optionally reset fields if needed, though toggleEdit already does this when starting
 };
+
+const segments = ref<{
+  id: number;
+  start: number;
+  end: number;
+  color: string;
+}[]>([]);
+
+watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
+  if (newFilteredRec) {
+    const firstPart = recording.value?.parts?.[0];
+
+    if (!firstPart) return;
+
+    let i = 0;
+
+    segments.value = newFilteredRec.map((fr) => ({
+      id: fr.id * 1000 + i++,
+      start:  Number((new Date(fr.startDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000),
+      end: Number((new Date(fr.endDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000),
+      color: DialectColors[
+        (fr.detectedDialects?.[0]?.confirmedDialect ?? fr.detectedDialects?.[0]?.predictedDialect ?? fr.detectedDialects?.[0]?.userGuessDialect) as keyof typeof DialectColors
+      ] ?? '#000000'
+    }));
+  }
+});
+
 
 // onMounted(() => {
 //   MapStore.move([ recordingPart.gpsLatitudeStart, recordingPart.gpsLongitudeStart ], 17);
@@ -203,6 +232,10 @@ const cancelEdit = () => {
         }}</span>
       </div>
 
+      <prefetch-link v-if="uploader" :to="`/uzivatel/${uploader.id}`">
+        <UserCard :user="uploader" />
+      </prefetch-link>
+
       <blockquote
         v-if="!editing"
         class="p-3 bg-gray-50 border-l-4 border-gray-300 italic"
@@ -217,6 +250,15 @@ const cancelEdit = () => {
           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
         />
       </div>
+
+      <Spectrogram
+        v-if="recording && !isFilteredRecLoading"
+        :audio-urls="recording.parts?.map(p => `${env.VITE_API_URL}/recordings/part/${recording.id}/${p.id}/sound`) ?? []"
+        :height="300"
+        :readonly="true"
+        :no-controls="true"
+        :selected="segments"
+      />
 
       <!-- Parts Section -->
       <div>
