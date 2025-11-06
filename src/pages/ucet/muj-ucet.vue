@@ -7,6 +7,7 @@ meta:
 import { accountStore } from '@/state/AccountStore';
 import { computed } from 'vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
+import ProfilePhoto from '@/components/ProfilePhoto.vue';
 
 // Compute if the user has both first and last name
 const hasFullName = computed(
@@ -34,13 +35,14 @@ const displayName = computed(() => {
 
     <!-- User info card -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <ProfilePhoto :userId="accountStore.user?.id!" />
       <div
         class="flex flex-col md:flex-row justify-between items-start md:items-center"
       >
         <div class="flex flex-col">
           <span class="text-xl font-medium">
             {{ displayName || accountStore.user?.nickname }}
-            <template v-if="accountStore.user?.nickname && !displayName">
+            <template v-if="accountStore.user?.nickname && displayName">
               ({{ accountStore.user?.nickname }})
             </template>
           </span>
@@ -86,6 +88,28 @@ const displayName = computed(() => {
         <span class="text-sm text-gray-600">
           <TranslatedText
             identifier="account.profile.my_recordings_description"
+          />
+        </span>
+      </prefetch-link>
+
+      <prefetch-link to="/ucet/sprava/uspechy" class="link">
+        <span class="font-medium">
+          <TranslatedText identifier="account.profile.achievements" />
+        </span>
+        <span class="text-sm text-gray-600">
+          <TranslatedText
+            identifier="account.profile.achievements_description"
+          />
+        </span>
+      </prefetch-link>
+
+      <prefetch-link to="/ucet/sprava/odmeny" class="link">
+        <span class="font-medium">
+          <TranslatedText identifier="account.profile.rewards" />
+        </span>
+        <span class="text-sm text-gray-600">
+          <TranslatedText
+            identifier="account.profile.rewards_description"
           />
         </span>
       </prefetch-link>

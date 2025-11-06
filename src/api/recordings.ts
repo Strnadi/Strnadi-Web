@@ -34,8 +34,10 @@ export interface DetectedDialect {
   id: number;
   userGuessDialectId: number;
   confirmedDialectId: number;
+  predictedDialectId: number;
   userGuessDialect: string | null;
   confirmedDialect: string | null;
+  predictedDialect: string | null;
   filteredRecordingPartId: number;
 }
 
@@ -56,6 +58,7 @@ export interface RecordingUploadReq {
   device: string;
   name: string;
   note: string | null;
+  expectedPartsCount: number;
 }
 
 export interface RecordingPartUploadReq {
@@ -94,7 +97,7 @@ export const postRecording = async (
   photos?: File[]
 ): Promise<void> => {
   const uploadedRecordingId = (
-    await axios.post(`/recordings`, recording, {
+    await axios.post(`/recordings`, { ...recording, expectedPartsCount: recordingParts.length ?? undefined }, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ).data;

@@ -69,12 +69,12 @@ export const getUsers = async (token: string): Promise<User[]> => {
 };
 
 export const getUserInfo = async (
-  token: string,
-  id: Numeric
+  id: Numeric,
+  token?: string
 ): Promise<User> => {
   const response = await axios.get(`/users/${id}`, {
     headers: {
-      Authorization: `Bearer ${token ?? ''}`
+      Authorization: token ? `Bearer ${token}` : undefined
     }
   });
 
@@ -93,7 +93,7 @@ export const getUserId = async (token: string): Promise<Numeric> => {
 
 export const getCurrentUserInfo = async (token: string): Promise<User> => {
   const userId = await getUserId(token);
-  return getUserInfo(token, userId);
+  return getUserInfo(userId, token);
 };
 
 export const postLogin = async (

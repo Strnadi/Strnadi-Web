@@ -20,7 +20,6 @@ import {
   getArticleCategories,
   type Article
 } from '@/api/articles';
-import { ARTICLE_TEXT_FILENAME } from '@/constants/Articles';
 import MaterialIcon from '@/components/MaterialIcon.vue';
 import { MdEditor } from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
@@ -251,9 +250,8 @@ const { mutate: submitArticle } = useMutation({
       v-for="file in article?.files?.filter(
         (f) => {
           if (!f.fileName) return false;
-          // Exclude language markdown files (e.g., cs.md, en.md) and legacy Text.md
-          const isLangFile = /^[a-z]{2}\.md$/.test(f.fileName);
-          return f.fileName !== ARTICLE_TEXT_FILENAME && !isLangFile;
+          const isLangFile = Object.keys(translations).includes(f.fileName?.split('.')[0] ?? '');
+          return !isLangFile;
         }
       ) ?? []"
       :key="file.fileName ?? `file-${file.id}`"

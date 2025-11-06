@@ -8,12 +8,13 @@ import TranslatedText from '@/components/TranslatedText.vue';
 import { authorizedPost } from '@/api/utils';
 import { ref } from 'vue';
 import { accountStore } from '@/state/AccountStore';
+import type { Numeric } from '@/types/basic';
 
-const fcmToken = ref<string>();
-const titleCz = ref<string>();
+const userId = ref<Numeric>();
+const titleCs = ref<string>();
 const titleEn = ref<string>();
 const titleDe = ref<string>();
-const messageCz = ref<string>();
+const messageCs = ref<string>();
 const messageEn = ref<string>();
 const messageDe = ref<string>();
 
@@ -22,11 +23,11 @@ const sendNotification = async () => {
     return;
   }
   authorizedPost(`/utils/send-notification`, accountStore.token, {
-    fcmToken: fcmToken.value,
-    titleCz: titleCz.value,
+    userId: Number(userId.value ?? 0),
+    titleCs: titleCs.value,
     titleEn: titleEn.value,
     titleDe: titleDe.value,
-    bodyCz: messageCz.value,
+    bodyCs: messageCs.value,
     bodyEn: messageEn.value,
     bodyDe: messageDe.value
   });
@@ -39,11 +40,11 @@ const sendNotification = async () => {
   </h1>
 
   <div class="flex flex-col gap-y-2">
-    <input type="text" v-model="fcmToken" placeholder="FCM Token" class="p-2" />
-    <input type="text" v-model="titleCz" placeholder="Title CZ" class="p-2" />
+    <input type="text" v-model="userId" placeholder="User ID" class="p-2" />
+    <input type="text" v-model="titleCs" placeholder="Title CS" class="p-2" />
     <input type="text" v-model="titleEn" placeholder="Title EN" class="p-2" />
     <input type="text" v-model="titleDe" placeholder="Title DE" class="p-2" />
-    <input type="text" v-model="messageCz" placeholder="Message CZ" class="p-2" />
+    <input type="text" v-model="messageCs" placeholder="Message CS" class="p-2" />
     <input type="text" v-model="messageEn" placeholder="Message EN" class="p-2" />
     <input type="text" v-model="messageDe" placeholder="Message DE" class="p-2" />
     <button @click="sendNotification" class="primary p-2">Send</button>

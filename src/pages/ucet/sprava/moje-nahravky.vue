@@ -39,7 +39,7 @@ console.log('Here');
       <li v-for="rec in recordings" :key="rec.id">
         <router-link
           :to="`/mapa/nahravka/${rec.id}`"
-          class="flex flex-col justify-around p-2 border-2 border-gray-200 hover:bg-gray-300 h-20 rounded-lg"
+          class="flex flex-col justify-around bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition duration-200"
         >
           <div class="flex flex-row justify-between">
             <span class="text-lg font-bold">{{ rec.name }}</span>

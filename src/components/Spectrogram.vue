@@ -382,7 +382,7 @@
     </div>
 
     <!-- Scrollbars -->
-    <div v-if="isLoaded && !props.noControls" class="w-full px-2.5 mt-2.5 space-y-2">
+    <div v-if="isLoaded" class="w-full px-2.5 mt-2.5 space-y-2">
       <!-- Pan Scrollbar -->
       <div
         v-if="spectrogramData.length > 0 && maxOffsetIndex > 0"
@@ -511,6 +511,12 @@ import {
 import { useDebounceFn } from '@vueuse/core';
 import type { Numeric } from '@/types/basic';
 import { t } from '@/components/TranslatedText.vue';
+import {
+  parseWavHeader,
+  bytesPerSecond,
+  buildWavHeader,
+  type WavHeaderInfo,
+} from '@/utils/audio';
 
 interface Range {
   id: Numeric;
@@ -534,12 +540,14 @@ interface Props {
   height?: number;
   margin?: { top: number; right: number; bottom: number; left: number };
   maxFrequency?: number;
+  minFrequency?: number;
   colorScheme?: string[];
   sampleSize?: number;
   selectionColorResolver?: (ranges: Range[]) => string;
   readonly?: boolean; // Add readonly prop
   currentTime?: number;
   noControls?: boolean;
+  downloadOnlySelections?: boolean; // NEW
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -549,6 +557,7 @@ const props = withDefaults(defineProps<Props>(), {
   height: 0,
   margin: () => ({ top: 20, right: 20, bottom: 30, left: 50 }),
   maxFrequency: 12000,
+  minFrequency: 3000,
   colorScheme: () => [
     '#ffffff',
     '#f0f0f0',
@@ -563,7 +572,8 @@ const props = withDefaults(defineProps<Props>(), {
   sampleSize: 256,
   readonly: false, // Default readonly to false
   currentTime: 0,
-  noControls: false
+  noControls: false,
+  downloadOnlySelections: true,
 });
 
 const emit = defineEmits<{
@@ -662,7 +672,7 @@ const zoomLevel = ref(DEFAULT_BASE_ZOOM); // Initial value, will be set properly
 const offsetIndex = ref(0);
 const windowSize = ref(0);
 // const minVisibleCols = 500; // This was causing the zoom-in issue, REMOVE IT
-const MIN_COLS_AT_MAX_ZOOM_DISPLAY = 20; // How many spectrogram columns are shown at maximum zoom-in.
+const MIN_COLS_AT_MAX_ZOOM_DISPLAY = 1200; // How many spectrogram columns are shown at maximum zoom-in.
 const maxZoomLevel = computed(() => {
   const total = spectrogramData.value.length;
   if (!isLoaded.value || total === 0) {
@@ -917,72 +927,196 @@ async function loadAndProcessAudio() {
   isLoading.value = true;
   isLoaded.value = false;
   spliceTimes.value = []; // Reset splice times
+
+  const downloadSelections =
+    props.downloadOnlySelections && props.selected && props.selected.length > 0;
+
   const audioCtx = getAudioContext();
   const urls = Array.isArray(props.audioUrls)
     ? props.audioUrls
     : [props.audioUrls];
+
+  // QUICK EXIT – if user didn't request selection-only, fall back to old behaviour
+  if (!downloadSelections) {
+    await legacyFullDownload(audioCtx, urls);
+    return;
+  }
+
+  try {
+    // 1. Probe headers for every file to get durations & format
+    interface FileMeta {
+      url: string;
+      header: WavHeaderInfo;
+      duration: number; // seconds
+    }
+    const metas: FileMeta[] = [];
+
+    for (const url of urls) {
+      const resp = await fetch(url, { headers: { Range: 'bytes=0-511' } });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status} probing header`);
+      const headerBuf = await resp.arrayBuffer();
+      let header: WavHeaderInfo;
+      try {
+        header = parseWavHeader(headerBuf);
+      } catch (e) {
+        console.warn('Header parse failed, fallback to full file', url, e);
+        await legacyFullDownload(audioCtx, urls);
+        return;
+      }
+      const dur = header.dataSize / bytesPerSecond(header);
+      metas.push({ url, header, duration: dur });
+    }
+
+    // Ensure all files share same audio format
+    const refFmt = metas[0].header;
+    for (const m of metas) {
+      if (
+        m.header.sampleRate !== refFmt.sampleRate ||
+        m.header.bitsPerSample !== refFmt.bitsPerSample ||
+        m.header.numChannels !== refFmt.numChannels
+      ) {
+        console.warn('Files differ in format, fallback to full download');
+        await legacyFullDownload(audioCtx, urls);
+        return;
+      }
+    }
+
+    // Build cumulative start times to map global -> per-file time
+    const fileStartTimes: number[] = []; // seconds
+    let cum = 0;
+    for (const m of metas) {
+      fileStartTimes.push(cum);
+      cum += m.duration;
+    }
+
+    // 2. Build list of (fileIndex, byteStart, byteEndInclusive) segments for all selections
+    type Segment = { idx: number; start: number; end: number }; // bytes inclusive
+    const segments: Segment[] = [];
+
+    for (const sel of props.selected!) {
+      const selStart = Math.max(0, sel.start);
+      const selEnd = Math.min(cum, sel.end);
+      if (selEnd <= selStart) continue;
+
+      // iterate files
+      for (let i = 0; i < metas.length; i++) {
+        const fileStart = fileStartTimes[i];
+        const fileEnd = fileStart + metas[i].duration;
+        const ovStart = Math.max(fileStart, selStart);
+        const ovEnd = Math.min(fileEnd, selEnd);
+        if (ovEnd <= ovStart) continue;
+        const relStartSec = ovStart - fileStart;
+        const relEndSec = ovEnd - fileStart;
+        const bps = bytesPerSecond(metas[i].header);
+        const blockAlign = (refFmt.numChannels * refFmt.bitsPerSample) / 8;
+        let byteStart = metas[i].header.dataOffset + Math.floor(relStartSec * bps);
+        let byteEnd = metas[i].header.dataOffset + Math.ceil(relEndSec * bps) - 1; // inclusive
+        // align to block
+        byteStart = byteStart - (byteStart - metas[i].header.dataOffset) % blockAlign;
+        byteEnd = byteEnd - ((byteEnd + 1 - metas[i].header.dataOffset) % blockAlign) - 1;
+        if (byteEnd < byteStart) continue;
+        segments.push({ idx: i, start: byteStart, end: byteEnd });
+      }
+    }
+
+    if (!segments.length) {
+      throw new Error('No byte segments to download for selections');
+    }
+
+    // Merge adjacent segments within same file to minimize requests
+    segments.sort((a, b) => a.idx - b.idx || a.start - b.start);
+    const merged: Segment[] = [];
+    for (const seg of segments) {
+      const last = merged[merged.length - 1];
+      if (last && last.idx === seg.idx && seg.start <= last.end + 1) {
+        last.end = Math.max(last.end, seg.end);
+      } else {
+        merged.push({ ...seg });
+      }
+    }
+
+    // 3. Fetch segments
+    const pcmParts: Uint8Array[] = [];
+
+    for (const seg of merged) {
+      const rangeHeader = `bytes=${seg.start}-${seg.end}`;
+      const resp = await fetch(metas[seg.idx].url, {
+        headers: { Range: rangeHeader },
+      });
+      if (resp.status !== 206 && resp.status !== 200) {
+        throw new Error(`Server did not honor range (${resp.status})`);
+      }
+      const buf = new Uint8Array(await resp.arrayBuffer());
+      pcmParts.push(buf);
+    }
+
+    // 4. Concatenate payloads & build header
+    const totalBytes = pcmParts.reduce((s, b) => s + b.byteLength, 0);
+    const headerBytes = buildWavHeader(refFmt, totalBytes);
+    const combined = new Uint8Array(headerBytes.byteLength + totalBytes);
+    combined.set(headerBytes, 0);
+    let offset = headerBytes.byteLength;
+    for (const part of pcmParts) {
+      combined.set(part, offset);
+      offset += part.byteLength;
+    }
+
+    // 5. Decode joined buffer
+    const decoded = await audioCtx.decodeAudioData(combined.buffer);
+    audioBuffer.value = decoded;
+    audioDuration.value = decoded.duration;
+
+    // Compute spliceTimes: positions where selections/spliced change – not meaningful now, so keep empty.
+
+    await generateSpectrogramDataOffline();
+  } catch (err) {
+    console.error('Error loading selection audio:', err);
+    isLoaded.value = false;
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+// Legacy full download logic extracted for reuse
+async function legacyFullDownload(audioCtx: AudioContext, urls: string[]) {
   const decodedBuffers: AudioBuffer[] = [];
   const individualDurations: number[] = [];
 
   try {
     for (const url of urls) {
-      const finalUrl =
-        props.audioElementProp?.src === url ? props.audioElementProp.src : url;
-      if (!finalUrl) continue;
-      const resp = await fetch(finalUrl);
+      const resp = await fetch(url);
       const ab = await resp.arrayBuffer();
       const buf = await audioCtx.decodeAudioData(ab);
       decodedBuffers.push(buf);
-      if (urls.length > 1) {
-        individualDurations.push(buf.duration);
-      }
+      if (urls.length > 1) individualDurations.push(buf.duration);
     }
     if (!decodedBuffers.length) throw new Error('No audio decoded');
 
     if (decodedBuffers.length > 1) {
-      const firstBuffer = decodedBuffers[0];
-      if (!firstBuffer) {
-        console.error('Error: First audio buffer is unexpectedly undefined.');
-        isLoading.value = false; // Stop loading indication
-        return; // Or throw new Error('Failed to process audio: first buffer missing');
-      }
-      const numCh = firstBuffer.numberOfChannels;
-      const sr = firstBuffer.sampleRate;
-      const totalLength = decodedBuffers.reduce((sum, b) => sum + b.length, 0);
+      const numCh = decodedBuffers[0].numberOfChannels;
+      const sr = decodedBuffers[0].sampleRate;
+      const totalLength = decodedBuffers.reduce((s, b) => s + b.length, 0);
       const out = audioCtx.createBuffer(numCh, totalLength, sr);
-      let currentOffset = 0;
+      let ofs = 0;
       for (const b of decodedBuffers) {
-        for (let c = 0; c < numCh; c++) {
-          out.copyToChannel(b.getChannelData(c), c, currentOffset);
-        }
-        currentOffset += b.length;
+        for (let c = 0; c < numCh; c++) out.copyToChannel(b.getChannelData(c), c, ofs);
+        ofs += b.length;
       }
       audioBuffer.value = out;
-
-      // Calculate splice times from individual durations
-      let cumulativeTime = 0;
+      // spliceTimes for UI
+      let cum = 0;
       for (let i = 0; i < individualDurations.length - 1; i++) {
-        const duration = individualDurations[i];
-        if (duration !== undefined) {
-          cumulativeTime += duration;
-          spliceTimes.value.push(cumulativeTime);
-        }
+        cum += individualDurations[i];
+        spliceTimes.value.push(cum);
       }
-    } else if (decodedBuffers.length === 1) {
-      const firstBuffer = decodedBuffers[0];
-      if (firstBuffer !== undefined) {
-        // Explicit check
-        audioBuffer.value = firstBuffer;
-      }
-      // No splices if only one buffer
+    } else {
+      audioBuffer.value = decodedBuffers[0];
     }
-    audioDuration.value = audioBuffer.value!.duration; // audioBuffer will be set if decodedBuffers has items
+    audioDuration.value = audioBuffer.value!.duration;
     await generateSpectrogramDataOffline();
-  } catch (err) {
-    console.error('Error loading audio:', err);
+  } catch (e) {
+    console.error('Error in legacy download', e);
     isLoaded.value = false;
-  } finally {
-    isLoading.value = false;
   }
 }
 
@@ -1043,7 +1177,8 @@ async function generateSpectrogramDataOffline() {
   const range = Math.max(1, maxV - minV);
   const nyq = buf.sampleRate / 2;
   const maxBin = Math.floor((totalBins.value * props.maxFrequency) / nyq);
-  cacheHeightBins.value = maxBin + 1;
+  const minBin = Math.floor((totalBins.value * props.minFrequency) / nyq);
+  cacheHeightBins.value = maxBin - minBin + 1;
 
   const palette = new Uint8ClampedArray(256 * 4);
   for (let i = 0; i < 256; i++) {
@@ -1243,7 +1378,7 @@ function drawAxes(v0: number, v1: number) {
   for (let i = 0; i <= steps; i++) {
     const f = i / steps,
       y = y1Val - f * (y1Val - y0Val),
-      lbl = (props.maxFrequency * f) / 1000;
+      lbl = ((props.maxFrequency - props.minFrequency) * f) / 1000;
     ctx.beginPath();
     ctx.moveTo(xAxisVal, y);
     ctx.lineTo(xAxisVal - 4, y);
@@ -2067,6 +2202,8 @@ function updateZoom(newZoom: number, centerPx?: number) {
   newOff = clamp(newOff, 0, Math.max(0, total - newWin));
   windowSize.value = newWin;
   offsetIndex.value = newOff;
+
+  console.log(newWin)
 
   renderSpectrogram();
 }
