@@ -4,11 +4,6 @@ import {
   type RecordingPartUploadParams,
   postRecording
 } from '@/api/recordings';
-import { postPhoto } from '@/api/photos';
-import axios from 'axios';
-// import { useQueryClient } from '@tanstack/vue-query';
-
-// const queryClient = useQueryClient();
 
 export interface UploadTask {
   id: string;
@@ -85,12 +80,12 @@ export const uploadQueueStore = reactive({
   },
 
   async uploadTask(task: UploadTask) {
-    const totalSteps = 1 + task.parts.length + (task.photos?.length || 0);
-    let completedSteps = 0;
+    // const totalSteps = 1 + task.parts.length + (task.photos?.length || 0);
+    // let completedSteps = 0;
 
-    const updateProgress = () => {
-      task.progress = Math.round((completedSteps / totalSteps) * 100);
-    };
+    // const updateProgress = () => {
+    //   task.progress = Math.round((completedSteps / totalSteps) * 100);
+    // };
 
     // Helper function to get audio duration
     const getAudioDuration = (file: File): Promise<number> => {
