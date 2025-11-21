@@ -34,8 +34,8 @@ declare global {
   interface Array<T> {
     guarded: (
       guard: (
-        to: RouteRecordRaw,
-        from: RouteRecordRaw
+        to: RouteLocationNormalized,
+        from: RouteLocationNormalized
       ) => boolean | RouteLocationRaw
     ) => RouteRecordRaw[];
   }
@@ -43,8 +43,8 @@ declare global {
 
 Array.prototype.guarded = function (
   guard: (
-    to: RouteRecordRaw,
-    from: RouteRecordRaw
+    to: RouteLocationNormalized,
+    from: RouteLocationNormalized
   ) => boolean | RouteLocationRaw
 ): RouteRecordRaw[] {
   return this.map((route: RouteRecordRaw) => {
@@ -78,8 +78,7 @@ const desktopQuery = window.matchMedia(`(min-width: ${desktopBp})`);
 // Mobile Firefox users (yes, all two of you), tough luck
 // Y'all will just recieve the desktop site :^)
 const initialIsDesktop =
-  navigator.userAgent.includes('Firefox') ||
-  (desktopQuery.matches && !mobileQuery.matches);
+  navigator.userAgent.includes('Firefox') || desktopQuery.matches;
 
 // const initialIsMobile = !initialIsDesktop;
 
@@ -194,8 +193,8 @@ const welcomeGuard = (
 };
 
 const serverGuard = (
-  to: RouteRecordRaw,
-  _from: RouteRecordRaw
+  to: RouteLocationNormalized,
+  _from: RouteLocationNormalized
 ): boolean | RouteLocationRaw => {
   // console.log(to.path);
 
