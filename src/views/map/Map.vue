@@ -21,6 +21,11 @@ export interface MapProps {
   scaleBar?: boolean;
   zoomControl?: boolean;
   position: [lat: number, lon: number, alt: number];
+  /**
+   * Optional callback that determines whether 2 markers are considered compatible for clustering.
+   * If omitted, all markers can be clustered together.
+   */
+  clusterTest?: (a: Marker, b: Marker) => boolean;
 }
 </script>
 
@@ -32,19 +37,130 @@ import { type Map as LeafletMap, type LeafletMouseEvent, Icon } from 'leaflet';
 import {
   LMap,
   LTileLayer,
-  LMarker,
   LPolygon,
   LControlScale,
   LControl,
   LControlZoom
 } from '@vue-leaflet/vue-leaflet';
 import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import type { MarkerClusterGroup, MarkerCluster } from 'leaflet';
 
 const env = import.meta.env;
 let leafletMap: LeafletMap | null = null;
 
+// --- Clustering ---
+// Keep references so we can remove / update clusters when props change
+let clusterGroups: Array<{ group: MarkerClusterGroup; sample: Marker }> = [];
+
+/** Create or update cluster groups according to current markers & clusterTest. */
+function rebuildClusters() {
+  if (!leafletMap) return;
+
+  // Remove previous groups from map
+  clusterGroups.forEach((cg) => leafletMap!.removeLayer(cg.group));
+  clusterGroups = [];
+
+  if (!props.markers || props.markers.length === 0) return;
+
+  // Helper to create leaflet marker with reference
+  const createLeafletMarker = (m: Marker) => {
+    const lm = L.marker(m.position as L.LatLngExpression, { icon: m.icon });
+    // @ts-ignore custom data
+    lm.__original = m;
+    lm.on('click', (ev) => {
+      emit('click', { event: ev as unknown as LeafletMouseEvent, marker: m });
+    });
+    return lm;
+  };
+
+  props.markers.forEach((m) => {
+    // find existing compatible group
+    let targetGroupObj: (typeof clusterGroups)[number] | undefined;
+    if (props.clusterTest) {
+      targetGroupObj = clusterGroups.find((cg) =>
+        props.clusterTest!(m, cg.sample)
+      );
+    } else {
+      targetGroupObj = clusterGroups[0];
+    }
+
+    if (!targetGroupObj) {
+      // create new cluster group
+      const newGroup = (L as any).markerClusterGroup({
+        showCoverageOnHover: false,
+        iconCreateFunction: (cluster: MarkerCluster) => {
+          const child = cluster.getAllChildMarkers()[0] as any;
+          const om: Marker | undefined = child?.__original;
+          const colors = (om?.data?.colors ?? []) as string[];
+          const html = `<multi-color-square size="100%" colors='${JSON.stringify(
+            colors
+          )}'></multi-color-square>`;
+
+          const isMobile = window.innerWidth < 768;
+          const iconSize = (isMobile ? 20 : 12) * 1.5;
+
+          return L.divIcon({
+            html,
+            className: '',
+            iconSize: [iconSize, iconSize],
+            iconAnchor: [iconSize / 2, iconSize / 2]
+          });
+        }
+      }) as MarkerClusterGroup;
+      newGroup.on('clusterclick', onClusterClick);
+      leafletMap?.addLayer(newGroup);
+      targetGroupObj = { group: newGroup, sample: m };
+      clusterGroups.push(targetGroupObj);
+    }
+
+    const leafletMarker = createLeafletMarker(m);
+    targetGroupObj.group.addLayer(leafletMarker);
+  });
+}
+
+function onClusterClick(e: any) {
+  if (!leafletMap) return;
+  const cluster: MarkerCluster = e.layer;
+  const childMarkers = cluster.getAllChildMarkers();
+
+  // Build popup with selectable list
+  const htmlItems = childMarkers
+    .map((cm: any, idx: number) => {
+      const om: Marker = cm.__original;
+      const label = om.data?.recording?.id ?? om.id ?? `Point ${idx + 1}`;
+      return `<div style="cursor:pointer;padding:4px 0;" data-idx="${idx}">${label}</div>`;
+    })
+    .join('');
+
+  const popup = L.popup()
+    .setLatLng(cluster.getLatLng())
+    .setContent(`<div>${htmlItems}</div>`)
+    .openOn(leafletMap);
+
+  // Add click delegate
+  setTimeout(() => {
+    const container = popup.getElement();
+    if (!container) return;
+    container.addEventListener('click', (event: any) => {
+      const target = event.target as HTMLElement;
+      const idxAttr = target.getAttribute('data-idx');
+      if (idxAttr != null) {
+        const idx = parseInt(idxAttr, 10);
+        const cm: any = childMarkers[idx];
+        const om: Marker = cm.__original;
+        emit('click', { event: e, marker: om });
+        leafletMap!.closePopup(popup);
+      }
+    });
+  }, 0);
+}
+
 const hoveredPolygon = ref<(number | string) | null>(null);
-const hoveredMarker = ref<(number | string) | null>(null);
 
 const { coords, isSupported: isGeolocationSupported } = useGeolocation();
 const iconCurrent = new Icon({
@@ -108,9 +224,21 @@ function updateZoom(newZoom: number) {
 function onMapReady(mapComp: any) {
   leafletMap = mapComp.mapObject ?? mapComp;
   updateBounds();
+
+  // Build the initial cluster groups
+  rebuildClusters();
 }
 
 watch([zoom, center], updateBounds);
+
+// Rebuild clusters whenever markers or clusterTest changes or when map ready
+watch(
+  () => [props.markers, props.clusterTest],
+  () => {
+    rebuildClusters();
+  },
+  { deep: true }
+);
 </script>
 
 <template>
@@ -161,16 +289,7 @@ watch([zoom, center], updateBounds);
         @click="(event: LeafletMouseEvent) => emit('click', { event, polygon })"
       />
 
-      <!-- Markers -->
-      <l-marker
-        v-for="marker in markers"
-        :key="marker.id"
-        :icon="marker.icon"
-        :lat-lng="marker.position"
-        @click="(event: LeafletMouseEvent) => emit('click', { event, marker })"
-        @mouseover="hoveredMarker = marker.id"
-        @mouseout="hoveredMarker = null"
-      />
+      <!-- Individual markers are handled via MarkerClusterGroup programmatically -->
 
       <!-- Current Location -->
       <l-marker

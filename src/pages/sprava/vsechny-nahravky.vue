@@ -255,17 +255,35 @@ async function downloadSelectedRecordings() {
             <input
               type="checkbox"
               class="form-checkbox h-5 w-5 text-blue-600"
-              :checked="recordings.filter(r => r.id === recording.id).every(r => r.parts && r.parts.length > 0 && r.parts?.every(p => isPartSelected(r.id, p.id)))"
-              @change="recordings.filter(r => r.id === recording.id).forEach(r => r.parts?.forEach(p => togglePartSelection(r.id, p.id)))"
+              :checked="
+                recordings
+                  .filter((r) => r.id === recording.id)
+                  .every(
+                    (r) =>
+                      r.parts &&
+                      r.parts.length > 0 &&
+                      r.parts?.every((p) => isPartSelected(r.id, p.id))
+                  )
+              "
+              @change="
+                recordings
+                  .filter((r) => r.id === recording.id)
+                  .forEach((r) =>
+                    r.parts?.forEach((p) => togglePartSelection(r.id, p.id))
+                  )
+              "
             />
             <h2 class="text-lg font-semibold mb-1">
-            {{
-              recording.name || `${t('recordings.id_prefix')} ${recording.id}`
-            }}
+              {{
+                recording.name || `${t('recordings.id_prefix')} ${recording.id}`
+              }}
             </h2>
           </div>
 
-          <prefetch-link :to="`/mapa/nahravka/${recording.id}/upravit-dialekt`" class="button-secondary p-2 px-4">
+          <prefetch-link
+            :to="`/mapa/nahravka/${recording.id}/upravit-dialekt`"
+            class="button-secondary p-2 px-4"
+          >
             <TranslatedText identifier="admin.recordings.edit_dialects" />
           </prefetch-link>
         </div>
@@ -311,13 +329,37 @@ async function downloadSelectedRecordings() {
 
         <ul>
           <li
-            v-for="fr in filteredRecordings?.filter(fr => fr.recordingId === recording.id)"
+            v-for="fr in filteredRecordings?.filter(
+              (fr) => fr.recordingId === recording.id
+            )"
             :key="fr.id"
             class="flex flex-row gap-x-2 items-center py-1 border-t border-gray-200 first:border-t-0"
           >
-            <MultiColorSquare size="16px" :colors="fr.detectedDialects?.map(d => DialectColors.value?.[d.confirmedDialect as keyof typeof DialectColors.value] ?? '') ?? []" />
+            <MultiColorSquare
+              size="16px"
+              :colors="
+                fr.detectedDialects?.map(
+                  (d) =>
+                    DialectColors.value?.[
+                      d.confirmedDialect as keyof typeof DialectColors.value
+                    ] ?? ''
+                ) ?? []
+              "
+            />
             <span class="text-sm">
-              {{ formatDuration(new Date(fr.startDate).getTime() - new Date(recording.parts?.[0]?.startDate ?? 0).getTime()) }} - {{ formatDuration(new Date(fr.endDate).getTime() - new Date(recording.parts?.[0]?.startDate ?? 0).getTime()) }}
+              {{
+                formatDuration(
+                  new Date(fr.startDate).getTime() -
+                    new Date(recording.parts?.[0]?.startDate ?? 0).getTime()
+                )
+              }}
+              -
+              {{
+                formatDuration(
+                  new Date(fr.endDate).getTime() -
+                    new Date(recording.parts?.[0]?.startDate ?? 0).getTime()
+                )
+              }}
             </span>
             <span class="text-sm">
               {{ fr.representantFlag ? 'Reprezentant' : 'Nereprezentant' }}

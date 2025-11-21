@@ -9,6 +9,10 @@ input[type='number'] {
   @apply rounded-2xl;
   /*  @apply p-4;*/
   /*  @apply h-14;*/
+  /* Mobile-friendly touch target size (min 44x44px) */
+  @apply min-h-[44px];
+  /* Prevent zoom on iOS when focused */
+  font-size: max(16px, 1em);
 }
 
 input[type='text']:focus,
@@ -16,6 +20,9 @@ input[type='email']:focus,
 input[type='password']:focus,
 input[type='number']:focus {
   @apply border-[#2D2B18];
+  @apply outline-none;
+  @apply ring-2;
+  @apply ring-[#2D2B18]/20;
 }
 
 textarea {
@@ -24,5 +31,14 @@ textarea {
   @apply border-[#d2d2d240];
   @apply rounded-2xl;
   @apply p-4;
-  @apply min-h-14;
+  @apply min-h-[80px];
+  /* Prevent zoom on iOS when focused */
+  font-size: max(16px, 1em);
+}
+
+textarea:focus {
+  @apply border-[#2D2B18];
+  @apply outline-none;
+  @apply ring-2;
+  @apply ring-[#2D2B18]/20;
 }

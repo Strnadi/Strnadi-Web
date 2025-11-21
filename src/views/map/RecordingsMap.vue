@@ -20,7 +20,9 @@ export interface MapClickEvent {
   square?: string;
 }
 
-export const DialectColors = computedAsync(async () => await getDialectColors());
+export const DialectColors = computedAsync(
+  async () => await getDialectColors()
+);
 
 export const MapEvents = mitt<{
   click: MapClickEvent;
@@ -58,7 +60,11 @@ export const MapStore = reactive<{
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { getRecordings, getFilteredRecordings, getDialectColors } from '@/api/recordings';
+import {
+  getRecordings,
+  getFilteredRecordings,
+  getDialectColors
+} from '@/api/recordings';
 
 import { accountStore } from '@/state/AccountStore';
 
@@ -69,6 +75,19 @@ import {
   type RecordingPartModel
 } from '@/api/recordings';
 import { divIcon, type Icon } from 'leaflet';
+
+// Helper to compare dialect color sets for clustering
+function haveSameDialects(a: Marker, b: Marker): boolean {
+  const colorsA = (a.data?.colors ?? []) as string[];
+  const colorsB = (b.data?.colors ?? []) as string[];
+  if (colorsA.length !== colorsB.length) return false;
+  // Compare ignoring order
+  const setA = new Set(colorsA);
+  const setB = new Set(colorsB);
+  if (setA.size !== setB.size) return false;
+  for (const c of setA) if (!setB.has(c)) return false;
+  return true;
+}
 
 const { data: recordings } = useQuery({
   queryKey: ['all-recordings'],
@@ -162,9 +181,7 @@ const markers = computed<Marker[]>(() => {
           case 'any-dialect':
             return (
               filteredRecordings.value?.some(
-                (fp) =>
-                  fp.recordingId === r.id &&
-                  fp.detectedDialects !== null
+                (fp) => fp.recordingId === r.id && fp.detectedDialects !== null
               ) ?? false
             );
           default:
@@ -180,8 +197,8 @@ const markers = computed<Marker[]>(() => {
         const lastPart = parts[parts.length - 1]!;
 
         // gather all filtered parts overlapping any part of this recording
-        const allFiltered = filteredRecordings.value
-          ?.filter((fr) => {
+        const allFiltered =
+          filteredRecordings.value?.filter((fr) => {
             if (fr.recordingId !== rec.id) return false;
 
             const frStart = new Date(fr.startDate);
@@ -198,62 +215,107 @@ const markers = computed<Marker[]>(() => {
         let fromModel = false;
         let fromUser = false;
 
-        if (allFiltered.some(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.confirmedDialect))) {
+        if (
+          allFiltered.some(
+            (fp) =>
+              fp.representantFlag &&
+              fp.detectedDialects?.some((dd) => dd.confirmedDialect)
+          )
+        ) {
           dialectStrings = allFiltered
-                          .filter(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.confirmedDialect))
-                          .flatMap(fp => fp.detectedDialects?.map(dd => dd.confirmedDialect) ?? []);
+            .filter(
+              (fp) =>
+                fp.representantFlag &&
+                fp.detectedDialects?.some((dd) => dd.confirmedDialect)
+            )
+            .flatMap(
+              (fp) =>
+                fp.detectedDialects?.map((dd) => dd.confirmedDialect) ?? []
+            )
+            .filter((d): d is string => d != null);
 
           if (dialectStrings.length > 0) {
             fromModel = false;
             fromUser = false;
           }
-        }
-
-        else if (allFiltered.some(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.predictedDialect))) {
+        } else if (
+          allFiltered.some(
+            (fp) =>
+              fp.representantFlag &&
+              fp.detectedDialects?.some((dd) => dd.predictedDialect)
+          )
+        ) {
           dialectStrings = allFiltered
-                          .filter(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.predictedDialect))
-                          .flatMap(fp => fp.detectedDialects?.map(dd => dd.predictedDialect) ?? []);
+            .filter(
+              (fp) =>
+                fp.representantFlag &&
+                fp.detectedDialects?.some((dd) => dd.predictedDialect)
+            )
+            .flatMap(
+              (fp) =>
+                fp.detectedDialects?.map((dd) => dd.predictedDialect) ?? []
+            )
+            .filter((d): d is string => d != null);
 
           if (dialectStrings.length > 0) {
             fromModel = true;
             fromUser = false;
           }
-        }
-
-        else if (allFiltered.some(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.userGuessDialect))) {
+        } else if (
+          allFiltered.some(
+            (fp) =>
+              fp.representantFlag &&
+              fp.detectedDialects?.some((dd) => dd.userGuessDialect)
+          )
+        ) {
           dialectStrings = allFiltered
-                          .filter(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.userGuessDialect))
-                          .flatMap(fp => fp.detectedDialects?.map(dd => dd.userGuessDialect) ?? []);
-          
+            .filter(
+              (fp) =>
+                fp.representantFlag &&
+                fp.detectedDialects?.some((dd) => dd.userGuessDialect)
+            )
+            .flatMap(
+              (fp) =>
+                fp.detectedDialects?.map((dd) => dd.userGuessDialect) ?? []
+            )
+            .filter((d): d is string => d != null);
+
           if (dialectStrings.length > 0) {
             fromUser = true;
             fromModel = false;
           }
-        }
-
-        else {
+        } else {
           dialectStrings = ['None'];
           fromModel = false;
           fromUser = false;
         }
 
-        const colors = dialectStrings.map(ds => DialectColors.value?.[ds as keyof typeof DialectColors.value] ?? '#000000');
-        console.log(colors)
+        const colors = dialectStrings.map(
+          (ds) =>
+            DialectColors.value?.[ds as keyof typeof DialectColors.value] ??
+            '#000000'
+        );
+        console.log(colors);
+
+        // Use larger icons on mobile (screen width < 768px)
+        const isMobile = window.innerWidth < 768;
+        const iconSize = isMobile ? 20 : 12;
+        const iconAnchor = isMobile ? 10 : 6;
 
         const icon = divIcon({
           className: '',
-          iconSize: [12, 12],
-          iconAnchor: [6, 6],
+          iconSize: [iconSize, iconSize],
+          iconAnchor: [iconAnchor, iconAnchor],
           html: `<multi-color-square size="100%" dot="${fromModel}" questionmark="${fromUser}" colors='${JSON.stringify(colors)}'></multi-color-square>`
         });
 
         return {
           id: `${rec.id}-${lastPart.id}`,
           icon: icon as Icon,
-          position: [
-            lastPart.gpsLatitudeStart,
-            lastPart.gpsLongitudeStart
-          ] as [number, number],
+          position: [lastPart.gpsLatitudeStart, lastPart.gpsLongitudeStart] as [
+            number,
+            number
+          ],
           data: {
             recording: rec,
             part: lastPart,
@@ -315,6 +377,7 @@ const onClick = ({
     :scale-bar="MapStore.scale"
     :polygons="polygons"
     :markers="[...markers, ...Object.values(MapStore.markers)]"
+    :cluster-test="haveSameDialects"
     :mode="MapStore.aerial ? 'aerial' : 'outdoor'"
     :position="currentCenter"
     :zoom-control="true"

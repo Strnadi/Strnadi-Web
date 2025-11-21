@@ -6,6 +6,10 @@ input[type='submit'] {
   cursor: pointer;
   @apply font-semibold;
   text-align: center;
+  /* Mobile-friendly touch target size (min 44x44px) */
+  @apply min-h-[44px];
+  /* Smooth transitions */
+  @apply transition-all duration-150;
 }
 
 .button-primary,
@@ -24,11 +28,20 @@ input[type='submit'].primary:hover {
   @apply bg-yellow-400;
 }
 
+.button-primary:active,
+button.primary:active,
+input[type='button'].primary:active,
+input[type='submit'].primary:active {
+  @apply bg-yellow-500;
+  @apply scale-[0.98];
+}
+
 .button-primary:disabled,
 button.primary:disabled,
 input[type='button'].primary:disabled,
 input[type='submit'].primary:disabled {
   @apply bg-gray-200;
+  @apply cursor-not-allowed;
 }
 
 .button-primary:disabled:hover,
@@ -52,6 +65,15 @@ button.secondary:hover,
 input[type='button'].secondary:hover,
 input[type='submit'].secondary:hover {
   @apply border-[#cccccc];
+  @apply bg-gray-50;
+}
+
+.button-secondary:active,
+button.secondary:active,
+input[type='button'].secondary:active,
+input[type='submit'].secondary:active {
+  @apply bg-gray-100;
+  @apply scale-[0.98];
 }
 
 .button-secondary:disabled,
@@ -59,6 +81,7 @@ button.secondary:disabled,
 input[type='button'].secondary:disabled,
 input[type='submit'].secondary:disabled {
   @apply bg-gray-200;
+  @apply cursor-not-allowed;
 }
 
 .button-secondary:disabled:hover,
@@ -66,6 +89,7 @@ button.secondary:disabled:hover,
 input[type='button'].secondary:disabled:hover,
 input[type='submit'].secondary:disabled:hover {
   @apply border-[#e5e7eb]; /* same border color as the disabled state */
+  @apply bg-gray-200;
 }
 
 /* Danger button */
@@ -76,13 +100,22 @@ input[type='submit'].danger {
   @apply text-red-500;
   @apply border-2 rounded-2xl border-none;
   @apply font-bold;
+  @apply bg-white;
 }
 
 .button-danger:hover,
 button.danger:hover,
 input[type='button'].danger:hover,
 input[type='submit'].danger:hover {
-  @apply border-[#cccccc];
+  @apply bg-red-50;
+}
+
+.button-danger:active,
+button.danger:active,
+input[type='button'].danger:active,
+input[type='submit'].danger:active {
+  @apply bg-red-100;
+  @apply scale-[0.98];
 }
 
 .button-danger:disabled,
@@ -90,6 +123,8 @@ button.danger:disabled,
 input[type='button'].danger:disabled,
 input[type='submit'].danger:disabled {
   @apply bg-gray-200;
+  @apply text-gray-400;
+  @apply cursor-not-allowed;
 }
 
 .button-danger:disabled:hover,

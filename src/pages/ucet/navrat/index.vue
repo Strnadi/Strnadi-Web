@@ -70,7 +70,5 @@ onMounted(() => {
   <span>
     <TranslatedText identifier="account.return.message" />
   </span>
-  <span>
-    {{ t('account.return.auto_close') }} {{ remaining }}s.
-  </span>
+  <span> {{ t('account.return.auto_close') }} {{ remaining }}s. </span>
 </template>

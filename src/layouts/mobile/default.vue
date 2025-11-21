@@ -18,11 +18,11 @@ const closePopup = () => {
   <div class="relative flex flex-col h-svh">
     <div
       class="flex flex-col flex-1 overflow-auto"
-      :class="route.path !== '/' && 'px-4 py-2'"
+      :class="route.path !== '/' && 'px-4 py-3 pb-safe'"
     >
       <!-- <div
         v-if="route.path !== '/'"
-        class="sticky flex flex-row justify-between top-0"
+        class="sticky flex flex-row justify-between top-0 z-10 bg-white/95 backdrop-blur-sm -mx-4 px-4 py-2 mb-2"
       >
         <button
           class="small"

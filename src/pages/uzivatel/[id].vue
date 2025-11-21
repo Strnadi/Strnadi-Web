@@ -74,28 +74,6 @@ const signupDate = computed(() =>
   user.value ? new Date(user.value.creationDate).toLocaleString() : ''
 );
 
-const locationLabel = computed(() => {
-  if (!user.value) {
-    return null;
-  }
-
-  const parts: string[] = [];
-
-  if (user.value.postCode) {
-    parts.push(String(user.value.postCode));
-  }
-
-  if (user.value.city) {
-    parts.push(user.value.city);
-  }
-
-  if (!parts.length) {
-    return null;
-  }
-
-  return parts.join(' ');
-});
-
 const roleLabel = computed(() => {
   if (!user.value) {
     return '';
@@ -136,9 +114,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
 <template>
   <div class="space-y-10">
     <template v-if="isUserLoading">
-      <p class="text-gray-500">
-        <TranslatedText identifier="loading" />...
-      </p>
+      <p class="text-gray-500"><TranslatedText identifier="loading" />...</p>
     </template>
     <template v-else-if="isUserError || !user">
       <p class="text-gray-500">
@@ -149,18 +125,29 @@ const recordingsCount = computed(() => recordingsList.value.length);
       <div class="space-y-6">
         <UserCard :user="user" />
 
-        <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <section
+          class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+        >
           <h2 class="mb-4 text-xl font-semibold">
             <TranslatedText identifier="pages.user_profile.details_section" />
           </h2>
           <dl class="grid gap-6 md:grid-cols-2">
-            <div>
+            <div
+              v-if="
+                accountStore.user?.id === user.id ||
+                accountStore.user?.role === 'admin'
+              "
+            >
               <dt class="text-sm uppercase tracking-wide text-gray-500">
                 <TranslatedText identifier="labels.email" />
               </dt>
-              <dd class="mt-1 flex flex-wrap items-center gap-2 text-base text-gray-900">
+              <dd
+                class="mt-1 flex flex-wrap items-center gap-2 text-base text-gray-900"
+              >
                 <span>{{ user.email }}</span>
-                <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                <span
+                  class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                >
                   {{ emailStatusLabel }}
                 </span>
               </dd>
@@ -194,16 +181,18 @@ const recordingsCount = computed(() => recordingsList.value.length);
             </div>
             <div>
               <dt class="text-sm uppercase tracking-wide text-gray-500">
-                <TranslatedText identifier="pages.user_profile.location_label" />
+                <TranslatedText
+                  identifier="pages.user_profile.location_label"
+                />
               </dt>
               <dd class="mt-1 text-base text-gray-900">
-                <span v-if="locationLabel">{{ locationLabel }}</span>
+                <span v-if="user.city">{{ user.city }}</span>
                 <span v-else>
                   <TranslatedText identifier="account.profile.no_location" />
                 </span>
               </dd>
             </div>
-            <div>
+            <div v-if="accountStore.user?.role === 'admin'">
               <dt class="text-sm uppercase tracking-wide text-gray-500">ID</dt>
               <dd class="mt-1 text-base text-gray-900">{{ user.id }}</dd>
             </div>
@@ -213,7 +202,9 @@ const recordingsCount = computed(() => recordingsList.value.length);
         <section class="space-y-4">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold">
-              <TranslatedText identifier="pages.user_profile.recordings_section" />
+              <TranslatedText
+                identifier="pages.user_profile.recordings_section"
+              />
             </h2>
             <span v-if="!isRecordingsLoading" class="text-sm text-gray-500">
               {{ recordingsCount }}
@@ -236,21 +227,28 @@ const recordingsCount = computed(() => recordingsList.value.length);
                     <p class="text-lg font-semibold text-gray-900">
                       {{
                         recording.name ||
-                          `${t('recordings.detail.fallback_prefix')} ${recording.id}`
+                        `${t('recordings.detail.fallback_prefix')}${recording.id}`
                       }}
                     </p>
-                    <span class="text-sm text-lime-500">
+                    <!-- <span class="text-sm text-lime-500">
                       <TranslatedText identifier="recordings.status.uploaded" />
-                    </span>
+                    </span> -->
                   </div>
                   <div
                     class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600"
                   >
-                    <span>{{ new Date(recording.createdAt).toLocaleString() }}</span>
+                    <span>{{
+                      new Date(recording.createdAt).toLocaleString()
+                    }}</span>
                     <span v-if="recording.byApp">
                       {{ t('recordings.detail.by_app_suffix') }}
                     </span>
-                    <span v-if="recording.estimatedBirdsCount !== null && recording.estimatedBirdsCount !== undefined">
+                    <span
+                      v-if="
+                        recording.estimatedBirdsCount !== null &&
+                        recording.estimatedBirdsCount !== undefined
+                      "
+                    >
                       <TranslatedText identifier="upload.bird_count_label" />:
                       {{ recording.estimatedBirdsCount }}
                     </span>
@@ -273,11 +271,15 @@ const recordingsCount = computed(() => recordingsList.value.length);
 
         <section class="space-y-4">
           <h2 class="text-xl font-semibold">
-            <TranslatedText identifier="pages.user_profile.admin.actions_section" />
+            <TranslatedText
+              identifier="pages.user_profile.admin.actions_section"
+            />
           </h2>
           <div class="flex flex-row">
             <button class="secondary danger p-2">
-              <TranslatedText identifier="pages.user_profile.admin.delete_account_button" />
+              <TranslatedText
+                identifier="pages.user_profile.admin.delete_account_button"
+              />
             </button>
           </div>
         </section>

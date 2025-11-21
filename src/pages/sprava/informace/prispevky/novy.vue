@@ -135,7 +135,11 @@ const { mutate: submitArticle } = useMutation({
       <label for="lang-select" class="mr-2 font-bold">
         <TranslatedText identifier="labels.language" />:
       </label>
-      <select id="lang-select" v-model="currentLanguage" class="border p-1 rounded">
+      <select
+        id="lang-select"
+        v-model="currentLanguage"
+        class="border p-1 rounded"
+      >
         <option v-for="lang in supportedLanguages" :key="lang" :value="lang">
           {{ translations[lang as keyof typeof translations]?.lang_name }}
         </option>
@@ -172,10 +176,7 @@ const { mutate: submitArticle } = useMutation({
     </li>
   </ul>
 
-  <button
-    class="primary p-2 w-full"
-    @click="() => submitArticle()"
-  >
+  <button class="primary p-2 w-full" @click="() => submitArticle()">
     <TranslatedText identifier="buttons.save" />
   </button>
 </template>

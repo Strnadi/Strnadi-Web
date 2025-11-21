@@ -16,7 +16,11 @@ import TranslatedText, { t } from '@/components/TranslatedText.vue';
 const router = useRouter();
 const recordingId = useRouteParams<Numeric>('id');
 
-const { data: recording, isLoading, isError } = useQuery({
+const {
+  data: recording,
+  isLoading,
+  isError
+} = useQuery({
   queryKey: ['recording', recordingId.value],
   queryFn: () => getRecording(recordingId.value)
 });
@@ -59,10 +63,18 @@ async function confirmDelete() {
       </span>
     </p>
     <div class="mt-4 space-x-2 flex flex-row">
-      <button class="primary p-2 w-full" :disabled="isDeleting" @click="confirmDelete">
+      <button
+        class="primary p-2 w-full"
+        :disabled="isDeleting"
+        @click="confirmDelete"
+      >
         {{ isDeleting ? t('states.deleting') : t('buttons.delete') }}
       </button>
-      <button class="secondary p-2 w-full" :disabled="isDeleting" @click="router.back()">
+      <button
+        class="secondary p-2 w-full"
+        :disabled="isDeleting"
+        @click="router.back()"
+      >
         <TranslatedText identifier="buttons.cancel" />
       </button>
     </div>

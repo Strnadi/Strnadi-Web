@@ -12,7 +12,7 @@ import { getUserInfo } from '@/api/account';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { accountStore } from '@/state/AccountStore';
 import type { Numeric } from '@/types/basic';
-import Spectrogram from '@/components/Spectrogram.vue';
+import Spectrogram from '@/views/Spectrogram.vue';
 import ToggleShow from '@/components/ToggleShow.vue';
 import { MapStore } from '@/views/map/RecordingsMap.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
@@ -20,6 +20,7 @@ import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import type { FilteredPartModel } from '@/api/recordings';
 import UserCard from '@/views/UserCard.vue';
+import { getDialectStrings } from '@/utils/dialects';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
@@ -29,10 +30,6 @@ const env = import.meta.env;
 
 const selected = ref([]);
 const audio = ref<HTMLAudioElement | null>(null);
-
-const editing = ref(false);
-const editedName = ref('');
-const editedNote = ref('');
 
 const {
   data: recording,
@@ -59,7 +56,8 @@ const {
   isError: isUploaderError
 } = useQuery({
   queryKey: ['user', recording.value?.userId],
-  queryFn: () => getUserInfo(recording.value?.userId!, accountStore.token ?? undefined),
+  queryFn: () =>
+    getUserInfo(recording.value?.userId!, accountStore.token ?? undefined),
   enabled // Use the computed enabled value
 });
 
@@ -72,52 +70,19 @@ onBeforeRouteUpdate(async (to) => {
   await queryClient.invalidateQueries({ queryKey: ['user'] });
 });
 
-// Watch for changes in the recording data to reset edited values if needed
-watch(
-  recording,
-  (newRecording) => {
-    if (newRecording) {
-      editedName.value = newRecording.name || '';
-      editedNote.value = newRecording.note || '';
-    }
-  },
-  { immediate: true }
-);
-
-const toggleEdit = () => {
-  if (!editing.value && recording.value) {
-    // Reset edited values to current recording values when starting edit
-    editedName.value = recording.value.name || '';
-    editedNote.value = recording.value.note || '';
-  }
-  editing.value = !editing.value;
-};
-
-const saveChanges = async () => {
-  // editRecording({
-
-  // })
-
-  await queryClient.invalidateQueries({
-    queryKey: ['recording', recordingId.value]
-  });
-  editing.value = false;
-};
-
-const cancelEdit = () => {
-  editing.value = false;
-  // Optionally reset fields if needed, though toggleEdit already does this when starting
-};
-
-const segments = ref<{
-  id: number;
-  start: number;
-  end: number;
-  color: string;
-}[]>([]);
+const segments = ref<
+  | {
+      id: number;
+      start: number;
+      end: number;
+      color?: string;
+      colors?: string[];
+    }[]
+  | null
+>(null);
 
 watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
-  if (newFilteredRec) {
+  if (newFilteredRec && DialectColors.value) {
     const firstPart = recording.value?.parts?.[0];
 
     if (!firstPart) return;
@@ -126,15 +91,27 @@ watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
 
     segments.value = newFilteredRec.map((fr) => ({
       id: fr.id * 1000 + i++,
-      start:  Number((new Date(fr.startDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000),
-      end: Number((new Date(fr.endDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000),
-      color: DialectColors.value?.[
-        (fr.detectedDialects?.[0]?.confirmedDialect ?? fr.detectedDialects?.[0]?.predictedDialect ?? fr.detectedDialects?.[0]?.userGuessDialect) as keyof typeof DialectColors.value
-      ] ?? '#000000'
+      start: Number(
+        (new Date(fr.startDate).getTime() -
+          new Date(firstPart.startDate).getTime()) /
+          1000
+      ),
+      end: Number(
+        (new Date(fr.endDate).getTime() -
+          new Date(firstPart.startDate).getTime()) /
+          1000
+      ),
+      // --- color mapping fix ---
+      // Collect dialect codes in priority (confirmed > predicted > guess)
+      colors: getDialectStrings(fr)
+        .map(
+          (code) =>
+            DialectColors.value?.[code as keyof typeof DialectColors.value]
+        )
+        .filter(Boolean) as string[]
     }));
   }
 });
-
 
 // onMounted(() => {
 //   MapStore.move([ recordingPart.gpsLatitudeStart, recordingPart.gpsLongitudeStart ], 17);
@@ -152,24 +129,93 @@ watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
 // }, { immediate: true });
 
 // todo move when selecting diff recordings (onBeforeRouteUpdate)
+
+// Helper to get mm:ss from absolute date based on first part start
+const firstPartStart = computed(() => {
+  const start = recording.value?.parts?.[0]?.startDate;
+  return start ? new Date(start).getTime() : null;
+});
+
+const formatRelTime = (dateStr: string) => {
+  if (!firstPartStart.value) return '0:00';
+  const diffSec = Math.max(
+    0,
+    (new Date(dateStr).getTime() - firstPartStart.value) / 1000
+  );
+  const min = Math.floor(diffSec / 60).toString();
+  const sec = Math.floor(diffSec % 60)
+    .toString()
+    .padStart(2, '0');
+  return `${min}:${sec}`;
+};
+
+const fallbackDialectColor = '#e2e8f0';
+
+const DIALECT_COLOR_ALPHA = {
+  background: 0.15,
+  border: 0.45,
+  star: 1
+} as const;
+
+type DialectColorUsage = keyof typeof DIALECT_COLOR_ALPHA;
+
+const getDialectBaseColor = (filteredPart: FilteredPartModel) => {
+  const firstDialect = getDialectStrings(filteredPart)[0];
+  if (!firstDialect || !DialectColors.value) {
+    return fallbackDialectColor;
+  }
+
+  return (
+    DialectColors.value[firstDialect as keyof typeof DialectColors.value] ??
+    fallbackDialectColor
+  );
+};
+
+const hexToRgba = (hexColor: string, alpha: number) => {
+  const normalized = hexColor.trim();
+  if (!normalized.startsWith('#')) {
+    return hexColor;
+  }
+
+  let value = normalized.slice(1);
+  if (value.length === 3 || value.length === 4) {
+    value = value
+      .split('')
+      .map((char) => char + char)
+      .join('');
+  }
+
+  if (value.length !== 6 && value.length !== 8) {
+    return hexColor;
+  }
+
+  const rgb = value.slice(0, 6);
+  const baseAlphaHex = value.length === 8 ? value.slice(6) : 'ff';
+
+  const r = parseInt(rgb.slice(0, 2), 16);
+  const g = parseInt(rgb.slice(2, 4), 16);
+  const b = parseInt(rgb.slice(4, 6), 16);
+  const baseAlpha = parseInt(baseAlphaHex, 16) / 255;
+
+  const finalAlpha = Math.min(
+    1,
+    Math.max(0, Math.round(baseAlpha * alpha * 1000) / 1000)
+  );
+
+  return `rgba(${r}, ${g}, ${b}, ${finalAlpha})`;
+};
+
+const getDialectColorWithAlpha = (
+  filteredPart: FilteredPartModel,
+  usage: DialectColorUsage
+) => {
+  const baseColor = getDialectBaseColor(filteredPart);
+  return hexToRgba(baseColor, DIALECT_COLOR_ALPHA[usage]);
+};
 </script>
 
 <template>
-  <h1 class="text-2xl font-semibold">
-    <span v-if="editing" class="mr-1">
-      <TranslatedText identifier="recordings.detail.editing_prefix" />
-    </span>
-    <!-- <template v-if="filteredRec">
-      <template v-for="fr in filteredRec">
-        <MultiColorSquare size="20px" :colors="fr.detectedDialects?.map(dd => {
-          let color = null;
-          if (dd.confirmedDialect && dd.confirmedDialect in DialectColors) {
-            color = DialectColors.valuedd.confirmedDialect as keyof typeof DialectColors];
-          }
-          return color;
-        }).filter(c => c !== null) ?? []" />
-      </template>
-    </template> -->
+  <h1 class="text-xl sm:text-2xl font-semibold break-words">
     <template v-if="recording?.name">
       {{ recording.name }}
     </template>
@@ -178,22 +224,8 @@ watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
     </template>
   </h1>
 
-  <div v-if="editing" class="space-y-2">
-    <div>
-      <label for="name" class="block text-sm font-medium text-gray-700">
-        <TranslatedText identifier="labels.title" />:
-      </label>
-      <input
-        id="name"
-        v-model="editedName"
-        type="text"
-        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-      />
-    </div>
-  </div>
-
   <template v-if="isError">
-    <span class="text-xl text-red-600">
+    <span class="text-lg sm:text-xl text-red-600">
       <TranslatedText identifier="common.error_prefix" />
       <span class="ml-1">
         <TranslatedText identifier="errors.recordings.loading_single" />
@@ -206,26 +238,15 @@ watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
     </span>
   </template>
   <template v-else-if="recording">
-    <div class="space-y-4">
+    <div class="space-y-3 sm:space-y-4">
       <!-- Metadata Section -->
       <div
-        class="flex flex-row justify-between w-full text-sm text-gray-600 space-y-1"
+        class="flex flex-col sm:flex-row justify-around w-full text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-0 sm:divide-x divide-gray-300"
       >
-        <span v-if="uploader">
-          <template v-if="uploader.nickname">{{ uploader.nickname }}</template>
-          <template v-else
-            >{{ uploader.firstName }} {{ uploader.lastName }}</template
-          >
-          {{ uploader.city ? `(${uploader.city})` : '' }}
-
-          <template v-if="recording.byApp">
-            <TranslatedText identifier="recordings.detail.by_app_suffix" />
-          </template>
-        </span>
-        <template v-if="recording.device">
+        <span v-if="recording.device" class="text-center sm:px-2">
           {{ recording.device }}
-        </template>
-        <span>{{
+        </span>
+        <span class="text-center sm:px-2">{{
           new Date(
             recording.parts?.[0]?.startDate ?? recording.createdAt!
           ).toLocaleString()
@@ -237,165 +258,152 @@ watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
       </prefetch-link>
 
       <blockquote
-        v-if="!editing"
-        class="p-3 bg-gray-50 border-l-4 border-gray-300 italic"
+        class="p-3 sm:p-4 bg-gray-50 border-l-4 border-gray-300 italic text-sm sm:text-base break-words"
       >
-        {{ recording.note || t('recordings.detail.no_note') }}
+        <template v-if="recording.note">
+          {{ recording.note }}
+        </template>
+        <template v-else>
+          <TranslatedText identifier="recordings.detail.no_note" />
+        </template>
       </blockquote>
-      <div v-else>
-        <textarea
-          id="note"
-          v-model="editedNote"
-          rows="3"
-          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-        />
-      </div>
 
-      <Spectrogram
-        v-if="recording && !isFilteredRecLoading"
-        :audio-urls="recording.parts?.map(p => `${env.VITE_API_URL}/recordings/part/${recording.id}/${p.id}/sound`) ?? []"
-        :height="300"
-        :readonly="true"
-        :no-controls="true"
-        :selected="segments"
-      />
-
-      <!-- Parts Section -->
-      <div>
-        <h3 class="text-lg font-medium mb-2">
-          <TranslatedText identifier="recordings.detail.parts_heading" />
+      <!-- Filtered Parts Section -->
+      <div
+        v-if="filteredRec?.length"
+        class="space-y-3 sm:space-y-4 mt-4 sm:mt-6"
+      >
+        <h3 class="text-base sm:text-lg font-medium mb-2">
+          <TranslatedText
+            identifier="recordings.detail.detected_dialects_heading"
+          />
         </h3>
-        <ul class="space-y-4">
+        <ul class="space-y-2 sm:space-y-3">
           <li
-            v-for="part in recording.parts"
-            :key="part.id"
-            class="p-3 space-y-3 flex flex-row"
+            v-for="fr in filteredRec.toSorted((a, b) =>
+              a.representantFlag === b.representantFlag
+                ? 0
+                : a.representantFlag
+                  ? -1
+                  : 1
+            )"
+            :key="fr.id"
+            class="flex flex-col gap-1 rounded-lg border p-3 sm:p-4 shadow-sm transition touch-manipulation"
+            :style="{
+              backgroundColor: getDialectColorWithAlpha(fr, 'background'),
+              borderColor: getDialectColorWithAlpha(fr, 'border')
+            }"
           >
-            <audio
-              ref="audio"
-              :src="`${env.VITE_API_URL}/recordings/part/${recording.id}/${part.id}/sound`"
-              controls
-              class="w-full"
-            />
-
-            <template v-if="accountStore.user?.role == 'admin'">
-              <button class="primary text-sm p-1 px-2" :disabled="editing">
-                <TranslatedText identifier="recordings.detail.delete_part" />
-              </button>
-            </template>
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <!-- <MultiColorSquare
+                  size="14px"
+                  v-if="DialectColors?.['value']"
+                  :colors="(
+                    fr.detectedDialects?.map(dd => {
+                      const code = dd.confirmedDialect ?? dd.predictedDialect ?? dd.userGuessDialect;
+                      return code && DialectColors.value[code as keyof typeof DialectColors.value] ?? null;
+                    }).filter(Boolean) as string[]
+                  ) ?? []"
+                /> -->
+                <p class="font-semibold text-sm sm:text-base truncate">
+                  {{
+                    fr.detectedDialects?.[0]?.confirmedDialect ??
+                    fr.detectedDialects?.[0]?.predictedDialect ??
+                    fr.detectedDialects?.[0]?.userGuessDialect ??
+                    t('recordings.detail.unknown_dialect')
+                  }}
+                </p>
+              </div>
+              <span
+                v-if="fr.representantFlag"
+                class="text-lg sm:text-xl flex-shrink-0"
+                :style="{ color: getDialectColorWithAlpha(fr, 'star') }"
+                >★</span
+              >
+            </div>
+            <span class="text-xs sm:text-sm text-gray-600">
+              {{ formatRelTime(fr.startDate) }} -
+              {{ formatRelTime(fr.endDate) }}
+            </span>
           </li>
         </ul>
       </div>
 
-      <prefetch-link
-        v-if="accountStore.user?.role === 'admin' || accountStore.user?.id === recording.userId"
-        :to="`./${recordingId}/upravit-dialekt`"
-        class="button-secondary py-2 px-4 max-sm:text-sm"
-      >
-        <TranslatedText identifier="admin.recordings.edit_dialects" />
-      </prefetch-link>
+      <!-- <KeepAlive> -->
+      <div class="-mx-4 sm:mx-0">
+        <Spectrogram
+          v-if="recording && filteredRec && DialectColors && segments"
+          :audio-urls="
+            recording.parts?.map(
+              (p) =>
+                `${env.VITE_API_URL}/recordings/part/${recording.id}/${p.id}/sound`
+            ) ?? []
+          "
+          :height="250"
+          :readonly="true"
+          :download-only-selections="true"
+          :no-controls="true"
+          :selected="segments"
+        >
+          <template #range-tooltip="{ range, close }">
+            <div
+              class="p-2 bg-blue-100 border border-blue-300 rounded shadow-md"
+            >
+              <h4 class="font-bold">Custom Tooltip!</h4>
+              <p>Range ID: {{ range.id }}</p>
+              <p>Starts at: {{ range.start.toFixed(2) }}s</p>
+              <p>Ends at: {{ range.end.toFixed(2) }}s</p>
+              <button class="text-blue-500 hover:underline mt-1" @click="close">
+                Dismiss
+              </button>
+            </div>
+          </template>
+        </Spectrogram>
+      </div>
+      <!-- </KeepAlive> -->
+      <!-- End Filtered Parts Section -->
 
-      <prefetch-link
-        v-if="accountStore.user?.role == 'admin' || accountStore.user?.id == recording?.userId"
-        :to="`./${recordingId}/upravit`"
-        class="button-secondary py-2 px-4 max-sm:text-sm"
-      >
-        <TranslatedText identifier="buttons.edit" />
-      </prefetch-link>
-      <prefetch-link
-        v-if="accountStore.user?.role == 'admin'"
-        :to="`./${recordingId}/smazat`"
-        class="button-primary py-2 px-4 max-sm:text-sm"
-      >
-        <TranslatedText identifier="recordings.detail.delete_recording" />
-      </prefetch-link>
-      <prefetch-link
-        v-else-if="accountStore.user?.role == 'user' && accountStore.user?.id == recording.userId"
-        :to="`./${recordingId}/smazat`"
-        class="button-secondary py-2 px-4 max-sm:text-sm"
-      >
-        <TranslatedText identifier="recordings.detail.request_delete" />
-      </prefetch-link>
+      <div class="flex flex-col gap-2 sm:gap-3">
+        <prefetch-link
+          v-if="
+            accountStore.user?.role === 'admin' ||
+            accountStore.user?.id === recording.userId
+          "
+          :to="`./${recordingId}/upravit-dialekt`"
+          class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
+        >
+          <TranslatedText identifier="admin.recordings.edit_dialects" />
+        </prefetch-link>
 
-      <!-- <ToggleShow class="w-full">
-        <template #toggle-button>
-          <button class="secondary text-sm p-1 px-2">
-            Zobrazit spektrogram
-          </button>
-        </template>
-        <KeepAlive>
-          <Spectrogram
-            v-if="recording"
-            :audio-urls="recording.parts?.map(p => `${env.VITE_API_URL}/recordings/part/${recording.id}/${p.id}/sound`) ?? []"
-            :height="300"
-            :readonly="true"
-            :selected="[
-              {
-                id: 1,
-                start: 1,
-                end: 3,
-                color: 'red'
-              }
-            ]"
-          >
-            <template #range-tooltip="{ range, close }">
-              <div class="p-2 bg-blue-100 border border-blue-300 rounded shadow-md">
-                <h4 class="font-bold">
-                  Custom Tooltip!
-                </h4>
-                <p>Range ID: {{ range.id }}</p>
-                <p>Starts at: {{ range.start.toFixed(2) }}s</p>
-                <p>Ends at: {{ range.end.toFixed(2) }}s</p>
-                <button
-                  class="text-blue-500 hover:underline mt-1"
-                  @click="close"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </template>
-          </Spectrogram>
-        </KeepAlive>
-      </ToggleShow> -->
-
-      <!-- <template v-if="accountStore.user?.role === 'admin' || accountStore.user?.id === recording.userId">
-        <template v-if="editing">
-          <button
-            class="success p-2"
-            @click="saveChanges"
-          >
-            Save changes
-          </button>
-          <button
-            class="secondary p-2"
-            @click="cancelEdit"
-          >
-            Cancel
-          </button>
-        </template>
-
-        <template v-else>
-          <button
-            v-if="accountStore.user?.role == 'admin' || accountStore.user?.id == recording?.userId"
-            class="secondary p-2 ml-4 flex-shrink-0"
-            @click="toggleEdit"
-          >
-            Edit
-          </button>
-          <button
-            v-if="accountStore.user?.role == 'admin'"
-            class="primary p-2"
-          >
-            Delete recording
-          </button>
-          <button
-            v-else-if="accountStore.user?.role == 'user' && accountStore.user?.id == recording.userId"
-            class="secondary p-2"
-          >
-            Request deletion
-          </button>
-        </template>
-      </template> -->
+        <prefetch-link
+          v-if="
+            accountStore.user?.role == 'admin' ||
+            accountStore.user?.id == recording?.userId
+          "
+          :to="`./${recordingId}/upravit`"
+          class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
+        >
+          <TranslatedText identifier="buttons.edit" />
+        </prefetch-link>
+        <prefetch-link
+          v-if="accountStore.user?.role == 'admin'"
+          :to="`./${recordingId}/smazat`"
+          class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
+        >
+          <TranslatedText identifier="recordings.detail.delete_recording" />
+        </prefetch-link>
+        <prefetch-link
+          v-else-if="
+            accountStore.user?.role == 'user' &&
+            accountStore.user?.id == recording.userId
+          "
+          :to="`./${recordingId}/smazat`"
+          class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
+        >
+          <TranslatedText identifier="recordings.detail.request_delete" />
+        </prefetch-link>
+      </div>
     </div>
   </template>
   <template v-else>

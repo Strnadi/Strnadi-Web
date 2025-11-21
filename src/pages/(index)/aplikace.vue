@@ -48,12 +48,18 @@ const location = window.location.href;
   <div class="flex flex-col items-center gap-y-4">
     <div class="flex flex-col items-center gap-y-4">
       <div class="flex flex-col items-center gap-x-4 w-3/4 gap-y-2">
-        <QrcodeSvg :value="location" :size="200" class="w-fit" background="transparent" :image-settings="{
-          src: `${env.VITE_PUBLIC_URL}/WIP.png`,
-          width: 48,
-          height: 48,
-          excavate: true
-        }" />
+        <QrcodeSvg
+          :value="location"
+          :size="200"
+          class="w-fit"
+          background="transparent"
+          :image-settings="{
+            src: `${env.VITE_PUBLIC_URL}/WIP.png`,
+            width: 48,
+            height: 48,
+            excavate: true
+          }"
+        />
 
         <span class="font-medium text-justify [text-align-last:center] text-sm">
           <TranslatedText identifier="app.qr_code" />
@@ -84,7 +90,10 @@ const location = window.location.href;
       <div class="flex flex-row gap-x-2">
         <a href="https://www.instagram.com/p/DKzadiSK_OP">
           <div class="flex flex-col items-center">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/9/95/Instagram_logo_2022.svg" width="40px">
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/9/95/Instagram_logo_2022.svg"
+              width="40px"
+            />
             <span>
               <TranslatedText identifier="pages.application.how_to_download" />
             </span>

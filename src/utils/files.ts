@@ -18,13 +18,12 @@ export const extensionToMime: Record<string, string> = {
   '.pdf': 'application/pdf',
   '.doc': 'application/msword',
   '.docx':
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   '.xls': 'application/vnd.ms-excel',
-  '.xlsx':
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   '.ppt': 'application/vnd.ms-powerpoint',
   '.pptx':
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   '.mp3': 'audio/mpeg',
   '.mp4': 'video/mp4',
   '.m4a': 'audio/mp4',
@@ -110,7 +109,6 @@ export const extensionToMime: Record<string, string> = {
   '.midi': 'audio/midi',
   '.iso': 'application/x-iso9660-image'
 };
-
 
 export function validateFiles(accept: string[], files: File[]) {
   if (!accept?.length) {
@@ -335,7 +333,6 @@ export function validateFiles(accept: string[], files: File[]) {
       'model/vrml'
     ]
   };
-
 
   // Process each file to determine if it's valid
   files.forEach((file) => {

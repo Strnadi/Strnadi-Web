@@ -12,6 +12,15 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@blockly/block-shareable-procedures": "^6.0.4",
+    "@blockly/disable-top-blocks": "^0.6.3",
+    "@blockly/plugin-cross-tab-copy-paste": "^8.0.2",
+    "@blockly/plugin-scroll-options": "^7.0.3",
+    "@blockly/plugin-workspace-search": "^10.1.2",
+    "@blockly/workspace-minimap": "^0.3.3",
+    "@blockly/zoom-to-fit": "^7.0.3",
+    "@mit-app-inventor/blockly-block-lexical-variables": "^11.0.3",
+    "@mit-app-inventor/blockly-plugin-workspace-multiselect": "^1.0.2",
     "@progress/jszip-esm": "^1.0.4",
     "@sentry/vue": "^9.19.0",
     "@tanstack/vue-query": "^5.76.0",

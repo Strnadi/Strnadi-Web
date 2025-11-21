@@ -53,8 +53,9 @@ aside.center {
   @apply right-0;
   @apply mx-auto;
   @apply w-fit;
-  @apply max-w-fit;
-  @apply desktop:max-w-3/4;
+  @apply min-w-fit;
+  @apply max-w-full;
+  /* @apply desktop:max-w-3/4; */
   @apply z-[7];
   @apply rounded-lg;
   @apply backdrop-blur-3xl;
@@ -75,7 +76,7 @@ aside > div > div > button.big {
   @apply py-1 -ml-3 mr-4 self-start flex flex-row items-center border-none bg-transparent;
 }
 
-aside > div :not(button:first-of-type, h1:first-of-type) {
+/* aside > div :not(button:first-of-type, h1:first-of-type) {
   @apply col-span-2;
-}
+} */
 </style>

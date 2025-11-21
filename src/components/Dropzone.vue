@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, toRef } from 'vue';
+import { ref, computed } from 'vue';
 import { useDropZone, useFileDialog } from '@vueuse/core';
 import { validateFiles } from '@/utils/files.ts';
 
@@ -20,9 +20,6 @@ interface MultipleFileProps extends CommonProps {
 
 const props = defineProps<SingleFileProps | MultipleFileProps>();
 const emit = defineEmits(['drop', 'update:modelValue']);
-
-// expose multiple for template binding
-const multiple = toRef(props, 'multiple');
 
 const dropzoneFiles = computed({
   get: () => props.modelValue,
@@ -87,10 +84,10 @@ onChange((files) => {
 <template>
   <div
     ref="dropZoneRef"
-    :class="
-      !headless &&
-      `border-2 border-dashed rounded-lg border-gray-300 w-full p-2 flex flex-col justify-center items-center min-h-[5rem] h-full`
-    "
+    :class="[
+      !headless && 'dropzone',
+      isOverDropZone && !headless && 'dropzone-active'
+    ]"
     @click="() => !headless && open()"
     @dragenter.stop
   >
@@ -102,3 +99,21 @@ onChange((files) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+@reference "../styles/main.css";
+
+.dropzone {
+  @apply border-3 border-dashed rounded-xl border-gray-300 bg-gray-50;
+  @apply w-full p-4 sm:p-6;
+  @apply flex flex-col justify-center items-center;
+  @apply min-h-[12rem] sm:min-h-[14rem];
+  @apply cursor-pointer touch-manipulation;
+  @apply transition-all duration-200;
+  @apply hover:border-blue-400 hover:bg-blue-50;
+}
+
+.dropzone-active {
+  @apply border-blue-500 bg-blue-100 scale-[1.02];
+}
+</style>

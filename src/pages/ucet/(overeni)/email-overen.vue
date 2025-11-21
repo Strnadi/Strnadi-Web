@@ -29,10 +29,9 @@ const isMobile = computed(() => {
       v-if="isMobile"
       class="button-primary p-2 w-full text-center"
       href="com.delta.strnadi://"
-      >
-      <TranslatedText identifier="buttons.back_to_app" />
-    </a
     >
+      <TranslatedText identifier="buttons.back_to_app" />
+    </a>
     <PrefetchLink
       v-else
       class="button-primary p-2 w-full text-center"
