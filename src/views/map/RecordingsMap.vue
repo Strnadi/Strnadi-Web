@@ -76,6 +76,19 @@ import {
 } from '@/api/recordings';
 import { divIcon, type Icon } from 'leaflet';
 
+// Helper to compare dialect color sets for clustering
+function haveSameDialects(a: Marker, b: Marker): boolean {
+  const colorsA = (a.data?.colors ?? []) as string[];
+  const colorsB = (b.data?.colors ?? []) as string[];
+  if (colorsA.length !== colorsB.length) return false;
+  // Compare ignoring order
+  const setA = new Set(colorsA);
+  const setB = new Set(colorsB);
+  if (setA.size !== setB.size) return false;
+  for (const c of setA) if (!setB.has(c)) return false;
+  return true;
+}
+
 const { data: recordings } = useQuery({
   queryKey: ['all-recordings'],
   queryFn: () => getRecordings({ parts: true })
@@ -218,7 +231,8 @@ const markers = computed<Marker[]>(() => {
             .flatMap(
               (fp) =>
                 fp.detectedDialects?.map((dd) => dd.confirmedDialect) ?? []
-            );
+            )
+            .filter((d): d is string => d != null);
 
           if (dialectStrings.length > 0) {
             fromModel = false;
@@ -240,7 +254,8 @@ const markers = computed<Marker[]>(() => {
             .flatMap(
               (fp) =>
                 fp.detectedDialects?.map((dd) => dd.predictedDialect) ?? []
-            );
+            )
+            .filter((d): d is string => d != null);
 
           if (dialectStrings.length > 0) {
             fromModel = true;
@@ -262,7 +277,8 @@ const markers = computed<Marker[]>(() => {
             .flatMap(
               (fp) =>
                 fp.detectedDialects?.map((dd) => dd.userGuessDialect) ?? []
-            );
+            )
+            .filter((d): d is string => d != null);
 
           if (dialectStrings.length > 0) {
             fromUser = true;
@@ -281,10 +297,15 @@ const markers = computed<Marker[]>(() => {
         );
         console.log(colors);
 
+        // Use larger icons on mobile (screen width < 768px)
+        const isMobile = window.innerWidth < 768;
+        const iconSize = isMobile ? 20 : 12;
+        const iconAnchor = isMobile ? 10 : 6;
+
         const icon = divIcon({
           className: '',
-          iconSize: [12, 12],
-          iconAnchor: [6, 6],
+          iconSize: [iconSize, iconSize],
+          iconAnchor: [iconAnchor, iconAnchor],
           html: `<multi-color-square size="100%" dot="${fromModel}" questionmark="${fromUser}" colors='${JSON.stringify(colors)}'></multi-color-square>`
         });
 
@@ -356,6 +377,7 @@ const onClick = ({
     :scale-bar="MapStore.scale"
     :polygons="polygons"
     :markers="[...markers, ...Object.values(MapStore.markers)]"
+    :cluster-test="haveSameDialects"
     :mode="MapStore.aerial ? 'aerial' : 'outdoor'"
     :position="currentCenter"
     :zoom-control="true"

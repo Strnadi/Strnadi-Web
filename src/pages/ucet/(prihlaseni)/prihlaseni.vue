@@ -116,22 +116,28 @@ const errorHandler = (error: string) => {
 </script>
 
 <template>
-  <h1>
+  <h1 class="text-xl sm:text-2xl">
     <TranslatedText identifier="auth.login.title" />
   </h1>
-  <div class="flex flex-col items-center gap-y-6">
-    <div v-if="error">
+  <div class="flex flex-col items-center gap-y-4 sm:gap-y-6">
+    <div
+      v-if="error"
+      class="text-sm sm:text-base text-red-600 p-3 bg-red-50 rounded-lg w-full"
+    >
       <TranslatedText identifier="common.error_prefix" />
       <span class="ml-1">{{ error }}</span>
     </div>
-    <div v-if="isPending">
+    <div v-if="isPending" class="text-sm sm:text-base">
       <TranslatedText identifier="states.loading" />
     </div>
-    <div v-else class="flex flex-col items-center gap-y-6 w-full">
-      <div class="flex flex-col items-center gap-y-2 max-lg:w-full">
-        <div class="flex flex-col gap-x-2 gap-y-4 w-full">
+    <div v-else class="flex flex-col items-center gap-y-4 sm:gap-y-6 w-full">
+      <div class="flex flex-col items-center gap-y-3 sm:gap-y-4 w-full">
+        <div class="flex flex-col gap-x-2 gap-y-3 sm:gap-y-4 w-full">
           <div class="w-full">
-            <label for="email" class="block text-sm font-medium mb-1">
+            <label
+              for="email"
+              class="block text-xs sm:text-sm font-medium mb-1.5"
+            >
               <TranslatedText identifier="labels.email" />
             </label>
             <input
@@ -140,7 +146,8 @@ const errorHandler = (error: string) => {
               name="mail"
               type="email"
               :placeholder="t('placeholders.email')"
-              class="w-full p-2 border rounded"
+              class="w-full p-3 border rounded text-sm sm:text-base touch-manipulation"
+              autocomplete="email"
             />
           </div>
           <div class="w-full">
@@ -148,13 +155,16 @@ const errorHandler = (error: string) => {
               v-model="password"
               name="pass"
               :placeholder="t('placeholders.password')"
-              class="w-full p-2 border rounded"
+              class="w-full p-3 border rounded text-sm sm:text-base touch-manipulation"
             >
               <div
-                class="text-sm font-medium mb-1 flex flex-row justify-between"
+                class="text-xs sm:text-sm font-medium mb-1.5 flex flex-row justify-between items-center"
               >
                 <span><TranslatedText identifier="labels.password" /></span>
-                <PrefetchLink to="/ucet/zapomenute-heslo">
+                <PrefetchLink
+                  to="/ucet/zapomenute-heslo"
+                  class="text-blue-600 hover:underline"
+                >
                   <TranslatedText identifier="buttons.forgotten_password" />
                 </PrefetchLink>
               </div>
@@ -162,7 +172,7 @@ const errorHandler = (error: string) => {
           </div>
         </div>
         <button
-          class="primary p-2 max-lg:w-full w-full"
+          class="primary py-3 px-4 w-full text-sm sm:text-base touch-manipulation"
           type="submit"
           :disabled="isPending"
           @click="handleLogin"

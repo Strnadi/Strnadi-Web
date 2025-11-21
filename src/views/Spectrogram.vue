@@ -24,9 +24,10 @@
       />
 
       <div
-        class="absolute top-0 left-0 w-full h-full"
+        class="absolute top-0 left-0 w-full h-full touch-none"
         :class="overlayCursorClass"
         @mousedown="onRangeSelectStart"
+        @touchstart="onRangeSelectTouchStart"
       >
         <!-- Hover line shows the nextRangeColor -->
         <div
@@ -64,7 +65,7 @@
             @click.stop="handleRangeFillClick(r.id, $event)"
           />
           <div
-            class="range-handle start absolute opacity-70 hover:opacity-100 transition-opacity"
+            class="range-handle start absolute opacity-70 hover:opacity-100 transition-opacity touch-manipulation"
             :class="{
               'scale-x-150':
                 draggingRangeId === r.id && draggingHandle === 'start',
@@ -76,10 +77,11 @@
               top: `${margin.top}px`,
               height: `${containerHeight - margin.top - margin.bottom}px`,
               transform: 'translateX(-50%)',
-              width: props.readonly ? '2px' : '20px',
+              width: props.readonly ? '2px' : '32px',
               background: props.readonly ? r.primaryColor : 'transparent'
             }"
             @mousedown.stop.prevent="onHandleMouseDown(r.id, 'start')"
+            @touchstart.stop.prevent="onHandleTouchStart(r.id, 'start', $event)"
           >
             <template v-if="!props.readonly">
               <div class="relative w-full h-full">
@@ -108,7 +110,7 @@
             </template>
           </div>
           <div
-            class="range-handle end absolute opacity-70 hover:opacity-100 transition-opacity"
+            class="range-handle end absolute opacity-70 hover:opacity-100 transition-opacity touch-manipulation"
             :class="{
               'scale-x-150':
                 draggingRangeId === r.id && draggingHandle === 'end',
@@ -120,10 +122,11 @@
               top: `${margin.top}px`,
               height: `${containerHeight - margin.top - margin.bottom}px`,
               transform: 'translateX(-50%)',
-              width: props.readonly ? '2px' : '20px',
+              width: props.readonly ? '2px' : '32px',
               background: props.readonly ? r.primaryColor : 'transparent'
             }"
             @mousedown.stop.prevent="onHandleMouseDown(r.id, 'end')"
+            @touchstart.stop.prevent="onHandleTouchStart(r.id, 'end', $event)"
           >
             <template v-if="!props.readonly">
               <div class="relative w-full h-full">
@@ -139,11 +142,11 @@
                 <div
                   class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                   :style="{
-                    width: '16px', // Content width, total 20px with borders
+                    width: '24px', // Larger for mobile touch
                     height: `${(containerHeight - margin.top - margin.bottom) * (2 / 3)}px`,
                     backgroundColor: 'white',
                     border: `2px solid ${r.primaryColor}`,
-                    borderRadius: '10px', // Adjusted for new width
+                    borderRadius: '14px', // Adjusted for new width
                     boxSizing: 'content-box',
                     zIndex: 1
                   }"
@@ -265,7 +268,13 @@
         <div
           class="spinner w-10 h-10 border-4 border-gray-200 border-l-black rounded-full animate-spin"
         />
-        <span>Chvilku strpení prosím...</span>
+        <div class="w-40 h-2 bg-gray-200 rounded overflow-hidden">
+          <div
+            class="h-full bg-blue-500 transition-all"
+            :style="{ width: `${Math.round(loadingProgress * 100)}%` }"
+          />
+        </div>
+        <span>{{ Math.round(loadingProgress * 100) }}%</span>
       </div>
     </div>
 
@@ -312,10 +321,10 @@
     <!-- Playback controls if no external audio element -->
     <div
       v-if="!props.audioElementProp && !props.noControls"
-      class="controls-container flex justify-center gap-2.5 w-full mt-2.5"
+      class="controls-container flex flex-wrap justify-center gap-2 sm:gap-2.5 w-full mt-2 sm:mt-2.5"
     >
       <button
-        class="px-3 py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300"
+        class="px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300 active:enabled:bg-gray-400 transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation"
         :disabled="isPlaying || !isLoaded"
         @click="playAudio"
       >
@@ -326,21 +335,21 @@
         <TranslatedText identifier="common.buttons.resume" v-else />
       </button>
       <button
-        class="px-3 py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300"
+        class="px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300 active:enabled:bg-gray-400 transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation"
         :disabled="!isPlaying || !isLoaded"
         @click="pauseAudio"
       >
         <TranslatedText identifier="common.buttons.pause" />
       </button>
       <button
-        class="px-3 py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300"
+        class="px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300 active:enabled:bg-gray-400 transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation"
         :disabled="!isLoaded || (!isPlaying && !isPaused)"
         @click="stopAudio"
       >
         <TranslatedText identifier="common.buttons.stop" />
       </button>
       <button
-        class="px-3 py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300"
+        class="px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300 active:enabled:bg-gray-400 transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation"
         :disabled="!isLoaded"
         @click="rewindToAbsoluteStart"
       >
@@ -351,60 +360,73 @@
     <!-- Playback options -->
     <div
       v-if="isLoaded && !props.noControls"
-      class="playback-options-container w-full flex items-center justify-center gap-x-4 gap-y-2 mt-1 px-2.5 flex-wrap"
+      class="playback-options-container w-full flex items-center justify-center gap-x-3 sm:gap-x-4 gap-y-2 mt-1 px-2 sm:px-2.5 flex-wrap"
     >
-      <label class="whitespace-nowrap text-sm">
+      <label
+        class="whitespace-nowrap text-xs sm:text-sm flex items-center touch-manipulation"
+      >
         <input
           v-model="playInViewportOnly"
           type="checkbox"
           :disabled="autoScroll"
-          class="mr-1 align-middle"
+          class="mr-1.5 align-middle w-4 h-4"
         />
         <TranslatedText
           identifier="common.playback_options.play_in_viewport_only"
         />
       </label>
-      <label class="whitespace-nowrap text-sm">
+      <label
+        class="whitespace-nowrap text-xs sm:text-sm flex items-center touch-manipulation"
+      >
         <input
           v-model="playInSelectionOnly"
           type="checkbox"
           :disabled="autoScroll || !isProgressInSelection"
-          class="mr-1 align-middle"
+          class="mr-1.5 align-middle w-4 h-4"
         />
         <TranslatedText
           identifier="common.playback_options.play_in_selection_only"
         />
       </label>
-      <label class="whitespace-nowrap text-sm">
+      <label
+        class="whitespace-nowrap text-xs sm:text-sm flex items-center touch-manipulation"
+      >
         <input
           v-model="loopPlayback"
           type="checkbox"
-          class="mr-1 align-middle"
+          class="mr-1.5 align-middle w-4 h-4"
         />
         <TranslatedText identifier="common.playback_options.loop_playback" />
       </label>
-      <label class="whitespace-nowrap text-sm">
-        <input v-model="autoScroll" type="checkbox" class="mr-1 align-middle" />
+      <label
+        class="whitespace-nowrap text-xs sm:text-sm flex items-center touch-manipulation"
+      >
+        <input
+          v-model="autoScroll"
+          type="checkbox"
+          class="mr-1.5 align-middle w-4 h-4"
+        />
         <TranslatedText identifier="common.playback_options.auto_scroll" />
       </label>
     </div>
 
     <!-- Scrollbars -->
-    <div v-if="isLoaded" class="w-full px-2.5 mt-2.5 space-y-2">
+    <div v-if="isLoaded" class="w-full px-2 sm:px-2.5 mt-2 sm:mt-2.5 space-y-2">
       <!-- Pan Scrollbar -->
       <div
         v-if="spectrogramData.length > 0 && maxOffsetIndex > 0"
-        class="pan-scrollbar h-5 flex items-center space-x-2"
+        class="pan-scrollbar min-h-[44px] flex items-center space-x-1.5 sm:space-x-2 py-2"
       >
-        <span class="text-xs w-10 text-right shrink-0">
+        <span class="text-[10px] sm:text-xs w-8 sm:w-10 text-right shrink-0">
           <TranslatedText
             identifier="common.playback_options.pan_scrollbar_label"
           />:
         </span>
         <div
           ref="panTrackRef"
-          class="pan-track flex-1 h-3 bg-gray-300 rounded relative cursor-pointer"
+          class="pan-track flex-1 h-5 sm:h-4 bg-gray-300 rounded relative cursor-pointer touch-manipulation"
           @mousedown.prevent="onPanTrackMouseDown"
+          @touchstart.prevent="onPanTrackTouchStart"
         >
           <div
             v-for="region in panBarRegions"
@@ -429,25 +451,26 @@
             }"
           />
           <div
-            class="pan-thumb h-full bg-blue-500 rounded absolute"
+            class="pan-thumb h-full bg-blue-500 rounded absolute touch-manipulation"
             :style="panThumbStyle"
             style="z-index: 2"
             @mousedown.stop.prevent="onPanThumbMouseDown"
+            @touchstart.stop.prevent="onPanThumbTouchStart"
           />
         </div>
       </div>
       <div
         v-else-if="spectrogramData.length > 0"
-        class="pan-scrollbar h-5 flex items-center space-x-2"
+        class="pan-scrollbar min-h-[44px] flex items-center space-x-1.5 sm:space-x-2 py-2"
       >
-        <span class="text-xs w-10 text-right shrink-0">
+        <span class="text-[10px] sm:text-xs w-8 sm:w-10 text-right shrink-0">
           <TranslatedText
             identifier="common.playback_options.pan_scrollbar_label"
           />:
         </span>
         <div
           ref="panTrackRef"
-          class="pan-track flex-1 h-3 bg-gray-300 rounded relative"
+          class="pan-track flex-1 h-5 sm:h-4 bg-gray-300 rounded relative"
         >
           <div
             v-for="region in panBarRegions"
@@ -478,37 +501,39 @@
       <!-- Zoom Scrollbar -->
       <div
         v-if="zoomRange > 0"
-        class="zoom-scrollbar h-5 flex items-center space-x-2"
+        class="zoom-scrollbar min-h-[44px] flex items-center space-x-1.5 sm:space-x-2 py-2"
       >
-        <span class="text-xs w-10 text-right shrink-0">
+        <span class="text-[10px] sm:text-xs w-8 sm:w-10 text-right shrink-0">
           <TranslatedText
             identifier="common.playback_options.zoom_scrollbar_label"
           />:
         </span>
         <div
           ref="zoomTrackRef"
-          class="zoom-track flex-1 h-3 bg-gray-300 rounded relative cursor-pointer"
+          class="zoom-track flex-1 h-5 sm:h-4 bg-gray-300 rounded relative cursor-pointer touch-manipulation"
           @mousedown.prevent="onZoomTrackMouseDown"
+          @touchstart.prevent="onZoomTrackTouchStart"
         >
           <div
-            class="zoom-thumb h-full bg-green-500 rounded absolute"
+            class="zoom-thumb h-full bg-green-500 rounded absolute touch-manipulation"
             :style="zoomThumbStyle"
             @mousedown.stop.prevent="onZoomThumbMouseDown"
+            @touchstart.stop.prevent="onZoomThumbTouchStart"
           />
         </div>
       </div>
       <div
         v-else-if="isLoaded"
-        class="zoom-scrollbar h-5 flex items-center space-x-2"
+        class="zoom-scrollbar min-h-[44px] flex items-center space-x-1.5 sm:space-x-2 py-2"
       >
-        <span class="text-xs w-10 text-right shrink-0">
+        <span class="text-[10px] sm:text-xs w-8 sm:w-10 text-right shrink-0">
           <TranslatedText
             identifier="common.playback_options.zoom_scrollbar_label"
           />:
         </span>
         <div
           ref="zoomTrackRef"
-          class="zoom-track flex-1 h-3 bg-gray-300 rounded relative"
+          class="zoom-track flex-1 h-5 sm:h-4 bg-gray-300 rounded relative"
         >
           <div
             class="h-full bg-green-400 rounded absolute"
@@ -661,7 +686,13 @@ const props = withDefaults(defineProps<Props>(), {
   selected: () => [],
   width: 0,
   height: 0,
-  margin: () => ({ top: 20, right: 20, bottom: 30, left: 50 }),
+  margin: () => {
+    // Responsive margins for mobile
+    const isMobile = window.innerWidth < 640; // 640px = sm breakpoint
+    return isMobile
+      ? { top: 15, right: 10, bottom: 25, left: 35 }
+      : { top: 20, right: 20, bottom: 30, left: 50 };
+  },
   maxFrequency: 12000,
   minFrequency: 3000,
   colorScheme: () => {
@@ -746,6 +777,17 @@ const isLoaded = ref(false);
 const isLoading = ref(false);
 const isPlaying = ref(false);
 const isPaused = ref(false);
+const totalAudioBytes = ref(0);
+const receivedAudioBytes = ref(0);
+// Loading progress
+const audioProgress = ref(0); // 0–1 for audio download/decoding
+const spectroProgress = ref(0); // 0–1 for spectrogram generation
+const loadingProgress = computed(() => {
+  const audioFrac = totalAudioBytes.value
+    ? clamp(receivedAudioBytes.value / totalAudioBytes.value, 0, 1)
+    : audioProgress.value; // fallback
+  return clamp(audioFrac * 0.4 + spectroProgress.value * 0.6, 0, 1);
+});
 const startTime = ref(0);
 const currentTime = ref(props.currentTime);
 
@@ -763,6 +805,8 @@ const normalizedGain = computed(() => sanitizeGain(props.gain));
 
 const audioDuration = ref(0);
 const spectrogramData = ref<{ time: number }[]>([]);
+// Duration (in seconds) represented by a single spectrogram column (FFT hop).
+const columnDuration = ref(0);
 const cacheCanvas = ref<HTMLCanvasElement | null>(null);
 // Split spectrogram into multiple off-screen tile canvases to avoid hitting the
 // browser maximum canvas size limit. Each tile has width ≤ TILE_COLS.
@@ -791,7 +835,24 @@ const containerHeight = ref(props.height);
 let resizeObserver: ResizeObserver | null = null;
 
 // Zoom/pan
-const MIN_COLS_AT_MAX_ZOOM_DISPLAY = 200; // How many spectrogram columns are shown at maximum zoom-in.
+const VIEW_MIN_SHOWN_SECONDS = 4;
+// Derive the minimum number of columns required at max zoom based on the actual
+// hop duration (sampleSize / sampleRate) so the viewport always spans the target seconds.
+const MIN_COLS_AT_MAX_ZOOM_DISPLAY = computed(() => {
+  const totalColumns = spectrogramData.value.length;
+  const hopSeconds =
+    columnDuration.value ||
+    (audioDuration.value > 0 && totalColumns > 0
+      ? audioDuration.value / totalColumns
+      : 0);
+
+  if (hopSeconds > 0) {
+    const minCols = Math.max(1, Math.ceil(VIEW_MIN_SHOWN_SECONDS / hopSeconds));
+    return totalColumns > 0 ? Math.min(minCols, totalColumns) : minCols;
+  }
+
+  return totalColumns > 0 ? totalColumns : 1;
+});
 const zoomLevel = ref(DEFAULT_BASE_ZOOM);
 const offsetIndex = ref(0);
 const windowSize = ref(0);
@@ -804,7 +865,8 @@ const maxZoomLevel = computed(() => {
     return Math.max(MIN_ZOOM_LEVEL, DEFAULT_BASE_ZOOM);
   }
   // Calculate the zoom factor required to show MIN_COLS_AT_MAX_ZOOM_DISPLAY columns.
-  const zoomFactorForMinDisplay = total / MIN_COLS_AT_MAX_ZOOM_DISPLAY;
+  const minCols = Math.max(1, MIN_COLS_AT_MAX_ZOOM_DISPLAY.value);
+  const zoomFactorForMinDisplay = total / minCols;
 
   // maxZoomLevel must be at least MIN_ZOOM_LEVEL.
   // If zoomFactorForMinDisplay is less than MIN_ZOOM_LEVEL (e.g., for very short audio),
@@ -957,8 +1019,17 @@ const hoverLineColor = computed(() => {
   return nextRangeColor.value;
 });
 
-// Margin
-const margin = computed(() => props.margin);
+// Margin - responsive for mobile
+const margin = computed(() => {
+  const isMobile = window.innerWidth < 640; // 640px = sm breakpoint
+  // If margin prop is explicitly provided, use it; otherwise use responsive defaults
+  return (
+    props.margin ??
+    (isMobile
+      ? { top: 15, right: 10, bottom: 25, left: 35 }
+      : { top: 20, right: 20, bottom: 30, left: 50 })
+  );
+});
 
 // Spacebar
 const isSpacebarPressed = ref(false);
@@ -1037,6 +1108,42 @@ function sanitizeGain(value: number | undefined): number {
     return DEFAULT_GAIN;
   }
   return clamp(value, 0, DEFAULT_GAIN);
+}
+
+const FALLBACK_AUDIO_PROGRESS_DENOM = 1024 * 1024; // 1MB heuristic when total size unknown
+
+function updateAudioProgressFromCounters() {
+  if (totalAudioBytes.value > 0) {
+    audioProgress.value = clamp(
+      receivedAudioBytes.value / totalAudioBytes.value,
+      0,
+      1
+    );
+  } else {
+    const fallback =
+      receivedAudioBytes.value /
+      (receivedAudioBytes.value + FALLBACK_AUDIO_PROGRESS_DENOM);
+    audioProgress.value = clamp(fallback || 0, 0, 1);
+  }
+}
+
+function incrementTotalBytes(bytes: number): number {
+  if (!Number.isFinite(bytes) || bytes <= 0) return 0;
+  totalAudioBytes.value += bytes;
+  updateAudioProgressFromCounters();
+  return bytes;
+}
+
+function rollbackTotalBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return;
+  totalAudioBytes.value = Math.max(0, totalAudioBytes.value - bytes);
+  updateAudioProgressFromCounters();
+}
+
+function incrementReceivedBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return;
+  receivedAudioBytes.value += bytes;
+  updateAudioProgressFromCounters();
 }
 
 function createSpectrogramCacheKey(urls: string[]): string {
@@ -1448,6 +1555,8 @@ function handleResize() {
 // Process audio
 async function loadAndProcessAudio() {
   isLoading.value = true;
+  audioProgress.value = 0;
+  spectroProgress.value = 0;
   isLoaded.value = false;
   spliceTimes.value = [];
   cancelSpectrogramGeneration?.();
@@ -1692,6 +1801,7 @@ async function loadAndProcessAudio() {
       }
       spliceTimes.value = spliceBoundaries;
 
+      audioProgress.value = 1;
       await generateSpectrogramDataOffline(cacheKey);
       isLoading.value = false;
       return;
@@ -1851,6 +1961,7 @@ async function loadAndProcessAudio() {
     audioDuration.value = assembledBuffer.duration;
     setSpectrogramCache(cacheKey, { audioBuffer: assembledBuffer });
 
+    audioProgress.value = 1;
     await generateSpectrogramDataOffline(cacheKey);
   } catch (err) {
     console.error('Error loading selection audio:', err);
@@ -1929,10 +2040,13 @@ async function legacyFullDownload(
 
   const downloadFile = (url: string, index: number) =>
     (async () => {
-      const resp = await fetch(url);
-      const arrayBuffer = await resp.arrayBuffer();
+      const arrayBuffer = await fetchArrayBufferWithProgress(url);
       const buffer = await audioCtx.decodeAudioData(arrayBuffer);
       loadedBuffers.set(index, buffer);
+      if (totalAudioBytes.value === 0) {
+        // fallback fraction by count if total size unknown
+        audioProgress.value = loadedBuffers.size / urls.length;
+      }
       await processContiguousPrefix();
     })().catch((err) => {
       console.error(`Failed to download audio file at index ${index}`, err);
@@ -1972,6 +2086,7 @@ async function generateSpectrogramDataOffline(cacheKey: string) {
 
   const hopSize = Math.max(1, props.sampleSize);
   const hopDuration = hopSize / buf.sampleRate;
+  columnDuration.value = hopDuration;
   const totalColumns = Math.max(
     1,
     Math.ceil(buf.duration / Math.max(hopDuration, 1 / buf.sampleRate))
@@ -2006,13 +2121,15 @@ async function generateSpectrogramDataOffline(cacheKey: string) {
   // renderCoarsePreview(buf, totalColumns, cacheHeightBins.value, palette);
 
   offsetIndex.value = 0;
+  const currentTotalColumns = spectrogramData.value.length || 1;
+  const minColsForView = Math.max(1, MIN_COLS_AT_MAX_ZOOM_DISPLAY.value);
   zoomLevel.value = Math.max(
     MIN_ZOOM_LEVEL,
-    spectrogramData.value.length / MIN_COLS_AT_MAX_ZOOM_DISPLAY
+    currentTotalColumns / minColsForView
   );
-  windowSize.value = Math.max(
-    MIN_COLS_AT_MAX_ZOOM_DISPLAY,
-    Math.floor(spectrogramData.value.length / zoomLevel.value)
+  windowSize.value = Math.min(
+    currentTotalColumns,
+    Math.max(minColsForView, Math.floor(currentTotalColumns / zoomLevel.value))
   );
   offsetIndex.value = clamp(
     offsetIndex.value,
@@ -2083,6 +2200,7 @@ async function generateSpectrogramDataOffline(cacheKey: string) {
     analyser.getByteFrequencyData(freqData);
     pendingColumns.push(aggregateToMel(freqData, melMap));
     producedColumns++;
+    spectroProgress.value = Math.min(1, producedColumns / totalColumns);
     if (pendingColumns.length >= PROGRESSIVE_FRAME_BATCH) {
       flushColumns();
     }
@@ -2104,6 +2222,7 @@ async function generateSpectrogramDataOffline(cacheKey: string) {
         palette,
         melBinToFreqBin: melMap
       });
+      spectroProgress.value = 1;
     }
     cancelSpectrogramGeneration = null;
   }
@@ -2796,6 +2915,187 @@ function onProgressDragEndHandler(e: MouseEvent) {
   }
 }
 
+// Touch handlers for range selection and panning
+function onRangeSelectTouchStart(e: TouchEvent) {
+  if (!isLoaded.value || !canvasRef.value) return;
+
+  const touch = e.touches[0];
+  if (!touch) return;
+
+  const tgt = e.target as HTMLElement;
+  if (
+    tgt.classList.contains('range-handle') ||
+    tgt.classList.contains('progress-line')
+  ) {
+    return;
+  }
+
+  mousedownX = touch.clientX;
+  mousedownTime = Date.now();
+
+  // On mobile, always enable panning by touch
+  if (props.readonly || zoomLevel.value > MIN_ZOOM_LEVEL) {
+    isPanning.value = true;
+    panStartX = touch.clientX;
+    panStartOffset = offsetIndex.value;
+    document.addEventListener('touchmove', generalPanTouchMoveHandler, {
+      passive: false
+    });
+    document.addEventListener('touchend', onRegularPanTouchEndHandler, {
+      once: true
+    });
+    document.addEventListener('touchcancel', onRegularPanTouchEndHandler, {
+      once: true
+    });
+    return;
+  }
+
+  // If not readonly, start selection
+  if (!props.readonly) {
+    const rect = canvasRef.value.getBoundingClientRect();
+    selectStartXPx.value = clamp(
+      touch.clientX - rect.left,
+      margin.value.left,
+      containerWidth.value - margin.value.right
+    );
+    selectCurrentXPx.value = selectStartXPx.value;
+    isSelecting.value = true;
+    document.addEventListener('touchmove', onRangeSelectTouchMoveHandler, {
+      passive: false
+    });
+    document.addEventListener('touchend', onRangeSelectTouchEndHandler, {
+      once: true
+    });
+    document.addEventListener('touchcancel', onRangeSelectTouchEndHandler, {
+      once: true
+    });
+  }
+}
+
+function onRangeSelectTouchMoveHandler(e: TouchEvent) {
+  e.preventDefault();
+  if (!isSelecting.value || !canvasRef.value) return;
+  const touch = e.touches[0];
+  if (!touch) return;
+  const rect = canvasRef.value.getBoundingClientRect();
+  selectCurrentXPx.value = clamp(
+    touch.clientX - rect.left,
+    margin.value.left,
+    containerWidth.value - margin.value.right
+  );
+}
+
+function onRangeSelectTouchEndHandler(_e: TouchEvent) {
+  document.removeEventListener('touchmove', onRangeSelectTouchMoveHandler);
+
+  const wasSelectionProcessActive = isSelecting.value;
+  isSelecting.value = false;
+
+  const touchEndTime = Date.now();
+  const timeDiff = touchEndTime - mousedownTime;
+  const touch = _e.changedTouches[0];
+  if (!touch) return;
+
+  const distDiff = Math.abs(touch.clientX - mousedownX);
+  const isClick =
+    timeDiff < CLICK_THRESHOLD_MS && distDiff < CLICK_THRESHOLD_PX;
+
+  if (wasSelectionProcessActive && !props.readonly) {
+    const x0 = Math.min(selectStartXPx.value, selectCurrentXPx.value);
+    const x1 = Math.max(selectStartXPx.value, selectCurrentXPx.value);
+
+    if (x1 - x0 >= CLICK_THRESHOLD_PX) {
+      const dispW =
+        containerWidth.value - margin.value.left - margin.value.right;
+      if (dispW > 0 && canvasRef.value && spectrogramData.value.length > 0) {
+        const f0 = clamp((x0 - margin.value.left) / dispW, 0, 1);
+        const f1 = clamp((x1 - margin.value.left) / dispW, 0, 1);
+        const sIdx = Math.floor(offsetIndex.value);
+        const win = Math.floor(windowSize.value);
+        const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
+        if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
+          const startElement = spectrogramData.value[sIdx];
+          const endElement =
+            spectrogramData.value[
+              Math.min(eIdx - 1, spectrogramData.value.length - 1)
+            ];
+          if (startElement && endElement) {
+            const vs = startElement.time;
+            const ve = endElement.time;
+            const dur = ve - vs;
+            if (dur > 0) {
+              const usedColor = nextRangeColor.value;
+              ranges.value.push({
+                id: Date.now() + Math.random(),
+                start: vs + f0 * dur,
+                end: vs + f1 * dur,
+                color: usedColor
+              });
+              updateNextRangeColor(ranges.value);
+            }
+          }
+        }
+      }
+      return;
+    }
+  }
+
+  // Fallback to click-to-seek
+  if (isClick && canvasRef.value) {
+    const rect = canvasRef.value.getBoundingClientRect();
+    const clickX = clamp(
+      mousedownX - rect.left,
+      margin.value.left,
+      containerWidth.value - margin.value.right
+    );
+    const dispW = containerWidth.value - margin.value.left - margin.value.right;
+    if (dispW > 0 && spectrogramData.value.length > 0) {
+      const f = clamp((clickX - margin.value.left) / dispW, 0, 1);
+      const sIdx = Math.floor(offsetIndex.value);
+      const win = Math.floor(windowSize.value);
+      const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
+      if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
+        const startElement = spectrogramData.value[sIdx];
+        const endElement =
+          spectrogramData.value[
+            Math.min(eIdx - 1, spectrogramData.value.length - 1)
+          ];
+        if (startElement && endElement) {
+          const vs = startElement.time;
+          const ve = endElement.time;
+          const dur = ve - vs;
+          if (dur > 0) seek(vs + f * dur);
+          else if (audioDuration.value > 0) seek(f * audioDuration.value);
+        }
+      }
+    }
+  }
+}
+
+function generalPanTouchMoveHandler(e: TouchEvent) {
+  e.preventDefault();
+  if (!isPanning.value) return;
+  const touch = e.touches[0];
+  if (!touch) return;
+  const dx = touch.clientX - panStartX;
+  const dispW = containerWidth.value - margin.value.left - margin.value.right;
+  if (dispW <= 0 || windowSize.value <= 0 || spectrogramData.value.length === 0)
+    return;
+  const colsPerPx = windowSize.value / dispW;
+  const targetOffset = panStartOffset - dx * colsPerPx;
+  offsetIndex.value = clamp(
+    targetOffset,
+    0,
+    spectrogramData.value.length - windowSize.value
+  );
+  renderSpectrogram();
+}
+
+function onRegularPanTouchEndHandler() {
+  document.removeEventListener('touchmove', generalPanTouchMoveHandler);
+  isPanning.value = false;
+}
+
 // RANGE SELECT
 function onRangeSelectStart(e: MouseEvent) {
   if (!isLoaded.value || !canvasRef.value) return; // Basic checks
@@ -2991,6 +3291,90 @@ function onHandleMouseDown(id: Numeric, handle: 'start' | 'end') {
   document.addEventListener('mousemove', onHandleMouseMoveHandler);
   document.addEventListener('mouseup', onHandleMouseUpHandler, { once: true });
 }
+
+function onHandleTouchStart(
+  id: Numeric,
+  handle: 'start' | 'end',
+  _e: TouchEvent
+) {
+  if (props.readonly) return;
+  draggingRangeId.value = id;
+  draggingHandle.value = handle;
+  document.addEventListener('touchmove', onHandleTouchMoveHandler, {
+    passive: false
+  });
+  document.addEventListener('touchend', onHandleTouchEndHandler, {
+    once: true
+  });
+  document.addEventListener('touchcancel', onHandleTouchEndHandler, {
+    once: true
+  });
+}
+
+function onHandleTouchMoveHandler(e: TouchEvent) {
+  e.preventDefault();
+  if (draggingRangeId.value === null || !canvasRef.value) return;
+  const touch = e.touches[0];
+  if (!touch) return;
+
+  const r_item = ranges.value.find((r) => r.id === draggingRangeId.value);
+  if (!r_item) return;
+
+  const rect = canvasRef.value.getBoundingClientRect();
+  const x = clamp(
+    touch.clientX - rect.left,
+    margin.value.left,
+    containerWidth.value - margin.value.right
+  );
+  const dispW = containerWidth.value - margin.value.left - margin.value.right;
+  if (dispW <= 0) return;
+
+  const f = clamp((x - margin.value.left) / dispW, 0, 1);
+  const sIdx = Math.floor(offsetIndex.value);
+  const win = Math.floor(windowSize.value);
+  const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
+
+  if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
+    const startElement = spectrogramData.value[sIdx];
+    const endElement = spectrogramData.value[Math.max(sIdx, eIdx - 1)];
+
+    if (startElement && endElement) {
+      const vs = startElement.time;
+      const ve = endElement.time;
+      const dur = ve - vs;
+
+      if (dur > 0) {
+        const nt = clamp(vs + f * dur, 0, audioDuration.value);
+
+        if (draggingHandle.value === 'start') {
+          if (nt > r_item.end) {
+            const originalEnd = r_item.end;
+            r_item.end = nt;
+            r_item.start = originalEnd;
+            draggingHandle.value = 'end';
+          } else {
+            r_item.start = nt;
+          }
+        } else if (draggingHandle.value === 'end') {
+          if (nt < r_item.start) {
+            const originalStart = r_item.start;
+            r_item.start = nt;
+            r_item.end = originalStart;
+            draggingHandle.value = 'start';
+          } else {
+            r_item.end = nt;
+          }
+        }
+      }
+    }
+  }
+}
+
+function onHandleTouchEndHandler() {
+  document.removeEventListener('touchmove', onHandleTouchMoveHandler);
+  draggingRangeId.value = null;
+  draggingHandle.value = null;
+}
 function onHandleMouseMoveHandler(e: MouseEvent) {
   if (draggingRangeId.value === null || !canvasRef.value) return;
   const r_item = ranges.value.find((r) => r.id === draggingRangeId.value);
@@ -3069,9 +3453,9 @@ function updateZoom(newZoom: number, centerPx?: number) {
 
   zoomLevel.value = newZoom;
   // Corrected newWin calculation: use MIN_COLS_AT_MAX_ZOOM_DISPLAY as the floor
-  const newWin = Math.max(
-    MIN_COLS_AT_MAX_ZOOM_DISPLAY,
-    Math.floor(total / newZoom)
+  const newWin = Math.min(
+    total,
+    Math.max(MIN_COLS_AT_MAX_ZOOM_DISPLAY.value, Math.floor(total / newZoom))
   );
   let newOff = Math.floor(centerIdxInTotal - cf * newWin);
   newOff = clamp(newOff, 0, Math.max(0, total - newWin));
@@ -3391,6 +3775,21 @@ onUnmounted(() => {
   document.removeEventListener('mouseup', onPanThumbMouseUp);
   document.removeEventListener('mousemove', onZoomThumbMouseMove);
   document.removeEventListener('mouseup', onZoomThumbMouseUp);
+  document.removeEventListener('touchmove', onHandleTouchMoveHandler);
+  document.removeEventListener('touchend', onHandleTouchEndHandler);
+  document.removeEventListener('touchcancel', onHandleTouchEndHandler);
+  document.removeEventListener('touchmove', onRangeSelectTouchMoveHandler);
+  document.removeEventListener('touchend', onRangeSelectTouchEndHandler);
+  document.removeEventListener('touchcancel', onRangeSelectTouchEndHandler);
+  document.removeEventListener('touchmove', generalPanTouchMoveHandler);
+  document.removeEventListener('touchend', onRegularPanTouchEndHandler);
+  document.removeEventListener('touchcancel', onRegularPanTouchEndHandler);
+  document.removeEventListener('touchmove', onPanThumbTouchMove);
+  document.removeEventListener('touchend', onPanThumbTouchEnd);
+  document.removeEventListener('touchcancel', onPanThumbTouchEnd);
+  document.removeEventListener('touchmove', onZoomThumbTouchMove);
+  document.removeEventListener('touchend', onZoomThumbTouchEnd);
+  document.removeEventListener('touchcancel', onZoomThumbTouchEnd);
 
   // 3. Disconnect observers
   if (resizeObserver) {
@@ -3422,9 +3821,13 @@ function rewindToAbsoluteStart() {
   if (spectrogramData.value.length > 0) {
     zoomLevel.value = DEFAULT_BASE_ZOOM;
     // Corrected windowSize calculation here as well for consistency
-    windowSize.value = Math.max(
-      MIN_COLS_AT_MAX_ZOOM_DISPLAY,
-      Math.floor(spectrogramData.value.length / zoomLevel.value)
+    const minColsForView = Math.max(1, MIN_COLS_AT_MAX_ZOOM_DISPLAY.value);
+    windowSize.value = Math.min(
+      spectrogramData.value.length,
+      Math.max(
+        minColsForView,
+        Math.floor(spectrogramData.value.length / zoomLevel.value)
+      )
     );
     offsetIndex.value = clamp(
       offsetIndex.value,
@@ -3731,6 +4134,41 @@ function onPanThumbMouseDown(e: MouseEvent) {
   document.addEventListener('mouseup', onPanThumbMouseUp, { once: true });
 }
 
+function onPanThumbTouchStart(e: TouchEvent) {
+  if (!isLoaded.value || maxOffsetIndex.value <= 0) return;
+  const touch = e.touches[0];
+  if (!touch) return;
+  isDraggingPanThumb.value = true;
+  panDragStartX = touch.clientX;
+  panDragInitialOffset = offsetIndex.value;
+  document.addEventListener('touchmove', onPanThumbTouchMove, {
+    passive: false
+  });
+  document.addEventListener('touchend', onPanThumbTouchEnd, { once: true });
+  document.addEventListener('touchcancel', onPanThumbTouchEnd, { once: true });
+}
+
+function onPanThumbTouchMove(e: TouchEvent) {
+  e.preventDefault();
+  if (!isDraggingPanThumb.value || !panTrackRef.value) return;
+  const touch = e.touches[0];
+  if (!touch) return;
+  const deltaX = touch.clientX - panDragStartX;
+  const scrollableTrackWidth = panTrackDOMWidth.value - panThumbWidthPx.value;
+  if (scrollableTrackWidth <= 0) return;
+
+  const offsetChangeRatio = deltaX / scrollableTrackWidth;
+  const newOffset =
+    panDragInitialOffset + offsetChangeRatio * maxOffsetIndex.value;
+  offsetIndex.value = clamp(newOffset, 0, maxOffsetIndex.value);
+  renderSpectrogram();
+}
+
+function onPanThumbTouchEnd() {
+  isDraggingPanThumb.value = false;
+  document.removeEventListener('touchmove', onPanThumbTouchMove);
+}
+
 function onPanThumbMouseMove(e: MouseEvent) {
   if (!isDraggingPanThumb.value || !panTrackRef.value) return;
   const deltaX = e.clientX - panDragStartX;
@@ -3773,6 +4211,27 @@ function onPanTrackMouseDown(e: MouseEvent) {
   renderSpectrogram();
 }
 
+function onPanTrackTouchStart(e: TouchEvent) {
+  if (!isLoaded.value || !panTrackRef.value || maxOffsetIndex.value <= 0)
+    return;
+  const touch = e.touches[0];
+  if (!touch) return;
+
+  const rect = panTrackRef.value.getBoundingClientRect();
+  const touchX = touch.clientX - rect.left;
+  const scrollableTrackWidth = panTrackDOMWidth.value - panThumbWidthPx.value;
+  if (scrollableTrackWidth <= 0) return;
+
+  const targetThumbStartX = touchX - panThumbWidthPx.value / 2;
+  const newOffsetRatio = clamp(targetThumbStartX / scrollableTrackWidth, 0, 1);
+  offsetIndex.value = clamp(
+    newOffsetRatio * maxOffsetIndex.value,
+    0,
+    maxOffsetIndex.value
+  );
+  renderSpectrogram();
+}
+
 function onZoomThumbMouseDown(e: MouseEvent) {
   if (!isLoaded.value || zoomRange.value <= 0) return;
   isDraggingZoomThumb.value = true;
@@ -3781,6 +4240,50 @@ function onZoomThumbMouseDown(e: MouseEvent) {
   zoomDragInitialLogZoom = Math.log(zoomLevel.value);
   document.addEventListener('mousemove', onZoomThumbMouseMove);
   document.addEventListener('mouseup', onZoomThumbMouseUp, { once: true });
+}
+
+function onZoomThumbTouchStart(e: TouchEvent) {
+  if (!isLoaded.value || zoomRange.value <= 0) return;
+  const touch = e.touches[0];
+  if (!touch) return;
+  isDraggingZoomThumb.value = true;
+  zoomDragStartX = touch.clientX;
+  zoomDragInitialLogZoom = Math.log(zoomLevel.value);
+  document.addEventListener('touchmove', onZoomThumbTouchMove, {
+    passive: false
+  });
+  document.addEventListener('touchend', onZoomThumbTouchEnd, { once: true });
+  document.addEventListener('touchcancel', onZoomThumbTouchEnd, { once: true });
+}
+
+function onZoomThumbTouchMove(e: TouchEvent) {
+  e.preventDefault();
+  if (!isDraggingZoomThumb.value || !zoomTrackRef.value) return;
+  const touch = e.touches[0];
+  if (!touch) return;
+  const deltaX = touch.clientX - zoomDragStartX;
+  const scrollableTrackWidth = zoomTrackDOMWidth.value - Z_THUMB_W;
+  if (scrollableTrackWidth <= 0) return;
+
+  if (LOG_ZOOM_RANGE_EFFECTIVE.value <= 1e-9) {
+    return;
+  }
+
+  const logPositionChangeRatio = deltaX / scrollableTrackWidth;
+  const newLogZoom =
+    zoomDragInitialLogZoom +
+    logPositionChangeRatio * LOG_ZOOM_RANGE_EFFECTIVE.value;
+  const newLinearZoom = Math.exp(newLogZoom);
+
+  updateZoom(
+    clamp(newLinearZoom, MIN_ZOOM_LEVEL, maxZoomLevel.value),
+    centerPxToMaintainForZoom.value
+  );
+}
+
+function onZoomThumbTouchEnd() {
+  isDraggingZoomThumb.value = false;
+  document.removeEventListener('touchmove', onZoomThumbTouchMove);
 }
 
 function onZoomThumbMouseMove(e: MouseEvent) {
@@ -3838,6 +4341,51 @@ function onZoomTrackMouseDown(e: MouseEvent) {
   }
 
   const targetThumbStartX = clickX - Z_THUMB_W / 2;
+  const targetNormalizedLogPosition = clamp(
+    targetThumbStartX / scrollableTrackWidth,
+    0,
+    1
+  );
+  const newLogZoom =
+    LOG_MIN_ZOOM_LEVEL_EFFECTIVE.value +
+    targetNormalizedLogPosition * LOG_ZOOM_RANGE_EFFECTIVE.value;
+  const newLinearZoom = Math.exp(newLogZoom);
+
+  updateZoom(
+    clamp(newLinearZoom, MIN_ZOOM_LEVEL, maxZoomLevel.value),
+    centerPxToMaintainForZoom.value
+  );
+}
+
+function onZoomTrackTouchStart(e: TouchEvent) {
+  if (!isLoaded.value || !zoomTrackRef.value || zoomRange.value <= 0) return;
+  const touch = e.touches[0];
+  if (!touch) return;
+
+  if (LOG_ZOOM_RANGE_EFFECTIVE.value <= 1e-9) {
+    updateZoom(MIN_ZOOM_LEVEL, centerPxToMaintainForZoom.value);
+    return;
+  }
+
+  const rect = zoomTrackRef.value.getBoundingClientRect();
+  const touchX = touch.clientX - rect.left;
+  const scrollableTrackWidth = zoomTrackDOMWidth.value - Z_THUMB_W;
+
+  if (scrollableTrackWidth <= 0) {
+    const targetNormalizedLogPosition =
+      touchX < zoomTrackDOMWidth.value / 2 ? 0 : 1;
+    const newLogZoom =
+      LOG_MIN_ZOOM_LEVEL_EFFECTIVE.value +
+      targetNormalizedLogPosition * LOG_ZOOM_RANGE_EFFECTIVE.value;
+    const newLinearZoom = Math.exp(newLogZoom);
+    updateZoom(
+      clamp(newLinearZoom, MIN_ZOOM_LEVEL, maxZoomLevel.value),
+      centerPxToMaintainForZoom.value
+    );
+    return;
+  }
+
+  const targetThumbStartX = touchX - Z_THUMB_W / 2;
   const targetNormalizedLogPosition = clamp(
     targetThumbStartX / scrollableTrackWidth,
     0,
@@ -4076,6 +4624,11 @@ function resetAndCleanupAudioResources() {
   cancelSpectrogramGeneration = null;
   cancelIdleTasks();
 
+  totalAudioBytes.value = 0;
+  receivedAudioBytes.value = 0;
+  audioProgress.value = 0;
+  spectroProgress.value = 0;
+
   // Release internal audio graph nodes (if they exist)
   if (liveAnalyser.value) {
     liveAnalyser.value.disconnect();
@@ -4107,6 +4660,7 @@ function resetAndCleanupAudioResources() {
   cacheTileContexts.length = 0;
   tileColumnOffsets.length = 0;
   spectrogramData.value = [];
+  columnDuration.value = 0;
   spliceTimes.value = [];
   ranges.value = []; // Clear ranges when audio source changes
 
@@ -4143,5 +4697,68 @@ function resetAndCleanupAudioResources() {
   playInSelectionOnly.value = false;
   loopPlayback.value = false;
   autoScroll.value = false;
+}
+
+// Helper: fetch ArrayBuffer with progress reporting
+async function fetchArrayBufferWithProgress(url: string): Promise<ArrayBuffer> {
+  if (typeof window === 'undefined' || typeof XMLHttpRequest === 'undefined') {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const buf = await resp.arrayBuffer();
+    incrementTotalBytes(buf.byteLength);
+    incrementReceivedBytes(buf.byteLength);
+    return buf;
+  }
+
+  return await new Promise<ArrayBuffer>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'arraybuffer';
+    let lastLoaded = 0;
+    let registeredTotalForDownload = 0;
+
+    xhr.onprogress = (event: ProgressEvent<EventTarget>) => {
+      if (event.lengthComputable && registeredTotalForDownload === 0) {
+        registeredTotalForDownload = incrementTotalBytes(event.total);
+      }
+      const delta = event.loaded - lastLoaded;
+      if (delta > 0) {
+        incrementReceivedBytes(delta);
+        lastLoaded = event.loaded;
+      }
+      if (!event.lengthComputable) {
+        updateAudioProgressFromCounters();
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        if (registeredTotalForDownload === 0) {
+          const headerTotal = parseInt(
+            xhr.getResponseHeader('Content-Length') || '0'
+          );
+          registeredTotalForDownload = incrementTotalBytes(headerTotal);
+        }
+        const responseBuffer = xhr.response ?? new ArrayBuffer(0);
+        const bufLength = responseBuffer.byteLength;
+        if (bufLength > lastLoaded) {
+          incrementReceivedBytes(bufLength - lastLoaded);
+        }
+        resolve(responseBuffer);
+      } else {
+        rollbackTotalBytes(registeredTotalForDownload);
+        reject(
+          new Error(`HTTP ${xhr.status} while downloading audio resource`)
+        );
+      }
+    };
+
+    xhr.onerror = () => {
+      rollbackTotalBytes(registeredTotalForDownload);
+      reject(new Error('Network error while downloading audio resource'));
+    };
+
+    xhr.send();
+  });
 }
 </script>

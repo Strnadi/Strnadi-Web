@@ -64,7 +64,7 @@ import DownloadIcon from '@/icons/interface/icon-download.svg';
 
     <prefetch-link
       v-wave
-      :to="accountStore.user ? '/ucet/sprava/osobni-udaje' : '/ucet/vitejte'"
+      :to="accountStore.user ? '/ucet/muj-ucet' : '/ucet/vitejte'"
       class="flex flex-1 justify-center items-center"
       :class="{ 'bg-gray-100': $route.path.startsWith('/ucet') }"
     >

@@ -215,7 +215,7 @@ const getDialectColorWithAlpha = (
 </script>
 
 <template>
-  <h1 class="text-2xl font-semibold">
+  <h1 class="text-xl sm:text-2xl font-semibold break-words">
     <template v-if="recording?.name">
       {{ recording.name }}
     </template>
@@ -225,7 +225,7 @@ const getDialectColorWithAlpha = (
   </h1>
 
   <template v-if="isError">
-    <span class="text-xl text-red-600">
+    <span class="text-lg sm:text-xl text-red-600">
       <TranslatedText identifier="common.error_prefix" />
       <span class="ml-1">
         <TranslatedText identifier="errors.recordings.loading_single" />
@@ -238,15 +238,15 @@ const getDialectColorWithAlpha = (
     </span>
   </template>
   <template v-else-if="recording">
-    <div class="space-y-4">
+    <div class="space-y-3 sm:space-y-4">
       <!-- Metadata Section -->
       <div
-        class="flex flex-row justify-around w-full text-sm text-gray-600 space-y-1"
+        class="flex flex-col sm:flex-row justify-around w-full text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-0 sm:divide-x divide-gray-300"
       >
-        <template v-if="recording.device">
+        <span v-if="recording.device" class="text-center sm:px-2">
           {{ recording.device }}
-        </template>
-        <span>{{
+        </span>
+        <span class="text-center sm:px-2">{{
           new Date(
             recording.parts?.[0]?.startDate ?? recording.createdAt!
           ).toLocaleString()
@@ -257,7 +257,9 @@ const getDialectColorWithAlpha = (
         <UserCard :user="uploader" />
       </prefetch-link>
 
-      <blockquote class="p-3 bg-gray-50 border-l-4 border-gray-300 italic">
+      <blockquote
+        class="p-3 sm:p-4 bg-gray-50 border-l-4 border-gray-300 italic text-sm sm:text-base break-words"
+      >
         <template v-if="recording.note">
           {{ recording.note }}
         </template>
@@ -267,13 +269,16 @@ const getDialectColorWithAlpha = (
       </blockquote>
 
       <!-- Filtered Parts Section -->
-      <div v-if="filteredRec?.length" class="space-y-4 mt-6">
-        <h3 class="text-lg font-medium mb-2">
+      <div
+        v-if="filteredRec?.length"
+        class="space-y-3 sm:space-y-4 mt-4 sm:mt-6"
+      >
+        <h3 class="text-base sm:text-lg font-medium mb-2">
           <TranslatedText
             identifier="recordings.detail.detected_dialects_heading"
           />
         </h3>
-        <ul class="space-y-3">
+        <ul class="space-y-2 sm:space-y-3">
           <li
             v-for="fr in filteredRec.toSorted((a, b) =>
               a.representantFlag === b.representantFlag
@@ -283,14 +288,14 @@ const getDialectColorWithAlpha = (
                   : 1
             )"
             :key="fr.id"
-            class="flex flex-col gap-1 rounded-lg border p-4 shadow-sm transition"
+            class="flex flex-col gap-1 rounded-lg border p-3 sm:p-4 shadow-sm transition touch-manipulation"
             :style="{
               backgroundColor: getDialectColorWithAlpha(fr, 'background'),
               borderColor: getDialectColorWithAlpha(fr, 'border')
             }"
           >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
                 <!-- <MultiColorSquare
                   size="14px"
                   v-if="DialectColors?.['value']"
@@ -301,7 +306,7 @@ const getDialectColorWithAlpha = (
                     }).filter(Boolean) as string[]
                   ) ?? []"
                 /> -->
-                <p class="font-semibold">
+                <p class="font-semibold text-sm sm:text-base truncate">
                   {{
                     fr.detectedDialects?.[0]?.confirmedDialect ??
                     fr.detectedDialects?.[0]?.predictedDialect ??
@@ -312,12 +317,12 @@ const getDialectColorWithAlpha = (
               </div>
               <span
                 v-if="fr.representantFlag"
-                class="text-lg"
+                class="text-lg sm:text-xl flex-shrink-0"
                 :style="{ color: getDialectColorWithAlpha(fr, 'star') }"
                 >★</span
               >
             </div>
-            <span class="text-sm text-gray-600">
+            <span class="text-xs sm:text-sm text-gray-600">
               {{ formatRelTime(fr.startDate) }} -
               {{ formatRelTime(fr.endDate) }}
             </span>
@@ -325,72 +330,80 @@ const getDialectColorWithAlpha = (
         </ul>
       </div>
 
-      <Spectrogram
-        v-if="recording && filteredRec && DialectColors && segments"
-        :audio-urls="
-          recording.parts?.map(
-            (p) =>
-              `${env.VITE_API_URL}/recordings/part/${recording.id}/${p.id}/sound`
-          ) ?? []
-        "
-        :height="300"
-        :readonly="true"
-        :download-only-selections="true"
-        :no-controls="true"
-        :selected="segments"
-      >
-        <template #range-tooltip="{ range, close }">
-          <div class="p-2 bg-blue-100 border border-blue-300 rounded shadow-md">
-            <h4 class="font-bold">Custom Tooltip!</h4>
-            <p>Range ID: {{ range.id }}</p>
-            <p>Starts at: {{ range.start.toFixed(2) }}s</p>
-            <p>Ends at: {{ range.end.toFixed(2) }}s</p>
-            <button class="text-blue-500 hover:underline mt-1" @click="close">
-              Dismiss
-            </button>
-          </div>
-        </template>
-      </Spectrogram>
+      <!-- <KeepAlive> -->
+      <div class="-mx-4 sm:mx-0">
+        <Spectrogram
+          v-if="recording && filteredRec && DialectColors && segments"
+          :audio-urls="
+            recording.parts?.map(
+              (p) =>
+                `${env.VITE_API_URL}/recordings/part/${recording.id}/${p.id}/sound`
+            ) ?? []
+          "
+          :height="250"
+          :readonly="true"
+          :download-only-selections="true"
+          :no-controls="true"
+          :selected="segments"
+        >
+          <template #range-tooltip="{ range, close }">
+            <div
+              class="p-2 bg-blue-100 border border-blue-300 rounded shadow-md"
+            >
+              <h4 class="font-bold">Custom Tooltip!</h4>
+              <p>Range ID: {{ range.id }}</p>
+              <p>Starts at: {{ range.start.toFixed(2) }}s</p>
+              <p>Ends at: {{ range.end.toFixed(2) }}s</p>
+              <button class="text-blue-500 hover:underline mt-1" @click="close">
+                Dismiss
+              </button>
+            </div>
+          </template>
+        </Spectrogram>
+      </div>
+      <!-- </KeepAlive> -->
       <!-- End Filtered Parts Section -->
 
-      <prefetch-link
-        v-if="
-          accountStore.user?.role === 'admin' ||
-          accountStore.user?.id === recording.userId
-        "
-        :to="`./${recordingId}/upravit-dialekt`"
-        class="button-secondary py-2 px-4 max-sm:text-sm"
-      >
-        <TranslatedText identifier="admin.recordings.edit_dialects" />
-      </prefetch-link>
+      <div class="flex flex-col gap-2 sm:gap-3">
+        <prefetch-link
+          v-if="
+            accountStore.user?.role === 'admin' ||
+            accountStore.user?.id === recording.userId
+          "
+          :to="`./${recordingId}/upravit-dialekt`"
+          class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
+        >
+          <TranslatedText identifier="admin.recordings.edit_dialects" />
+        </prefetch-link>
 
-      <prefetch-link
-        v-if="
-          accountStore.user?.role == 'admin' ||
-          accountStore.user?.id == recording?.userId
-        "
-        :to="`./${recordingId}/upravit`"
-        class="button-secondary py-2 px-4 max-sm:text-sm"
-      >
-        <TranslatedText identifier="buttons.edit" />
-      </prefetch-link>
-      <prefetch-link
-        v-if="accountStore.user?.role == 'admin'"
-        :to="`./${recordingId}/smazat`"
-        class="button-primary py-2 px-4 max-sm:text-sm"
-      >
-        <TranslatedText identifier="recordings.detail.delete_recording" />
-      </prefetch-link>
-      <prefetch-link
-        v-else-if="
-          accountStore.user?.role == 'user' &&
-          accountStore.user?.id == recording.userId
-        "
-        :to="`./${recordingId}/smazat`"
-        class="button-secondary py-2 px-4 max-sm:text-sm"
-      >
-        <TranslatedText identifier="recordings.detail.request_delete" />
-      </prefetch-link>
+        <prefetch-link
+          v-if="
+            accountStore.user?.role == 'admin' ||
+            accountStore.user?.id == recording?.userId
+          "
+          :to="`./${recordingId}/upravit`"
+          class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
+        >
+          <TranslatedText identifier="buttons.edit" />
+        </prefetch-link>
+        <prefetch-link
+          v-if="accountStore.user?.role == 'admin'"
+          :to="`./${recordingId}/smazat`"
+          class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
+        >
+          <TranslatedText identifier="recordings.detail.delete_recording" />
+        </prefetch-link>
+        <prefetch-link
+          v-else-if="
+            accountStore.user?.role == 'user' &&
+            accountStore.user?.id == recording.userId
+          "
+          :to="`./${recordingId}/smazat`"
+          class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
+        >
+          <TranslatedText identifier="recordings.detail.request_delete" />
+        </prefetch-link>
+      </div>
     </div>
   </template>
   <template v-else>
