@@ -44,17 +44,29 @@ const sendNotification = async () => {
     <input type="text" v-model="titleCs" placeholder="Title CS" class="p-2" />
     <input type="text" v-model="titleEn" placeholder="Title EN" class="p-2" />
     <input type="text" v-model="titleDe" placeholder="Title DE" class="p-2" />
-    <input type="text" v-model="messageCs" placeholder="Message CS" class="p-2" />
-    <input type="text" v-model="messageEn" placeholder="Message EN" class="p-2" />
-    <input type="text" v-model="messageDe" placeholder="Message DE" class="p-2" />
+    <input
+      type="text"
+      v-model="messageCs"
+      placeholder="Message CS"
+      class="p-2"
+    />
+    <input
+      type="text"
+      v-model="messageEn"
+      placeholder="Message EN"
+      class="p-2"
+    />
+    <input
+      type="text"
+      v-model="messageDe"
+      placeholder="Message DE"
+      class="p-2"
+    />
     <button @click="sendNotification" class="primary p-2">Send</button>
   </div>
 
   <div class="flex flex-col gap-y-2">
-    <h2>
-      Historie notifikací
-    </h2>
-    <div class="flex flex-col gap-y-2">
-    </div>
+    <h2>Historie oznámení</h2>
+    <div class="flex flex-col gap-y-2"></div>
   </div>
 </template>

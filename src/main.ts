@@ -73,20 +73,30 @@ const desktopBp = getComputedStyle(document.documentElement)
   .trim();
 
 const desktopQuery = window.matchMedia(`(min-width: ${desktopBp})`);
+// const mobileQuery = window.matchMedia(`(max-width: ${desktopBp})`);
 
 // Mobile Firefox users (yes, all two of you), tough luck
 // Y'all will just recieve the desktop site :^)
 const initialIsDesktop =
-  navigator.userAgent.includes('Firefox') || desktopQuery.matches;
+  navigator.userAgent.includes('Firefox') ||
+  (desktopQuery.matches && !mobileQuery.matches);
+
+// const initialIsMobile = !initialIsDesktop;
 
 const handleResize = () => {
   const currentIsDesktop = desktopQuery.matches;
   if (currentIsDesktop !== initialIsDesktop) {
     window.location.reload();
   }
+
+  // const currentIsMobile = mobileQuery.matches;
+  // if (currentIsMobile !== initialIsMobile) {
+  //   window.location.reload();
+  // }
 };
 
 desktopQuery.addEventListener('change', handleResize);
+// mobileQuery.addEventListener('change', handleResize);
 
 const removeUnlayoutedRoutes = (
   routes: RouteRecordRaw[],
@@ -166,7 +176,7 @@ const welcomeGuard = (
   to: RouteLocationNormalized,
   _from: RouteLocationNormalized
 ): boolean | RouteLocationRaw => {
-  console.log('meta', to);
+  // console.log('meta', to);
 
   if (!localStorage.getItem('FirstLaunch') && !to.meta?.['landing-bypass']) {
     localStorage.setItem('FirstLaunch', 'false');
@@ -187,7 +197,7 @@ const serverGuard = (
   to: RouteRecordRaw,
   _from: RouteRecordRaw
 ): boolean | RouteLocationRaw => {
-  console.log(to.path);
+  // console.log(to.path);
 
   if (to.path.startsWith('/__')) {
     window.location.pathname = to.path;

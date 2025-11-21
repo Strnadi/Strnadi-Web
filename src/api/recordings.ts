@@ -32,13 +32,13 @@ export interface RecordingModel {
 
 export interface DetectedDialect {
   id: number;
-  userGuessDialectId: number;
-  confirmedDialectId: number;
-  predictedDialectId: number;
-  userGuessDialect: string | null;
-  confirmedDialect: string | null;
-  predictedDialect: string | null;
   filteredRecordingPartId: number;
+  userGuessDialectId?: number | null;
+  confirmedDialectId?: number | null;
+  predictedDialectId?: number | null;
+  userGuessDialect?: string | null;
+  confirmedDialect?: string | null;
+  predictedDialect?: string | null;
 }
 
 export interface FilteredPartModel {
@@ -48,7 +48,28 @@ export interface FilteredPartModel {
   state: number;
   recordingId: number;
   detectedDialects: DetectedDialect[] | null;
-  representantFlag: boolean;
+  representantFlag?: boolean;
+  representant?: boolean;
+}
+
+export interface DialectDefinition {
+  id: number;
+  dialectCode: string;
+  color: string;
+}
+
+export interface UpdateDetectedDialectPayload {
+  id: Numeric;
+  userGuessDialectId?: number | null;
+  confirmedDialectId?: number | null;
+  predictedDialectId?: number | null;
+}
+
+export interface DetectedDialectUploadRequest {
+  filteredPartId: number;
+  userGuessDialectId?: number | null;
+  confirmedDialectId?: number | null;
+  predictedDialectId?: number | null;
 }
 
 export interface RecordingUploadReq {
@@ -97,13 +118,16 @@ export const postRecording = async (
   photos?: File[]
 ): Promise<void> => {
   const uploadedRecordingId = (
-    await axios.post(`/recordings`, { ...recording, expectedPartsCount: recordingParts.length ?? undefined }, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    await axios.post(
+      `/recordings`,
+      { ...recording, expectedPartsCount: recordingParts.length ?? undefined },
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    )
   ).data;
 
   for (const part of recordingParts) {
-
     const formData = new FormData();
     formData.append('startDate', part.startDate);
     formData.append('endDate', part.endDate);
@@ -113,14 +137,10 @@ export const postRecording = async (
     formData.append('gpsLongitudeEnd', part.gpsLongitudeEnd.toString());
     formData.append('recordingId', uploadedRecordingId.toString());
     formData.append('file', part.data);
-    
-    await axios.post(
-      `/recordings/part-new`,
-      formData,
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
+
+    await axios.post(`/recordings/part-new`, formData, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
   }
 
   for (const photo of photos ?? []) {
@@ -158,7 +178,8 @@ export const deleteRecordingPart = async (
   token: string,
   recordingId: Numeric,
   partId: Numeric
-): Promise<void> => authorizedDelete(`/recordings/part/${recordingId}/${partId}`, token);
+): Promise<void> =>
+  authorizedDelete(`/recordings/part/${recordingId}/${partId}`, token);
 
 export const getRecordings = async ({
   audio = false,
@@ -203,25 +224,43 @@ export const patchFilteredPart = async (
   token: string,
   id: Numeric,
   patchedFilteredPart: Omit<FilteredPartModel, 'id'>
-): Promise<void> => authorizedPatch(`/recordings/filtered/${id}`, token, patchedFilteredPart);
+): Promise<void> =>
+  authorizedPatch(`/recordings/filtered/${id}`, token, patchedFilteredPart);
 
 export const deleteFilteredPart = async (
   token: string,
   id: Numeric
 ): Promise<void> => authorizedDelete(`/recordings/filtered/${id}`, token);
 
-export const getDialectColors = async (): Promise<Record<string, string>> => {
-
-  // const forNow = [{"id":11,"dialectCode":"Jiné","color":""},{"id":3,"dialectCode":"BC","color":"#FDE441"},{"id":4,"dialectCode":"BE","color":"#52DC4D"},{"id":5,"dialectCode":"BD","color":"#666666"},{"id":6,"dialectCode":"BhBl","color":"#8ED0FF"},{"id":7,"dialectCode":"BlBh","color":"#4E68F0"},{"id":8,"dialectCode":"XB","color":"#F04D4D"},{"id":12,"dialectCode":"Neznámý","color":"#aaaaaa"},{"id":13,"dialectCode":"Bez dialektu","color":"#000000"},{"id":1,"dialectCode":"B","color":"#47f5f2"},{"id":2,"dialectCode":"X","color":"#00ff88"},{"id":9,"dialectCode":"XlB","color":"#e5ff00"},{"id":10,"dialectCode":"XsB","color":"#ffb06b"},{"id":14,"dialectCode":"3S","color":"#030303"},{"id":15,"dialectCode":"BBe","color":"#bbebbe"},{"id":16,"dialectCode":"Nedokončený","color":"#3b4e5f"},{"id":17,"dialectCode":"Unfinished","color":"#3b4e5f"}];
-
-  const response = await axios.get(`${import.meta.env.VITE_API_URL}/recordings/dialects`);
-  console.log(response.data)
-
-  const mapping = {};
-
-  for (const dialect of response.data) {
-    mapping[dialect.dialectCode] = dialect.color;
-  }
-
-  return mapping;
+export const getDialects = async (): Promise<DialectDefinition[]> => {
+  const response = await axios.get(
+    `${import.meta.env.VITE_API_URL}/recordings/dialects`
+  );
+  return response.data as DialectDefinition[];
 };
+
+export const getDialectColors = async (): Promise<Record<string, string>> => {
+  const dialects = await getDialects();
+  return dialects.reduce<Record<string, string>>((acc, dialect) => {
+    acc[dialect.dialectCode] = dialect.color;
+    return acc;
+  }, {});
+};
+
+export const updateDetectedDialect = async (
+  token: string,
+  payload: UpdateDetectedDialectPayload
+): Promise<void> =>
+  authorizedPatch(`/recordings/filtered/detected`, token, payload);
+
+export const postDetectedDialect = async (
+  token: string,
+  payload: DetectedDialectUploadRequest
+): Promise<void> =>
+  authorizedPost(`/recordings/filtered/detected`, token, payload);
+
+export const deleteDetectedDialect = async (
+  token: string,
+  id: Numeric
+): Promise<void> =>
+  authorizedDelete(`/recordings/filtered/detected/${id}`, token);

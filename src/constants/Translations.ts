@@ -47,8 +47,7 @@ export const translations = {
         'Toto je "chytrý" QR kód, který vás přesměruje přímo na ten správný obchod s aplikacemi pro vaši platformu.',
       google_play:
         'Na obchodě Google Play se aplikace jmenuje Strnadi a je v předběžném přístupu.',
-      apple:
-        'V App Storu je aplikace dostupná pod jménem Strnadi.',
+      apple: 'V App Storu je aplikace dostupná pod jménem Strnadi.',
       development:
         'Aplikace, stejně jako web, stále prochází velmi bouřlivým vývojem. Za chyby se omlouváme. Těšte se na časté aktualizace a vylepšování.'
     },
@@ -286,6 +285,7 @@ export const translations = {
         by_app_suffix: 'přes aplikaci',
         no_note: 'Žádná poznámka.',
         parts_heading: 'Části nahrávky',
+        detected_dialects_heading: 'Detekovaná nářečí',
         edit_dialects_title: 'Upravit dialekty nahrávky',
         edit_recording_title: 'Upravit nahrávku',
         delete_recording_title: 'Smazání nahrávky',
@@ -331,8 +331,7 @@ export const translations = {
       },
       delete: {
         title: 'Smazání účtu',
-        prompt:
-          'Opravdu si chcete smazat účet? Tuto akci nelze vrátit zpět.',
+        prompt: 'Opravdu si chcete smazat účet? Tuto akci nelze vrátit zpět.',
         confirmation_label:
           'Opravdu si chci smazat účet. Nahrávky zůstávají v databázi.'
       },
@@ -472,8 +471,7 @@ export const translations = {
         'This is a "smart" QR code that sends you directly to the correct app store for your platform.',
       google_play:
         'On Google Play the app is called Strnadi and is in early access.',
-      apple:
-        'In the App Store the app is available under the name Strnadi.',
+      apple: 'In the App Store the app is available under the name Strnadi.',
       development:
         'The app, just like the website, is in heavy development. We apologise for any errors. Expect frequent updates and improvements.'
     },
@@ -711,6 +709,7 @@ export const translations = {
         by_app_suffix: 'via the app',
         no_note: 'No note.',
         parts_heading: 'Recording parts',
+        detected_dialects_heading: 'Detected dialects',
         edit_dialects_title: 'Edit recording dialects',
         edit_recording_title: 'Edit recording',
         delete_recording_title: 'Delete recording',
@@ -897,8 +896,7 @@ export const translations = {
         'Dies ist ein „intelligenter“ QR-Code, der Sie direkt in den richtigen App-Store für Ihre Plattform weiterleitet.',
       google_play:
         'Im Google Play Store heißt die App Strnadi und befindet sich im Vorabzugang.',
-      apple:
-        'Im App Store ist die App unter dem Namen Strnadi verfügbar.',
+      apple: 'Im App Store ist die App unter dem Namen Strnadi verfügbar.',
       development:
         'Die App befindet sich – genau wie die Website – in intensiver Entwicklung. Wir entschuldigen uns für mögliche Fehler. Freuen Sie sich auf häufige Updates und Verbesserungen.'
     },
@@ -1108,8 +1106,7 @@ export const translations = {
         no_parts: 'Diese Aufnahme hat keine Teile.',
         alerts: {
           no_part_selected: 'Es wurde kein Aufnahmeteil ausgewählt.',
-          zip_failed:
-            'Beim Erstellen der ZIP-Datei ist ein Fehler aufgetreten.'
+          zip_failed: 'Beim Erstellen der ZIP-Datei ist ein Fehler aufgetreten.'
         }
       }
     },
@@ -1125,6 +1122,7 @@ export const translations = {
         by_app_suffix: 'über die App',
         no_note: 'Keine Notiz.',
         parts_heading: 'Aufnahmeteile',
+        detected_dialects_heading: 'Detektierte Dialekte',
         edit_dialects_title: 'Dialekte der Aufnahme bearbeiten',
         edit_recording_title: 'Aufnahme bearbeiten',
         delete_recording_title: 'Aufnahme löschen',
@@ -1276,4 +1274,3 @@ type DotLeafPaths<T> =
 
 type TranslationObjects = (typeof translations)[keyof typeof translations];
 export type TranslationIdentifier = DotLeafPaths<TranslationObjects>;
-

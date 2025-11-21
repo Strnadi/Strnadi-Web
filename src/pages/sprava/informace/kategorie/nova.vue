@@ -77,13 +77,20 @@ const { mutate: submitCategory } = useMutation({
         <TranslatedText identifier="admin.articles.included_articles" />
       </h2>
 
-      <draggable v-if="categoryArticles" v-model="categoryArticles" item-key="id">
+      <draggable
+        v-if="categoryArticles"
+        v-model="categoryArticles"
+        item-key="id"
+      >
         <template #item="{ element: article }">
           <div class="flex flex-row gap-x-2">
             <button>
               <TranslatedText identifier="buttons.delete" />
             </button>
-            <span>{{ articles?.find(a => a.id === article)?.name }} (ID: {{ articles?.find(a => a.id === article)?.id }})</span>
+            <span
+              >{{ articles?.find((a) => a.id === article)?.name }} (ID:
+              {{ articles?.find((a) => a.id === article)?.id }})</span
+            >
           </div>
         </template>
 
@@ -96,10 +103,8 @@ const { mutate: submitCategory } = useMutation({
             label="name"
             multiple
           />
-
         </template>
       </draggable>
-
     </div>
     <button @click="submitCategory" class="primary p-2">
       <TranslatedText identifier="buttons.add" />

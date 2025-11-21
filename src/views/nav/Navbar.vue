@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { kebabize } from '@/utils/strings';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { accountStore } from '@/state/AccountStore';
 import { getArticleCategories } from '@/api/articles';
 
@@ -14,6 +14,8 @@ import { applicationStore } from '@/state/ApplicationStore';
 import TranslatedText from '@/components/TranslatedText.vue';
 import { translations } from '@/constants/Translations';
 
+const queryClient = useQueryClient();
+
 const {
   data: categories,
   isLoading,
@@ -22,6 +24,12 @@ const {
   queryKey: ['categories'],
   queryFn: getArticleCategories
 });
+
+const changeLanguage = (lang: keyof typeof translations) => {
+  applicationStore.language = lang;
+
+  queryClient.invalidateQueries({ queryKey: ['articles'] });
+};
 </script>
 
 <template>
@@ -54,7 +62,7 @@ const {
               <li>
                 <PrefetchLink to="/mapa/nahrat" class="dropdown-item" v-wave>
                   <UploadIcon />
-                  Nahrát
+                  <TranslatedText identifier="upload.title" />
                 </PrefetchLink>
               </li>
             </template>
@@ -104,7 +112,7 @@ const {
                     :class="
                       key === applicationStore.language ? 'font-bold' : ''
                     "
-                    @click="() => (applicationStore.language = key)"
+                    @click="changeLanguage(key)"
                   >
                     {{ translations[key].lang_name }}
                   </button>

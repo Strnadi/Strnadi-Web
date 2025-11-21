@@ -1,6 +1,9 @@
 <template>
   <div :style="squareStyle" class="inline-block box-border">
-    <div v-if="dot === 'true'" class="absolute m-auto top-0 left-0 right-0 bottom-0 w-1/2 h-1/2 bg-black rounded-full" />
+    <div
+      v-if="dot === 'true'"
+      class="absolute m-auto top-0 left-0 right-0 bottom-0 w-1/2 h-1/2 bg-black rounded-full"
+    />
   </div>
 </template>
 

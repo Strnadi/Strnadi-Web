@@ -54,14 +54,20 @@ const displayName = computed(() => {
           >
             <span
               class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
-              ><TranslatedText identifier="account.profile.email_verified_badge" /></span
             >
+              <TranslatedText
+                identifier="account.profile.email_verified_badge"
+              />
+            </span>
           </div>
           <div class="flex items-center mt-2" v-else>
             <span
               class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full"
-              ><TranslatedText identifier="account.profile.email_unverified_badge" /></span
             >
+              <TranslatedText
+                identifier="account.profile.email_unverified_badge"
+              />
+            </span>
           </div>
         </div>
 
@@ -108,20 +114,7 @@ const displayName = computed(() => {
           <TranslatedText identifier="account.profile.rewards" />
         </span>
         <span class="text-sm text-gray-600">
-          <TranslatedText
-            identifier="account.profile.rewards_description"
-          />
-        </span>
-      </prefetch-link>
-
-      <prefetch-link to="/ucet/sprava/osobni-udaje" class="link">
-        <span class="font-medium">
-          <TranslatedText identifier="account.profile.personal_data" />
-        </span>
-        <span class="text-sm text-gray-600">
-          <TranslatedText
-            identifier="account.profile.personal_data_description"
-          />
+          <TranslatedText identifier="account.profile.rewards_description" />
         </span>
       </prefetch-link>
 
@@ -162,6 +155,17 @@ const displayName = computed(() => {
       >
         <span class="font-medium">
           <TranslatedText identifier="account.settings.resend_verification" />
+        </span>
+      </prefetch-link>
+
+      <prefetch-link to="/ucet/sprava/osobni-udaje" class="link">
+        <span class="font-medium">
+          <TranslatedText identifier="account.profile.personal_data" />
+        </span>
+        <span class="text-sm text-gray-600">
+          <TranslatedText
+            identifier="account.profile.personal_data_description"
+          />
         </span>
       </prefetch-link>
 

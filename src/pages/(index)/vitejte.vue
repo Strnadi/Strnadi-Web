@@ -18,7 +18,9 @@ const route = useRoute();
         <h4>
           <TranslatedText identifier="buttons.contacts" />
         </h4>
-        <a external="true" href="mailto:info@strnadi.cz" class="text-sm">info@strnadi.cz</a>
+        <a external="true" href="mailto:info@strnadi.cz" class="text-sm"
+          >info@strnadi.cz</a
+        >
         <a external="true" href="mailto:developers@strnadi.cz" class="text-sm"
           >developers@strnadi.cz</a
         >

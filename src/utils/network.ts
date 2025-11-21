@@ -1,5 +1,9 @@
 import { unref, type Ref } from 'vue';
-import { useMutation, useQuery } from '@tanstack/vue-query';
+import {
+  useMutation,
+  useQuery,
+  type UseQueryOptions
+} from '@tanstack/vue-query';
 
 type MaybeRef<T> = T | Ref<T>;
 
@@ -17,6 +21,17 @@ export const useFetched = <A extends unknown[], T>(
   useQuery<T>({
     queryKey: [fetcher.name, ...params],
     queryFn: () => fetcher(...(params.map(unref) as A))
+  });
+
+export const useFetchedWithOptions = <A extends unknown[], T>(
+  fetcher: (...args: A) => T | Promise<T>,
+  options: UseQueryOptions<T>,
+  ...params: { [K in keyof A]: MaybeRef<A[K]> }
+) =>
+  useQuery<T>({
+    queryKey: [fetcher.name, ...params],
+    queryFn: () => fetcher(...(params.map(unref) as A)),
+    ...options
   });
 
 export const useMutated = <A extends unknown[], T>(

@@ -56,7 +56,7 @@
             :style="{
               left: `${r.left}px`,
               width: `${r.width}px`,
-              background: r.color,
+              background: r.background,
               top: `${margin.top}px`,
               height: `${containerHeight - margin.top - margin.bottom}px`
             }"
@@ -77,7 +77,7 @@
               height: `${containerHeight - margin.top - margin.bottom}px`,
               transform: 'translateX(-50%)',
               width: props.readonly ? '2px' : '20px',
-              background: props.readonly ? r.color : 'transparent'
+              background: props.readonly ? r.primaryColor : 'transparent'
             }"
             @mousedown.stop.prevent="onHandleMouseDown(r.id, 'start')"
           >
@@ -88,7 +88,7 @@
                   class="absolute top-0 left-1/2 -translate-x-1/2 h-full"
                   :style="{
                     width: '2px',
-                    backgroundColor: r.color
+                    backgroundColor: r.primaryColor
                   }"
                 />
                 <!-- Capsule -->
@@ -98,7 +98,7 @@
                     width: '16px', // Content width, total 20px with borders
                     height: `${(containerHeight - margin.top - margin.bottom) * (2 / 3)}px`,
                     backgroundColor: 'white',
-                    border: `2px solid ${r.color}`,
+                    border: `2px solid ${r.primaryColor}`,
                     borderRadius: '10px', // Adjusted for new width
                     boxSizing: 'content-box',
                     zIndex: 1
@@ -121,7 +121,7 @@
               height: `${containerHeight - margin.top - margin.bottom}px`,
               transform: 'translateX(-50%)',
               width: props.readonly ? '2px' : '20px',
-              background: props.readonly ? r.color : 'transparent'
+              background: props.readonly ? r.primaryColor : 'transparent'
             }"
             @mousedown.stop.prevent="onHandleMouseDown(r.id, 'end')"
           >
@@ -132,7 +132,7 @@
                   class="absolute top-0 left-1/2 -translate-x-1/2 h-full"
                   :style="{
                     width: '2px',
-                    backgroundColor: r.color
+                    backgroundColor: r.primaryColor
                   }"
                 />
                 <!-- Capsule -->
@@ -142,7 +142,7 @@
                     width: '16px', // Content width, total 20px with borders
                     height: `${(containerHeight - margin.top - margin.bottom) * (2 / 3)}px`,
                     backgroundColor: 'white',
-                    border: `2px solid ${r.color}`,
+                    border: `2px solid ${r.primaryColor}`,
                     borderRadius: '10px', // Adjusted for new width
                     boxSizing: 'content-box',
                     zIndex: 1
@@ -265,7 +265,7 @@
         <div
           class="spinner w-10 h-10 border-4 border-gray-200 border-l-black rounded-full animate-spin"
         />
-        <span>Načítání...</span>
+        <span>Chvilku strpení prosím...</span>
       </div>
     </div>
 
@@ -295,7 +295,7 @@
     <div
       v-if="isRangeTooltipVisible && selectedRangeForTooltip"
       ref="rangeTooltipRef"
-      class="absolute bg-white border border-gray-300 rounded shadow-lg p-2 z-[51]"
+      class="absolute bg-white border border-gray-300 rounded shadow-lg p-2 z-51"
       :style="{
         top: `${rangeTooltipPosition.y}px`,
         left: `${rangeTooltipPosition.x}px`
@@ -319,28 +319,32 @@
         :disabled="isPlaying || !isLoaded"
         @click="playAudio"
       >
-        {{ isPaused || currentTime > 0 ? t('common.buttons.resume') : t('common.buttons.play') }}
+        <TranslatedText
+          identifier="common.buttons.play"
+          v-if="isPaused || currentTime > 0"
+        />
+        <TranslatedText identifier="common.buttons.resume" v-else />
       </button>
       <button
         class="px-3 py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300"
         :disabled="!isPlaying || !isLoaded"
         @click="pauseAudio"
       >
-        {{ t('common.buttons.pause') }}
+        <TranslatedText identifier="common.buttons.pause" />
       </button>
       <button
         class="px-3 py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300"
         :disabled="!isLoaded || (!isPlaying && !isPaused)"
         @click="stopAudio"
       >
-        {{ t('common.buttons.stop') }}
+        <TranslatedText identifier="common.buttons.stop" />
       </button>
       <button
         class="px-3 py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300"
         :disabled="!isLoaded"
         @click="rewindToAbsoluteStart"
       >
-        {{ t('common.buttons.rewind') }}
+        <TranslatedText identifier="common.buttons.rewind" />
       </button>
     </div>
 
@@ -356,7 +360,9 @@
           :disabled="autoScroll"
           class="mr-1 align-middle"
         />
-        {{ t('common.playback_options.play_in_viewport_only') }}
+        <TranslatedText
+          identifier="common.playback_options.play_in_viewport_only"
+        />
       </label>
       <label class="whitespace-nowrap text-sm">
         <input
@@ -365,7 +371,9 @@
           :disabled="autoScroll || !isProgressInSelection"
           class="mr-1 align-middle"
         />
-        {{ t('common.playback_options.play_in_selection_only') }}
+        <TranslatedText
+          identifier="common.playback_options.play_in_selection_only"
+        />
       </label>
       <label class="whitespace-nowrap text-sm">
         <input
@@ -373,11 +381,11 @@
           type="checkbox"
           class="mr-1 align-middle"
         />
-        {{ t('common.playback_options.loop_playback') }}
+        <TranslatedText identifier="common.playback_options.loop_playback" />
       </label>
       <label class="whitespace-nowrap text-sm">
         <input v-model="autoScroll" type="checkbox" class="mr-1 align-middle" />
-        {{ t('common.playback_options.auto_scroll') }}
+        <TranslatedText identifier="common.playback_options.auto_scroll" />
       </label>
     </div>
 
@@ -388,7 +396,11 @@
         v-if="spectrogramData.length > 0 && maxOffsetIndex > 0"
         class="pan-scrollbar h-5 flex items-center space-x-2"
       >
-        <span class="text-xs w-10 text-right shrink-0">{{ t('common.playback_options.pan_scrollbar_label') }}:</span>
+        <span class="text-xs w-10 text-right shrink-0">
+          <TranslatedText
+            identifier="common.playback_options.pan_scrollbar_label"
+          />:
+        </span>
         <div
           ref="panTrackRef"
           class="pan-track flex-1 h-3 bg-gray-300 rounded relative cursor-pointer"
@@ -401,7 +413,7 @@
             :style="{
               left: `${region.leftPx}px`,
               width: `${region.widthPx}px`,
-              backgroundColor: region.color,
+              background: region.background,
               zIndex: 1
             }"
           />
@@ -428,7 +440,11 @@
         v-else-if="spectrogramData.length > 0"
         class="pan-scrollbar h-5 flex items-center space-x-2"
       >
-        <span class="text-xs w-10 text-right shrink-0">{{ t('common.playback_options.pan_scrollbar_label') }}:</span>
+        <span class="text-xs w-10 text-right shrink-0">
+          <TranslatedText
+            identifier="common.playback_options.pan_scrollbar_label"
+          />:
+        </span>
         <div
           ref="panTrackRef"
           class="pan-track flex-1 h-3 bg-gray-300 rounded relative"
@@ -440,7 +456,7 @@
             :style="{
               left: `${region.leftPx}px`,
               width: `${region.widthPx}px`,
-              backgroundColor: region.color,
+              background: region.background,
               zIndex: 1
             }"
           />
@@ -464,7 +480,11 @@
         v-if="zoomRange > 0"
         class="zoom-scrollbar h-5 flex items-center space-x-2"
       >
-        <span class="text-xs w-10 text-right shrink-0">{{ t('common.playback_options.zoom_scrollbar_label') }}:</span>
+        <span class="text-xs w-10 text-right shrink-0">
+          <TranslatedText
+            identifier="common.playback_options.zoom_scrollbar_label"
+          />:
+        </span>
         <div
           ref="zoomTrackRef"
           class="zoom-track flex-1 h-3 bg-gray-300 rounded relative cursor-pointer"
@@ -481,7 +501,11 @@
         v-else-if="isLoaded"
         class="zoom-scrollbar h-5 flex items-center space-x-2"
       >
-        <span class="text-xs w-10 text-right shrink-0">{{ t('common.playback_options.zoom_scrollbar_label') }}:</span>
+        <span class="text-xs w-10 text-right shrink-0">
+          <TranslatedText
+            identifier="common.playback_options.zoom_scrollbar_label"
+          />:
+        </span>
         <div
           ref="zoomTrackRef"
           class="zoom-track flex-1 h-3 bg-gray-300 rounded relative"
@@ -510,27 +534,107 @@ import {
 } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
 import type { Numeric } from '@/types/basic';
-import { t } from '@/components/TranslatedText.vue';
+import TranslatedText from '@/components/TranslatedText.vue';
 import {
   parseWavHeader,
   bytesPerSecond,
   buildWavHeader,
-  type WavHeaderInfo,
+  type WavHeaderInfo
 } from '@/utils/audio';
+import {
+  getSpectrogramCache,
+  setSpectrogramCache
+} from '@/utils/spectrogram-cache';
 
 interface Range {
   id: Numeric;
   start: number;
   end: number;
-  color: string;
+  color?: string;
+  colors?: string[];
+  payload?: unknown;
 }
 
+const DEFAULT_RANGE_COLOR = '#111827';
+
+const getRangeColors = (range: Range): string[] => {
+  if (Array.isArray(range.colors) && range.colors.length) {
+    return range.colors;
+  }
+  if (range.color) {
+    return [range.color];
+  }
+  return [DEFAULT_RANGE_COLOR];
+};
+
+const getPrimaryRangeColor = (range: Range): string =>
+  getRangeColors(range)[0] ?? DEFAULT_RANGE_COLOR;
+
+const getRangeFillBackground = (range: Range): string => {
+  const colors = getRangeColors(range);
+  if (colors.length <= 1) {
+    return colors[0] ?? DEFAULT_RANGE_COLOR;
+  }
+  const sliceSize = 100 / colors.length;
+  const segments = colors.map((color, index) => {
+    const start = (index * sliceSize).toFixed(4);
+    const end = ((index + 1) * sliceSize).toFixed(4);
+    return `${color} ${start}% ${end}%`;
+  });
+  return `linear-gradient(90deg, ${segments.join(', ')})`;
+};
+
 const DEFAULT_BASE_ZOOM = 1;
+const DEFAULT_GAIN = 2;
 const MIN_ZOOM_LEVEL = 1; // New constant for minimum zoom out
 // Maximum safe canvas width before browsers start throwing errors (varies by engine)
 const CANVAS_COL_LIMIT = 8192;
 // Width (in spectrogram columns) of each off-screen tile when the spectrogram is too wide
-const TILE_COLS = 2048;
+const TILE_COLS = CANVAS_COL_LIMIT / 4;
+const ANALYSER_FFT_SIZE = 1024;
+const PROGRESSIVE_FRAME_BATCH = 512;
+const IDLE_TASK_TIMEOUT_MS = 50;
+const PREVIEW_FILL_VALUE = 64;
+let activeSpectrogramJobId = 0;
+const activeIdleCallbacks = new Set<number>();
+const cacheTileContexts: CanvasRenderingContext2D[] = [];
+const tileColumnOffsets: number[] = [];
+let cancelSpectrogramGeneration: (() => void) | null = null;
+
+function scheduleIdleTask(fn: () => void) {
+  if (typeof window === 'undefined') {
+    fn();
+    return;
+  }
+  if (typeof window.requestIdleCallback === 'function') {
+    const handle = window.requestIdleCallback(
+      (_deadline) => {
+        activeIdleCallbacks.delete(handle);
+        fn();
+      },
+      { timeout: IDLE_TASK_TIMEOUT_MS }
+    );
+    activeIdleCallbacks.add(handle);
+    return;
+  }
+  const fallbackHandle = window.setTimeout(() => {
+    activeIdleCallbacks.delete(fallbackHandle);
+    fn();
+  }, 16);
+  activeIdleCallbacks.add(fallbackHandle);
+}
+
+function cancelIdleTasks() {
+  if (typeof window === 'undefined') return;
+  for (const handle of activeIdleCallbacks) {
+    if (typeof window.cancelIdleCallback === 'function') {
+      window.cancelIdleCallback(handle);
+    } else {
+      window.clearTimeout(handle);
+    }
+    activeIdleCallbacks.delete(handle);
+  }
+}
 
 interface Props {
   audioUrls: string | string[];
@@ -543,11 +647,13 @@ interface Props {
   minFrequency?: number;
   colorScheme?: string[];
   sampleSize?: number;
+  gain?: number;
   selectionColorResolver?: (ranges: Range[]) => string;
   readonly?: boolean; // Add readonly prop
   currentTime?: number;
   noControls?: boolean;
   downloadOnlySelections?: boolean; // NEW
+  joinSelectionSegments?: boolean; // Whether to concatenate selected regions without gaps
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -558,22 +664,33 @@ const props = withDefaults(defineProps<Props>(), {
   margin: () => ({ top: 20, right: 20, bottom: 30, left: 50 }),
   maxFrequency: 12000,
   minFrequency: 3000,
-  colorScheme: () => [
-    '#ffffff',
-    '#f0f0f0',
-    '#d9d9d9',
-    '#bdbdbd',
-    '#969696',
-    '#737373',
-    '#525252',
-    '#252525',
-    '#000000'
-  ],
-  sampleSize: 1024,
+  colorScheme: () => {
+    const grayColors: string[] = [];
+    for (let i = 15; i >= 0; i--) {
+      const byte = `${i.toString(16)}${i.toString(16)}`;
+      grayColors.push(`#${byte}${byte}${byte}`);
+    }
+
+    return grayColors;
+  },
+  sampleSize: 256,
+  gain: DEFAULT_GAIN,
   readonly: false, // Default readonly to false
   currentTime: 0,
   noControls: false,
-  downloadOnlySelections: false, // todo
+  downloadOnlySelections: false
+});
+
+const joinSelectionSegments = computed(() => {
+  return props.downloadOnlySelections; // Boolean(props.joinSelectionSegments);
+});
+
+// Use the faster code path when downloading selections and joining them
+const useFastSelectionDownloadPath = computed(() => {
+  const hasSelections = props.selected && props.selected.length > 0;
+  return Boolean(
+    props.downloadOnlySelections && hasSelections && joinSelectionSegments.value
+  );
 });
 
 const emit = defineEmits<{
@@ -587,34 +704,34 @@ function setColorAlpha(color: string, alpha: number): string {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) return color;
-  
+
   ctx.fillStyle = color;
   const parsedColor = ctx.fillStyle;
-  
+
   // Try to extract RGB values from various formats
   const rgbMatch = parsedColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
   if (rgbMatch) {
     return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${alpha})`;
   }
-  
+
   // Try HSL format
   const hslMatch = parsedColor.match(/hsla?\((\d+),\s*(\d+)%,\s*(\d+)%/);
   if (hslMatch) {
     return `hsla(${hslMatch[1]}, ${hslMatch[2]}%, ${hslMatch[3]}%, ${alpha})`;
   }
-  
+
   // Fallback: try to convert using canvas and get computed style
   const tempDiv = document.createElement('div');
   tempDiv.style.color = color;
   document.body.appendChild(tempDiv);
   const computed = window.getComputedStyle(tempDiv).color;
   document.body.removeChild(tempDiv);
-  
+
   const computedRgb = computed.match(/\d+/g);
   if (computedRgb && computedRgb.length >= 3) {
     return `rgba(${computedRgb[0]}, ${computedRgb[1]}, ${computedRgb[2]}, ${alpha})`;
   }
-  
+
   return color; // Fallback to original if parsing fails
 }
 
@@ -632,11 +749,17 @@ const isPaused = ref(false);
 const startTime = ref(0);
 const currentTime = ref(props.currentTime);
 
-watch(currentTime, (newCurrentTime?: number) => {
-  if (newCurrentTime !== undefined) {
-    emit('update:currentTime', newCurrentTime ?? 0);
-  }
-}, { immediate: true });
+watch(
+  currentTime,
+  (newCurrentTime?: number) => {
+    if (newCurrentTime !== undefined) {
+      emit('update:currentTime', newCurrentTime ?? 0);
+    }
+  },
+  { immediate: true }
+);
+
+const normalizedGain = computed(() => sanitizeGain(props.gain));
 
 const audioDuration = ref(0);
 const spectrogramData = ref<{ time: number }[]>([]);
@@ -668,11 +791,10 @@ const containerHeight = ref(props.height);
 let resizeObserver: ResizeObserver | null = null;
 
 // Zoom/pan
-const zoomLevel = ref(DEFAULT_BASE_ZOOM); // Initial value, will be set properly in generateSpectrogramDataOffline
+const MIN_COLS_AT_MAX_ZOOM_DISPLAY = 200; // How many spectrogram columns are shown at maximum zoom-in.
+const zoomLevel = ref(DEFAULT_BASE_ZOOM);
 const offsetIndex = ref(0);
 const windowSize = ref(0);
-// const minVisibleCols = 500; // This was causing the zoom-in issue, REMOVE IT
-const MIN_COLS_AT_MAX_ZOOM_DISPLAY = 1200; // How many spectrogram columns are shown at maximum zoom-in.
 const maxZoomLevel = computed(() => {
   const total = spectrogramData.value.length;
   if (!isLoaded.value || total === 0) {
@@ -706,16 +828,28 @@ const isDraggingProgress = ref(false);
 
 // Ranges
 const ranges = ref<Range[]>([]);
+const isSyncingSelectedFromParent = ref(false);
+const lastPropsSelectedSnapshot = ref<string | null>(
+  props.selected ? JSON.stringify(props.selected) : null
+);
+const lastEmittedSelectedSnapshot = ref<string | null>(
+  ranges.value ? JSON.stringify(ranges.value) : null
+);
+
+function cloneRanges(source: Range[] | undefined | null): Range[] {
+  return JSON.parse(JSON.stringify(source ?? []));
+}
 watch(
   () => props.selected,
   (newSelectedRanges) => {
-    // Ensure we're not in an update loop if props.selected is programmatically updated
-    // based on an emit from this component. A simple length/content check can help.
-    // A more robust way might involve comparing deep values if performance allows,
-    // or using a flag if emits cause direct prop updates.
-    if (JSON.stringify(newSelectedRanges) !== JSON.stringify(ranges.value)) {
-      ranges.value = JSON.parse(JSON.stringify(newSelectedRanges));
+    const snapshot = JSON.stringify(newSelectedRanges ?? []);
+    if (snapshot === lastPropsSelectedSnapshot.value) {
+      return;
     }
+    lastPropsSelectedSnapshot.value = snapshot;
+    isSyncingSelectedFromParent.value = true;
+    ranges.value = cloneRanges(newSelectedRanges ?? []);
+    isSyncingSelectedFromParent.value = false;
   },
   { deep: true, immediate: true }
 );
@@ -723,9 +857,59 @@ watch(
 watch(
   ranges,
   (newRanges) => {
-    emit('update:selected', JSON.parse(JSON.stringify(newRanges)));
+    if (isSyncingSelectedFromParent.value) return;
+    const snapshot = JSON.stringify(newRanges ?? []);
+    // Skip if nothing actually changed compared to the last values we received
+    if (
+      snapshot === lastEmittedSelectedSnapshot.value ||
+      snapshot === lastPropsSelectedSnapshot.value
+    )
+      return;
+
+    lastEmittedSelectedSnapshot.value = snapshot;
+    lastPropsSelectedSnapshot.value = snapshot;
+    emit('update:selected', cloneRanges(newRanges ?? []));
   },
   { deep: true }
+);
+
+const joinedRangeTimelineMap = computed(() => {
+  if (!joinSelectionSegments.value || !ranges.value.length) {
+    return null;
+  }
+  const sortedRanges = [...ranges.value].sort((a, b) => a.start - b.start);
+  let cursor = 0;
+  const mapped = new Map<Numeric, { start: number; end: number }>();
+  for (const range of sortedRanges) {
+    const duration = Math.max(0, range.end - range.start);
+    const normalizedStart = cursor;
+    const normalizedEnd = normalizedStart + duration;
+    mapped.set(range.id, { start: normalizedStart, end: normalizedEnd });
+    cursor = normalizedEnd;
+  }
+  return mapped;
+});
+
+function getRangeEffectiveBounds(range: Range | null | undefined) {
+  if (!range) {
+    return { start: 0, end: 0 };
+  }
+  if (!joinSelectionSegments.value) {
+    return { start: range.start, end: range.end };
+  }
+  const normalized = joinedRangeTimelineMap.value?.get(range.id);
+  if (normalized) {
+    return normalized;
+  }
+  return { start: range.start, end: range.end };
+}
+
+watch(
+  normalizedGain,
+  (gain) => {
+    applyGain(gain);
+  },
+  { immediate: true }
 );
 
 // Selection
@@ -747,15 +931,23 @@ const hoverLineX = ref(0);
 const nextRangeColor = ref<string>('');
 // Initialize nextRangeColor
 function updateNextRangeColor(ranges: Range[]) {
-  const color = props.selectionColorResolver ? props.selectionColorResolver(ranges) : `hsla(${Math.random() * 360},70%,50%,0.4)`;
-  nextRangeColor.value = props.selectionColorResolver ? setColorAlpha(color, 0.6) : color;
+  const color = props.selectionColorResolver
+    ? props.selectionColorResolver(ranges)
+    : `hsla(${Math.random() * 360},70%,50%,0.4)`;
+  nextRangeColor.value = props.selectionColorResolver
+    ? setColorAlpha(color, 0.6)
+    : color;
 }
 // Initialize with current selected ranges
 // updateNextRangeColor(props.selected);
 // Watch for changes in selected ranges
-watch(() => props.selected, (newSelected) => {
-  updateNextRangeColor(newSelected);
-}, { deep: true, immediate: true });
+watch(
+  () => props.selected,
+  (newSelected) => {
+    updateNextRangeColor(newSelected);
+  },
+  { deep: true, immediate: true }
+);
 
 const hoverLineColor = computed(() => {
   if (props.readonly) {
@@ -780,7 +972,8 @@ const currentActiveSelectionRange = computed(() => {
   if (!isLoaded.value || !ranges.value.length || !spectrogramData.value.length)
     return null;
   for (const r of ranges.value) {
-    if (currentTime.value >= r.start && currentTime.value < r.end) {
+    const { start, end } = getRangeEffectiveBounds(r);
+    if (currentTime.value >= start && currentTime.value < end) {
       return r;
     }
   }
@@ -839,10 +1032,331 @@ watch(
 function clamp(v: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(v, hi));
 }
+function sanitizeGain(value: number | undefined): number {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return DEFAULT_GAIN;
+  }
+  return clamp(value, 0, DEFAULT_GAIN);
+}
+
+function createSpectrogramCacheKey(urls: string[]): string {
+  const normalized = urls.slice().sort().join('|');
+  return [
+    normalized,
+    props.minFrequency,
+    props.maxFrequency,
+    props.sampleSize,
+    props.colorScheme.join(',')
+  ].join('::');
+}
 function hexToRgb(h: string): [number, number, number] {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);
   if (!m) return [0, 0, 0];
   return [parseInt(m[1]!, 16), parseInt(m[2]!, 16), parseInt(m[3]!, 16)];
+}
+
+function buildPaletteFromScheme(colorScheme: string[]): Uint8ClampedArray {
+  const palette = new Uint8ClampedArray(256 * 4);
+  const safeScheme = colorScheme.length ? colorScheme : ['#000000', '#ffffff'];
+  for (let i = 0; i < 256; i++) {
+    const norm = i / 255;
+    const scaledIndex = norm * (safeScheme.length - 1);
+    const baseIdx = Math.floor(scaledIndex);
+    const frac = scaledIndex - baseIdx;
+    const [r0, g0, b0] = hexToRgb(safeScheme[baseIdx] ?? safeScheme[0]!);
+    const [r1, g1, b1] = hexToRgb(
+      safeScheme[Math.min(baseIdx + 1, safeScheme.length - 1)] ??
+        safeScheme[safeScheme.length - 1]!
+    );
+    palette[i * 4] = Math.round(r0 + (r1 - r0) * frac);
+    palette[i * 4 + 1] = Math.round(g0 + (g1 - g0) * frac);
+    palette[i * 4 + 2] = Math.round(b0 + (b1 - b0) * frac);
+    palette[i * 4 + 3] = 255;
+  }
+  return palette;
+}
+
+function computeMelBinMapping(
+  totalFreqBins: number,
+  minFrequency: number,
+  maxFrequency: number,
+  sampleRate: number
+): [number, number][] {
+  const melMin = hzToMel(minFrequency);
+  const melMax = hzToMel(maxFrequency);
+  const nyq = sampleRate / 2;
+  let melBinCount = Math.min(
+    totalFreqBins,
+    Math.max(
+      32,
+      Math.floor(
+        (totalFreqBins * (maxFrequency - minFrequency)) / Math.max(nyq, 1)
+      )
+    )
+  );
+  melBinCount = Math.max(16, melBinCount);
+  const mapping: [number, number][] = [];
+  for (let m = 0; m < melBinCount; m++) {
+    const melLo = melMin + (m / melBinCount) * (melMax - melMin);
+    const melHi = melMin + ((m + 1) / melBinCount) * (melMax - melMin);
+    const hzLo = melToHz(melLo);
+    const hzHi = melToHz(melHi);
+    const binLo = clamp(
+      Math.floor((hzLo / nyq) * totalFreqBins),
+      0,
+      totalFreqBins - 1
+    );
+    const binHi = clamp(
+      Math.ceil((hzHi / nyq) * totalFreqBins) - 1,
+      0,
+      totalFreqBins - 1
+    );
+    mapping.push([binLo, Math.max(binLo, binHi)]);
+  }
+  return mapping;
+}
+
+function aggregateToMel(values: Uint8Array, melMap: [number, number][]) {
+  const rows = melMap.length;
+  const column = new Uint8Array(rows);
+  for (let i = 0; i < rows; i++) {
+    const [binLo, binHi] = melMap[i] ?? [0, 0];
+    let sum = 0;
+    let count = 0;
+    for (let b = binLo; b <= binHi; b++) {
+      const v = values[b];
+      if (v !== undefined) {
+        sum += v;
+        count++;
+      }
+    }
+    column[i] = count > 0 ? Math.round(sum / count) : 0;
+  }
+  return column;
+}
+
+function setupTileCanvases(totalColumns: number, rows: number) {
+  cacheCanvases.value = [];
+  cacheTileContexts.length = 0;
+  tileColumnOffsets.length = 0;
+
+  if (totalColumns <= CANVAS_COL_LIMIT) {
+    const canvas = document.createElement('canvas');
+    canvas.width = totalColumns;
+    canvas.height = rows;
+    cacheCanvases.value.push(canvas);
+    cacheTileContexts.push(
+      canvas.getContext('2d', { willReadFrequently: true })!
+    );
+    tileColumnOffsets.push(0);
+  } else {
+    const numTiles = Math.ceil(totalColumns / TILE_COLS);
+    for (let i = 0; i < numTiles; i++) {
+      const width =
+        i === numTiles - 1 ? totalColumns - i * TILE_COLS : TILE_COLS;
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = rows;
+      cacheCanvases.value.push(canvas);
+      cacheTileContexts.push(
+        canvas.getContext('2d', { willReadFrequently: true })!
+      );
+      tileColumnOffsets.push(i * TILE_COLS);
+    }
+  }
+  cacheCanvas.value = cacheCanvases.value[0] ?? null;
+}
+
+function resolveTileForColumn(column: number) {
+  if (!cacheCanvases.value.length) return null;
+  for (let i = 0; i < cacheCanvases.value.length; i++) {
+    const tile = cacheCanvases.value[i];
+    if (!tile) continue;
+    const start = tileColumnOffsets[i] ?? 0;
+    const end = start + tile.width;
+    if (column >= start && column < end) {
+      const ctx = cacheTileContexts[i];
+      if (!ctx) continue;
+      return {
+        tile,
+        ctx,
+        localX: column - start,
+        tileWidth: tile.width,
+        tileIndex: i
+      };
+    }
+  }
+  return null;
+}
+
+function paintColumnsToTiles(
+  startColumn: number,
+  columns: Uint8Array[],
+  palette: Uint8ClampedArray
+) {
+  if (!columns.length || !cacheCanvases.value.length) return;
+  let processed = 0;
+  const rows = cacheHeightBins.value;
+  while (processed < columns.length) {
+    const absoluteColumn = startColumn + processed;
+    const resolved = resolveTileForColumn(absoluteColumn);
+    if (!resolved) break;
+    const { ctx, localX, tileWidth } = resolved;
+    const availableInTile = tileWidth - localX;
+    const remaining = columns.length - processed;
+    const drawCount = Math.min(availableInTile, remaining);
+    const imageData = ctx.createImageData(drawCount, rows);
+    const data = imageData.data;
+    for (let dx = 0; dx < drawCount; dx++) {
+      const columnValues = columns[processed + dx];
+      for (let row = 0; row < rows; row++) {
+        const v = columnValues?.[row] ?? 0;
+        const paletteIdx = v * 4;
+        const pixelIndex = (row * drawCount + dx) * 4;
+        data[pixelIndex] = palette[paletteIdx] ?? 0;
+        data[pixelIndex + 1] = palette[paletteIdx + 1] ?? 0;
+        data[pixelIndex + 2] = palette[paletteIdx + 2] ?? 0;
+        data[pixelIndex + 3] = 255;
+      }
+    }
+    ctx.putImageData(imageData, localX, 0);
+    processed += drawCount;
+  }
+}
+
+function renderCoarsePreview(
+  buffer: AudioBuffer,
+  totalColumns: number,
+  rows: number,
+  palette: Uint8ClampedArray
+) {
+  const channelData = buffer.getChannelData(0);
+  if (!channelData.length) return;
+  const stride = Math.max(1, Math.floor(channelData.length / totalColumns));
+  let produced = 0;
+  const batchSize = 256;
+  while (produced < totalColumns) {
+    const len = Math.min(batchSize, totalColumns - produced);
+    const batch: Uint8Array[] = [];
+    for (let i = 0; i < len; i++) {
+      const absoluteCol = produced + i;
+      const sampleIndex = clamp(
+        absoluteCol * stride,
+        0,
+        channelData.length - 1
+      );
+      const sample = channelData[sampleIndex] ?? 0;
+      const intensity = clamp(Math.round(Math.abs(sample) * 255), 0, 255);
+      const column = new Uint8Array(rows);
+      column.fill(intensity || PREVIEW_FILL_VALUE);
+      batch.push(column);
+    }
+    paintColumnsToTiles(produced, batch, palette);
+    produced += len;
+  }
+}
+
+function pcmSampleToFloat(value: number, bitsPerSample: number): number {
+  switch (bitsPerSample) {
+    case 8:
+      return clamp((value - 128) / 128, -1, 1);
+    case 16:
+      return clamp(value / 32768, -1, 1);
+    case 24:
+      return clamp(value / 8388608, -1, 1);
+    case 32:
+      return clamp(value / 2147483648, -1, 1);
+    default:
+      return 0;
+  }
+}
+
+function readPcmSample(
+  view: DataView,
+  byteOffset: number,
+  bitsPerSample: number
+): number {
+  switch (bitsPerSample) {
+    case 8:
+      return pcmSampleToFloat(view.getUint8(byteOffset), bitsPerSample);
+    case 16:
+      return pcmSampleToFloat(view.getInt16(byteOffset, true), bitsPerSample);
+    case 24: {
+      const b0 = view.getUint8(byteOffset);
+      const b1 = view.getUint8(byteOffset + 1);
+      const b2 = view.getUint8(byteOffset + 2);
+      let val = b0 | (b1 << 8) | (b2 << 16);
+      if (val & 0x800000) val |= 0xff000000;
+      return pcmSampleToFloat(val, bitsPerSample);
+    }
+    case 32:
+      return pcmSampleToFloat(view.getInt32(byteOffset, true), bitsPerSample);
+    default:
+      return 0;
+  }
+}
+
+function writePcmChunkToBuffer(
+  channelViews: Float32Array[],
+  chunk: Uint8Array,
+  fmt: WavHeaderInfo,
+  destOffsetSamples: number
+): number {
+  const bytesPerSample = fmt.bitsPerSample / 8;
+  if (!bytesPerSample || !channelViews.length) return 0;
+  const blockAlign = bytesPerSample * fmt.numChannels;
+  if (!blockAlign) return 0;
+  const totalSamples = Math.floor(chunk.byteLength / blockAlign);
+  if (!totalSamples) return 0;
+  const view = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+  let byteOffset = 0;
+  for (let sampleIdx = 0; sampleIdx < totalSamples; sampleIdx++) {
+    for (let ch = 0; ch < fmt.numChannels; ch++) {
+      const sample = readPcmSample(view, byteOffset, fmt.bitsPerSample);
+      const channel = channelViews[ch];
+      if (channel) {
+        channel[destOffsetSamples + sampleIdx] = sample;
+      }
+      byteOffset += bytesPerSample;
+    }
+  }
+  return totalSamples;
+}
+
+function combineAudioBuffers(
+  buffers: AudioBuffer[],
+  audioCtx: AudioContext
+): AudioBuffer {
+  if (!buffers.length) {
+    throw new Error('Nothing to combine');
+  }
+  if (buffers.length === 1) {
+    return buffers[0]!;
+  }
+  const firstBuffer = buffers[0]!;
+  const numChannels = firstBuffer.numberOfChannels;
+  const sampleRate = firstBuffer.sampleRate;
+  const totalLength = buffers.reduce((sum, buf) => sum + buf.length, 0);
+  const combined = audioCtx.createBuffer(numChannels, totalLength, sampleRate);
+  let offset = 0;
+  for (const buf of buffers) {
+    if (!buf) continue;
+    for (let ch = 0; ch < numChannels; ch++) {
+      combined.copyToChannel(buf.getChannelData(ch), ch, offset);
+    }
+    offset += buf.length;
+  }
+  return combined;
+}
+
+// MEL scale helpers
+function hzToMel(hz: number): number {
+  // HTK formula
+  return 2595 * Math.log10(1 + hz / 700);
+}
+
+function melToHz(mel: number): number {
+  return 700 * (Math.pow(10, mel / 2595) - 1);
 }
 function timeToIndex(t: number): number {
   const A = spectrogramData.value;
@@ -864,7 +1378,13 @@ function timeToIndex(t: number): number {
 
 // Visible ranges in current view
 const visibleRanges = computed(() => {
-  const out: { id: Numeric; left: number; width: number; color: string }[] = [];
+  const out: {
+    id: Numeric;
+    left: number;
+    width: number;
+    background: string;
+    primaryColor: string;
+  }[] = [];
   const total = spectrogramData.value.length;
   if (!isLoaded.value || !total || !canvasRef.value) return out;
   const dispW = containerWidth.value - margin.value.left - margin.value.right;
@@ -883,16 +1403,19 @@ const visibleRanges = computed(() => {
   const dur = v1 - v0;
   if (dur <= 0) return out;
   for (const r of ranges.value) {
-    if (r.end <= v0 || r.start >= v1) continue;
-    const rs = Math.max(r.start, v0);
-    const re = Math.min(r.end, v1);
+    const { start: effectiveStart, end: effectiveEnd } =
+      getRangeEffectiveBounds(r);
+    if (effectiveEnd <= v0 || effectiveStart >= v1) continue;
+    const rs = Math.max(effectiveStart, v0);
+    const re = Math.min(effectiveEnd, v1);
     const left = margin.value.left + ((rs - v0) / dur) * dispW;
     const right = margin.value.left + ((re - v0) / dur) * dispW;
     out.push({
       id: r.id,
       left,
       width: Math.max(0, right - left),
-      color: r.color
+      background: getRangeFillBackground(r),
+      primaryColor: getPrimaryRangeColor(r)
     });
   }
   return out;
@@ -926,7 +1449,9 @@ function handleResize() {
 async function loadAndProcessAudio() {
   isLoading.value = true;
   isLoaded.value = false;
-  spliceTimes.value = []; // Reset splice times
+  spliceTimes.value = [];
+  cancelSpectrogramGeneration?.();
+  cancelIdleTasks();
 
   const downloadSelections =
     props.downloadOnlySelections && props.selected && props.selected.length > 0;
@@ -935,19 +1460,27 @@ async function loadAndProcessAudio() {
   const urls = Array.isArray(props.audioUrls)
     ? props.audioUrls
     : [props.audioUrls];
+  const cacheKey = createSpectrogramCacheKey(urls);
+  const cached = getSpectrogramCache(cacheKey);
 
-  // QUICK EXIT – if user didn't request selection-only, fall back to old behaviour
+  if (cached?.audioBuffer) {
+    audioBuffer.value = cached.audioBuffer;
+    audioDuration.value = cached.audioBuffer.duration;
+    await generateSpectrogramDataOffline(cacheKey);
+    isLoading.value = false;
+    return;
+  }
+
   if (!downloadSelections) {
-    await legacyFullDownload(audioCtx, urls);
+    await legacyFullDownload(audioCtx, urls, cacheKey);
     return;
   }
 
   try {
-    // 1. Probe headers for every file to get durations & format
     interface FileMeta {
       url: string;
       header: WavHeaderInfo;
-      duration: number; // seconds
+      duration: number;
     }
     const metas: FileMeta[] = [];
 
@@ -960,19 +1493,17 @@ async function loadAndProcessAudio() {
         header = parseWavHeader(headerBuf);
       } catch (e) {
         console.warn('Header parse failed, fallback to full file', url, e);
-        await legacyFullDownload(audioCtx, urls);
+        await legacyFullDownload(audioCtx, urls, cacheKey);
         return;
       }
       const dur = header.dataSize / bytesPerSecond(header);
-      console.log(dur);
       metas.push({ url, header, duration: dur });
     }
 
-    // Ensure all files share same audio format
     const refFmt = metas[0]?.header;
     if (!refFmt) {
       console.warn('No header found, fallback to full download');
-      await legacyFullDownload(audioCtx, urls);
+      await legacyFullDownload(audioCtx, urls, cacheKey);
       return;
     }
     for (const m of metas) {
@@ -982,21 +1513,197 @@ async function loadAndProcessAudio() {
         m.header.numChannels !== refFmt.numChannels
       ) {
         console.warn('Files differ in format, fallback to full download');
-        await legacyFullDownload(audioCtx, urls);
+        await legacyFullDownload(audioCtx, urls, cacheKey);
         return;
       }
     }
 
-    // Build cumulative start times to map global -> per-file time
-    const fileStartTimes: number[] = []; // seconds
+    const fileStartTimes: number[] = [];
     let cum = 0;
     for (const m of metas) {
       fileStartTimes.push(cum);
       cum += m.duration;
     }
 
-    // 2. Build list of (fileIndex, byteStart, byteEndInclusive) segments for all selections
-    type Segment = { idx: number; start: number; end: number }; // bytes inclusive
+    const blockAlign = (refFmt.numChannels * refFmt.bitsPerSample) / 8;
+
+    if (useFastSelectionDownloadPath.value) {
+      interface SelectionPart {
+        fileIndex: number;
+        byteStart: number;
+        byteEndExclusive: number;
+        selectionIndex: number;
+        sampleCount: number;
+      }
+
+      const sortedSelections = [...props.selected!]
+        .slice()
+        .sort((a, b) =>
+          a.start === b.start ? a.end - b.end : a.start - b.start
+        );
+
+      const totalSamplesPerFile = metas.map((meta) =>
+        Math.floor(meta.header.dataSize / blockAlign)
+      );
+
+      const selectionParts: SelectionPart[] = [];
+
+      for (
+        let selectionIndex = 0;
+        selectionIndex < sortedSelections.length;
+        selectionIndex++
+      ) {
+        const sel = sortedSelections[selectionIndex];
+        if (!sel) continue;
+        const selStart = Math.max(0, sel.start);
+        const selEnd = Math.min(cum, sel.end);
+        if (selEnd <= selStart) continue;
+
+        for (let fileIndex = 0; fileIndex < metas.length; fileIndex++) {
+          const fileStart = fileStartTimes[fileIndex];
+          const metaForFile = metas[fileIndex];
+          if (fileStart === undefined || !metaForFile) continue;
+          const fileEnd = fileStart + metaForFile.duration;
+          const ovStart = Math.max(fileStart, selStart);
+          const ovEnd = Math.min(fileEnd, selEnd);
+          if (ovEnd <= ovStart) continue;
+
+          const relStartSec = ovStart - fileStart;
+          const relEndSec = ovEnd - fileStart;
+          const totalSamples = totalSamplesPerFile[fileIndex];
+          if (totalSamples === undefined) continue;
+          const startSample = Math.max(
+            0,
+            Math.floor(relStartSec * refFmt.sampleRate)
+          );
+          const endSample = Math.min(
+            totalSamples,
+            Math.ceil(relEndSec * refFmt.sampleRate)
+          );
+          if (endSample <= startSample) continue;
+
+          const sampleCount = endSample - startSample;
+          const byteStart =
+            metaForFile.header.dataOffset + startSample * blockAlign;
+          const byteEndExclusive = byteStart + sampleCount * blockAlign;
+
+          selectionParts.push({
+            fileIndex,
+            byteStart,
+            byteEndExclusive,
+            selectionIndex,
+            sampleCount
+          });
+        }
+      }
+
+      if (!selectionParts.length) {
+        throw new Error('No audio data available for the requested selections');
+      }
+
+      const selectionSampleCounts = new Array(sortedSelections.length).fill(0);
+      const fetchedParts = await Promise.all(
+        selectionParts.map(async (part) => {
+          const metaForPart = metas[part.fileIndex];
+          if (!metaForPart) return null;
+          const rangeHeader = `bytes=${part.byteStart}-${part.byteEndExclusive - 1}`;
+          const resp = await fetch(metaForPart.url, {
+            headers: { Range: rangeHeader }
+          });
+          if (resp.status !== 206 && resp.status !== 200) {
+            throw new Error(`Server did not honor range (${resp.status})`);
+          }
+          let buf = new Uint8Array(await resp.arrayBuffer());
+          if (resp.status === 200) {
+            const sliceStart = part.byteStart;
+            const sliceEnd = part.byteEndExclusive;
+            if (sliceStart >= buf.byteLength) {
+              return null;
+            }
+            buf = buf.subarray(sliceStart, Math.min(sliceEnd, buf.byteLength));
+          }
+          if (!buf.byteLength) return null;
+
+          const expectedByteLength = part.sampleCount * blockAlign;
+          let usableSampleCount = part.sampleCount;
+          if (buf.byteLength < expectedByteLength) {
+            usableSampleCount = Math.floor(buf.byteLength / blockAlign);
+          }
+          const usableByteLength = usableSampleCount * blockAlign;
+          if (usableSampleCount <= 0 || usableByteLength <= 0) return null;
+
+          if (buf.byteLength !== usableByteLength) {
+            buf = buf.subarray(0, usableByteLength);
+          }
+
+          return {
+            selectionIndex: part.selectionIndex,
+            data: buf,
+            sampleCount: usableSampleCount
+          };
+        })
+      );
+
+      type SelectionPayload = {
+        selectionIndex: number;
+        data: Uint8Array<ArrayBufferLike>;
+        sampleCount: number;
+      };
+
+      const partPayloads: SelectionPayload[] = [];
+      for (const payload of fetchedParts) {
+        if (!payload) continue;
+        partPayloads.push(payload);
+        selectionSampleCounts[payload.selectionIndex] += payload.sampleCount;
+      }
+
+      if (!partPayloads.length) {
+        throw new Error('No audio data fetched for selections');
+      }
+
+      const totalBytes = partPayloads.reduce(
+        (sum, payload) => sum + payload.data.byteLength,
+        0
+      );
+      const headerBytes = buildWavHeader(refFmt, totalBytes);
+      const combined = new Uint8Array(headerBytes.byteLength + totalBytes);
+      combined.set(headerBytes, 0);
+      let offset = headerBytes.byteLength;
+      for (const payload of partPayloads) {
+        combined.set(payload.data, offset);
+        offset += payload.data.byteLength;
+      }
+
+      const decoded = await audioCtx.decodeAudioData(combined.buffer);
+      audioBuffer.value = decoded;
+      audioDuration.value = decoded.duration;
+      setSpectrogramCache(cacheKey, { audioBuffer: decoded });
+
+      const nonEmptySampleCounts = selectionSampleCounts.filter(
+        (count) => count > 0
+      );
+      const spliceBoundaries: number[] = [];
+      if (nonEmptySampleCounts.length > 1) {
+        let cumulativeSamples = 0;
+        for (let i = 0; i < nonEmptySampleCounts.length - 1; i++) {
+          cumulativeSamples += nonEmptySampleCounts[i];
+          spliceBoundaries.push(cumulativeSamples / refFmt.sampleRate);
+        }
+      }
+      spliceTimes.value = spliceBoundaries;
+
+      await generateSpectrogramDataOffline(cacheKey);
+      isLoading.value = false;
+      return;
+    }
+
+    interface Segment {
+      idx: number;
+      start: number;
+      end: number;
+      absStart: number;
+      absEnd: number;
+    }
     const segments: Segment[] = [];
 
     for (const sel of props.selected!) {
@@ -1004,24 +1711,36 @@ async function loadAndProcessAudio() {
       const selEnd = Math.min(cum, sel.end);
       if (selEnd <= selStart) continue;
 
-      // iterate files
       for (let i = 0; i < metas.length; i++) {
         const fileStart = fileStartTimes[i];
-        const fileEnd = fileStart + metas[i].duration;
+        const metaForFile = metas[i];
+        if (fileStart === undefined || !metaForFile) continue;
+        const fileEnd = fileStart + metaForFile.duration;
         const ovStart = Math.max(fileStart, selStart);
         const ovEnd = Math.min(fileEnd, selEnd);
         if (ovEnd <= ovStart) continue;
         const relStartSec = ovStart - fileStart;
         const relEndSec = ovEnd - fileStart;
-        const bps = bytesPerSecond(metas[i].header);
-        const blockAlign = (refFmt.numChannels * refFmt.bitsPerSample) / 8;
-        let byteStart = metas[i].header.dataOffset + Math.floor(relStartSec * bps);
-        let byteEnd = metas[i].header.dataOffset + Math.ceil(relEndSec * bps) - 1; // inclusive
-        // align to block
-        byteStart = byteStart - (byteStart - metas[i].header.dataOffset) % blockAlign;
-        byteEnd = byteEnd - ((byteEnd + 1 - metas[i].header.dataOffset) % blockAlign) - 1;
+        const bps = bytesPerSecond(metaForFile.header);
+        let byteStart =
+          metaForFile.header.dataOffset + Math.floor(relStartSec * bps);
+        let byteEnd =
+          metaForFile.header.dataOffset + Math.ceil(relEndSec * bps) - 1;
+        byteStart =
+          byteStart -
+          ((byteStart - metaForFile.header.dataOffset) % blockAlign);
+        byteEnd =
+          byteEnd -
+          ((byteEnd + 1 - metaForFile.header.dataOffset) % blockAlign) -
+          1;
         if (byteEnd < byteStart) continue;
-        segments.push({ idx: i, start: byteStart, end: byteEnd });
+        segments.push({
+          idx: i,
+          start: byteStart,
+          end: byteEnd,
+          absStart: ovStart,
+          absEnd: ovEnd
+        });
       }
     }
 
@@ -1029,9 +1748,10 @@ async function loadAndProcessAudio() {
       throw new Error('No byte segments to download for selections');
     }
 
-    // Merge adjacent segments within same file to minimize requests
     segments.sort((a, b) => a.idx - b.idx || a.start - b.start);
-    const merged: Segment[] = [];
+    const merged: Array<
+      Segment & { destSampleStart?: number; expectedSamples?: number }
+    > = [];
     for (const seg of segments) {
       const last = merged[merged.length - 1];
       if (last && last.idx === seg.idx && seg.start <= last.end + 1) {
@@ -1041,40 +1761,97 @@ async function loadAndProcessAudio() {
       }
     }
 
-    // 3. Fetch segments
-    const pcmParts: Uint8Array[] = [];
+    let destSampleCursor = 0;
+    const totalSampleCount = joinSelectionSegments.value
+      ? merged.reduce(
+          (sum, seg) =>
+            sum +
+            Math.floor((seg.end - seg.start + 1) / Math.max(1, blockAlign)),
+          0
+        )
+      : Math.floor(refFmt.sampleRate * cum);
 
-    for (const seg of merged) {
-      const rangeHeader = `bytes=${seg.start}-${seg.end}`;
-      const resp = await fetch(metas[seg.idx].url, {
-        headers: { Range: rangeHeader },
-      });
-      if (resp.status !== 206 && resp.status !== 200) {
-        throw new Error(`Server did not honor range (${resp.status})`);
+    let assembledBuffer = audioCtx.createBuffer(
+      refFmt.numChannels,
+      totalSampleCount,
+      refFmt.sampleRate
+    );
+    const channelViews = Array.from({ length: refFmt.numChannels }, (_, ch) =>
+      assembledBuffer.getChannelData(ch)
+    );
+
+    await Promise.all(
+      merged.map(async (seg) => {
+        const rangeHeader = `bytes=${seg.start}-${seg.end}`;
+        const metaForSegment = metas[seg.idx];
+        if (!metaForSegment) return;
+        const resp = await fetch(metaForSegment.url, {
+          headers: { Range: rangeHeader }
+        });
+        if (resp.status !== 206 && resp.status !== 200) {
+          throw new Error(`Server did not honor range (${resp.status})`);
+        }
+        let chunk = new Uint8Array(await resp.arrayBuffer());
+        if (resp.status === 200) {
+          const sliceStart = seg.start;
+          const sliceEnd = seg.end + 1;
+          if (sliceStart >= chunk.byteLength) return;
+          chunk = chunk.subarray(
+            sliceStart,
+            Math.min(sliceEnd, chunk.byteLength)
+          );
+        }
+        if (!chunk.byteLength) return;
+
+        const usableByteLength =
+          Math.floor(chunk.byteLength / Math.max(1, blockAlign)) * blockAlign;
+        if (!usableByteLength) return;
+        if (chunk.byteLength !== usableByteLength) {
+          chunk = chunk.subarray(0, usableByteLength);
+        }
+
+        const destStart = joinSelectionSegments.value
+          ? destSampleCursor
+          : Math.floor(seg.absStart * refFmt.sampleRate);
+
+        const samplesWritten = writePcmChunkToBuffer(
+          channelViews,
+          chunk,
+          refFmt,
+          destStart
+        );
+        if (joinSelectionSegments.value) {
+          destSampleCursor += samplesWritten;
+        }
+      })
+    );
+
+    if (!totalSampleCount) {
+      throw new Error('No audio data fetched for selections');
+    }
+
+    if (channelViews[0]?.length && totalSampleCount < channelViews[0].length) {
+      const trimmedBuffer = audioCtx.createBuffer(
+        refFmt.numChannels,
+        totalSampleCount,
+        refFmt.sampleRate
+      );
+      for (let ch = 0; ch < refFmt.numChannels; ch++) {
+        const sourceChannel = channelViews[ch];
+        if (sourceChannel) {
+          trimmedBuffer
+            .getChannelData(ch)
+            .set(sourceChannel.subarray(0, totalSampleCount));
+        }
       }
-      const buf = new Uint8Array(await resp.arrayBuffer());
-      pcmParts.push(buf);
+      assembledBuffer = trimmedBuffer;
     }
 
-    // 4. Concatenate payloads & build header
-    const totalBytes = pcmParts.reduce((s, b) => s + b.byteLength, 0);
-    const headerBytes = buildWavHeader(refFmt, totalBytes);
-    const combined = new Uint8Array(headerBytes.byteLength + totalBytes);
-    combined.set(headerBytes, 0);
-    let offset = headerBytes.byteLength;
-    for (const part of pcmParts) {
-      combined.set(part, offset);
-      offset += part.byteLength;
-    }
+    audioBuffer.value = assembledBuffer;
+    audioDuration.value = assembledBuffer.duration;
+    setSpectrogramCache(cacheKey, { audioBuffer: assembledBuffer });
 
-    // 5. Decode joined buffer
-    const decoded = await audioCtx.decodeAudioData(combined.buffer);
-    audioBuffer.value = decoded;
-    audioDuration.value = decoded.duration;
-
-    // Compute spliceTimes: positions where selections/spliced change – not meaningful now, so keep empty.
-
-    await generateSpectrogramDataOffline();
+    await generateSpectrogramDataOffline(cacheKey);
   } catch (err) {
     console.error('Error loading selection audio:', err);
     isLoaded.value = false;
@@ -1084,171 +1861,155 @@ async function loadAndProcessAudio() {
 }
 
 // Legacy full download logic extracted for reuse
-async function legacyFullDownload(audioCtx: AudioContext, urls: string[]) {
-  const decodedBuffers: AudioBuffer[] = [];
-  const individualDurations: number[] = [];
+async function legacyFullDownload(
+  audioCtx: AudioContext,
+  urls: string[],
+  cacheKey: string
+) {
+  if (!urls.length) {
+    throw new Error('No audio URLs provided');
+  }
 
-  try {
-    for (const url of urls) {
+  const loadedBuffers = new Map<number, AudioBuffer>();
+  let isBuildingCombinedBuffer = false;
+  let hasPendingBuildRequest = false;
+
+  const computeContiguousBuffers = () => {
+    const contiguous: AudioBuffer[] = [];
+    for (let i = 0; i < urls.length; i++) {
+      const buf = loadedBuffers.get(i);
+      if (!buf) break;
+      contiguous.push(buf);
+    }
+    return contiguous;
+  };
+
+  const updateSpliceMarkersForBuffers = (buffers: AudioBuffer[]) => {
+    spliceTimes.value = [];
+    if (buffers.length <= 1) return;
+    let cumulative = 0;
+    for (let i = 0; i < buffers.length - 1; i++) {
+      cumulative += buffers[i]!.duration;
+      spliceTimes.value.push(cumulative);
+    }
+  };
+
+  const buildCombinedBuffer = async (buffers: AudioBuffer[]) => {
+    if (!buffers.length) return;
+    const combined =
+      buffers.length === 1
+        ? buffers[0]!
+        : combineAudioBuffers(buffers, audioCtx);
+    audioBuffer.value = combined;
+    audioDuration.value = combined.duration;
+    updateSpliceMarkersForBuffers(buffers);
+    if (buffers.length === urls.length) {
+      setSpectrogramCache(cacheKey, { audioBuffer: combined });
+    }
+    await generateSpectrogramDataOffline(cacheKey);
+  };
+
+  const processContiguousPrefix = async () => {
+    if (isBuildingCombinedBuffer) {
+      hasPendingBuildRequest = true;
+      return;
+    }
+    isBuildingCombinedBuffer = true;
+    try {
+      do {
+        hasPendingBuildRequest = false;
+        const contiguous = computeContiguousBuffers();
+        if (!contiguous.length) break;
+        await buildCombinedBuffer(contiguous);
+      } while (hasPendingBuildRequest);
+    } finally {
+      isBuildingCombinedBuffer = false;
+    }
+  };
+
+  const downloadFile = (url: string, index: number) =>
+    (async () => {
       const resp = await fetch(url);
-      const ab = await resp.arrayBuffer();
-      const buf = await audioCtx.decodeAudioData(ab);
-      decodedBuffers.push(buf);
-      if (urls.length > 1) individualDurations.push(buf.duration);
-    }
-    if (!decodedBuffers.length) throw new Error('No audio decoded');
+      const arrayBuffer = await resp.arrayBuffer();
+      const buffer = await audioCtx.decodeAudioData(arrayBuffer);
+      loadedBuffers.set(index, buffer);
+      await processContiguousPrefix();
+    })().catch((err) => {
+      console.error(`Failed to download audio file at index ${index}`, err);
+      throw err;
+    });
 
-    if (decodedBuffers.length > 1) {
-      const numCh = decodedBuffers[0].numberOfChannels;
-      const sr = decodedBuffers[0].sampleRate;
-      const totalLength = decodedBuffers.reduce((s, b) => s + b.length, 0);
-      const out = audioCtx.createBuffer(numCh, totalLength, sr);
-      let ofs = 0;
-      for (const b of decodedBuffers) {
-        for (let c = 0; c < numCh; c++) out.copyToChannel(b.getChannelData(c), c, ofs);
-        ofs += b.length;
-      }
-      audioBuffer.value = out;
-      // spliceTimes for UI
-      let cum = 0;
-      for (let i = 0; i < individualDurations.length - 1; i++) {
-        cum += individualDurations[i];
-        spliceTimes.value.push(cum);
-      }
-    } else {
-      audioBuffer.value = decodedBuffers[0];
-    }
-    audioDuration.value = audioBuffer.value!.duration;
-    await generateSpectrogramDataOffline();
-  } catch (e) {
-    console.error('Error in legacy download', e);
-    isLoaded.value = false;
+  const initialIndexes: number[] = [];
+  // Initial viewport always starts at time 0, so ensure first file is prioritized.
+  if (urls.length > 0) initialIndexes.push(0);
+
+  const deferredIndexes = urls
+    .map((_, idx) => idx)
+    .filter((idx) => !initialIndexes.includes(idx));
+
+  const downloadPromises = urls.map((url, idx) => downloadFile(url, idx));
+
+  const initialPromises = initialIndexes.map((idx) => downloadPromises[idx]!);
+  await Promise.all(initialPromises);
+
+  const deferredPromises = deferredIndexes.map((idx) => downloadPromises[idx]!);
+  if (deferredPromises.length) {
+    // Background downloads; no need to await for initial render, but ensure errors surface.
+    void Promise.allSettled(deferredPromises);
   }
 }
 
-async function generateSpectrogramDataOffline() {
+async function generateSpectrogramDataOffline(cacheKey: string) {
   if (!audioBuffer.value) return;
-  spectrogramData.value = [];
   const buf = audioBuffer.value;
-  const offline = new OfflineAudioContext(
-    buf.numberOfChannels,
-    buf.length,
-    buf.sampleRate
-  );
-  const analyser = offline.createAnalyser();
-  analyser.fftSize = 4096;
-  analyser.smoothingTimeConstant = 0;
-  analyser.minDecibels = -80;
-  analyser.maxDecibels = 80;
-  totalBins.value = analyser.frequencyBinCount;
-
-  const proc = offline.createScriptProcessor(
-    props.sampleSize,
-    buf.numberOfChannels,
-    buf.numberOfChannels
-  );
-  const src = offline.createBufferSource();
-  src.buffer = buf;
-  src.connect(analyser);
-  analyser.connect(proc);
-  proc.connect(offline.destination);
-
-  const freqData = new Uint8Array(analyser.frequencyBinCount);
-  const temp: { time: number; values: Uint8Array }[] = [];
-  let frame = 0;
-  proc.onaudioprocess = () => {
-    analyser.getByteFrequencyData(freqData);
-    temp.push({
-      time: frame * (props.sampleSize / buf.sampleRate),
-      values: new Uint8Array(freqData)
-    });
-    frame++;
+  const jobId = ++activeSpectrogramJobId;
+  cancelIdleTasks();
+  let cancelled = false;
+  cancelSpectrogramGeneration = () => {
+    cancelled = true;
+    cancelIdleTasks();
   };
 
-  src.start(0);
-  await offline.startRendering();
-  src.disconnect();
-  proc.disconnect();
-  analyser.disconnect();
+  const hopSize = Math.max(1, props.sampleSize);
+  const hopDuration = hopSize / buf.sampleRate;
+  const totalColumns = Math.max(
+    1,
+    Math.ceil(buf.duration / Math.max(hopDuration, 1 / buf.sampleRate))
+  );
 
-  spectrogramData.value = temp.map((d) => ({ time: d.time }));
-  let minV = 255,
-    maxV = 0;
-  for (const col of temp) {
-    for (const v of col.values) {
-      minV = Math.min(minV, v);
-      maxV = Math.max(maxV, v);
-    }
-  }
-  const range = Math.max(1, maxV - minV);
-  const nyq = buf.sampleRate / 2;
-  const maxBin = Math.floor((totalBins.value * props.maxFrequency) / nyq);
-  const minBin = Math.floor((totalBins.value * props.minFrequency) / nyq);
-  cacheHeightBins.value = maxBin - minBin + 1;
-
-  const palette = new Uint8ClampedArray(256 * 4);
-  for (let i = 0; i < 256; i++) {
-    const norm = clamp((i - minV) / range, 0, 1);
-    const idx = Math.floor(norm * (props.colorScheme.length - 1));
-    const colorString = props.colorScheme[idx];
-    const [r, g, b] = hexToRgb(colorString ?? '#000000'); // Provide a fallback if colorString is undefined
-    palette[i * 4] = r;
-    palette[i * 4 + 1] = g;
-    palette[i * 4 + 2] = b;
-    palette[i * 4 + 3] = 255;
+  const cacheEntry = getSpectrogramCache(cacheKey);
+  const palette =
+    cacheEntry?.palette ?? buildPaletteFromScheme(props.colorScheme);
+  if (!cacheEntry?.palette) {
+    setSpectrogramCache(cacheKey, { palette });
   }
 
-  const cols = temp.length,
-    rows = cacheHeightBins.value;
-  // Prepare tiled canvases to avoid exceeding maximum canvas size.
-  cacheCanvases.value = [];
-  if (cols <= CANVAS_COL_LIMIT) {
-    const offCanvas = document.createElement('canvas');
-    offCanvas.width = cols;
-    offCanvas.height = rows;
-    cacheCanvases.value.push(offCanvas);
-  } else {
-    // Split into multiple canvas tiles each with width TILE_COLS (except last).
-    const numTiles = Math.ceil(cols / TILE_COLS);
-    for (let i = 0; i < numTiles; i++) {
-      const width = i === numTiles - 1 ? cols - i * TILE_COLS : TILE_COLS;
-      const tile = document.createElement('canvas');
-      tile.width = width;
-      tile.height = rows;
-      cacheCanvases.value.push(tile);
-    }
+  const melMap =
+    cacheEntry?.melBinToFreqBin ??
+    computeMelBinMapping(
+      ANALYSER_FFT_SIZE / 2,
+      props.minFrequency,
+      props.maxFrequency,
+      buf.sampleRate
+    );
+  if (!cacheEntry?.melBinToFreqBin) {
+    setSpectrogramCache(cacheKey, { melBinToFreqBin: melMap });
   }
+  cacheHeightBins.value = melMap.length;
+  totalBins.value = ANALYSER_FFT_SIZE / 2;
 
-  // Draw pixel data into each tile
-  let globalX = 0; // current column in overall spectrogram
-  for (const tile of cacheCanvases.value) {
-    const ctx2 = tile.getContext('2d', { willReadFrequently: true })!;
-    const img = ctx2.createImageData(tile.width, rows);
-    for (let x = 0; x < tile.width; x++) {
-      const overallX = globalX + x;
-      const colData = temp[overallX];
-      if (!colData) continue;
-      const vals = colData.values;
-      for (let y = 0; y < rows; y++) {
-        const v = vals[y] ?? 0;
-        const pi = (y * tile.width + x) * 4,
-          ci = v * 4;
-        img.data[pi] = palette[ci] ?? 0;
-        img.data[pi + 1] = palette[ci + 1] ?? 0;
-        img.data[pi + 2] = palette[ci + 2] ?? 0;
-        img.data[pi + 3] = 255;
-      }
-    }
-    ctx2.putImageData(img, 0, 0);
-    globalX += tile.width;
-  }
+  spectrogramData.value = Array.from({ length: totalColumns }, (_, idx) => ({
+    time: idx * hopDuration
+  }));
 
-  // For backward compatibility, keep first tile as cacheCanvas for smaller callers
-  cacheCanvas.value = cacheCanvases.value[0] ?? null;
+  setupTileCanvases(totalColumns, cacheHeightBins.value);
+  // renderCoarsePreview(buf, totalColumns, cacheHeightBins.value, palette);
 
   offsetIndex.value = 0;
-  zoomLevel.value = DEFAULT_BASE_ZOOM;
-  // Corrected windowSize calculation for initial setup
+  zoomLevel.value = Math.max(
+    MIN_ZOOM_LEVEL,
+    spectrogramData.value.length / MIN_COLS_AT_MAX_ZOOM_DISPLAY
+  );
   windowSize.value = Math.max(
     MIN_COLS_AT_MAX_ZOOM_DISPLAY,
     Math.floor(spectrogramData.value.length / zoomLevel.value)
@@ -1264,13 +2025,88 @@ async function generateSpectrogramDataOffline() {
     liveAnalyser.value = actx.createAnalyser();
     liveAnalyser.value.fftSize = 2048;
     gainNode.value = actx.createGain();
-    gainNode.value.gain.value = 1;
     gainNode.value.connect(actx.destination);
+    applyGain(normalizedGain.value);
   }
 
   isLoaded.value = true;
   await nextTick();
   handleResize();
+  renderSpectrogram();
+
+  const offline = new OfflineAudioContext(
+    buf.numberOfChannels,
+    buf.length,
+    buf.sampleRate
+  );
+  const analyser = offline.createAnalyser();
+  analyser.fftSize = ANALYSER_FFT_SIZE;
+  analyser.smoothingTimeConstant = 0;
+  analyser.minDecibels = -100;
+  analyser.maxDecibels = -30;
+  totalBins.value = analyser.frequencyBinCount;
+
+  // Insert gain node so current gain affects spectrogram brightness
+  const offlineGain = offline.createGain();
+  offlineGain.gain.value = normalizedGain.value;
+
+  const proc = offline.createScriptProcessor(
+    hopSize,
+    buf.numberOfChannels,
+    buf.numberOfChannels
+  );
+  const src = offline.createBufferSource();
+  src.buffer = buf;
+  // Connect through the gain node before the analyser
+  src.connect(offlineGain);
+  offlineGain.connect(analyser);
+  analyser.connect(proc);
+  proc.connect(offline.destination);
+
+  const freqData = new Uint8Array(analyser.frequencyBinCount);
+  let producedColumns = 0;
+  const pendingColumns: Uint8Array[] = [];
+
+  const flushColumns = () => {
+    if (!pendingColumns.length) return;
+    const batch = pendingColumns.splice(0);
+    const batchStart = producedColumns - batch.length;
+    scheduleIdleTask(() => {
+      if (cancelled || jobId !== activeSpectrogramJobId) return;
+      paintColumnsToTiles(batchStart, batch, palette);
+      renderSpectrogram();
+    });
+  };
+
+  proc.onaudioprocess = () => {
+    if (cancelled || jobId !== activeSpectrogramJobId) return;
+    analyser.getByteFrequencyData(freqData);
+    pendingColumns.push(aggregateToMel(freqData, melMap));
+    producedColumns++;
+    if (pendingColumns.length >= PROGRESSIVE_FRAME_BATCH) {
+      flushColumns();
+    }
+  };
+
+  src.start(0);
+  try {
+    await offline.startRendering();
+  } catch (err) {
+    console.error('Spectrogram render failed', err);
+  } finally {
+    flushColumns();
+    src.disconnect();
+    proc.disconnect();
+    analyser.disconnect();
+    if (!cancelled && jobId === activeSpectrogramJobId) {
+      setSpectrogramCache(cacheKey, {
+        audioBuffer: buf,
+        palette,
+        melBinToFreqBin: melMap
+      });
+    }
+    cancelSpectrogramGeneration = null;
+  }
 }
 
 // Render
@@ -1299,16 +2135,14 @@ function renderSpectrogram() {
     let destX = margin.value.left;
     let srcStart = sIdx;
     while (remaining > 0) {
-      // Determine which tile contains srcStart
-      const tileIndex = Math.floor(srcStart / TILE_COLS);
-      const tile = cacheCanvases.value[tileIndex];
-      if (!tile) break;
-      const tileOffset = srcStart - tileIndex * TILE_COLS;
-      const drawCols = Math.min(remaining, tile.width - tileOffset);
+      const resolved = resolveTileForColumn(srcStart);
+      if (!resolved) break;
+      const { tile, tileWidth, localX } = resolved;
+      const drawCols = Math.min(remaining, tileWidth - localX);
 
       ctx.drawImage(
         tile,
-        tileOffset,
+        localX,
         0,
         drawCols,
         cacheHeightBins.value,
@@ -1325,14 +2159,19 @@ function renderSpectrogram() {
     }
   }
 
-  const v0 = spectrogramData.value[sIdx]?.time || 0;
-  const v1 =
-    spectrogramData.value[Math.min(sIdx + num - 1, totalCols - 1)]?.time ||
-    audioDuration.value;
-  // drawAxes(v0, v1);
+  // const startElement = spectrogramData.value[sIdx];
+  // const endElement =
+  //   spectrogramData.value[
+  //     Math.min(sIdx + num - 1, totalCols - 1)
+  //   ];
+  // if (startElement && endElement) {
+  //   drawAxes(startElement.time, endElement.time);
+  // }
+
   updateProgressLinePosition();
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function drawAxes(v0: number, v1: number) {
   if (!canvasRef.value) return;
   const ctx = canvasRef.value.getContext('2d');
@@ -1381,10 +2220,18 @@ function drawAxes(v0: number, v1: number) {
   ctx.moveTo(xAxisVal, y0Val);
   ctx.lineTo(xAxisVal, y1Val);
   ctx.stroke();
+  // Position ticks using the MEL scale so spacing follows perceived pitch
+  const melMin = hzToMel(props.minFrequency);
+  const melMax = hzToMel(props.maxFrequency);
   for (let i = 0; i <= steps; i++) {
-    const f = i / steps,
-      y = y1Val - f * (y1Val - y0Val),
-      lbl = ((props.maxFrequency - props.minFrequency) * f) / 1000;
+    const f = i / steps;
+    // frequency for this tick (linear label), but position is determined by mel mapping
+    const freq =
+      props.minFrequency + (props.maxFrequency - props.minFrequency) * f;
+    const melF = hzToMel(freq);
+    const frac = (melF - melMin) / (melMax - melMin) || 0;
+    const y = y1Val - frac * (y1Val - y0Val);
+    const lbl = freq / 1000;
     ctx.beginPath();
     ctx.moveTo(xAxisVal, y);
     ctx.lineTo(xAxisVal - 4, y);
@@ -1431,6 +2278,7 @@ function drawAxes(v0: number, v1: number) {
 
   ctx.restore();
 }
+void drawAxes;
 
 // Playback
 function getAudioContext() {
@@ -1438,13 +2286,28 @@ function getAudioContext() {
   return internalAudioContext.value;
 }
 
+function applyGain(gain: number) {
+  if (gainNode?.value) {
+    try {
+      const ctx = gainNode.value.context;
+      gainNode.value.gain.setValueAtTime(gain, ctx.currentTime);
+    } catch {
+      gainNode.value.gain.value = gain;
+    }
+  }
+  if (props.audioElementProp) {
+    props.audioElementProp.volume = clamp(gain, 0, 1);
+  }
+}
+
 function getPlaybackRange(): { start: number; end: number } {
   let start = 0;
   let end = audioDuration.value;
 
   if (playInSelectionOnly.value && currentActiveSelectionRange.value) {
-    start = currentActiveSelectionRange.value.start;
-    end = currentActiveSelectionRange.value.end;
+    const bounds = getRangeEffectiveBounds(currentActiveSelectionRange.value);
+    start = bounds.start;
+    end = bounds.end;
   } else if (
     playInViewportOnly.value &&
     spectrogramData.value.length > 0 &&
@@ -1674,10 +2537,8 @@ function seek(t: number) {
 
   // If "playInSelectionOnly" is on and seek moves outside the selection, turn it off.
   if (playInSelectionOnly.value && currentActiveSelectionRange.value) {
-    if (
-      nt < currentActiveSelectionRange.value.start ||
-      nt >= currentActiveSelectionRange.value.end
-    ) {
+    const bounds = getRangeEffectiveBounds(currentActiveSelectionRange.value);
+    if (nt < bounds.start || nt >= bounds.end) {
       playInSelectionOnly.value = false;
     }
   }
@@ -1985,13 +2846,21 @@ function onRangeSelectStart(e: MouseEvent) {
     return;
   }
 
-  // If readonly, we don't start a selection (isSelecting.value remains false).
-  // But we still need to listen for mouseup to handle a potential click-to-seek.
+  // If readonly, treat left-drag as immediate panning (no selection allowed).
   if (props.readonly) {
+    isSelecting.value = false;
+    isPanning.value = true;
+    isSpacePanningActive.value = false;
+    panStartX = e.clientX;
+    panStartOffset = offsetIndex.value;
+    document.addEventListener('mousemove', generalPanMoveHandler);
+    document.addEventListener('mouseup', onRegularPanEndHandler, {
+      once: true
+    });
     document.addEventListener('mouseup', onRangeSelectEndHandler, {
       once: true
     });
-    return; // Do not proceed to selection initiation logic
+    return; // Skip selection logic entirely in readonly mode
   }
 
   // If not readonly and not spacebar panning, and not on a specific handle, proceed to start selection.
@@ -2209,7 +3078,7 @@ function updateZoom(newZoom: number, centerPx?: number) {
   windowSize.value = newWin;
   offsetIndex.value = newOff;
 
-  console.log(newWin)
+  // console.log(newWin);
 
   renderSpectrogram();
 }
@@ -2318,7 +3187,8 @@ function setupAudioElementListeners() {
       if (
         playInSelectionOnly.value &&
         currentActiveSelectionRange.value &&
-        segmentStart === currentActiveSelectionRange.value.start
+        segmentStart ===
+          getRangeEffectiveBounds(currentActiveSelectionRange.value).start
       ) {
         // playInSelectionOnly.value = false; // Kept as per original behavior if desired
       }
@@ -2415,10 +3285,8 @@ function setupAudioElementListeners() {
   const onSeek = () => {
     currentTime.value = el.currentTime;
     if (playInSelectionOnly.value && currentActiveSelectionRange.value) {
-      if (
-        el.currentTime < currentActiveSelectionRange.value.start ||
-        el.currentTime >= currentActiveSelectionRange.value.end
-      ) {
+      const bounds = getRangeEffectiveBounds(currentActiveSelectionRange.value);
+      if (el.currentTime < bounds.start || el.currentTime >= bounds.end) {
         playInSelectionOnly.value = false;
       }
     }
@@ -2441,6 +3309,7 @@ function setupAudioElementListeners() {
   currentTime.value = el.currentTime;
   audioDuration.value = el.duration || 0;
   updateProgressLinePosition();
+  applyGain(normalizedGain.value);
 
   return () => {
     el.removeEventListener('play', onPlay);
@@ -2489,6 +3358,7 @@ onMounted(() => {
 onUnmounted(() => {
   // 1. Reset and clean up audio-specific resources and state
   resetAndCleanupAudioResources();
+  cancelIdleTasks();
 
   // 2. Remove event listeners bound to window, document, or component's root element
   window.removeEventListener('resize', handleResize);
@@ -2577,61 +3447,79 @@ function rewindToAbsoluteStart() {
 }
 
 // CURSOR CLASSES
-const canvasCursorClass = computed(() => ({
-  'cursor-grabbing':
-    isPanning.value || isSpacePanningActive.value || isMiddleClickPanning.value,
-  'cursor-grab':
-    (zoomLevel.value > MIN_ZOOM_LEVEL && // Changed from > 1
+const canvasCursorClass = computed(() => {
+  const isPanEligible =
+    (props.readonly || zoomLevel.value > MIN_ZOOM_LEVEL) &&
+    !isPanning.value &&
+    !isMiddleClickPanning.value &&
+    !isDraggingProgress.value &&
+    draggingRangeId.value === null &&
+    !isSpacePanningActive.value &&
+    !isSelecting.value &&
+    !autoScroll.value;
+  const isSpaceGrabEligible =
+    isSpacebarPressed.value &&
+    !isSpacePanningActive.value &&
+    !isMiddleClickPanning.value &&
+    !autoScroll.value;
+
+  return {
+    'cursor-grabbing':
+      isPanning.value ||
+      isSpacePanningActive.value ||
+      isMiddleClickPanning.value,
+    'cursor-grab': isPanEligible || isSpaceGrabEligible,
+    'cursor-zoom-in':
+      zoomLevel.value === MIN_ZOOM_LEVEL && // Changed from === 1
       !isPanning.value &&
       !isMiddleClickPanning.value &&
       !isDraggingProgress.value &&
       draggingRangeId.value === null &&
-      !isSpacePanningActive.value &&
+      !isSpacebarPressed.value &&
       !isSelecting.value &&
-      !autoScroll.value) ||
-    (isSpacebarPressed.value &&
+      !autoScroll.value,
+    'cursor-col-resize':
+      isDraggingProgress.value || draggingRangeId.value !== null,
+    'cursor-crosshair':
+      !props.readonly &&
+      !isSpacebarPressed.value &&
       !isSpacePanningActive.value &&
       !isMiddleClickPanning.value &&
-      !autoScroll.value),
-  'cursor-zoom-in':
-    zoomLevel.value === MIN_ZOOM_LEVEL && // Changed from === 1
-    !isPanning.value &&
-    !isMiddleClickPanning.value &&
-    !isDraggingProgress.value &&
-    draggingRangeId.value === null &&
-    !isSpacebarPressed.value &&
-    !isSelecting.value &&
-    !autoScroll.value,
-  'cursor-col-resize':
-    isDraggingProgress.value || draggingRangeId.value !== null,
-  'cursor-crosshair':
-    !isSpacebarPressed.value &&
+      zoomLevel.value === MIN_ZOOM_LEVEL && // Changed from === 1
+      !isDraggingProgress.value &&
+      draggingRangeId.value === null &&
+      !isSelecting.value &&
+      !isPanning.value &&
+      !autoScroll.value, // Ensure not panning and not autoScroll
+    'cursor-default': autoScroll.value // Default cursor when autoScroll is active and no other specific cursor applies
+  };
+});
+const overlayCursorClass = computed(() => {
+  const isReadOnlyGrabEligible =
+    props.readonly &&
     !isSpacePanningActive.value &&
     !isMiddleClickPanning.value &&
-    zoomLevel.value === MIN_ZOOM_LEVEL && // Changed from === 1
-    !isDraggingProgress.value &&
-    draggingRangeId.value === null &&
-    !isSelecting.value &&
-    !isPanning.value &&
-    !autoScroll.value, // Ensure not panning and not autoScroll
-  'cursor-default': autoScroll.value // Default cursor when autoScroll is active and no other specific cursor applies
-}));
-const overlayCursorClass = computed(() => ({
-  'cursor-grabbing': isSpacePanningActive.value || isMiddleClickPanning.value,
-  'cursor-grab':
+    !autoScroll.value;
+  const isSpaceGrabEligible =
     isSpacebarPressed.value &&
     !isSpacePanningActive.value &&
     !isMiddleClickPanning.value &&
-    !autoScroll.value, // Grab for space pan (overlay)
-  'cursor-crosshair':
-    !isSpacebarPressed.value &&
-    !isSpacePanningActive.value &&
-    !isMiddleClickPanning.value &&
-    !isSelecting.value &&
-    !isPanning.value &&
-    !autoScroll.value, // Ensure not panning and not autoScroll
-  'cursor-default': autoScroll.value // Default cursor when autoScroll is active and no other specific cursor applies
-}));
+    !autoScroll.value;
+
+  return {
+    'cursor-grabbing': isSpacePanningActive.value || isMiddleClickPanning.value,
+    'cursor-grab': isReadOnlyGrabEligible || isSpaceGrabEligible,
+    'cursor-crosshair':
+      !props.readonly &&
+      !isSpacebarPressed.value &&
+      !isSpacePanningActive.value &&
+      !isMiddleClickPanning.value &&
+      !isSelecting.value &&
+      !isPanning.value &&
+      !autoScroll.value, // Ensure not panning and not autoScroll
+    'cursor-default': autoScroll.value // Default cursor when autoScroll is active and no other specific cursor applies
+  };
+});
 
 // WHEEL ZOOM/PAN
 function onWheel(e: WheelEvent) {
@@ -2688,6 +3576,15 @@ watch(
 );
 
 watch(
+  () => joinSelectionSegments.value,
+  () => {
+    if (!props.downloadOnlySelections) return;
+    stopAudio();
+    loadAndProcessAudio();
+  }
+);
+
+watch(
   () => props.audioElementProp,
   (newEl, oldEl) => {
     if (oldEl && cleanupAudioListeners) {
@@ -2707,6 +3604,7 @@ watch(
 
       updateProgressLinePosition();
       if (isPlaying.value) requestAnimationFrame(updateLoopExternalAudio);
+      applyGain(normalizedGain.value);
     } else {
       stopAudio();
       if (internalAudioContext.value && !liveAnalyser.value) {
@@ -2715,9 +3613,9 @@ watch(
       }
       if (internalAudioContext.value?.destination && !gainNode.value) {
         gainNode.value = internalAudioContext.value.createGain();
-        gainNode.value.gain.value = 1;
         gainNode.value.connect(internalAudioContext.value.destination);
       }
+      applyGain(normalizedGain.value);
     }
   },
   { immediate: false }
@@ -2969,8 +3867,9 @@ const panBarRegions = computed(() => {
   const trackWidth = panTrackDOMWidth.value;
   return ranges.value
     .map((r) => {
-      const startPercent = r.start / audioDuration.value;
-      const endPercent = r.end / audioDuration.value;
+      const { start, end } = getRangeEffectiveBounds(r);
+      const startPercent = start / audioDuration.value;
+      const endPercent = end / audioDuration.value;
 
       // Clamp percentages to [0, 1] to handle ranges outside audioDuration (should not happen with valid ranges)
       const clampedStartPercent = clamp(startPercent, 0, 1);
@@ -2983,7 +3882,7 @@ const panBarRegions = computed(() => {
         id: r.id,
         leftPx: left,
         widthPx: Math.max(0, right - left), // Ensure width is not negative
-        color: r.color // Uses the original hsla color string which includes alpha
+        background: getRangeFillBackground(r)
       };
     })
     .filter((r) => r.widthPx >= 1); // Only show if width is at least 1px
@@ -3173,6 +4072,9 @@ watch(
 
 function resetAndCleanupAudioResources() {
   stopAudio(); // Stops current playback and disconnects audioSourceNode
+  cancelSpectrogramGeneration?.();
+  cancelSpectrogramGeneration = null;
+  cancelIdleTasks();
 
   // Release internal audio graph nodes (if they exist)
   if (liveAnalyser.value) {
@@ -3201,6 +4103,9 @@ function resetAndCleanupAudioResources() {
     cacheCanvas.value.height = 0;
     cacheCanvas.value = null;
   }
+  cacheCanvases.value = [];
+  cacheTileContexts.length = 0;
+  tileColumnOffsets.length = 0;
   spectrogramData.value = [];
   spliceTimes.value = [];
   ranges.value = []; // Clear ranges when audio source changes

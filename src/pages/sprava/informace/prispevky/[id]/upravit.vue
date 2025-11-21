@@ -74,7 +74,10 @@ watch(
     categories.value = (data as any).categories?.map((c: any) => c.name) ?? [];
 
     // Find all language markdown files and fetch them
-    const languageFiles = data.files?.filter((f) => supportedLanguages.includes(f.fileName?.split('.')[0] ?? '')) ?? [];
+    const languageFiles =
+      data.files?.filter((f) =>
+        supportedLanguages.includes(f.fileName?.split('.')[0] ?? '')
+      ) ?? [];
 
     // Fetch all language files in parallel
     const fetchPromises = languageFiles.map(async (file) => {
@@ -107,7 +110,9 @@ const { mutate: submitArticle } = useMutation({
     const ops: Promise<any>[] = [];
 
     // metadata update
-    const origCats = ((article.value as any)?.categories ?? []).map((c: any) => c.name);
+    const origCats = ((article.value as any)?.categories ?? []).map(
+      (c: any) => c.name
+    );
     if (
       name.value !== article.value!.name ||
       description.value !== article.value!.description ||
@@ -146,7 +151,8 @@ const { mutate: submitArticle } = useMutation({
       if (!originalContent || currentContent !== originalContent) {
         const processedContent = currentContent.replace(
           /!\[([^\]]*)\]\(((?:[^()]|\([^()]*\))*)\)/g,
-          (_: unknown, alt: string, url: string) => `![${alt}](${encodeURI(url)})`
+          (_: unknown, alt: string, url: string) =>
+            `![${alt}](${encodeURI(url)})`
         );
 
         const textFile = new File([processedContent], `${lang}.md`, {
@@ -157,7 +163,12 @@ const { mutate: submitArticle } = useMutation({
         if (originalContent) {
           // Update existing file
           ops.push(
-            patchArticleFile(accountStore.token!, id.value, `${lang}.md`, textFile)
+            patchArticleFile(
+              accountStore.token!,
+              id.value,
+              `${lang}.md`,
+              textFile
+            )
           );
         } else {
           // Create new file
@@ -169,7 +180,9 @@ const { mutate: submitArticle } = useMutation({
     // Delete language files that were removed (emptied)
     for (const lang of originalLangFiles) {
       if (!currentLangFiles.has(lang)) {
-        ops.push(deleteArticleFile(accountStore.token!, id.value, `${lang}.md`));
+        ops.push(
+          deleteArticleFile(accountStore.token!, id.value, `${lang}.md`)
+        );
       }
     }
 
@@ -224,7 +237,11 @@ const { mutate: submitArticle } = useMutation({
       <label for="lang-select" class="mr-2 font-bold">
         <TranslatedText identifier="labels.language" />:
       </label>
-      <select id="lang-select" v-model="currentLanguage" class="border p-1 rounded">
+      <select
+        id="lang-select"
+        v-model="currentLanguage"
+        class="border p-1 rounded"
+      >
         <option v-for="lang in supportedLanguages" :key="lang" :value="lang">
           {{ translations[lang as keyof typeof translations]?.lang_name }}
         </option>
@@ -247,18 +264,22 @@ const { mutate: submitArticle } = useMutation({
   <ul class="flex flex-col w-full" @click.stop>
     <!-- Existing files -->
     <li
-      v-for="file in article?.files?.filter(
-        (f) => {
-          if (!f.fileName) return false;
-          const isLangFile = Object.keys(translations).includes(f.fileName?.split('.')[0] ?? '');
-          return !isLangFile;
-        }
-      ) ?? []"
+      v-for="file in article?.files?.filter((f) => {
+        if (!f.fileName) return false;
+        const isLangFile = Object.keys(translations).includes(
+          f.fileName?.split('.')[0] ?? ''
+        );
+        return !isLangFile;
+      }) ?? []"
       :key="file.fileName ?? `file-${file.id}`"
       class="flex flex-row w-full items-center justify-between"
     >
       <div class="flex flex-row gap-x-2 items-center">
-        <MaterialIcon v-if="file.fileName" class="h-10" :filename="file.fileName" />
+        <MaterialIcon
+          v-if="file.fileName"
+          class="h-10"
+          :filename="file.fileName"
+        />
         <div class="flex flex-col">
           <p
             v-if="file.fileName"
@@ -309,10 +330,7 @@ const { mutate: submitArticle } = useMutation({
     </li>
   </ul>
 
-  <button
-    class="primary p-2 w-full"
-    @click="() => submitArticle()"
-  >
+  <button class="primary p-2 w-full" @click="() => submitArticle()">
     <TranslatedText identifier="buttons.save" />
   </button>
 </template>

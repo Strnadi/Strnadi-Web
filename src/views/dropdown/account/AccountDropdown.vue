@@ -18,9 +18,7 @@ const user = accountStore.user!;
         <template v-if="user.nickname && !user.firstName && !user.lastName">
           @{{ user.nickname }}
         </template>
-        <template v-else>
-          {{ user.firstName }} {{ user.lastName }}
-        </template>
+        <template v-else> {{ user.firstName }} {{ user.lastName }} </template>
         <DropdownIcon />
       </div>
     </template>
@@ -30,8 +28,13 @@ const user = accountStore.user!;
       </PrefetchLink>
     </li>
     <li>
-      <PrefetchLink to="/ucet/sprava/moje-nahravky" class="dropdown-item" v-wave>
-        Moje záznamy
+      <PrefetchLink to="/ucet/sprava/oznameni" class="dropdown-item" v-wave>
+        Oznámení
+      </PrefetchLink>
+    </li>
+    <li>
+      <PrefetchLink to="/nastaveni" class="dropdown-item" v-wave>
+        Nastavení webové aplikace
       </PrefetchLink>
     </li>
     <li v-if="accountStore.user?.role === 'admin'">
@@ -39,7 +42,11 @@ const user = accountStore.user!;
         Administrace systému
       </PrefetchLink>
     </li>
-    <li class="cursor-pointer dropdown-item" @click="accountStore.logout" v-wave>
+    <li
+      class="cursor-pointer dropdown-item"
+      @click="accountStore.logout"
+      v-wave
+    >
       Odhlásit se
     </li>
   </Dropdown>

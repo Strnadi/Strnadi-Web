@@ -129,7 +129,9 @@ const uncategorizedArticles = computed(() => {
             </li>
           </ul>
           <p v-else class="text-gray-500 italic">
-            <TranslatedText identifier="admin.articles.no_articles_in_category" />
+            <TranslatedText
+              identifier="admin.articles.no_articles_in_category"
+            />
           </p>
         </div>
       </details>

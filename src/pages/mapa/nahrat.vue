@@ -158,8 +158,9 @@ const stepper = useStepper<Record<StepIdentifier, Step>>({
     title: 'upload.steps.file',
     isValid: () =>
       (uploadStore.parts?.length ?? 0) > 0 &&
-      (uploadStore.parts?.every((part) => part.file) ?? false)
-      && !isSubmitting.value && !uploadSuccess.value
+      (uploadStore.parts?.every((part) => part.file) ?? false) &&
+      !isSubmitting.value &&
+      !uploadSuccess.value
   },
 
   location: {
@@ -175,7 +176,11 @@ const stepper = useStepper<Record<StepIdentifier, Step>>({
 
   info: {
     title: 'upload.steps.info',
-    isValid: () => !!uploadStore.dateTime && uploadStore.confirmUpload && !isSubmitting.value && !uploadSuccess.value
+    isValid: () =>
+      !!uploadStore.dateTime &&
+      uploadStore.confirmUpload &&
+      !isSubmitting.value &&
+      !uploadSuccess.value
   },
 
   photos: {

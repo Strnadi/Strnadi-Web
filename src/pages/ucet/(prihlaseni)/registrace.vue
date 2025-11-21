@@ -124,7 +124,9 @@ const {
   }
 });
 
-const stepper = useStepper<Record<string, { title: TranslationIdentifier; isValid: () => boolean }>>({
+const stepper = useStepper<
+  Record<string, { title: TranslationIdentifier; isValid: () => boolean }>
+>({
   email: {
     title: 'auth.register.steps.email',
     isValid: () =>
@@ -138,8 +140,7 @@ const stepper = useStepper<Record<string, { title: TranslationIdentifier; isVali
 
   'personal-info': {
     title: 'auth.register.steps.personal_info',
-    isValid: () =>
-      registerStore.name.trim() !== '' && registerStore.surname.trim() !== ''
+    isValid: () => registerStore.nickname.trim() !== ''
   },
 
   location: {
@@ -192,7 +193,8 @@ function submit() {
     stepper.goToNext();
   }
 
-  if (stepper.current.value === stepper.steps.value['creating-account']) register();
+  if (stepper.current.value === stepper.steps.value['creating-account'])
+    register();
 }
 
 function allStepsBeforeAreValid(index: number): boolean {
@@ -246,8 +248,7 @@ watch(
                 <TranslatedText
                   identifier="auth.register.email_exists.prefix"
                 />
-                <PrefetchLink to="/ucet/zapomenute-heslo" class="underline"
-                  >
+                <PrefetchLink to="/ucet/zapomenute-heslo" class="underline">
                   <TranslatedText
                     identifier="auth.register.email_exists.link"
                   />
@@ -289,20 +290,14 @@ watch(
               />
               <label for="agreement">
                 <span class="text-sm">
-                  <TranslatedText
-                    identifier="auth.register.agreement.prefix"
-                  />
+                  <TranslatedText identifier="auth.register.agreement.prefix" />
                   <span class="mx-1">
                     <TranslatedText identifier="project_name" />
                   </span>
                   <PrefetchLink to="/podminky-pouziti" class="underline">
-                    <TranslatedText
-                      identifier="auth.register.agreement.link"
-                    />
+                    <TranslatedText identifier="auth.register.agreement.link" />
                   </PrefetchLink>
-                  <TranslatedText
-                    identifier="auth.register.agreement.suffix"
-                  />
+                  <TranslatedText identifier="auth.register.agreement.suffix" />
                 </span>
               </label>
             </div>
@@ -366,9 +361,7 @@ watch(
             </h2>
             <DigitInput v-model="registerStore.postCode" :digits="5" />
             <p class="text-gray-600">
-              <TranslatedText
-                identifier="auth.register.postal_code_hint"
-              />
+              <TranslatedText identifier="auth.register.postal_code_hint" />
             </p>
           </div>
           <div class="flex flex-col gap-y-1">
@@ -463,7 +456,9 @@ watch(
 
         <div v-if="stepper.isCurrent('creating-account')">
           <p v-if="isPending || isRegPending">
-            <TranslatedText identifier="auth.register.status.creating_account_wait" />
+            <TranslatedText
+              identifier="auth.register.status.creating_account_wait"
+            />
           </p>
           <template v-else-if="isRegError || isError">
             <p>{{ (error ?? regError)!.message }}</p>
@@ -477,7 +472,9 @@ watch(
         <div v-if="stepper.isCurrent('done')" class="flex flex-col gap-y-4">
           <template v-if="isRegPending">
             <p>
-              <TranslatedText identifier="auth.register.status.creating_account" />
+              <TranslatedText
+                identifier="auth.register.status.creating_account"
+              />
             </p>
           </template>
           <template v-else-if="isRegError">
@@ -491,7 +488,9 @@ watch(
               <TranslatedText identifier="auth.register.status.success_title" />
             </h2>
             <span class="font-medium">
-              <TranslatedText identifier="auth.register.status.success_message" />
+              <TranslatedText
+                identifier="auth.register.status.success_message"
+              />
             </span>
           </template>
         </div>

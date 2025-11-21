@@ -173,9 +173,7 @@ const submit = () => {
   <hr class="my-4 px-8" />
 
   <h2>
-    <TranslatedText
-      identifier="account.personal_data.password_section_title"
-    />
+    <TranslatedText identifier="account.personal_data.password_section_title" />
   </h2>
   <div class="flex flex-col gap-y-2">
     <RevealablePasswordInput v-model="password">

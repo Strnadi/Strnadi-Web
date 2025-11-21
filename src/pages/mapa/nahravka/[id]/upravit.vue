@@ -16,7 +16,11 @@ import TranslatedText, { t } from '@/components/TranslatedText.vue';
 const router = useRouter();
 const recordingId = useRouteParams<Numeric>('id');
 
-const { data: recording, isLoading, isError } = useQuery({
+const {
+  data: recording,
+  isLoading,
+  isError
+} = useQuery({
   queryKey: ['recording', recordingId.value],
   queryFn: () => getRecording(recordingId.value)
 });
@@ -24,12 +28,16 @@ const { data: recording, isLoading, isError } = useQuery({
 const name = ref('');
 const note = ref('');
 
-watch(recording, (rec) => {
-  if (rec) {
-    name.value = rec.name ?? '';
-    note.value = rec.note ?? '';
-  }
-}, { immediate: true });
+watch(
+  recording,
+  (rec) => {
+    if (rec) {
+      name.value = rec.name ?? '';
+      note.value = rec.note ?? '';
+    }
+  },
+  { immediate: true }
+);
 
 const saving = ref(false);
 async function save() {
@@ -75,13 +83,23 @@ async function save() {
         <label for="name" class="block text-sm font-medium text-gray-700">
           <TranslatedText identifier="labels.title" />
         </label>
-        <input id="name" v-model="name" type="text" class="mt-1 block w-full border px-3 py-2 rounded" />
+        <input
+          id="name"
+          v-model="name"
+          type="text"
+          class="mt-1 block w-full border px-3 py-2 rounded"
+        />
       </div>
       <div>
         <label for="note" class="block text-sm font-medium text-gray-700">
           <TranslatedText identifier="labels.note" />
         </label>
-        <textarea id="note" v-model="note" rows="4" class="mt-1 block w-full border px-3 py-2 rounded" />
+        <textarea
+          id="note"
+          v-model="note"
+          rows="4"
+          class="mt-1 block w-full border px-3 py-2 rounded"
+        />
       </div>
       <div class="space-x-2">
         <button class="success" :disabled="saving" @click="save">

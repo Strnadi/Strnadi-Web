@@ -61,6 +61,7 @@ const update = () => {
   const selected =
     suggestions.value.find((suggestion) => suggestion.name === text.value) ||
     null;
+
   if (!selected) {
     return;
   }

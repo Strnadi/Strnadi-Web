@@ -97,40 +97,49 @@ export const uploadQueueStore = reactive({
       return new Promise((resolve, reject) => {
         const audio = new Audio();
         audio.preload = 'metadata';
-        
+
         audio.onloadedmetadata = () => {
           URL.revokeObjectURL(audio.src);
           resolve(audio.duration);
         };
-        
+
         audio.onerror = () => {
           URL.revokeObjectURL(audio.src);
           reject(new Error('Failed to load audio metadata'));
         };
-        
+
         audio.src = URL.createObjectURL(file);
       });
     };
 
     let lastEndDate: Date | undefined;
-    const modifiedParts = await Promise.all(task.parts.map(async part => {
-      // Calculate end date based on audio duration
-      let endDate = part.endDate;
-      try {
-        const duration = await getAudioDuration(part.data);
-        const startDate = new Date(new Date(part.startDate).getTime() + (lastEndDate?.getTime() ?? 0)).toISOString();
-        const calculatedEndDate = new Date(new Date(startDate).getTime() + (duration * 1000));
-        endDate = calculatedEndDate.toISOString();
-        lastEndDate = calculatedEndDate;
-      } catch (error) {
-        console.warn('Failed to get audio duration, using original endDate', error);
-      }
+    const modifiedParts = await Promise.all(
+      task.parts.map(async (part) => {
+        // Calculate end date based on audio duration
+        let endDate = part.endDate;
+        try {
+          const duration = await getAudioDuration(part.data);
+          const startDate = new Date(
+            new Date(part.startDate).getTime() + (lastEndDate?.getTime() ?? 0)
+          ).toISOString();
+          const calculatedEndDate = new Date(
+            new Date(startDate).getTime() + duration * 1000
+          );
+          endDate = calculatedEndDate.toISOString();
+          lastEndDate = calculatedEndDate;
+        } catch (error) {
+          console.warn(
+            'Failed to get audio duration, using original endDate',
+            error
+          );
+        }
 
-      return {
-        ...part,
-        endDate: endDate
-      };
-    }));
+        return {
+          ...part,
+          endDate: endDate
+        };
+      })
+    );
 
     await postRecording(task.token, task.recording, modifiedParts, task.photos);
   },

@@ -7,7 +7,7 @@ export interface WavHeaderInfo {
   sampleRate: number;
   bitsPerSample: number;
   dataOffset: number; // absolute byte offset where PCM payload starts
-  dataSize: number;   // payload size in bytes
+  dataSize: number; // payload size in bytes
 }
 
 /**
@@ -76,7 +76,7 @@ export function parseWavHeader(buffer: ArrayBuffer): WavHeaderInfo {
     sampleRate,
     bitsPerSample,
     dataOffset,
-    dataSize,
+    dataSize
   };
 }
 
@@ -89,7 +89,10 @@ export function bytesPerSecond(h: WavHeaderInfo): number {
  * Build a minimal 44-byte PCM-WAVE header for a payload of `pcmByteLength` bytes.
  * Returns a Uint8Array.
  */
-export function buildWavHeader(h: WavHeaderInfo, pcmByteLength: number): Uint8Array {
+export function buildWavHeader(
+  h: WavHeaderInfo,
+  pcmByteLength: number
+): Uint8Array {
   const header = new Uint8Array(44);
   const view = new DataView(header.buffer);
   // "RIFF" id + overall size (4 bytes) = 36 + data

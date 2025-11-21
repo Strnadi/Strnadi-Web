@@ -20,7 +20,9 @@ export interface MapClickEvent {
   square?: string;
 }
 
-export const DialectColors = computedAsync(async () => await getDialectColors());
+export const DialectColors = computedAsync(
+  async () => await getDialectColors()
+);
 
 export const MapEvents = mitt<{
   click: MapClickEvent;
@@ -58,7 +60,11 @@ export const MapStore = reactive<{
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { getRecordings, getFilteredRecordings, getDialectColors } from '@/api/recordings';
+import {
+  getRecordings,
+  getFilteredRecordings,
+  getDialectColors
+} from '@/api/recordings';
 
 import { accountStore } from '@/state/AccountStore';
 
@@ -162,9 +168,7 @@ const markers = computed<Marker[]>(() => {
           case 'any-dialect':
             return (
               filteredRecordings.value?.some(
-                (fp) =>
-                  fp.recordingId === r.id &&
-                  fp.detectedDialects !== null
+                (fp) => fp.recordingId === r.id && fp.detectedDialects !== null
               ) ?? false
             );
           default:
@@ -180,8 +184,8 @@ const markers = computed<Marker[]>(() => {
         const lastPart = parts[parts.length - 1]!;
 
         // gather all filtered parts overlapping any part of this recording
-        const allFiltered = filteredRecordings.value
-          ?.filter((fr) => {
+        const allFiltered =
+          filteredRecordings.value?.filter((fr) => {
             if (fr.recordingId !== rec.id) return false;
 
             const frStart = new Date(fr.startDate);
@@ -198,47 +202,84 @@ const markers = computed<Marker[]>(() => {
         let fromModel = false;
         let fromUser = false;
 
-        if (allFiltered.some(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.confirmedDialect))) {
+        if (
+          allFiltered.some(
+            (fp) =>
+              fp.representantFlag &&
+              fp.detectedDialects?.some((dd) => dd.confirmedDialect)
+          )
+        ) {
           dialectStrings = allFiltered
-                          .filter(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.confirmedDialect))
-                          .flatMap(fp => fp.detectedDialects?.map(dd => dd.confirmedDialect) ?? []);
+            .filter(
+              (fp) =>
+                fp.representantFlag &&
+                fp.detectedDialects?.some((dd) => dd.confirmedDialect)
+            )
+            .flatMap(
+              (fp) =>
+                fp.detectedDialects?.map((dd) => dd.confirmedDialect) ?? []
+            );
 
           if (dialectStrings.length > 0) {
             fromModel = false;
             fromUser = false;
           }
-        }
-
-        else if (allFiltered.some(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.predictedDialect))) {
+        } else if (
+          allFiltered.some(
+            (fp) =>
+              fp.representantFlag &&
+              fp.detectedDialects?.some((dd) => dd.predictedDialect)
+          )
+        ) {
           dialectStrings = allFiltered
-                          .filter(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.predictedDialect))
-                          .flatMap(fp => fp.detectedDialects?.map(dd => dd.predictedDialect) ?? []);
+            .filter(
+              (fp) =>
+                fp.representantFlag &&
+                fp.detectedDialects?.some((dd) => dd.predictedDialect)
+            )
+            .flatMap(
+              (fp) =>
+                fp.detectedDialects?.map((dd) => dd.predictedDialect) ?? []
+            );
 
           if (dialectStrings.length > 0) {
             fromModel = true;
             fromUser = false;
           }
-        }
-
-        else if (allFiltered.some(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.userGuessDialect))) {
+        } else if (
+          allFiltered.some(
+            (fp) =>
+              fp.representantFlag &&
+              fp.detectedDialects?.some((dd) => dd.userGuessDialect)
+          )
+        ) {
           dialectStrings = allFiltered
-                          .filter(fp => fp.representantFlag && fp.detectedDialects?.some(dd => dd.userGuessDialect))
-                          .flatMap(fp => fp.detectedDialects?.map(dd => dd.userGuessDialect) ?? []);
-          
+            .filter(
+              (fp) =>
+                fp.representantFlag &&
+                fp.detectedDialects?.some((dd) => dd.userGuessDialect)
+            )
+            .flatMap(
+              (fp) =>
+                fp.detectedDialects?.map((dd) => dd.userGuessDialect) ?? []
+            );
+
           if (dialectStrings.length > 0) {
             fromUser = true;
             fromModel = false;
           }
-        }
-
-        else {
+        } else {
           dialectStrings = ['None'];
           fromModel = false;
           fromUser = false;
         }
 
-        const colors = dialectStrings.map(ds => DialectColors.value?.[ds as keyof typeof DialectColors.value] ?? '#000000');
-        console.log(colors)
+        const colors = dialectStrings.map(
+          (ds) =>
+            DialectColors.value?.[ds as keyof typeof DialectColors.value] ??
+            '#000000'
+        );
+        console.log(colors);
 
         const icon = divIcon({
           className: '',
@@ -250,10 +291,10 @@ const markers = computed<Marker[]>(() => {
         return {
           id: `${rec.id}-${lastPart.id}`,
           icon: icon as Icon,
-          position: [
-            lastPart.gpsLatitudeStart,
-            lastPart.gpsLongitudeStart
-          ] as [number, number],
+          position: [lastPart.gpsLatitudeStart, lastPart.gpsLongitudeStart] as [
+            number,
+            number
+          ],
           data: {
             recording: rec,
             part: lastPart,

@@ -13,7 +13,7 @@ const oauth2_responseMode = 'form_post';
 
 <template>
   <OAuth2Button
-    class="secondary p-2 max-lg:w-full w-full !bg-gray-900 !text-white"
+    class="secondary p-2 max-lg:w-full w-full bg-gray-900! text-white!"
     :url="oauth2_url"
     :client-id="oauth2_clientId"
     :response-type="oauth2_responseType"

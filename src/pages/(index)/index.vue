@@ -16,6 +16,8 @@ useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
   if (recording && recordingPart) {
     router.push(`/mapa/nahravka/${recording.id}`);
   } else if (square) {
+    // TODO: this gets cancelled for some reason
+    // Error: Navigation cancelled from "/" to "/mapa/ctverec/5658" with a new navigation.
     router.push(`/mapa/ctverec/${square}`);
   } else {
     router.push('/');
