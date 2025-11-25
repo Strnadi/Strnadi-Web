@@ -3,7 +3,7 @@ meta:
   layout: desktop/center
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { getArticleCategories, getArticles } from '@/api/articles';
 import { useQuery } from '@tanstack/vue-query';
 import { computed } from 'vue';
@@ -108,7 +108,9 @@ const uncategorizedArticles = computed(() => {
             >
               <div class="flex flex-col w-full justify-around">
                 <span>{{ article.name }}</span>
-                <span v-if="article.description"><i>{{ article.description }}</i></span>
+                <span v-if="article.description"
+                  ><i>{{ article.description }}</i></span
+                >
               </div>
               <div class="flex flex-row gap-x-2 shrink-0">
                 <router-link
@@ -126,10 +128,7 @@ const uncategorizedArticles = computed(() => {
               </div>
             </li>
           </ul>
-          <p
-            v-else
-            class="text-gray-500 italic"
-          >
+          <p v-else class="text-gray-500 italic">
             <TranslatedText
               identifier="admin.articles.no_articles_in_category"
             />
@@ -167,7 +166,9 @@ const uncategorizedArticles = computed(() => {
             >
               <div class="flex flex-col w-full justify-around">
                 <span>{{ article.name }}</span>
-                <span v-if="article.description"><i>{{ article.description }}</i></span>
+                <span v-if="article.description"
+                  ><i>{{ article.description }}</i></span
+                >
               </div>
               <div class="flex flex-row gap-x-2 shrink-0">
                 <router-link

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import MobileNav from '@/views/nav/MobileNav.vue';
 import { useRoute, useRouter } from 'vue-router';
 

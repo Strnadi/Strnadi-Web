@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script lang="ts" setup>
+<script setup vapor lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { getRecordings } from '@/api/recordings';
 import { accountStore } from '@/state/AccountStore';
@@ -35,14 +35,8 @@ console.log('Here');
     <TranslatedText identifier="errors.recordings.loading" />
   </template>
   <template v-else>
-    <ul
-      v-if="recordingsLength > 0"
-      class="flex flex-col-reverse gap-y-3"
-    >
-      <li
-        v-for="rec in recordings"
-        :key="rec.id"
-      >
+    <ul v-if="recordingsLength > 0" class="flex flex-col-reverse gap-y-3">
+      <li v-for="rec in recordings" :key="rec.id">
         <router-link
           :to="`/mapa/nahravka/${rec.id}`"
           class="flex flex-col justify-around bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition duration-200"

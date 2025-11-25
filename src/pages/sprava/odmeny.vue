@@ -21,10 +21,7 @@ meta:
         >
           <list-icon class="w-8 h-8" />
         </button>
-        <h3
-          v-if="!isSidebarCollapsed"
-          class="text-lg font-semibold"
-        >
+        <h3 v-if="!isSidebarCollapsed" class="text-lg font-semibold">
           Editors
         </h3>
         <button
@@ -37,14 +34,8 @@ meta:
         </button>
       </div>
 
-      <div
-        v-if="!isSidebarCollapsed"
-        class="flex flex-col gap-2"
-      >
-        <template
-          v-for="(ed, i) in editors"
-          :key="ed.id"
-        >
+      <div v-if="!isSidebarCollapsed" class="flex flex-col gap-2">
+        <template v-for="(ed, i) in editors" :key="ed.id">
           <div class="flex items-center">
             <button
               v-wave
@@ -74,10 +65,7 @@ meta:
 
     <div class="flex flex-1 flex-col gap-y-2 min-h-0">
       <div class="flex flex-1 flex-col gap-4 min-h-0 overflow-hidden">
-        <div
-          ref="blocklyArea"
-          class="relative flex-1 min-h-0 overflow-hidden"
-        >
+        <div ref="blocklyArea" class="relative flex-1 min-h-0 overflow-hidden">
           <div
             ref="blocklyDiv"
             class="h-full min-h-80 w-full overflow-hidden rounded-lg border border-gray-200 bg-white"
@@ -86,18 +74,10 @@ meta:
 
         <div class="flex flex-col gap-3">
           <div class="flex flex-row flex-wrap gap-2">
-            <button @click="generateAndExportSQL">
-              Export .sql
-            </button>
-            <button @click="generateSQL">
-              Generate SQL
-            </button>
-            <button @click="saveWorkspace">
-              Save XML
-            </button>
-            <button @click="loadWorkspace">
-              Load saved XML
-            </button>
+            <button @click="generateAndExportSQL">Export .sql</button>
+            <button @click="generateSQL">Generate SQL</button>
+            <button @click="saveWorkspace">Save XML</button>
+            <button @click="loadWorkspace">Load saved XML</button>
           </div>
 
           <label><strong>Generated SQL</strong></label>

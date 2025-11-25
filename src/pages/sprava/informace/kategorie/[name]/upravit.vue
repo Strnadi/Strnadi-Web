@@ -3,7 +3,7 @@ meta:
   layout: desktop/center
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref, watch } from 'vue';
 import { useMutation, useQuery } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router';
@@ -59,19 +59,13 @@ const { mutate: mutateCategory } = useMutation({
 </script>
 
 <template>
-  <div
-    class="flex flex-col w-full gap-y-2"
-    @dragenter.prevent.stop
-  >
+  <div class="flex flex-col w-full gap-y-2" @dragenter.prevent.stop>
     <h1>
       <TranslatedText identifier="admin.articles.edit_category_title" />
       {{ newName }}
     </h1>
     <div class="w-full">
-      <label
-        for="title"
-        class="block text-sm font-medium mb-1"
-      >
+      <label for="title" class="block text-sm font-medium mb-1">
         <TranslatedText identifier="admin.articles.category_name_label" />
       </label>
       <input
@@ -80,13 +74,10 @@ const { mutate: mutateCategory } = useMutation({
         type="text"
         :placeholder="t('placeholders.title')"
         class="w-full p-2 border rounded"
-      >
+      />
     </div>
     <div class="w-full">
-      <label
-        for="description"
-        class="block text-sm font-medium mb-1"
-      >
+      <label for="description" class="block text-sm font-medium mb-1">
         <TranslatedText
           identifier="admin.articles.category_description_label"
         />
@@ -97,14 +88,10 @@ const { mutate: mutateCategory } = useMutation({
         type="text"
         :placeholder="t('placeholders.description')"
         class="w-full p-2 border rounded"
-      >
+      />
     </div>
 
-    <draggable
-      v-if="categoryArticles"
-      v-model="categoryArticles"
-      item-key="id"
-    >
+    <draggable v-if="categoryArticles" v-model="categoryArticles" item-key="id">
       <template #item="{ element: article }">
         <div class="flex flex-row gap-x-2">
           <button>
@@ -126,10 +113,7 @@ const { mutate: mutateCategory } = useMutation({
         </div>
       </template>
     </draggable>
-    <button
-      class="primary p-2"
-      @click="mutateCategory"
-    >
+    <button class="primary p-2" @click="mutateCategory">
       <TranslatedText identifier="buttons.save" />
     </button>
   </div>

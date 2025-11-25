@@ -132,7 +132,7 @@ export default defineConfig({
         ]
       }
     }),
-    Compression({ algorithm: 'brotliCompress' }),
+    Compression({ algorithms: ['brotliCompress', 'gzip'] }),
     SentryVitePlugin({
       org: 'delta-strnadi',
       project:
@@ -142,9 +142,9 @@ export default defineConfig({
       telemetry: false
     }),
     mkcert(),
-    vueDevTools({
-      launchEditor: 'subl4'
-    }),
+    // vueDevTools({
+    //   launchEditor: 'subl4'
+    // }),
     Visualizer({
       gzipSize: true,
       open: false,
@@ -199,7 +199,7 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: /leaflet\/dist\/leaflet-src\.js(\?commonjs-es-import)?$/,
+        find: /leaflet\/dist\/leaflet-src\.js/,
         replacement: 'leaflet/dist/leaflet-src.esm.js'
       }
     ]
@@ -207,6 +207,7 @@ export default defineConfig({
 
   server: {
     allowedHosts: true,
+    hmr: false,
     // https: {
     //
     // },

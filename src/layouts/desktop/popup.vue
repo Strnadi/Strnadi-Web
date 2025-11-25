@@ -1,7 +1,9 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import Back from '@/icons/interface/icon-back.svg';
 import TranslatedText from '@/components/TranslatedText.vue';
 import { useRouter } from 'vue-router';
+
+import { VaporRouterView } from 'vue-router';
 
 const router = useRouter();
 const closePopup = () => {
@@ -10,24 +12,21 @@ const closePopup = () => {
 </script>
 
 <template>
-  <router-view v-slot="{ Component, route }">
-    <aside
-      class="popup"
+  <!-- <VaporRouterView v-slot="{ Component, route }"> -->
+  <aside class="popup" @click="closePopup" @keydown.escape="closePopup">
+    <button
+      class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl"
       @click="closePopup"
-      @keydown.escape="closePopup"
     >
-      <button
-        class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl"
-        @click="closePopup"
-      >
-        <Close />
-      </button>
+      <Close />
+    </button>
 
-      <div @click.stop>
-        <component :is="Component" />
-      </div>
-    </aside>
-  </router-view>
+    <div @click.stop>
+      <VaporRouterView />
+      <!-- <component :is="Component"></component> -->
+    </div>
+  </aside>
+  <!-- </VaporRouterView> -->
 </template>
 
 <style scoped>

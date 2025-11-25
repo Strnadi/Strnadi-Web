@@ -4,7 +4,7 @@
     :alt="alt"
     class="cursor-pointer hover:transform hover:scale-102 transition-transform duration-200 max-w-full"
     @click="isExpanded = true"
-  >
+  />
 
   <teleport to="body">
     <div
@@ -12,12 +12,7 @@
       class="fullscreen-overlay"
       @click="isExpanded = false"
     >
-      <img
-        :src="src"
-        :alt="alt"
-        class="fullscreen-image"
-        @click.stop
-      >
+      <img :src="src" :alt="alt" class="fullscreen-image" @click.stop />
       <button
         class="button-secondary absolute top-4 right-4 w-12 h-12 rounded-full flex justify-center items-center text-2xl z-[10000]"
         @click="isExpanded = false"
@@ -28,7 +23,7 @@
   </teleport>
 </template>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 
 defineProps<{

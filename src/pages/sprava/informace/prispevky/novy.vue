@@ -3,7 +3,7 @@ meta:
   layout: desktop/center
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { useQuery, useMutation } from '@tanstack/vue-query';
 import {
@@ -107,13 +107,13 @@ const { mutate: submitArticle } = useMutation({
       type="text"
       :placeholder="t('placeholders.title')"
       class="p-2"
-    >
+    />
     <input
       v-model="description"
       type="text"
       :placeholder="t('placeholders.description')"
       class="p-2"
-    >
+    />
   </div>
 
   <div class="flex flex-row items-center gap-x-2">
@@ -132,10 +132,7 @@ const { mutate: submitArticle } = useMutation({
 
     <!-- Language selector -->
     <div class="mb-4">
-      <label
-        for="lang-select"
-        class="mr-2 font-bold"
-      >
+      <label for="lang-select" class="mr-2 font-bold">
         <TranslatedText identifier="labels.language" />:
       </label>
       <select
@@ -143,11 +140,7 @@ const { mutate: submitArticle } = useMutation({
         v-model="currentLanguage"
         class="border p-1 rounded"
       >
-        <option
-          v-for="lang in supportedLanguages"
-          :key="lang"
-          :value="lang"
-        >
+        <option v-for="lang in supportedLanguages" :key="lang" :value="lang">
           {{ translations[lang as keyof typeof translations]?.lang_name }}
         </option>
       </select>
@@ -166,36 +159,24 @@ const { mutate: submitArticle } = useMutation({
     @save="() => submitArticle()"
   />
 
-  <ul
-    class="flex flex-col w-full"
-    @click.stop
-  >
+  <ul class="flex flex-col w-full" @click.stop>
     <li
       v-for="(file, index) in files"
       :key="file.name"
       class="flex flex-row w-full items-center justify-between"
     >
-      <MaterialIcon
-        class="h-10"
-        :filename="file.name"
-      />
+      <MaterialIcon class="h-10" :filename="file.name" />
       <div class="flex flex-col">
         <p>{{ file.name }}</p>
         <p>{{ file.size / 1_000_000 }} MB</p>
       </div>
-      <button
-        class="text-red-500"
-        @click="files.splice(index, 1)"
-      >
+      <button class="text-red-500" @click="files.splice(index, 1)">
         <TranslatedText identifier="buttons.delete" />
       </button>
     </li>
   </ul>
 
-  <button
-    class="primary p-2 w-full"
-    @click="() => submitArticle()"
-  >
+  <button class="primary p-2 w-full" @click="() => submitArticle()">
     <TranslatedText identifier="buttons.save" />
   </button>
 </template>

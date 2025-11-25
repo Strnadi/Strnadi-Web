@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { getUsers } from '@/api/account';
 import { accountStore } from '@/state/AccountStore';
@@ -54,9 +54,7 @@ const { data: users, isLoading } = useQuery({
         </div>
 
         <div class="flex flex-row justify-between">
-          <button class="secondary p-2">
-            Poslat oznámení
-          </button>
+          <button class="secondary p-2">Poslat oznámení</button>
         </div>
       </PrefetchLink>
     </ul>

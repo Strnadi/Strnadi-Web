@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import Close from '@/icons/interface/icon-close.svg';
 import Back from '@/icons/interface/icon-back.svg';
 import { useRouter } from 'vue-router';
@@ -17,10 +17,7 @@ const closePopup = () => {
 <template>
   <router-view v-slot="{ Component }">
     <Transition>
-      <aside
-        class="center"
-        @keydown.escape="closePopup"
-      >
+      <aside class="center" @keydown.escape="closePopup">
         <button
           class="small absolute top-5 left-5 z-10 rounded-2xl"
           @click="goBack"

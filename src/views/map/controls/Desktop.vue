@@ -34,10 +34,7 @@ const searchText = ref('');
 
     <div class="flex flex-row-reverse items-end">
       <div class="flex flex-col">
-        <div
-          v-if="toolsShown"
-          class="flex flex-col-reverse gap-x-2"
-        >
+        <div v-if="toolsShown" class="flex flex-col-reverse gap-x-2">
           <button
             v-wave
             class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
@@ -62,10 +59,7 @@ const searchText = ref('');
           class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
           @click="toolsShown = !toolsShown"
         >
-          <OptionsIcon
-            width="32"
-            height="32"
-          />
+          <OptionsIcon width="32" height="32" />
         </button>
       </div>
 
@@ -74,10 +68,7 @@ const searchText = ref('');
         class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
         to="/mapa/legenda"
       >
-        <InfoIcon
-          width="32"
-          height="32"
-        />
+        <InfoIcon width="32" height="32" />
       </PrefetchLink>
 
       <select
@@ -85,35 +76,19 @@ const searchText = ref('');
         class="filter-select drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100"
         aria-label="Filter recordings"
       >
-        <option value="all">
-          Všechny nahrávky
-        </option>
+        <option value="all">Všechny nahrávky</option>
 
-        <option value="new">
-          Jen nové nahrávky
-        </option>
+        <option value="new">Jen nové nahrávky</option>
 
-        <option value="old">
-          Jen staré nahrávky
-        </option>
+        <option value="old">Jen staré nahrávky</option>
 
-        <option
-          v-if="accountStore.user"
-          value="my"
-        >
-          Jen moje nahrávky
-        </option>
+        <option v-if="accountStore.user" value="my">Jen moje nahrávky</option>
 
-        <option
-          v-if="accountStore.user"
-          value="others"
-        >
+        <option v-if="accountStore.user" value="others">
           Jen nahrávky ostatních
         </option>
 
-        <option value="any-dialect">
-          Jen nahrávky s dialektem
-        </option>
+        <option value="any-dialect">Jen nahrávky s dialektem</option>
       </select>
     </div>
   </div>

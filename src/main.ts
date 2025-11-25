@@ -4,7 +4,13 @@ import posthogPlugin from '@/plugins/vue/posthog';
 import firebasePlugin from '@/plugins/vue/firebase';
 import Vue3RouterPrefetch from 'vue3-router-prefetch';
 import axios from 'axios';
-import { createApp, defineCustomElement } from 'vue';
+import {
+  // createApp,
+  createVaporApp,
+  vaporInteropPlugin,
+  defineCustomElement,
+  defineVaporCustomElement
+} from 'vue';
 import {
   createRouter,
   createWebHistory,
@@ -23,7 +29,7 @@ import VueVirtualScroller from 'vue-virtual-scroller';
 import VueClickAway from 'vue3-click-away';
 import VWave from 'v-wave';
 import vSelect from 'vue-select';
-import VueDatePicker from '@vuepic/vue-datepicker';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
 import ExpandableImage from '@/components/ExpandableImage.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import { ApiError } from '@/classes/api-error';
@@ -232,10 +238,10 @@ const serverGuard = (
 // }
 
 let routes: RouteRecordRaw[];
-routes = generatedRoutes;
+routes = generatedRoutes as RouteRecordRaw[];
 // routes = removeUnlayoutedRoutes(routes, initialIsDesktop);
 routes = removeLayoutsRecursively(routes, initialIsDesktop);
-routes = setupLayouts(routes);
+routes = setupLayouts(routes) as RouteRecordRaw[];
 // routes = nameRoutes(routes, "guest", route => route.meta?.auth === false);
 // routes = nameRoutes(routes, "auth", route => !!route.meta?.auth);
 // routes = nameRoutes(routes, "admin", route => !!route.meta?.admin);
@@ -249,7 +255,12 @@ routes = routes.guarded(welcomeGuard);
 
 // console.log(routes)
 
-const app = createApp(App);
+// @ts-expect-error
+const app = createVaporApp(App);
+
+// Once the world is in a stable state, we can remove this
+app.use(vaporInteropPlugin);
+
 const router = createRouter({
   history: createWebHistory(),
   routes: routes,
@@ -327,9 +338,9 @@ const autoScrollbar = {
 app.use(router);
 app.use(firebasePlugin);
 app.use(VueQueryPlugin);
-app.use(Vue3RouterPrefetch, { type: 'hover', name: 'PrefetchLink' });
+app.use(Vue3RouterPrefetch as any, { type: 'hover', name: 'PrefetchLink' });
 app.use(VWave, {
-  duration: 0.1
+  duration: 0.2
 });
 app.use(VueClickAway);
 app.use(VueVirtualScroller);

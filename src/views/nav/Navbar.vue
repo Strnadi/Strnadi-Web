@@ -43,10 +43,7 @@ const changeLanguage = (lang: keyof typeof translations) => {
           class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc] shrink-0"
         >
           <PrefetchLink to="/vitejte">
-            <img
-              src="/logo.svg"
-              alt="Logo"
-            >
+            <img src="/logo.svg" alt="Logo" />
           </PrefetchLink>
         </div>
 
@@ -63,40 +60,27 @@ const changeLanguage = (lang: keyof typeof translations) => {
           <ul class="flex flex-row gap-x-4 items-center">
             <template v-if="accountStore.user">
               <li>
-                <PrefetchLink
-                  v-wave
-                  to="/mapa/nahrat"
-                  class="dropdown-item"
-                >
+                <PrefetchLink v-wave to="/mapa/nahrat" class="dropdown-item">
                   <UploadIcon />
                   <TranslatedText identifier="upload.title" />
                 </PrefetchLink>
               </li>
             </template>
 
-            <Dropdown
-              v-for="category in categories"
-              :key="category.name"
-            >
+            <Dropdown v-for="category in categories" :key="category.name">
               <template #title>
                 {{ category.label }}
                 <DropdownIcon />
               </template>
 
-              <li
-                v-for="article in category.articles"
-                :key="article.id"
-              >
+              <li v-for="article in category.articles" :key="article.id">
                 <prefetch-link
                   v-wave
                   :to="`/informace/${category.name}/${kebabize(article.name)}`"
                   class="dropdown-item !flex !flex-col !items-start"
                 >
                   <span>{{ article.name }}</span>
-                  <span
-                    v-if="article.description"
-                    class="italic"
-                  >
+                  <span v-if="article.description" class="italic">
                     {{ article.description }}
                   </span>
                 </prefetch-link>

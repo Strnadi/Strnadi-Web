@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { getArticleCategories } from '@/api/articles';
 import { useQuery } from '@tanstack/vue-query';
 import TranslatedText from '@/components/TranslatedText.vue';

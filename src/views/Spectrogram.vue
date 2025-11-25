@@ -33,13 +33,13 @@
         <div
           v-if="
             showHoverLine &&
-              isLoaded &&
-              !isPanning &&
-              !isDraggingProgress &&
-              draggingRangeId === null &&
-              !isSelecting &&
-              !isSpacePanningActive &&
-              !isSpacebarPressed
+            isLoaded &&
+            !isPanning &&
+            !isDraggingProgress &&
+            draggingRangeId === null &&
+            !isSelecting &&
+            !isSpacePanningActive &&
+            !isSpacebarPressed
           "
           class="hover-line absolute top-0 h-full w-0.5 pointer-events-none"
           :style="{
@@ -51,10 +51,7 @@
         />
 
         <!-- Already‐committed ranges -->
-        <template
-          v-for="r in visibleRanges"
-          :key="r.id"
-        >
+        <template v-for="r in visibleRanges" :key="r.id">
           <div
             class="range-fill absolute opacity-50 rounded"
             :style="{
@@ -335,10 +332,7 @@
           v-if="isPaused || currentTime > 0"
           identifier="common.buttons.play"
         />
-        <TranslatedText
-          v-else
-          identifier="common.buttons.resume"
-        />
+        <TranslatedText v-else identifier="common.buttons.resume" />
       </button>
       <button
         class="px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300 active:enabled:bg-gray-400 transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation"
@@ -376,7 +370,7 @@
           type="checkbox"
           :disabled="autoScroll"
           class="mr-1.5 align-middle w-4 h-4"
-        >
+        />
         <TranslatedText
           identifier="common.playback_options.play_in_viewport_only"
         />
@@ -389,7 +383,7 @@
           type="checkbox"
           :disabled="autoScroll || !isProgressInSelection"
           class="mr-1.5 align-middle w-4 h-4"
-        >
+        />
         <TranslatedText
           identifier="common.playback_options.play_in_selection_only"
         />
@@ -401,7 +395,7 @@
           v-model="loopPlayback"
           type="checkbox"
           class="mr-1.5 align-middle w-4 h-4"
-        >
+        />
         <TranslatedText identifier="common.playback_options.loop_playback" />
       </label>
       <label
@@ -411,16 +405,13 @@
           v-model="autoScroll"
           type="checkbox"
           class="mr-1.5 align-middle w-4 h-4"
-        >
+        />
         <TranslatedText identifier="common.playback_options.auto_scroll" />
       </label>
     </div>
 
     <!-- Scrollbars -->
-    <div
-      v-if="isLoaded"
-      class="w-full px-2 sm:px-2.5 mt-2 sm:mt-2.5 space-y-2"
-    >
+    <div v-if="isLoaded" class="w-full px-2 sm:px-2.5 mt-2 sm:mt-2.5 space-y-2">
       <!-- Pan Scrollbar -->
       <div
         v-if="spectrogramData.length > 0 && maxOffsetIndex > 0"
@@ -503,10 +494,7 @@
               zIndex: 1
             }"
           />
-          <div
-            class="h-full bg-blue-400 rounded"
-            style="z-index: 2"
-          />
+          <div class="h-full bg-blue-400 rounded" style="z-index: 2" />
         </div>
       </div>
 
@@ -557,7 +545,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import {
   ref,
   computed,

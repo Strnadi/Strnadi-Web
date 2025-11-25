@@ -31,10 +31,7 @@ const { data: categories } = useQuery({
         {{ category.label }}
       </h2>
       <ul class="flex flex-col gap-2">
-        <li
-          v-for="article in category.articles"
-          :key="article.id"
-        >
+        <li v-for="article in category.articles" :key="article.id">
           <router-link
             v-wave
             :to="`/informace/${category.name}/${kebabize(article.name)}`"

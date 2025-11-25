@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed } from 'vue';
 
 const props = defineProps({
@@ -23,11 +23,7 @@ const calculateFillAmount = (segmentIndex: number) => {
 
 <template>
   <div class="segmented-progress-bar">
-    <div
-      v-for="segmentIndex in segments"
-      :key="segmentIndex"
-      class="segment"
-    >
+    <div v-for="segmentIndex in segments" :key="segmentIndex" class="segment">
       <div
         class="segment-fill"
         :style="{ width: `${calculateFillAmount(segmentIndex) * 100}%` }"

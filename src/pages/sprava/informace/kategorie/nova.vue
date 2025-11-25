@@ -3,7 +3,7 @@ meta:
   layout: desktop/center
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref } from 'vue';
 import { useQuery, useMutation } from '@tanstack/vue-query';
 import {
@@ -65,13 +65,13 @@ const { mutate: submitCategory } = useMutation({
       type="text"
       :placeholder="t('placeholders.title')"
       class="p-2"
-    >
+    />
     <input
       v-model="label"
       type="text"
       :placeholder="t('placeholders.description')"
       class="p-2"
-    >
+    />
     <div>
       <h2>
         <TranslatedText identifier="admin.articles.included_articles" />
@@ -87,8 +87,10 @@ const { mutate: submitCategory } = useMutation({
             <button>
               <TranslatedText identifier="buttons.delete" />
             </button>
-            <span>{{ articles?.find((a) => a.id === article)?.name }} (ID:
-              {{ articles?.find((a) => a.id === article)?.id }})</span>
+            <span
+              >{{ articles?.find((a) => a.id === article)?.name }} (ID:
+              {{ articles?.find((a) => a.id === article)?.id }})</span
+            >
           </div>
         </template>
 
@@ -104,10 +106,7 @@ const { mutate: submitCategory } = useMutation({
         </template>
       </draggable>
     </div>
-    <button
-      class="primary p-2"
-      @click="submitCategory"
-    >
+    <button class="primary p-2" @click="submitCategory">
       <TranslatedText identifier="buttons.add" />
     </button>
   </div>

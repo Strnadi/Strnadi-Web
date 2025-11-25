@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import LocationSearch from '@/components/map/LocationSearch.vue';
 import { MapStore } from '@/views/map/RecordingsMap.vue';
 import LocationArrowIcon from '@/icons/interface/icon-location-arrow.svg';
@@ -42,40 +42,21 @@ const { coords, isSupported: isGeolocationSupported } = useGeolocation();
         class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
         to="/mapa/legenda"
       >
-        <InfoIcon
-          width="24"
-          height="24"
-        />
+        <InfoIcon width="24" height="24" />
       </PrefetchLink>
       <button
         class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
         @click="MapStore.scale = !MapStore.scale"
       >
-        <RulerIcon
-          v-if="!MapStore.scale"
-          width="24"
-          height="24"
-        />
-        <FilledRulerIcon
-          v-else
-          width="24"
-          height="24"
-        />
+        <RulerIcon v-if="!MapStore.scale" width="24" height="24" />
+        <FilledRulerIcon v-else width="24" height="24" />
       </button>
       <button
         class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
         @click="MapStore.aerial = !MapStore.aerial"
       >
-        <PictureIcon
-          v-if="!MapStore.aerial"
-          width="24"
-          height="24"
-        />
-        <MapIcon
-          v-else
-          width="24"
-          height="24"
-        />
+        <PictureIcon v-if="!MapStore.aerial" width="24" height="24" />
+        <MapIcon v-else width="24" height="24" />
       </button>
     </div>
   </div>

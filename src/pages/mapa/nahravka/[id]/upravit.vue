@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRouteParams } from '@vueuse/router';
@@ -80,10 +80,7 @@ async function save() {
   <template v-else>
     <div class="space-y-4 max-w-lg">
       <div>
-        <label
-          for="name"
-          class="block text-sm font-medium text-gray-700"
-        >
+        <label for="name" class="block text-sm font-medium text-gray-700">
           <TranslatedText identifier="labels.title" />
         </label>
         <input
@@ -91,13 +88,10 @@ async function save() {
           v-model="name"
           type="text"
           class="mt-1 block w-full border px-3 py-2 rounded"
-        >
+        />
       </div>
       <div>
-        <label
-          for="note"
-          class="block text-sm font-medium text-gray-700"
-        >
+        <label for="note" class="block text-sm font-medium text-gray-700">
           <TranslatedText identifier="labels.note" />
         </label>
         <textarea
@@ -108,18 +102,10 @@ async function save() {
         />
       </div>
       <div class="space-x-2">
-        <button
-          class="success"
-          :disabled="saving"
-          @click="save"
-        >
+        <button class="success" :disabled="saving" @click="save">
           {{ saving ? t('states.saving') : t('buttons.save') }}
         </button>
-        <button
-          class="secondary"
-          :disabled="saving"
-          @click="router.back()"
-        >
+        <button class="secondary" :disabled="saving" @click="router.back()">
           <TranslatedText identifier="buttons.cancel" />
         </button>
       </div>
