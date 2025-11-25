@@ -23,7 +23,7 @@ import VueVirtualScroller from 'vue-virtual-scroller';
 import VueClickAway from 'vue3-click-away';
 import VWave from 'v-wave';
 import vSelect from 'vue-select';
-import VueDatePicker from '@vuepic/vue-datepicker';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
 import ExpandableImage from '@/components/ExpandableImage.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import { ApiError } from '@/classes/api-error';
@@ -232,10 +232,10 @@ const serverGuard = (
 // }
 
 let routes: RouteRecordRaw[];
-routes = generatedRoutes;
+routes = generatedRoutes as RouteRecordRaw[];
 // routes = removeUnlayoutedRoutes(routes, initialIsDesktop);
 routes = removeLayoutsRecursively(routes, initialIsDesktop);
-routes = setupLayouts(routes);
+routes = setupLayouts(routes) as RouteRecordRaw[];
 // routes = nameRoutes(routes, "guest", route => route.meta?.auth === false);
 // routes = nameRoutes(routes, "auth", route => !!route.meta?.auth);
 // routes = nameRoutes(routes, "admin", route => !!route.meta?.admin);

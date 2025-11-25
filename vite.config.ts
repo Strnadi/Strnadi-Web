@@ -132,7 +132,7 @@ export default defineConfig({
         ]
       }
     }),
-    Compression({ algorithm: 'brotliCompress' }),
+    Compression({ algorithms: ['brotliCompress'] }),
     SentryVitePlugin({
       org: 'delta-strnadi',
       project:
@@ -199,7 +199,7 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: /leaflet\/dist\/leaflet-src\.js(\?commonjs-es-import)?$/,
+        find: /leaflet\/dist\/leaflet-src\.js/,
         replacement: 'leaflet/dist/leaflet-src.esm.js'
       }
     ]
