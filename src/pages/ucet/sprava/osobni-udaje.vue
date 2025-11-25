@@ -106,9 +106,16 @@ const submit = () => {
   <h2>
     <TranslatedText identifier="account.personal_data.title" />
   </h2>
-  <form ref="form" class="flex flex-col gap-y-2" @submit.prevent="submit">
+  <form
+    ref="form"
+    class="flex flex-col gap-y-2"
+    @submit.prevent="submit"
+  >
     <div>
-      <label for="name" class="block text-sm font-medium mb-1">
+      <label
+        for="name"
+        class="block text-sm font-medium mb-1"
+      >
         <TranslatedText identifier="labels.name" />
       </label>
       <input
@@ -118,10 +125,13 @@ const submit = () => {
         type="text"
         :placeholder="t('placeholders.name')"
         class="w-full p-2 border rounded"
-      />
+      >
     </div>
     <div>
-      <label for="surname" class="block text-sm font-medium mb-1">
+      <label
+        for="surname"
+        class="block text-sm font-medium mb-1"
+      >
         <TranslatedText identifier="labels.surname" />
       </label>
       <input
@@ -131,10 +141,13 @@ const submit = () => {
         type="text"
         :placeholder="t('placeholders.surname')"
         class="w-full p-2 border rounded"
-      />
+      >
     </div>
     <div>
-      <label for="nickname" class="block text-sm font-medium mb-1">
+      <label
+        for="nickname"
+        class="block text-sm font-medium mb-1"
+      >
         <TranslatedText identifier="labels.nickname" />
       </label>
       <input
@@ -144,10 +157,13 @@ const submit = () => {
         type="text"
         :placeholder="t('placeholders.nickname')"
         class="w-full p-2 border rounded"
-      />
+      >
     </div>
     <div>
-      <label for="zipcode" class="block text-sm font-medium mb-1">
+      <label
+        for="zipcode"
+        class="block text-sm font-medium mb-1"
+      >
         <TranslatedText identifier="labels.postal_code" />
       </label>
       <input
@@ -157,7 +173,7 @@ const submit = () => {
         type="number"
         :placeholder="t('placeholders.postal_code')"
         class="w-full p-2 border rounded"
-      />
+      >
     </div>
     <LocationSearch
       v-model="town"
@@ -170,7 +186,7 @@ const submit = () => {
     </button>
   </form>
 
-  <hr class="my-4 px-8" />
+  <hr class="my-4 px-8">
 
   <h2>
     <TranslatedText identifier="account.personal_data.password_section_title" />

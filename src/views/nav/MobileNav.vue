@@ -36,7 +36,7 @@ import DownloadIcon from '@/icons/interface/icon-download.svg';
       v-wave
       to="/mapa/nahrat"
       class="flex flex-1 justify-center items-center"
-      :class="{ 'bg-gray-100': $route.path.startsWith('/nahrat') }"
+      :class="{ 'bg-gray-100': $route.path.startsWith('/mapa/nahrat') }"
     >
       <UploadIcon />
     </prefetch-link>
@@ -45,21 +45,9 @@ import DownloadIcon from '@/icons/interface/icon-download.svg';
       v-wave
       to="/aplikace"
       class="flex flex-1 justify-center items-center"
-      :class="{ 'bg-gray-100': $route.path.startsWith('/informace') }"
+      :class="{ 'bg-gray-100': $route.path.startsWith('/aplikace') }"
     >
       <DownloadIcon />
-    </prefetch-link>
-
-    <prefetch-link
-      v-if="accountStore.user"
-      v-wave
-      to="/ucet/sprava/moje-nahravky"
-      class="flex flex-1 justify-center items-center"
-      :class="{
-        'bg-gray-100': $route.path.startsWith('/ucet/sprava/moje-nahravky')
-      }"
-    >
-      <ListIcon />
     </prefetch-link>
 
     <prefetch-link

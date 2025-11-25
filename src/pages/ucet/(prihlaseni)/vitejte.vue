@@ -10,7 +10,7 @@ import TranslatedText from '@/components/TranslatedText.vue';
 
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
-    <img src="/logo-no-text.svg" />
+    <img src="/logo-no-text.svg">
     <h1 class="text-center">
       <TranslatedText identifier="project_name" />
     </h1>
@@ -41,7 +41,10 @@ import TranslatedText from '@/components/TranslatedText.vue';
       </span>
     </HorizontalLineWithText>
 
-    <router-link to="/" class="p-2">
+    <router-link
+      to="/"
+      class="p-2"
+    >
       <TranslatedText identifier="auth.welcome.continue_without_account" />
     </router-link>
   </div>

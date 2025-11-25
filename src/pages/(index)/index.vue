@@ -18,7 +18,7 @@ useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
   } else if (square) {
     // TODO: this gets cancelled for some reason
     // Error: Navigation cancelled from "/" to "/mapa/ctverec/5658" with a new navigation.
-    router.push(`/mapa/ctverec/${square}`);
+    console.log(router.push(`/mapa/ctverec/${square}`));
   } else {
     router.push('/');
   }
@@ -26,7 +26,10 @@ useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
 </script>
 
 <template>
-  <div v-if="!isDesktop" class="relative flex flex-1">
+  <div
+    v-if="!isDesktop"
+    class="relative flex flex-1"
+  >
     <Map />
     <MapControls />
   </div>

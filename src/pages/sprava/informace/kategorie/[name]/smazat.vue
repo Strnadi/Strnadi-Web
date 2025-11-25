@@ -32,7 +32,10 @@ const handleDeleteCategory = () => {
     <TranslatedText identifier="admin.articles.delete_category_title" />
     {{ name }}
   </h1>
-  <button class="danger" @click="handleDeleteCategory">
+  <button
+    class="danger"
+    @click="handleDeleteCategory"
+  >
     <TranslatedText identifier="buttons.delete" />
   </button>
 </template>

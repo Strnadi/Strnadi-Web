@@ -33,13 +33,13 @@
         <div
           v-if="
             showHoverLine &&
-            isLoaded &&
-            !isPanning &&
-            !isDraggingProgress &&
-            draggingRangeId === null &&
-            !isSelecting &&
-            !isSpacePanningActive &&
-            !isSpacebarPressed
+              isLoaded &&
+              !isPanning &&
+              !isDraggingProgress &&
+              draggingRangeId === null &&
+              !isSelecting &&
+              !isSpacePanningActive &&
+              !isSpacebarPressed
           "
           class="hover-line absolute top-0 h-full w-0.5 pointer-events-none"
           :style="{
@@ -51,7 +51,10 @@
         />
 
         <!-- Already‐committed ranges -->
-        <template v-for="r in visibleRanges" :key="r.id">
+        <template
+          v-for="r in visibleRanges"
+          :key="r.id"
+        >
           <div
             class="range-fill absolute opacity-50 rounded"
             :style="{
@@ -329,10 +332,13 @@
         @click="playAudio"
       >
         <TranslatedText
-          identifier="common.buttons.play"
           v-if="isPaused || currentTime > 0"
+          identifier="common.buttons.play"
         />
-        <TranslatedText identifier="common.buttons.resume" v-else />
+        <TranslatedText
+          v-else
+          identifier="common.buttons.resume"
+        />
       </button>
       <button
         class="px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300 active:enabled:bg-gray-400 transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation"
@@ -370,7 +376,7 @@
           type="checkbox"
           :disabled="autoScroll"
           class="mr-1.5 align-middle w-4 h-4"
-        />
+        >
         <TranslatedText
           identifier="common.playback_options.play_in_viewport_only"
         />
@@ -383,7 +389,7 @@
           type="checkbox"
           :disabled="autoScroll || !isProgressInSelection"
           class="mr-1.5 align-middle w-4 h-4"
-        />
+        >
         <TranslatedText
           identifier="common.playback_options.play_in_selection_only"
         />
@@ -395,7 +401,7 @@
           v-model="loopPlayback"
           type="checkbox"
           class="mr-1.5 align-middle w-4 h-4"
-        />
+        >
         <TranslatedText identifier="common.playback_options.loop_playback" />
       </label>
       <label
@@ -405,13 +411,16 @@
           v-model="autoScroll"
           type="checkbox"
           class="mr-1.5 align-middle w-4 h-4"
-        />
+        >
         <TranslatedText identifier="common.playback_options.auto_scroll" />
       </label>
     </div>
 
     <!-- Scrollbars -->
-    <div v-if="isLoaded" class="w-full px-2 sm:px-2.5 mt-2 sm:mt-2.5 space-y-2">
+    <div
+      v-if="isLoaded"
+      class="w-full px-2 sm:px-2.5 mt-2 sm:mt-2.5 space-y-2"
+    >
       <!-- Pan Scrollbar -->
       <div
         v-if="spectrogramData.length > 0 && maxOffsetIndex > 0"
@@ -494,7 +503,10 @@
               zIndex: 1
             }"
           />
-          <div class="h-full bg-blue-400 rounded" style="z-index: 2" />
+          <div
+            class="h-full bg-blue-400 rounded"
+            style="z-index: 2"
+          />
         </div>
       </div>
 
@@ -740,13 +752,13 @@ function setColorAlpha(color: string, alpha: number): string {
   const parsedColor = ctx.fillStyle;
 
   // Try to extract RGB values from various formats
-  const rgbMatch = parsedColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  const rgbMatch = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(parsedColor);
   if (rgbMatch) {
     return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${alpha})`;
   }
 
   // Try HSL format
-  const hslMatch = parsedColor.match(/hsla?\((\d+),\s*(\d+)%,\s*(\d+)%/);
+  const hslMatch = /hsla?\((\d+),\s*(\d+)%,\s*(\d+)%/.exec(parsedColor);
   if (hslMatch) {
     return `hsla(${hslMatch[1]}, ${hslMatch[2]}%, ${hslMatch[3]}%, ${alpha})`;
   }
@@ -1645,7 +1657,7 @@ async function loadAndProcessAudio() {
         sampleCount: number;
       }
 
-      const sortedSelections = [...props.selected!]
+      const sortedSelections = [...props.selected]
         .slice()
         .sort((a, b) =>
           a.start === b.start ? a.end - b.end : a.start - b.start
@@ -1753,11 +1765,11 @@ async function loadAndProcessAudio() {
         })
       );
 
-      type SelectionPayload = {
+      interface SelectionPayload {
         selectionIndex: number;
-        data: Uint8Array<ArrayBufferLike>;
+        data: Uint8Array;
         sampleCount: number;
-      };
+      }
 
       const partPayloads: SelectionPayload[] = [];
       for (const payload of fetchedParts) {
@@ -1816,7 +1828,7 @@ async function loadAndProcessAudio() {
     }
     const segments: Segment[] = [];
 
-    for (const sel of props.selected!) {
+    for (const sel of props.selected) {
       const selStart = Math.max(0, sel.start);
       const selEnd = Math.min(cum, sel.end);
       if (selEnd <= selStart) continue;
@@ -1859,9 +1871,10 @@ async function loadAndProcessAudio() {
     }
 
     segments.sort((a, b) => a.idx - b.idx || a.start - b.start);
-    const merged: Array<
-      Segment & { destSampleStart?: number; expectedSamples?: number }
-    > = [];
+    const merged: (Segment & {
+      destSampleStart?: number;
+      expectedSamples?: number;
+    })[] = [];
     for (const seg of segments) {
       const last = merged[merged.length - 1];
       if (last && last.idx === seg.idx && seg.start <= last.end + 1) {
@@ -2290,7 +2303,6 @@ function renderSpectrogram() {
   updateProgressLinePosition();
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function drawAxes(v0: number, v1: number) {
   if (!canvasRef.value) return;
   const ctx = canvasRef.value.getContext('2d');
@@ -4717,7 +4729,7 @@ async function fetchArrayBufferWithProgress(url: string): Promise<ArrayBuffer> {
     let lastLoaded = 0;
     let registeredTotalForDownload = 0;
 
-    xhr.onprogress = (event: ProgressEvent<EventTarget>) => {
+    xhr.onprogress = (event: ProgressEvent) => {
       if (event.lengthComputable && registeredTotalForDownload === 0) {
         registeredTotalForDownload = incrementTotalBytes(event.total);
       }

@@ -179,14 +179,11 @@ export default defineConfig({
 
   build: {
     target: 'ESNext',
+    cssTarget: 'es2022',
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-
-          return;
+        advancedChunks: {
+          groups: [{ name: 'vendor', test: /node_modules/ }]
         }
       }
     },

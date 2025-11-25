@@ -40,9 +40,15 @@ const goHome = () => {
       <div class="flex w-screen h-screen"><span class="m-auto">Upusťte soubory pro nahrání</span></div>
     </template> -->
 
-  <div class="flex min-w-svw min-h-svh" @keyup.escape="goHome">
+  <div
+    class="flex min-w-svw min-h-svh"
+    @keyup.escape="goHome"
+  >
     <Navbar />
-    <aside v-if="applicationStore.notifications.length" class="notifications">
+    <aside
+      v-if="applicationStore.notifications.length"
+      class="notifications"
+    >
       <ul class="flex flex-col-reverse gap-y-2">
         <li
           v-for="(notification, index) in applicationStore.notifications"

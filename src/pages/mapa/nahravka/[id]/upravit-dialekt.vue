@@ -283,7 +283,9 @@ function computeRangeColors(meta: SegmentMeta) {
   if (!codes.length) {
     return [DEFAULT_SEGMENT_COLOR];
   }
-  return codes.map((code) => resolveDialectColor(code));
+  return codes.map((code) => {
+    resolveDialectColor(code);
+  });
 }
 
 function createRangeFromMeta(meta: SegmentMeta): SpectrogramRange {
@@ -301,7 +303,9 @@ function syncSegmentRanges(
   oldRanges: SpectrogramRange[]
 ) {
   const newIds = new Set(newRanges.map((r) => r.id));
-  newRanges.forEach((range) => applyRangeMeta(range));
+  newRanges.forEach((range) => {
+    applyRangeMeta(range);
+  });
   oldRanges.forEach((range) => {
     if (!newIds.has(range.id)) {
       handleRangeRemoved(range);
@@ -388,7 +392,7 @@ function removeSegment(meta: SegmentMeta) {
 }
 
 function restoreSegment(meta: SegmentMeta) {
-  if (meta.isNew || meta.markedForDeletion === false) return;
+  if (meta.isNew || !meta.markedForDeletion) return;
   meta.markedForDeletion = false;
   if (!segments.value.some((range) => range.id === meta.key)) {
     segments.value = [...segments.value, createRangeFromMeta(meta)];
@@ -614,11 +618,12 @@ const createDetection = async (meta: SegmentMeta) => {
       <Spectrogram
         v-if="
           recording &&
-          recording.parts &&
-          segments &&
-          availableDialects.length > 0
+            recording.parts &&
+            segments &&
+            availableDialects.length > 0
         "
         v-model:selected="segments"
+        v-model:current-time="currentTime"
         :audio-urls="
           recording.parts.map(
             (p) =>
@@ -630,7 +635,6 @@ const createDetection = async (meta: SegmentMeta) => {
         :min-frequency="3000"
         :selection-color-resolver="selectionColorResolver"
         :readonly="!canEditDialects"
-        v-model:currentTime="currentTime"
       />
 
       <div
@@ -674,14 +678,23 @@ const createDetection = async (meta: SegmentMeta) => {
         </div>
       </div>
 
-      <p v-if="!canEditDialects" class="text-sm text-gray-500">
+      <p
+        v-if="!canEditDialects"
+        class="text-sm text-gray-500"
+      >
         Pro úpravy se prosím přihlaste.
       </p>
 
-      <p v-if="segmentError" class="text-sm text-red-600">
+      <p
+        v-if="segmentError"
+        class="text-sm text-red-600"
+      >
         {{ segmentError }}
       </p>
-      <p v-if="segmentSuccess" class="text-sm text-emerald-600">
+      <p
+        v-if="segmentSuccess"
+        class="text-sm text-emerald-600"
+      >
         {{ segmentSuccess }}
       </p>
 
@@ -746,7 +759,7 @@ const createDetection = async (meta: SegmentMeta) => {
                     ($event.target as HTMLInputElement).checked
                   )
                 "
-              />
+              >
               Reprezentant
             </label>
           </div>
@@ -761,15 +774,22 @@ const createDetection = async (meta: SegmentMeta) => {
             </button>
           </div>
 
-          <div v-if="meta.filteredPart" class="space-y-3">
-            <h3 class="text-sm font-semibold">Detekované dialekty</h3>
+          <div
+            v-if="meta.filteredPart"
+            class="space-y-3"
+          >
+            <h3 class="text-sm font-semibold">
+              Detekované dialekty
+            </h3>
 
             <div
               v-for="detected in meta.filteredPart.detectedDialects ?? []"
               :key="detected.id"
               class="border border-gray-200 rounded-md p-3 space-y-3"
             >
-              <div class="text-xs text-gray-500">ID #{{ detected.id }}</div>
+              <div class="text-xs text-gray-500">
+                ID #{{ detected.id }}
+              </div>
 
               <div class="flex flex-row w-full items-center gap-2 text-sm">
                 <label class="flex flex-col flex-1 gap-1">
@@ -853,7 +873,9 @@ const createDetection = async (meta: SegmentMeta) => {
             <div
               class="border border-dashed border-gray-300 rounded-md p-3 space-y-2"
             >
-              <p class="text-xs text-gray-500">Přidat nový záznam</p>
+              <p class="text-xs text-gray-500">
+                Přidat nový záznam
+              </p>
               <div class="flex flex-row w-full items-center gap-2 text-sm">
                 <label
                   v-if="accountStore.user?.role === 'user'"
@@ -912,8 +934,13 @@ const createDetection = async (meta: SegmentMeta) => {
         </article>
       </section>
 
-      <section v-if="deletedSegmentMetas.length" class="space-y-2">
-        <h2 class="text-sm font-semibold">Úseky označené ke smazání</h2>
+      <section
+        v-if="deletedSegmentMetas.length"
+        class="space-y-2"
+      >
+        <h2 class="text-sm font-semibold">
+          Úseky označené ke smazání
+        </h2>
         <div
           v-for="meta in deletedSegmentMetas"
           :key="`deleted-${meta.key}`"
@@ -933,10 +960,16 @@ const createDetection = async (meta: SegmentMeta) => {
         </div>
       </section>
 
-      <p v-if="detectionError" class="text-sm text-red-600">
+      <p
+        v-if="detectionError"
+        class="text-sm text-red-600"
+      >
         {{ detectionError }}
       </p>
-      <p v-if="detectionMessage" class="text-sm text-emerald-600">
+      <p
+        v-if="detectionMessage"
+        class="text-sm text-emerald-600"
+      >
         {{ detectionMessage }}
       </p>
     </div>

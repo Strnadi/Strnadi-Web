@@ -54,7 +54,9 @@ const { data: users, isLoading } = useQuery({
         </div>
 
         <div class="flex flex-row justify-between">
-          <button class="secondary p-2">Poslat oznámení</button>
+          <button class="secondary p-2">
+            Poslat oznámení
+          </button>
         </div>
       </PrefetchLink>
     </ul>

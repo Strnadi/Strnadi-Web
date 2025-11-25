@@ -243,7 +243,10 @@ const getDialectColorWithAlpha = (
       <div
         class="flex flex-col sm:flex-row justify-around w-full text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-0 sm:divide-x divide-gray-300"
       >
-        <span v-if="recording.device" class="text-center sm:px-2">
+        <span
+          v-if="recording.device"
+          class="text-center sm:px-2"
+        >
           {{ recording.device }}
         </span>
         <span class="text-center sm:px-2">{{
@@ -253,7 +256,10 @@ const getDialectColorWithAlpha = (
         }}</span>
       </div>
 
-      <prefetch-link v-if="uploader" :to="`/uzivatel/${uploader.id}`">
+      <prefetch-link
+        v-if="uploader"
+        :to="`/uzivatel/${uploader.id}`"
+      >
         <UserCard :user="uploader" />
       </prefetch-link>
 
@@ -309,9 +315,9 @@ const getDialectColorWithAlpha = (
                 <p class="font-semibold text-sm sm:text-base truncate">
                   {{
                     fr.detectedDialects?.[0]?.confirmedDialect ??
-                    fr.detectedDialects?.[0]?.predictedDialect ??
-                    fr.detectedDialects?.[0]?.userGuessDialect ??
-                    t('recordings.detail.unknown_dialect')
+                      fr.detectedDialects?.[0]?.predictedDialect ??
+                      fr.detectedDialects?.[0]?.userGuessDialect ??
+                      t('recordings.detail.unknown_dialect')
                   }}
                 </p>
               </div>
@@ -319,8 +325,7 @@ const getDialectColorWithAlpha = (
                 v-if="fr.representantFlag"
                 class="text-lg sm:text-xl flex-shrink-0"
                 :style="{ color: getDialectColorWithAlpha(fr, 'star') }"
-                >★</span
-              >
+              >★</span>
             </div>
             <span class="text-xs sm:text-sm text-gray-600">
               {{ formatRelTime(fr.startDate) }} -
@@ -350,11 +355,16 @@ const getDialectColorWithAlpha = (
             <div
               class="p-2 bg-blue-100 border border-blue-300 rounded shadow-md"
             >
-              <h4 class="font-bold">Custom Tooltip!</h4>
+              <h4 class="font-bold">
+                Custom Tooltip!
+              </h4>
               <p>Range ID: {{ range.id }}</p>
               <p>Starts at: {{ range.start.toFixed(2) }}s</p>
               <p>Ends at: {{ range.end.toFixed(2) }}s</p>
-              <button class="text-blue-500 hover:underline mt-1" @click="close">
+              <button
+                class="text-blue-500 hover:underline mt-1"
+                @click="close"
+              >
                 Dismiss
               </button>
             </div>
@@ -368,7 +378,7 @@ const getDialectColorWithAlpha = (
         <prefetch-link
           v-if="
             accountStore.user?.role === 'admin' ||
-            accountStore.user?.id === recording.userId
+              accountStore.user?.id === recording.userId
           "
           :to="`./${recordingId}/upravit-dialekt`"
           class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
@@ -379,7 +389,7 @@ const getDialectColorWithAlpha = (
         <prefetch-link
           v-if="
             accountStore.user?.role == 'admin' ||
-            accountStore.user?.id == recording?.userId
+              accountStore.user?.id == recording?.userId
           "
           :to="`./${recordingId}/upravit`"
           class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
@@ -396,7 +406,7 @@ const getDialectColorWithAlpha = (
         <prefetch-link
           v-else-if="
             accountStore.user?.role == 'user' &&
-            accountStore.user?.id == recording.userId
+              accountStore.user?.id == recording.userId
           "
           :to="`./${recordingId}/smazat`"
           class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation"

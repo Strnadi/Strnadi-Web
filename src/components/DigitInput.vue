@@ -4,16 +4,16 @@
       v-for="(digit, index) in digitsArray"
       :key="index"
       ref="inputs"
+      v-model="digitsArray[index]"
       maxlength="1"
       type="text"
       inputmode="numeric"
       autocomplete="one-time-code"
       class="digit-input__field"
-      v-model="digitsArray[index]"
       @input="onInput($event, index)"
       @keydown="onKeydown($event, index)"
       @paste="onPaste"
-    />
+    >
   </div>
 </template>
 

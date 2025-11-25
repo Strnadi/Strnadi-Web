@@ -142,7 +142,11 @@ const login = () => {
 </script>
 
 <template>
-  <button :disabled="disabled" type="button" @click="login">
+  <button
+    :disabled="disabled"
+    type="button"
+    @click="login"
+  >
     <slot />
   </button>
 </template>

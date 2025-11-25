@@ -13,39 +13,60 @@ const user = accountStore.user!;
     <template #title>
       <div class="flex flex-row items-center">
         <ProfileIcon v-if="!user.profilePicture" />
-        <img v-else :src="user.profilePicture" />
+        <img
+          v-else
+          :src="user.profilePicture"
+        >
 
         <template v-if="user.nickname && !user.firstName && !user.lastName">
           @{{ user.nickname }}
         </template>
-        <template v-else> {{ user.firstName }} {{ user.lastName }} </template>
+        <template v-else>
+          {{ user.firstName }} {{ user.lastName }}
+        </template>
         <DropdownIcon />
       </div>
     </template>
     <li>
-      <PrefetchLink to="/ucet/muj-ucet" class="dropdown-item" v-wave>
+      <PrefetchLink
+        v-wave
+        to="/ucet/muj-ucet"
+        class="dropdown-item"
+      >
         Můj profil
       </PrefetchLink>
     </li>
     <li>
-      <PrefetchLink to="/ucet/sprava/oznameni" class="dropdown-item" v-wave>
+      <PrefetchLink
+        v-wave
+        to="/ucet/sprava/oznameni"
+        class="dropdown-item"
+      >
         Oznámení
       </PrefetchLink>
     </li>
     <li>
-      <PrefetchLink to="/nastaveni" class="dropdown-item" v-wave>
+      <PrefetchLink
+        v-wave
+        to="/nastaveni"
+        class="dropdown-item"
+      >
         Nastavení webové aplikace
       </PrefetchLink>
     </li>
     <li v-if="accountStore.user?.role === 'admin'">
-      <PrefetchLink to="/sprava" class="dropdown-item" v-wave>
+      <PrefetchLink
+        v-wave
+        to="/sprava"
+        class="dropdown-item"
+      >
         Administrace systému
       </PrefetchLink>
     </li>
     <li
+      v-wave
       class="cursor-pointer dropdown-item"
       @click="accountStore.logout"
-      v-wave
     >
       Odhlásit se
     </li>

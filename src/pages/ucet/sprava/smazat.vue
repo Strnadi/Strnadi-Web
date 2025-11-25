@@ -12,7 +12,11 @@ meta:
   </h2>
 
   <div class="flex flex-row items-center gap-x-2">
-    <input id="agreement" v-model="enabled" type="checkbox" />
+    <input
+      id="agreement"
+      v-model="enabled"
+      type="checkbox"
+    >
     <label for="agreement">
       <span class="text-sm">
         <TranslatedText identifier="account.delete.confirmation_label" />
@@ -20,7 +24,11 @@ meta:
     </label>
   </div>
 
-  <button class="primary p-2" :disabled="!enabled" @click="() => mutate()">
+  <button
+    class="primary p-2"
+    :disabled="!enabled"
+    @click="() => mutate()"
+  >
     <TranslatedText identifier="buttons.delete_account" />
   </button>
 </template>

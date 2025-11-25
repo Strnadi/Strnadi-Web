@@ -291,9 +291,7 @@ const markers = computed<Marker[]>(() => {
         }
 
         const colors = dialectStrings.map(
-          (ds) =>
-            DialectColors.value?.[ds as keyof typeof DialectColors.value] ??
-            '#000000'
+          (ds) => DialectColors.value?.[ds] ?? '#000000'
         );
         console.log(colors);
 

@@ -11,8 +11,17 @@ const closePopup = () => {
 
 <template>
   <router-view v-slot="{ Component, route }">
-    <aside class="small_popup" @click="closePopup" @keydown.escape="closePopup">
-      <div :key="`${route.path}`" @click.stop v-auto-scrollbar class="relative">
+    <aside
+      class="small_popup"
+      @click="closePopup"
+      @keydown.escape="closePopup"
+    >
+      <div
+        :key="`${route.path}`"
+        v-auto-scrollbar
+        class="relative"
+        @click.stop
+      >
         <button
           class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl"
           @click="closePopup"

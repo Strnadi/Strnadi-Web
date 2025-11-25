@@ -28,7 +28,7 @@ const { data: filteredPart } = useQuery({
     :src="`${env.VITE_API_URL}/recordings/part/${recordingId}/${partId}/sound`"
     controls
     class="w-full"
-  ></audio>
+  />
 
   <Spectrogram
     v-if="filteredPart"

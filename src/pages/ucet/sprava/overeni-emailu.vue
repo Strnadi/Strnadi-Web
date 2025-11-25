@@ -46,7 +46,10 @@ const resendEmail = () => {
   >
     <TranslatedText identifier="buttons.resend_verification" />
   </button>
-  <div v-if="isActive" class="flex flex-row">
+  <div
+    v-if="isActive"
+    class="flex flex-row"
+  >
     <p>{{ remaining }}s</p>
     <SegmentedProgress
       :progress="remaining"

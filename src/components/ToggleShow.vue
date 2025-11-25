@@ -1,8 +1,14 @@
 <template>
-  <button v-show="!visible" @click="visible = !visible">
+  <button
+    v-show="!visible"
+    @click="visible = !visible"
+  >
     <slot name="toggle-button" />
   </button>
-  <div v-show="visible" v-bind="$attrs">
+  <div
+    v-show="visible"
+    v-bind="$attrs"
+  >
     <slot />
   </div>
 </template>
