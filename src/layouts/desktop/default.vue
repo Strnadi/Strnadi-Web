@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { applicationStore } from '@/state/ApplicationStore';
 import Map, { MapEvents } from '@/views/map/RecordingsMap.vue';
 import MapControls from '@/views/map/controls/Desktop.vue';
@@ -10,6 +10,7 @@ import { soundAccept } from '@/pages/mapa/nahrat.vue';
 
 import { useRouter } from 'vue-router';
 import Dropzone from '@/components/Dropzone.vue';
+import { VaporRouterView } from 'vue-router';
 
 const router = useRouter();
 const goHome = () => {
@@ -69,7 +70,7 @@ const goHome = () => {
     </div>
   </div>
 
-  <router-view />
+  <VaporRouterView />
   <!-- </Dropzone> -->
 </template>
 

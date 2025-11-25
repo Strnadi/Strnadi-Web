@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed } from 'vue';
 import { useRouteParams } from '@vueuse/router';
 import { useQuery } from '@tanstack/vue-query';
@@ -114,9 +114,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
 <template>
   <div class="space-y-10">
     <template v-if="isUserLoading">
-      <p class="text-gray-500">
-        <TranslatedText identifier="loading" />...
-      </p>
+      <p class="text-gray-500"><TranslatedText identifier="loading" />...</p>
     </template>
     <template v-else-if="isUserError || !user">
       <p class="text-gray-500">
@@ -137,7 +135,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
             <div
               v-if="
                 accountStore.user?.id === user.id ||
-                  accountStore.user?.role === 'admin'
+                accountStore.user?.role === 'admin'
               "
             >
               <dt class="text-sm uppercase tracking-wide text-gray-500">
@@ -195,9 +193,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
               </dd>
             </div>
             <div v-if="accountStore.user?.role === 'admin'">
-              <dt class="text-sm uppercase tracking-wide text-gray-500">
-                ID
-              </dt>
+              <dt class="text-sm uppercase tracking-wide text-gray-500">ID</dt>
               <dd class="mt-1 text-base text-gray-900">
                 {{ user.id }}
               </dd>
@@ -212,34 +208,19 @@ const recordingsCount = computed(() => recordingsList.value.length);
                 identifier="pages.user_profile.recordings_section"
               />
             </h2>
-            <span
-              v-if="!isRecordingsLoading"
-              class="text-sm text-gray-500"
-            >
+            <span v-if="!isRecordingsLoading" class="text-sm text-gray-500">
               {{ recordingsCount }}
             </span>
           </div>
-          <div
-            v-if="isRecordingsLoading"
-            class="text-gray-500"
-          >
+          <div v-if="isRecordingsLoading" class="text-gray-500">
             <TranslatedText identifier="loading" />...
           </div>
-          <div
-            v-else-if="isRecordingsError"
-            class="text-red-600"
-          >
+          <div v-else-if="isRecordingsError" class="text-red-600">
             <TranslatedText identifier="errors.recordings.loading" />
           </div>
           <template v-else>
-            <ul
-              v-if="recordingsCount"
-              class="space-y-3"
-            >
-              <li
-                v-for="recording in recordingsList"
-                :key="recording.id"
-              >
+            <ul v-if="recordingsCount" class="space-y-3">
+              <li v-for="recording in recordingsList" :key="recording.id">
                 <prefetch-link
                   :to="`/mapa/nahravka/${recording.id}`"
                   class="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-yellow-400 hover:shadow-md"
@@ -248,7 +229,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
                     <p class="text-lg font-semibold text-gray-900">
                       {{
                         recording.name ||
-                          `${t('recordings.detail.fallback_prefix')}${recording.id}`
+                        `${t('recordings.detail.fallback_prefix')}${recording.id}`
                       }}
                     </p>
                     <!-- <span class="text-sm text-lime-500">
@@ -267,7 +248,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
                     <span
                       v-if="
                         recording.estimatedBirdsCount !== null &&
-                          recording.estimatedBirdsCount !== undefined
+                        recording.estimatedBirdsCount !== undefined
                       "
                     >
                       <TranslatedText identifier="upload.bird_count_label" />:
@@ -278,19 +259,13 @@ const recordingsCount = computed(() => recordingsList.value.length);
                       {{ recording.device }}
                     </span>
                   </div>
-                  <p
-                    v-if="recording.note"
-                    class="text-sm text-gray-700"
-                  >
+                  <p v-if="recording.note" class="text-sm text-gray-700">
                     {{ recording.note }}
                   </p>
                 </prefetch-link>
               </li>
             </ul>
-            <p
-              v-else
-              class="text-gray-500"
-            >
+            <p v-else class="text-gray-500">
               <TranslatedText identifier="empty" />
             </p>
           </template>

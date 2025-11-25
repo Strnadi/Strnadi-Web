@@ -3,7 +3,7 @@ meta:
   layout: desktop/small-popup
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { useMutation } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router';
 import { useRouter } from 'vue-router';
@@ -32,10 +32,7 @@ const handleDeleteCategory = () => {
     <TranslatedText identifier="admin.articles.delete_category_title" />
     {{ name }}
   </h1>
-  <button
-    class="danger"
-    @click="handleDeleteCategory"
-  >
+  <button class="danger" @click="handleDeleteCategory">
     <TranslatedText identifier="buttons.delete" />
   </button>
 </template>

@@ -377,21 +377,12 @@ const currentPartIndex = ref(0);
       <TranslatedText :identifier="stepper.current.value.title" />
     </h1>
 
-    <form
-      class="flex flex-col gap-4"
-      @submit.prevent="submitOrNext"
-    >
+    <form class="flex flex-col gap-4" @submit.prevent="submitOrNext">
       <template v-if="stepper.isCurrent('file')">
-        <Dropzone
-          :accept="soundAccept"
-          :multiple="true"
-          @drop="onSoundDrop"
-        >
+        <Dropzone :accept="soundAccept" :multiple="true" @drop="onSoundDrop">
           <template #dragging>
             <div class="text-center py-8">
-              <div class="text-4xl mb-2">
-                📁
-              </div>
+              <div class="text-4xl mb-2">📁</div>
               <p class="text-sm sm:text-base font-medium">
                 <TranslatedText identifier="upload.drop_files_here" />
               </p>
@@ -399,9 +390,7 @@ const currentPartIndex = ref(0);
           </template>
 
           <div class="flex flex-col items-center gap-y-4 py-6">
-            <div class="text-5xl">
-              🎵
-            </div>
+            <div class="text-5xl">🎵</div>
             <div class="text-center px-4">
               <p class="text-sm sm:text-base font-medium mb-2">
                 <TranslatedText identifier="upload.select_or_drag_files" />
@@ -454,9 +443,7 @@ const currentPartIndex = ref(0);
       <template v-if="stepper.isCurrent('location')">
         <div class="flex flex-col gap-4">
           <div class="info-card">
-            <div class="text-2xl mb-2">
-              📍
-            </div>
+            <div class="text-2xl mb-2">📍</div>
             <p class="text-sm sm:text-base">
               <TranslatedText identifier="upload.map_instructions" />
             </p>
@@ -498,18 +485,12 @@ const currentPartIndex = ref(0);
           </ul>
 
           <!-- Embedded Map for Mobile -->
-          <div
-            v-if="!isDesktop"
-            class="map-container"
-          >
+          <div v-if="!isDesktop" class="map-container">
             <RecordingsMap />
           </div>
 
           <!-- Desktop instruction -->
-          <div
-            v-else
-            class="info-card bg-gray-50 border-gray-300"
-          >
+          <div v-else class="info-card bg-gray-50 border-gray-300">
             <p class="text-xs sm:text-sm text-gray-700">
               💡 Klikněte na mapu na pozadí pro výběr lokace
             </p>
@@ -531,10 +512,7 @@ const currentPartIndex = ref(0);
           </div>
 
           <div class="form-section">
-            <label
-              for="title"
-              class="form-label"
-            >
+            <label for="title" class="form-label">
               <TranslatedText identifier="upload.title_label" />
             </label>
             <input
@@ -543,14 +521,11 @@ const currentPartIndex = ref(0);
               type="text"
               class="form-input"
               placeholder=""
-            >
+            />
           </div>
 
           <div class="form-section">
-            <label
-              for="note"
-              class="form-label"
-            >
+            <label for="note" class="form-label">
               <TranslatedText identifier="upload.note_label" />
             </label>
             <textarea
@@ -562,10 +537,7 @@ const currentPartIndex = ref(0);
           </div>
 
           <div class="form-section">
-            <label
-              for="device"
-              class="form-label"
-            >
+            <label for="device" class="form-label">
               <TranslatedText identifier="upload.device_label" />
             </label>
             <input
@@ -574,16 +546,15 @@ const currentPartIndex = ref(0);
               type="text"
               class="form-input"
               placeholder=""
-            >
+            />
           </div>
 
           <div class="form-section">
-            <label
-              for="birdCount"
-              class="form-label"
-            >
+            <label for="birdCount" class="form-label">
               <TranslatedText identifier="upload.bird_count_label" />
-              <span class="text-blue-600 font-semibold ml-1">({{ uploadStore.birdCount }})</span>
+              <span class="text-blue-600 font-semibold ml-1"
+                >({{ uploadStore.birdCount }})</span
+              >
             </label>
             <input
               id="birdCount"
@@ -592,13 +563,10 @@ const currentPartIndex = ref(0);
               max="2"
               type="range"
               class="w-full h-10 touch-manipulation"
-            >
+            />
           </div>
 
-          <div
-            v-if="uploadStore.dialects.length > 0"
-            class="form-section"
-          >
+          <div v-if="uploadStore.dialects.length > 0" class="form-section">
             <h3 class="form-label mb-2">
               <TranslatedText identifier="upload.dialects" />
             </h3>
@@ -647,11 +615,8 @@ const currentPartIndex = ref(0);
               v-model="uploadStore.confirmUpload"
               class="confirmation-checkbox"
               type="checkbox"
-            >
-            <label
-              for="confirmUpload"
-              class="text-gray-700 text-xs sm:text-sm"
-            >
+            />
+            <label for="confirmUpload" class="text-gray-700 text-xs sm:text-sm">
               <TranslatedText identifier="upload.confirm_upload_text" />
             </label>
           </div>
@@ -660,16 +625,10 @@ const currentPartIndex = ref(0);
 
       <!-- Photos Stage -->
       <template v-if="stepper.isCurrent('photos')">
-        <Dropzone
-          :multiple="true"
-          :accept="photoAccept"
-          @drop="onPhotoDrop"
-        >
+        <Dropzone :multiple="true" :accept="photoAccept" @drop="onPhotoDrop">
           <template #dragging>
             <div class="text-center py-8">
-              <div class="text-4xl mb-2">
-                📷
-              </div>
+              <div class="text-4xl mb-2">📷</div>
               <p class="text-sm sm:text-base font-medium">
                 <TranslatedText identifier="upload.drop_files_here" />
               </p>
@@ -677,16 +636,12 @@ const currentPartIndex = ref(0);
           </template>
 
           <div class="flex flex-col items-center gap-y-4 py-6">
-            <div class="text-5xl">
-              📸
-            </div>
+            <div class="text-5xl">📸</div>
             <div class="text-center px-4">
               <p class="text-sm sm:text-base font-medium">
                 <TranslatedText identifier="upload.select_or_drag_photos" />
               </p>
-              <p class="text-xs sm:text-sm text-gray-500 mt-1">
-                (Volitelné)
-              </p>
+              <p class="text-xs sm:text-sm text-gray-500 mt-1">(Volitelné)</p>
             </div>
           </div>
         </Dropzone>
@@ -705,7 +660,7 @@ const currentPartIndex = ref(0);
             <img
               :src="makeURL(file)"
               class="w-full sm:w-32 h-32 object-cover rounded"
-            >
+            />
             <div class="flex-1 text-center sm:text-left">
               <p class="text-sm font-medium">
                 {{ file.name }}
@@ -728,9 +683,7 @@ const currentPartIndex = ref(0);
       <template v-if="stepper.isCurrent('submit')">
         <div class="flex flex-col gap-6 items-center justify-center py-12 px-4">
           <template v-if="uploadSuccess">
-            <div class="text-7xl sm:text-8xl">
-              ✅
-            </div>
+            <div class="text-7xl sm:text-8xl">✅</div>
             <div class="text-center">
               <p class="text-xl sm:text-2xl font-bold text-green-600 mb-3">
                 <TranslatedText identifier="upload.success.queued" />
@@ -744,9 +697,7 @@ const currentPartIndex = ref(0);
             </div>
           </template>
           <template v-else>
-            <div class="text-5xl animate-pulse">
-              ⏳
-            </div>
+            <div class="text-5xl animate-pulse">⏳</div>
             <p class="text-base sm:text-lg font-medium">
               <TranslatedText identifier="upload.preparing" />
             </p>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue';
 import { uploadQueueStore } from '@/state/UploadStore';
 
@@ -46,10 +46,7 @@ onUnmounted(() => {
     class="upload-progress-container"
   >
     <!-- Active Upload Indicator (Compact) -->
-    <div
-      v-if="hasActiveTasks"
-      class="upload-progress"
-    >
+    <div v-if="hasActiveTasks" class="upload-progress">
       <span class="upload-icon">📤</span>
       <div class="upload-content">
         <div class="upload-text">
@@ -79,9 +76,7 @@ onUnmounted(() => {
       class="upload-error"
     >
       <span class="error-icon">⚠️</span>
-      <div class="error-text">
-        Chyba při nahrávání
-      </div>
+      <div class="error-text">Chyba při nahrávání</div>
       <button
         class="dismiss-button"
         title="Zavřít"

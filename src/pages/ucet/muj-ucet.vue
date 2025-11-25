@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { accountStore } from '@/state/AccountStore';
 import { computed } from 'vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
@@ -68,10 +68,7 @@ const displayName = computed(() => {
               />
             </span>
           </div>
-          <div
-            v-else
-            class="flex items-center mt-2"
-          >
+          <div v-else class="flex items-center mt-2">
             <span
               class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full"
             >
@@ -83,17 +80,13 @@ const displayName = computed(() => {
         </div>
 
         <div class="mt-4 md:mt-0">
-          <span
-            v-if="accountStore.user?.city"
-            class="text-gray-600"
-          >
+          <span v-if="accountStore.user?.city" class="text-gray-600">
             {{ accountStore.user?.city }}
-            <span v-if="accountStore.user?.postCode">({{ accountStore.user?.postCode }})</span>
+            <span v-if="accountStore.user?.postCode"
+              >({{ accountStore.user?.postCode }})</span
+            >
           </span>
-          <span
-            v-else
-            class="text-gray-400 text-sm"
-          >
+          <span v-else class="text-gray-400 text-sm">
             <TranslatedText identifier="account.profile.no_location" />
           </span>
         </div>
@@ -102,10 +95,7 @@ const displayName = computed(() => {
 
     <!-- Navigation links -->
     <div class="grid md:grid-cols-2 gap-3 mb-6">
-      <prefetch-link
-        to="/ucet/sprava/moje-nahravky"
-        class="link"
-      >
+      <prefetch-link to="/ucet/sprava/moje-nahravky" class="link">
         <span class="font-medium">
           <TranslatedText identifier="account.profile.my_recordings" />
         </span>
@@ -116,10 +106,7 @@ const displayName = computed(() => {
         </span>
       </prefetch-link>
 
-      <prefetch-link
-        to="/ucet/sprava/uspechy"
-        class="link"
-      >
+      <prefetch-link to="/ucet/sprava/uspechy" class="link">
         <span class="font-medium">
           <TranslatedText identifier="account.profile.achievements" />
         </span>
@@ -130,10 +117,7 @@ const displayName = computed(() => {
         </span>
       </prefetch-link>
 
-      <prefetch-link
-        to="/ucet/sprava/odmeny"
-        class="link"
-      >
+      <prefetch-link to="/ucet/sprava/odmeny" class="link">
         <span class="font-medium">
           <TranslatedText identifier="account.profile.rewards" />
         </span>
@@ -182,10 +166,7 @@ const displayName = computed(() => {
         </span>
       </prefetch-link>
 
-      <prefetch-link
-        to="/ucet/sprava/osobni-udaje"
-        class="link"
-      >
+      <prefetch-link to="/ucet/sprava/osobni-udaje" class="link">
         <span class="font-medium">
           <TranslatedText identifier="account.profile.personal_data" />
         </span>
@@ -208,10 +189,7 @@ const displayName = computed(() => {
 
     <!-- Logout button -->
     <div class="mt-6">
-      <button
-        class="button-secondary p-2 w-full"
-        @click="logout"
-      >
+      <button class="button-secondary p-2 w-full" @click="logout">
         <TranslatedText identifier="buttons.logout" />
       </button>
     </div>

@@ -2,7 +2,7 @@
   <div v-html="svg" />
 </template>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { getIcon } from 'material-file-icons';
 import { computed } from 'vue';
 

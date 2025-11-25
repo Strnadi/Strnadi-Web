@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import {
   computed,
   nextTick,
@@ -276,10 +276,7 @@ onClickOutside(containerRef, () => {
 </script>
 
 <template>
-  <div
-    ref="containerRef"
-    class="location-search"
-  >
+  <div ref="containerRef" class="location-search">
     <input
       v-bind="$attrs"
       v-model="text"
@@ -293,7 +290,7 @@ onClickOutside(containerRef, () => {
       @input="handleInput"
       @keydown="handleKeydown"
       @blur="handleBlur"
-    >
+    />
     <Transition name="location-search-fade">
       <ul
         v-if="showSuggestions"

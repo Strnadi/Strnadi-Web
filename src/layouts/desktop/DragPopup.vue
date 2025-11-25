@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import Back from '@/icons/interface/icon-back.svg';
 import TranslatedText from '@/components/TranslatedText.vue';
 import { useRouter } from 'vue-router';
@@ -10,11 +10,7 @@ const closePopup = () => {
 </script>
 
 <template>
-  <aside
-    class="popup"
-    @click="closePopup"
-    @keydown.escape="closePopup"
-  >
+  <aside class="popup" @click="closePopup" @keydown.escape="closePopup">
     <slot />
   </aside>
 </template>

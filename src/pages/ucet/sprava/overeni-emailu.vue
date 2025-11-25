@@ -3,7 +3,7 @@ meta:
   layout: desktop/popup
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { getResendVerifyEmail } from '@/api/account';
 import SegmentedProgress from '@/components/SegmentedProgress.vue';
 import { accountStore } from '@/state/AccountStore';
@@ -46,10 +46,7 @@ const resendEmail = () => {
   >
     <TranslatedText identifier="buttons.resend_verification" />
   </button>
-  <div
-    v-if="isActive"
-    class="flex flex-row"
-  >
+  <div v-if="isActive" class="flex flex-row">
     <p>{{ remaining }}s</p>
     <SegmentedProgress
       :progress="remaining"

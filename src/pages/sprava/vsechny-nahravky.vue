@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref, computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import axios from 'axios';
@@ -272,7 +272,7 @@ async function downloadSelectedRecordings() {
                     r.parts?.forEach((p) => togglePartSelection(r.id, p.id))
                   )
               "
-            >
+            />
             <h2 class="text-lg font-semibold mb-1">
               {{
                 recording.name || `${t('recordings.id_prefix')} ${recording.id}`
@@ -302,36 +302,30 @@ async function downloadSelectedRecordings() {
               :checked="isPartSelected(recording.id, part.id)"
               class="form-checkbox h-5 w-5 text-blue-600"
               @change="togglePartSelection(recording.id, part.id)"
-            >
+            />
             <span class="text-sm">
               {{ t('admin.recordings.part_prefix') }}{{ part.id }}
             </span>
             <TextualCoords
               v-if="
                 part.gpsLatitudeStart !== undefined &&
-                  part.gpsLongitudeStart !== undefined
+                part.gpsLongitudeStart !== undefined
               "
               :lat="part.gpsLatitudeStart"
               :lng="part.gpsLongitudeStart"
               type="municipality_part"
               class="text-xs text-gray-500"
             />
-            <span
-              v-else
-              class="text-xs text-gray-400"
-            >
+            <span v-else class="text-xs text-gray-400">
               <TranslatedText identifier="admin.recordings.no_gps_data" />
             </span>
           </li>
         </ul>
-        <p
-          v-else
-          class="text-sm text-gray-500"
-        >
+        <p v-else class="text-sm text-gray-500">
           <TranslatedText identifier="admin.recordings.no_parts" />
         </p>
 
-        <hr>
+        <hr />
 
         <ul>
           <li

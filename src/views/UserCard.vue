@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import type { User } from '@/api/account';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import { computed } from 'vue';

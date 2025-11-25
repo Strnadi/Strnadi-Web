@@ -13,11 +13,11 @@
       @input="onInput($event, index)"
       @keydown="onKeydown($event, index)"
       @paste="onPaste"
-    >
+    />
   </div>
 </template>
 
-<script setup>
+<script setup vapor>
 import { ref, watch, nextTick } from 'vue';
 
 const props = defineProps({

@@ -3,7 +3,7 @@ meta:
   layout: desktop/small-popup
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import * as jose from 'jose';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -127,16 +127,10 @@ const errorHandler = (error: string) => {
       <TranslatedText identifier="common.error_prefix" />
       <span class="ml-1">{{ error }}</span>
     </div>
-    <div
-      v-if="isPending"
-      class="text-sm sm:text-base"
-    >
+    <div v-if="isPending" class="text-sm sm:text-base">
       <TranslatedText identifier="states.loading" />
     </div>
-    <div
-      v-else
-      class="flex flex-col items-center gap-y-4 sm:gap-y-6 w-full"
-    >
+    <div v-else class="flex flex-col items-center gap-y-4 sm:gap-y-6 w-full">
       <div class="flex flex-col items-center gap-y-3 sm:gap-y-4 w-full">
         <div class="flex flex-col gap-x-2 gap-y-3 sm:gap-y-4 w-full">
           <div class="w-full">
@@ -154,7 +148,7 @@ const errorHandler = (error: string) => {
               :placeholder="t('placeholders.email')"
               class="w-full p-3 border rounded text-sm sm:text-base touch-manipulation"
               autocomplete="email"
-            >
+            />
           </div>
           <div class="w-full">
             <RevealablePasswordInput
@@ -185,10 +179,7 @@ const errorHandler = (error: string) => {
         >
           <TranslatedText identifier="buttons.login" />
         </button>
-        <AuthButtons
-          @success="success"
-          @error="errorHandler"
-        />
+        <AuthButtons @success="success" @error="errorHandler" />
       </div>
     </div>
   </div>

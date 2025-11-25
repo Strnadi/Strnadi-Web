@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { getArticles } from '@/api/articles';
 import { useQuery } from '@tanstack/vue-query';
 import TranslatedText from '@/components/TranslatedText.vue';
@@ -29,7 +29,9 @@ const { data: articles } = useQuery({
     >
       <div class="flex flex-col w-full justify-around">
         <span>{{ article.name }}</span>
-        <span v-if="article.description"><i>{{ article.description }}</i></span>
+        <span v-if="article.description"
+          ><i>{{ article.description }}</i></span
+        >
       </div>
       <div class="flex flex-row">
         <router-link

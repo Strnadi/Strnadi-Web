@@ -293,7 +293,7 @@ const markers = computed<Marker[]>(() => {
         const colors = dialectStrings.map(
           (ds) => DialectColors.value?.[ds] ?? '#000000'
         );
-        console.log(colors);
+        // console.log(colors);
 
         // Use larger icons on mobile (screen width < 768px)
         const isMobile = window.innerWidth < 768;

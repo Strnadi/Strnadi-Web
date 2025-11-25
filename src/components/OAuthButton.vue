@@ -17,7 +17,7 @@ export interface OAuthButtonProps {
 }
 </script>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import * as jose from 'jose';
 import { onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
@@ -142,11 +142,7 @@ const login = () => {
 </script>
 
 <template>
-  <button
-    :disabled="disabled"
-    type="button"
-    @click="login"
-  >
+  <button :disabled="disabled" type="button" @click="login">
     <slot />
   </button>
 </template>

@@ -248,10 +248,7 @@ watch(
                 <TranslatedText
                   identifier="auth.register.email_exists.prefix"
                 />
-                <PrefetchLink
-                  to="/ucet/zapomenute-heslo"
-                  class="underline"
-                >
+                <PrefetchLink to="/ucet/zapomenute-heslo" class="underline">
                   <TranslatedText
                     identifier="auth.register.email_exists.link"
                   />
@@ -283,24 +280,21 @@ watch(
                 class="p-2"
                 required
                 :placeholder="t('placeholders.email')"
-              >
+              />
             </div>
             <div class="flex flex-row items-center gap-x-2 m-4">
               <input
                 id="agreement"
                 v-model="registerStore.dataAgreement"
                 type="checkbox"
-              >
+              />
               <label for="agreement">
                 <span class="text-sm">
                   <TranslatedText identifier="auth.register.agreement.prefix" />
                   <span class="mx-1">
                     <TranslatedText identifier="project_name" />
                   </span>
-                  <PrefetchLink
-                    to="/podminky-pouziti"
-                    class="underline"
-                  >
+                  <PrefetchLink to="/podminky-pouziti" class="underline">
                     <TranslatedText identifier="auth.register.agreement.link" />
                   </PrefetchLink>
                   <TranslatedText identifier="auth.register.agreement.suffix" />
@@ -329,7 +323,7 @@ watch(
               class="p-2"
               type="text"
               required
-            >
+            />
           </div>
           <div class="flex flex-col gap-y-1">
             <label for="surname">
@@ -341,7 +335,7 @@ watch(
               class="p-2"
               type="text"
               required
-            >
+            />
           </div>
           <div class="flex flex-col gap-y-1">
             <label for="nickname">
@@ -352,7 +346,7 @@ watch(
               v-model="registerStore.nickname"
               class="p-2"
               type="text"
-            >
+            />
             <p class="text-gray-600 text-sm">
               <TranslatedText identifier="auth.register.nickname_hint" />
             </p>
@@ -360,18 +354,12 @@ watch(
         </div>
 
         <!-- location -->
-        <div
-          v-if="stepper.isCurrent('location')"
-          class="flex flex-col gap-y-4"
-        >
+        <div v-if="stepper.isCurrent('location')" class="flex flex-col gap-y-4">
           <div class="flex flex-col gap-y-1">
             <h2>
               <TranslatedText identifier="labels.postal_code" />
             </h2>
-            <DigitInput
-              v-model="registerStore.postCode"
-              :digits="5"
-            />
+            <DigitInput v-model="registerStore.postCode" :digits="5" />
             <p class="text-gray-600">
               <TranslatedText identifier="auth.register.postal_code_hint" />
             </p>
@@ -392,18 +380,15 @@ watch(
         </div>
 
         <!-- password -->
-        <div
-          v-if="stepper.isCurrent('password')"
-          class="flex flex-col gap-y-4"
-        >
+        <div v-if="stepper.isCurrent('password')" class="flex flex-col gap-y-4">
           <p class="text-gray-600">
             <TranslatedText identifier="auth.register.password_hint" />
           </p>
           <template
             v-if="
               !stepper.current.value.isValid() &&
-                registerStore.password !== '' &&
-                registerStore.passwordConfirm === registerStore.password
+              registerStore.password !== '' &&
+              registerStore.passwordConfirm === registerStore.password
             "
           >
             <span>
@@ -413,7 +398,7 @@ watch(
           <template
             v-if="
               registerStore.password !== registerStore.passwordConfirm &&
-                registerStore.passwordConfirm !== ''
+              registerStore.passwordConfirm !== ''
             "
           >
             <span>
@@ -477,20 +462,14 @@ watch(
           </p>
           <template v-else-if="isRegError || isError">
             <p>{{ (error ?? regError)!.message }}</p>
-            <button
-              class="secondary p-2 w-full"
-              @click="register"
-            >
+            <button class="secondary p-2 w-full" @click="register">
               <TranslatedText identifier="buttons.retry" />
             </button>
           </template>
         </div>
 
         <!-- done -->
-        <div
-          v-if="stepper.isCurrent('done')"
-          class="flex flex-col gap-y-4"
-        >
+        <div v-if="stepper.isCurrent('done')" class="flex flex-col gap-y-4">
           <template v-if="isRegPending">
             <p>
               <TranslatedText
@@ -500,10 +479,7 @@ watch(
           </template>
           <template v-else-if="isRegError">
             <p>{{ regError!.message }}</p>
-            <button
-              class="secondary p-2 w-full"
-              @click="register"
-            >
+            <button class="secondary p-2 w-full" @click="register">
               <TranslatedText identifier="buttons.retry" />
             </button>
           </template>
@@ -538,11 +514,7 @@ watch(
   </form>
 
   <div class="flex gap-2 my-4 justify-center">
-    <div
-      v-for="(step, id, i) in stepper.steps.value"
-      :key="id"
-      class=""
-    >
+    <div v-for="(step, id, i) in stepper.steps.value" :key="id" class="">
       <button
         :disabled="!allStepsBeforeAreValid(i) && stepper.isBefore(id)"
         class="text-sm text-gray-500 hover:text-gray-900 disabled:cursor-not-allowed"

@@ -31,10 +31,7 @@ const closePopup = () => {
         <Close />
       </button>
 
-      <div
-        v-auto-scrollbar
-        class="relative"
-      >
+      <div v-auto-scrollbar class="relative">
         <component :is="Component" />
       </div>
       <div class="bottom-fade" />

@@ -40,54 +40,29 @@ const sendNotification = async () => {
   </h1>
 
   <div class="flex flex-col gap-y-2">
-    <input
-      v-model="userId"
-      type="text"
-      placeholder="User ID"
-      class="p-2"
-    >
-    <input
-      v-model="titleCs"
-      type="text"
-      placeholder="Title CS"
-      class="p-2"
-    >
-    <input
-      v-model="titleEn"
-      type="text"
-      placeholder="Title EN"
-      class="p-2"
-    >
-    <input
-      v-model="titleDe"
-      type="text"
-      placeholder="Title DE"
-      class="p-2"
-    >
+    <input v-model="userId" type="text" placeholder="User ID" class="p-2" />
+    <input v-model="titleCs" type="text" placeholder="Title CS" class="p-2" />
+    <input v-model="titleEn" type="text" placeholder="Title EN" class="p-2" />
+    <input v-model="titleDe" type="text" placeholder="Title DE" class="p-2" />
     <input
       v-model="messageCs"
       type="text"
       placeholder="Message CS"
       class="p-2"
-    >
+    />
     <input
       v-model="messageEn"
       type="text"
       placeholder="Message EN"
       class="p-2"
-    >
+    />
     <input
       v-model="messageDe"
       type="text"
       placeholder="Message DE"
       class="p-2"
-    >
-    <button
-      class="primary p-2"
-      @click="sendNotification"
-    >
-      Send
-    </button>
+    />
+    <button class="primary p-2" @click="sendNotification">Send</button>
   </div>
 
   <div class="flex flex-col gap-y-2">
