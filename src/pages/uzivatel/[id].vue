@@ -112,11 +112,9 @@ const recordingsCount = computed(() => recordingsList.value.length);
 </script>
 
 <template>
-  <div class="space-y-10">
+  <div class="w-full space-y-10">
     <template v-if="isUserLoading">
-      <p class="text-gray-500">
-        <TranslatedText identifier="loading" />...
-      </p>
+      <p class="text-gray-500"><TranslatedText identifier="loading" />...</p>
     </template>
     <template v-else-if="isUserError || !user">
       <p class="text-gray-500">
@@ -124,7 +122,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
       </p>
     </template>
     <template v-else>
-      <div class="space-y-6">
+      <div class="w-full space-y-6">
         <UserCard :user="user" />
 
         <section
@@ -137,7 +135,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
             <div
               v-if="
                 accountStore.user?.id === user.id ||
-                  accountStore.user?.role === 'admin'
+                accountStore.user?.role === 'admin'
               "
             >
               <dt class="text-sm uppercase tracking-wide text-gray-500">
@@ -195,9 +193,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
               </dd>
             </div>
             <div v-if="accountStore.user?.role === 'admin'">
-              <dt class="text-sm uppercase tracking-wide text-gray-500">
-                ID
-              </dt>
+              <dt class="text-sm uppercase tracking-wide text-gray-500">ID</dt>
               <dd class="mt-1 text-base text-gray-900">
                 {{ user.id }}
               </dd>
@@ -248,7 +244,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
                     <p class="text-lg font-semibold text-gray-900">
                       {{
                         recording.name ||
-                          `${t('recordings.detail.fallback_prefix')}${recording.id}`
+                        `${t('recordings.detail.fallback_prefix')}${recording.id}`
                       }}
                     </p>
                     <!-- <span class="text-sm text-lime-500">
@@ -267,7 +263,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
                     <span
                       v-if="
                         recording.estimatedBirdsCount !== null &&
-                          recording.estimatedBirdsCount !== undefined
+                        recording.estimatedBirdsCount !== undefined
                       "
                     >
                       <TranslatedText identifier="upload.bird_count_label" />:

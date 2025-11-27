@@ -70,7 +70,7 @@ onBeforeRouteUpdate(async (to) => {
   await queryClient.invalidateQueries({ queryKey: ['user'] });
 });
 
-const segments = ref<
+const segments = computed<
   | {
       id: number;
       start: number;
@@ -79,17 +79,15 @@ const segments = ref<
       colors?: string[];
     }[]
   | null
->(null);
-
-watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
-  if (newFilteredRec && DialectColors.value) {
+>(() => {
+  if (filteredRec.value && DialectColors.value) {
     const firstPart = recording.value?.parts?.[0];
 
-    if (!firstPart) return;
+    if (!firstPart) return null;
 
     let i = 0;
 
-    segments.value = newFilteredRec.map((fr) => ({
+    return filteredRec.value.map((fr) => ({
       id: fr.id * 1000 + i++,
       start: Number(
         (new Date(fr.startDate).getTime() -
@@ -111,6 +109,8 @@ watch(filteredRec, (newFilteredRec?: FilteredPartModel[]) => {
         .filter(Boolean) as string[]
     }));
   }
+
+  return null;
 });
 
 // onMounted(() => {
@@ -238,7 +238,7 @@ const getDialectColorWithAlpha = (
     </span>
   </template>
   <template v-else-if="recording">
-    <div class="space-y-3 sm:space-y-4">
+    <div class="w-full">
       <!-- Metadata Section -->
       <div
         class="flex flex-col sm:flex-row justify-around w-full text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-0 sm:divide-x divide-gray-300"
@@ -315,9 +315,9 @@ const getDialectColorWithAlpha = (
                 <p class="font-semibold text-sm sm:text-base truncate">
                   {{
                     fr.detectedDialects?.[0]?.confirmedDialect ??
-                      fr.detectedDialects?.[0]?.predictedDialect ??
-                      fr.detectedDialects?.[0]?.userGuessDialect ??
-                      t('recordings.detail.unknown_dialect')
+                    fr.detectedDialects?.[0]?.predictedDialect ??
+                    fr.detectedDialects?.[0]?.userGuessDialect ??
+                    t('recordings.detail.unknown_dialect')
                   }}
                 </p>
               </div>
@@ -325,7 +325,8 @@ const getDialectColorWithAlpha = (
                 v-if="fr.representantFlag"
                 class="text-lg sm:text-xl flex-shrink-0"
                 :style="{ color: getDialectColorWithAlpha(fr, 'star') }"
-              >★</span>
+                >★</span
+              >
             </div>
             <span class="text-xs sm:text-sm text-gray-600">
               {{ formatRelTime(fr.startDate) }} -
@@ -336,7 +337,9 @@ const getDialectColorWithAlpha = (
       </div>
 
       <!-- <KeepAlive> -->
-      <div class="-mx-4 sm:mx-0">
+      <div
+        class="-mx-4 sm:mx-0 rounded-lg border p-3 sm:p-4 shadow-sm transition touch-manipulation gap-2 border-gray-200 bg-whitehover:border-yellow-400"
+      >
         <Spectrogram
           v-if="recording && filteredRec && DialectColors && segments"
           :audio-urls="
@@ -345,7 +348,7 @@ const getDialectColorWithAlpha = (
                 `${env.VITE_API_URL}/recordings/part/${recording.id}/${p.id}/sound`
             ) ?? []
           "
-          :height="250"
+          :height="350"
           :readonly="true"
           :download-only-selections="true"
           :no-controls="true"
@@ -355,9 +358,7 @@ const getDialectColorWithAlpha = (
             <div
               class="p-2 bg-blue-100 border border-blue-300 rounded shadow-md"
             >
-              <h4 class="font-bold">
-                Custom Tooltip!
-              </h4>
+              <h4 class="font-bold">Custom Tooltip!</h4>
               <p>Range ID: {{ range.id }}</p>
               <p>Starts at: {{ range.start.toFixed(2) }}s</p>
               <p>Ends at: {{ range.end.toFixed(2) }}s</p>
@@ -378,7 +379,7 @@ const getDialectColorWithAlpha = (
         <prefetch-link
           v-if="
             accountStore.user?.role === 'admin' ||
-              accountStore.user?.id === recording.userId
+            accountStore.user?.id === recording.userId
           "
           :to="`./${recordingId}/upravit-dialekt`"
           class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
@@ -389,7 +390,7 @@ const getDialectColorWithAlpha = (
         <prefetch-link
           v-if="
             accountStore.user?.role == 'admin' ||
-              accountStore.user?.id == recording?.userId
+            accountStore.user?.id == recording?.userId
           "
           :to="`./${recordingId}/upravit`"
           class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
@@ -406,7 +407,7 @@ const getDialectColorWithAlpha = (
         <prefetch-link
           v-else-if="
             accountStore.user?.role == 'user' &&
-              accountStore.user?.id == recording.userId
+            accountStore.user?.id == recording.userId
           "
           :to="`./${recordingId}/smazat`"
           class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation"

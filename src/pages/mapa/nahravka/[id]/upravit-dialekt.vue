@@ -102,7 +102,7 @@ const anchorTimestamp = computed(() => {
 });
 
 function selectionColorResolver() {
-  resolveDialectColor(selectedDialectCode.value);
+  return resolveDialectColor(selectedDialectCode.value);
 }
 
 watch(
@@ -121,9 +121,16 @@ watch(
 );
 
 watch(
+  [filteredParts, anchorTimestamp, () => DialectColors.value],
+  ([parts]) => {
+    hydrateSegments(parts ?? []);
+  },
+  { immediate: true }
+);
+
+watch(
   filteredParts,
   (parts) => {
-    hydrateSegments(parts ?? []);
     hydrateDetectionForms(parts ?? []);
   },
   { immediate: true }
@@ -152,8 +159,10 @@ const pendingSegmentChanges = computed(() =>
 );
 
 function resolveDialectColor(code?: string | null) {
-  (code && DialectColors.value?.[code as keyof typeof DialectColors.value]) ??
-    DEFAULT_SEGMENT_COLOR;
+  if (!code) return DEFAULT_SEGMENT_COLOR;
+  const colors = DialectColors.value;
+  if (!colors) return DEFAULT_SEGMENT_COLOR;
+  return colors[code as keyof typeof colors] ?? DEFAULT_SEGMENT_COLOR;
 }
 
 function representantFlag(part: FilteredPartModel) {
@@ -283,9 +292,7 @@ function computeRangeColors(meta: SegmentMeta) {
   if (!codes.length) {
     return [DEFAULT_SEGMENT_COLOR];
   }
-  return codes.map((code) => {
-    resolveDialectColor(code);
-  });
+  return codes.map((code) => resolveDialectColor(code));
 }
 
 function createRangeFromMeta(meta: SegmentMeta): SpectrogramRange {
@@ -618,9 +625,9 @@ const createDetection = async (meta: SegmentMeta) => {
       <Spectrogram
         v-if="
           recording &&
-            recording.parts &&
-            segments &&
-            availableDialects.length > 0
+          recording.parts &&
+          segments &&
+          availableDialects.length > 0
         "
         v-model:selected="segments"
         v-model:current-time="currentTime"
@@ -759,7 +766,7 @@ const createDetection = async (meta: SegmentMeta) => {
                     ($event.target as HTMLInputElement).checked
                   )
                 "
-              >
+              />
               Reprezentant
             </label>
           </div>
@@ -778,18 +785,14 @@ const createDetection = async (meta: SegmentMeta) => {
             v-if="meta.filteredPart"
             class="space-y-3"
           >
-            <h3 class="text-sm font-semibold">
-              Detekované dialekty
-            </h3>
+            <h3 class="text-sm font-semibold">Detekované dialekty</h3>
 
             <div
               v-for="detected in meta.filteredPart.detectedDialects ?? []"
               :key="detected.id"
               class="border border-gray-200 rounded-md p-3 space-y-3"
             >
-              <div class="text-xs text-gray-500">
-                ID #{{ detected.id }}
-              </div>
+              <div class="text-xs text-gray-500">ID #{{ detected.id }}</div>
 
               <div class="flex flex-row w-full items-center gap-2 text-sm">
                 <label class="flex flex-col flex-1 gap-1">
@@ -873,9 +876,7 @@ const createDetection = async (meta: SegmentMeta) => {
             <div
               class="border border-dashed border-gray-300 rounded-md p-3 space-y-2"
             >
-              <p class="text-xs text-gray-500">
-                Přidat nový záznam
-              </p>
+              <p class="text-xs text-gray-500">Přidat nový záznam</p>
               <div class="flex flex-row w-full items-center gap-2 text-sm">
                 <label
                   v-if="accountStore.user?.role === 'user'"
@@ -938,9 +939,7 @@ const createDetection = async (meta: SegmentMeta) => {
         v-if="deletedSegmentMetas.length"
         class="space-y-2"
       >
-        <h2 class="text-sm font-semibold">
-          Úseky označené ke smazání
-        </h2>
+        <h2 class="text-sm font-semibold">Úseky označené ke smazání</h2>
         <div
           v-for="meta in deletedSegmentMetas"
           :key="`deleted-${meta.key}`"

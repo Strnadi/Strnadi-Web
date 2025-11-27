@@ -7,7 +7,7 @@
   >
     <div
       ref="spectrogramContainerRef"
-      class="relative w-full border border-gray-300 overflow-hidden"
+      class="relative w-full overflow-hidden"
       :style="{ height: `${containerHeight}px` }"
       @mousemove="onSpectrogramMouseMove"
       @mouseenter="onSpectrogramMouseEnter"
@@ -33,13 +33,13 @@
         <div
           v-if="
             showHoverLine &&
-              isLoaded &&
-              !isPanning &&
-              !isDraggingProgress &&
-              draggingRangeId === null &&
-              !isSelecting &&
-              !isSpacePanningActive &&
-              !isSpacebarPressed
+            isLoaded &&
+            !isPanning &&
+            !isDraggingProgress &&
+            draggingRangeId === null &&
+            !isSelecting &&
+            !isSpacePanningActive &&
+            !isSpacebarPressed
           "
           class="hover-line absolute top-0 h-full w-0.5 pointer-events-none"
           :style="{
@@ -376,7 +376,7 @@
           type="checkbox"
           :disabled="autoScroll"
           class="mr-1.5 align-middle w-4 h-4"
-        >
+        />
         <TranslatedText
           identifier="common.playback_options.play_in_viewport_only"
         />
@@ -389,7 +389,7 @@
           type="checkbox"
           :disabled="autoScroll || !isProgressInSelection"
           class="mr-1.5 align-middle w-4 h-4"
-        >
+        />
         <TranslatedText
           identifier="common.playback_options.play_in_selection_only"
         />
@@ -401,7 +401,7 @@
           v-model="loopPlayback"
           type="checkbox"
           class="mr-1.5 align-middle w-4 h-4"
-        >
+        />
         <TranslatedText identifier="common.playback_options.loop_playback" />
       </label>
       <label
@@ -411,7 +411,7 @@
           v-model="autoScroll"
           type="checkbox"
           class="mr-1.5 align-middle w-4 h-4"
-        >
+        />
         <TranslatedText identifier="common.playback_options.auto_scroll" />
       </label>
     </div>

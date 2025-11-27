@@ -46,7 +46,7 @@ const changeLanguage = (lang: keyof typeof translations) => {
             <img
               src="/logo.svg"
               alt="Logo"
-            >
+            />
           </PrefetchLink>
         </div>
 
@@ -90,7 +90,7 @@ const changeLanguage = (lang: keyof typeof translations) => {
                 <prefetch-link
                   v-wave
                   :to="`/informace/${category.name}/${kebabize(article.name)}`"
-                  class="dropdown-item !flex !flex-col !items-start"
+                  class="dropdown-item flex! flex-col! items-start!"
                 >
                   <span>{{ article.name }}</span>
                   <span

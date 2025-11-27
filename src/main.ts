@@ -270,6 +270,44 @@ const router = createRouter({
   }
 });
 
+const reducedMotionQuery = window.matchMedia(
+  '(prefers-reduced-motion: reduce)'
+);
+let allowViewTransitions = !reducedMotionQuery.matches;
+reducedMotionQuery.addEventListener('change', (event) => {
+  allowViewTransitions = !event.matches;
+});
+
+if ('startViewTransition' in document) {
+  let isViewTransitioning = false;
+
+  router.beforeEach((to, from, next) => {
+    if (
+      !allowViewTransitions ||
+      isViewTransitioning ||
+      !from.name ||
+      to.fullPath === from.fullPath
+    ) {
+      next();
+      return;
+    }
+
+    try {
+      isViewTransitioning = true;
+      const transition = document.startViewTransition(() => {
+        next();
+      });
+
+      transition.finished.finally(() => {
+        isViewTransitioning = false;
+      });
+    } catch (_error) {
+      isViewTransitioning = false;
+      next();
+    }
+  });
+}
+
 const sentryConfig = {
   app: app,
   integrations: [Sentry.browserTracingIntegration({ router })]

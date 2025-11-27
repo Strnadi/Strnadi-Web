@@ -133,6 +133,15 @@ export const translations = {
       deleting: 'Mazání...'
     },
 
+    navigation: {
+      map: 'Mapa',
+      information: 'Informace',
+      upload: 'Nahrát',
+      app: 'Aplikace',
+      account: 'Účet',
+      login: 'Přihlásit'
+    },
+
     pages: {
       application: {
         title: 'Stažení aplikace',
@@ -555,6 +564,15 @@ export const translations = {
       loading: 'Loading...',
       saving: 'Saving...',
       deleting: 'Deleting...'
+    },
+
+    navigation: {
+      map: 'Map',
+      information: 'Info',
+      upload: 'Upload',
+      app: 'App',
+      account: 'Account',
+      login: 'Login'
     },
 
     pages: {
@@ -982,6 +1000,15 @@ export const translations = {
       loading: 'Wird geladen...',
       saving: 'Speichern...',
       deleting: 'Löschen...'
+    },
+
+    navigation: {
+      map: 'Karte',
+      information: 'Infos',
+      upload: 'Hochladen',
+      app: 'App',
+      account: 'Konto',
+      login: 'Anmelden'
     },
 
     pages: {

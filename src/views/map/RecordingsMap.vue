@@ -76,8 +76,10 @@ import {
 } from '@/api/recordings';
 import { divIcon, type Icon } from 'leaflet';
 
+import L from 'leaflet';
+
 // Helper to compare dialect color sets for clustering
-function haveSameDialects(a: Marker, b: Marker): boolean {
+function clusterTest(a: Marker, b: Marker): boolean {
   const colorsA = (a.data?.colors ?? []) as string[];
   const colorsB = (b.data?.colors ?? []) as string[];
   if (colorsA.length !== colorsB.length) return false;
@@ -86,6 +88,13 @@ function haveSameDialects(a: Marker, b: Marker): boolean {
   const setB = new Set(colorsB);
   if (setA.size !== setB.size) return false;
   for (const c of setA) if (!setB.has(c)) return false;
+
+  // Set a threshold for the distance between the two markers
+  const distance = L.latLng(a.position[0], a.position[1]).distanceTo(
+    L.latLng(b.position[0], b.position[1])
+  );
+  if (distance > 70_000) return false;
+
   return true;
 }
 
@@ -165,165 +174,166 @@ const polygons = refDebounced(
 
 const oldCutoff = new Date(2024, 11, 31);
 const markers = computed<Marker[]>(() => {
-  return (
-    recordings.value
-      // First filter recordings by MapStore.filter
-      ?.filter((r) => {
-        switch (MapStore.filter) {
-          case 'my':
-            return r.userId === accountStore.user?.id;
-          case 'others':
-            return r.userId !== accountStore.user?.id;
-          case 'old':
-            return new Date(r.createdAt) <= oldCutoff;
-          case 'new':
-            return new Date(r.createdAt) > oldCutoff;
-          case 'any-dialect':
-            return (
-              filteredRecordings.value?.some(
-                (fp) => fp.recordingId === r.id && fp.detectedDialects !== null
-              ) ?? false
-            );
-          default:
-            return true;
-        }
-      })
-      .map((rec) => {
-        const parts = rec.parts ?? [];
-        if (parts.length === 0) {
-          return null;
-        }
-        // pick the last part
-        const lastPart = parts[parts.length - 1]!;
+  return DialectColors
+    ? (recordings.value
+        // First filter recordings by MapStore.filter
+        ?.filter((r) => {
+          switch (MapStore.filter) {
+            case 'my':
+              return r.userId === accountStore.user?.id;
+            case 'others':
+              return r.userId !== accountStore.user?.id;
+            case 'old':
+              return new Date(r.createdAt) <= oldCutoff;
+            case 'new':
+              return new Date(r.createdAt) > oldCutoff;
+            case 'any-dialect':
+              return (
+                filteredRecordings.value?.some(
+                  (fp) =>
+                    fp.recordingId === r.id && fp.detectedDialects !== null
+                ) ?? false
+              );
+            default:
+              return true;
+          }
+        })
+        .map((rec) => {
+          const parts = rec.parts ?? [];
+          if (parts.length === 0) {
+            return null;
+          }
+          // pick the last part
+          const lastPart = parts[parts.length - 1]!;
 
-        // gather all filtered parts overlapping any part of this recording
-        const allFiltered =
-          filteredRecordings.value?.filter((fr) => {
-            if (fr.recordingId !== rec.id) return false;
+          // gather all filtered parts overlapping any part of this recording
+          const allFiltered =
+            filteredRecordings.value?.filter((fr) => {
+              if (fr.recordingId !== rec.id) return false;
 
-            const frStart = new Date(fr.startDate);
-            const frEnd = new Date(fr.endDate);
+              const frStart = new Date(fr.startDate);
+              const frEnd = new Date(fr.endDate);
 
-            return parts.some((p) => {
-              const pStart = new Date(p.startDate);
-              const pEnd = new Date(p.endDate);
-              return frEnd >= pStart || frStart <= pEnd;
-            });
-          }) ?? [];
+              return parts.some((p) => {
+                const pStart = new Date(p.startDate);
+                const pEnd = new Date(p.endDate);
+                return frEnd >= pStart || frStart <= pEnd;
+              });
+            }) ?? [];
 
-        let dialectStrings: string[] = [];
-        let fromModel = false;
-        let fromUser = false;
+          let dialectStrings: string[] = [];
+          let fromModel = false;
+          let fromUser = false;
 
-        if (
-          allFiltered.some(
-            (fp) =>
-              fp.representantFlag &&
-              fp.detectedDialects?.some((dd) => dd.confirmedDialect)
-          )
-        ) {
-          dialectStrings = allFiltered
-            .filter(
+          if (
+            allFiltered.some(
               (fp) =>
                 fp.representantFlag &&
                 fp.detectedDialects?.some((dd) => dd.confirmedDialect)
             )
-            .flatMap(
-              (fp) =>
-                fp.detectedDialects?.map((dd) => dd.confirmedDialect) ?? []
-            )
-            .filter((d): d is string => d != null);
+          ) {
+            dialectStrings = allFiltered
+              .filter(
+                (fp) =>
+                  fp.representantFlag &&
+                  fp.detectedDialects?.some((dd) => dd.confirmedDialect)
+              )
+              .flatMap(
+                (fp) =>
+                  fp.detectedDialects?.map((dd) => dd.confirmedDialect) ?? []
+              )
+              .filter((d): d is string => d != null);
 
-          if (dialectStrings.length > 0) {
-            fromModel = false;
-            fromUser = false;
-          }
-        } else if (
-          allFiltered.some(
-            (fp) =>
-              fp.representantFlag &&
-              fp.detectedDialects?.some((dd) => dd.predictedDialect)
-          )
-        ) {
-          dialectStrings = allFiltered
-            .filter(
+            if (dialectStrings.length > 0) {
+              fromModel = false;
+              fromUser = false;
+            }
+          } else if (
+            allFiltered.some(
               (fp) =>
                 fp.representantFlag &&
                 fp.detectedDialects?.some((dd) => dd.predictedDialect)
             )
-            .flatMap(
-              (fp) =>
-                fp.detectedDialects?.map((dd) => dd.predictedDialect) ?? []
-            )
-            .filter((d): d is string => d != null);
+          ) {
+            dialectStrings = allFiltered
+              .filter(
+                (fp) =>
+                  fp.representantFlag &&
+                  fp.detectedDialects?.some((dd) => dd.predictedDialect)
+              )
+              .flatMap(
+                (fp) =>
+                  fp.detectedDialects?.map((dd) => dd.predictedDialect) ?? []
+              )
+              .filter((d): d is string => d != null);
 
-          if (dialectStrings.length > 0) {
-            fromModel = true;
-            fromUser = false;
-          }
-        } else if (
-          allFiltered.some(
-            (fp) =>
-              fp.representantFlag &&
-              fp.detectedDialects?.some((dd) => dd.userGuessDialect)
-          )
-        ) {
-          dialectStrings = allFiltered
-            .filter(
+            if (dialectStrings.length > 0) {
+              fromModel = true;
+              fromUser = false;
+            }
+          } else if (
+            allFiltered.some(
               (fp) =>
                 fp.representantFlag &&
                 fp.detectedDialects?.some((dd) => dd.userGuessDialect)
             )
-            .flatMap(
-              (fp) =>
-                fp.detectedDialects?.map((dd) => dd.userGuessDialect) ?? []
-            )
-            .filter((d): d is string => d != null);
+          ) {
+            dialectStrings = allFiltered
+              .filter(
+                (fp) =>
+                  fp.representantFlag &&
+                  fp.detectedDialects?.some((dd) => dd.userGuessDialect)
+              )
+              .flatMap(
+                (fp) =>
+                  fp.detectedDialects?.map((dd) => dd.userGuessDialect) ?? []
+              )
+              .filter((d): d is string => d != null);
 
-          if (dialectStrings.length > 0) {
-            fromUser = true;
+            if (dialectStrings.length > 0) {
+              fromUser = true;
+              fromModel = false;
+            }
+          } else {
+            dialectStrings = ['None'];
             fromModel = false;
+            fromUser = false;
           }
-        } else {
-          dialectStrings = ['None'];
-          fromModel = false;
-          fromUser = false;
-        }
 
-        const colors = dialectStrings.map(
-          (ds) => DialectColors.value?.[ds] ?? '#000000'
-        );
-        console.log(colors);
+          const colors = dialectStrings.map(
+            (ds) => DialectColors.value?.[ds] ?? '#000000'
+          );
+          console.log(colors);
 
-        // Use larger icons on mobile (screen width < 768px)
-        const isMobile = window.innerWidth < 768;
-        const iconSize = isMobile ? 20 : 12;
-        const iconAnchor = isMobile ? 10 : 6;
+          // Use larger icons on mobile (screen width < 768px)
+          const isMobile = window.innerWidth < 768;
+          const iconSize = isMobile ? 20 : 12;
+          const iconAnchor = isMobile ? 10 : 6;
 
-        const icon = divIcon({
-          className: '',
-          iconSize: [iconSize, iconSize],
-          iconAnchor: [iconAnchor, iconAnchor],
-          html: `<multi-color-square size="100%" dot="${fromModel}" questionmark="${fromUser}" colors='${JSON.stringify(colors)}'></multi-color-square>`
-        });
+          const icon = divIcon({
+            className: '',
+            iconSize: [iconSize, iconSize],
+            iconAnchor: [iconAnchor, iconAnchor],
+            html: `<multi-color-square size="100%" dot="${fromModel}" questionmark="${fromUser}" colors='${JSON.stringify(colors)}'></multi-color-square>`
+          });
 
-        return {
-          id: `${rec.id}-${lastPart.id}`,
-          icon: icon as Icon,
-          position: [lastPart.gpsLatitudeStart, lastPart.gpsLongitudeStart] as [
-            number,
-            number
-          ],
-          data: {
-            recording: rec,
-            part: lastPart,
-            colors
-          }
-        };
-      })
-      // remove nulls
-      .filter((m) => m !== null) ?? []
-  );
+          return {
+            id: `${rec.id}-${lastPart.id}`,
+            icon: icon as Icon,
+            position: [
+              lastPart.gpsLatitudeStart,
+              lastPart.gpsLongitudeStart
+            ] as [number, number],
+            data: {
+              recording: rec,
+              part: lastPart,
+              colors
+            }
+          };
+        })
+        // remove nulls
+        .filter((m) => m !== null) ?? [])
+    : [];
 });
 
 const onClick = ({
@@ -369,13 +379,12 @@ const onClick = ({
 
 <template>
   <Map
-    v-if="DialectColors"
     v-model:bounds="viewBounds"
     v-model:zoom="zoom"
     :scale-bar="MapStore.scale"
     :polygons="polygons"
     :markers="[...markers, ...Object.values(MapStore.markers)]"
-    :cluster-test="haveSameDialects"
+    :cluster-test="clusterTest"
     :mode="MapStore.aerial ? 'aerial' : 'outdoor'"
     :position="currentCenter"
     :zoom-control="true"
