@@ -387,33 +387,35 @@ const getDialectColorWithAlpha = (
           <TranslatedText identifier="admin.recordings.edit_dialects" />
         </prefetch-link>
 
-        <prefetch-link
-          v-if="
-            accountStore.user?.role == 'admin' ||
-            accountStore.user?.id == recording?.userId
-          "
-          :to="`./${recordingId}/upravit`"
-          class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
-        >
-          <TranslatedText identifier="buttons.edit" />
-        </prefetch-link>
-        <prefetch-link
-          v-if="accountStore.user?.role == 'admin'"
-          :to="`./${recordingId}/smazat`"
-          class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
-        >
-          <TranslatedText identifier="recordings.detail.delete_recording" />
-        </prefetch-link>
-        <prefetch-link
-          v-else-if="
-            accountStore.user?.role == 'user' &&
-            accountStore.user?.id == recording.userId
-          "
-          :to="`./${recordingId}/smazat`"
-          class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
-        >
-          <TranslatedText identifier="recordings.detail.request_delete" />
-        </prefetch-link>
+        <div class="flex flex-col md:flex-row gap-2 w-full">
+          <prefetch-link
+            v-if="
+              accountStore.user?.role == 'admin' ||
+              accountStore.user?.id == recording?.userId
+            "
+            :to="`./${recordingId}/upravit`"
+            class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation w-full"
+          >
+            <TranslatedText identifier="buttons.edit" />
+          </prefetch-link>
+          <prefetch-link
+            v-if="accountStore.user?.role == 'admin'"
+            :to="`./${recordingId}/smazat`"
+            class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation w-full"
+          >
+            <TranslatedText identifier="recordings.detail.delete_recording" />
+          </prefetch-link>
+          <prefetch-link
+            v-else-if="
+              accountStore.user?.role == 'user' &&
+              accountStore.user?.id == recording.userId
+            "
+            :to="`./${recordingId}/smazat`"
+            class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation w-full"
+          >
+            <TranslatedText identifier="recordings.detail.request_delete" />
+          </prefetch-link>
+        </div>
       </div>
     </div>
   </template>

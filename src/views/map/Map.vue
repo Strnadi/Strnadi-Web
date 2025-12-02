@@ -40,7 +40,8 @@ import {
   LPolygon,
   LControlScale,
   LControl,
-  LControlZoom
+  LControlZoom,
+  LMarker
 } from '@vue-leaflet/vue-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -310,7 +311,7 @@ watch(
             <img
               src="https://api.mapy.cz/img/api/logo.svg"
               alt="Mapy.cz Logo"
-            >
+            />
           </a>
         </div>
       </l-control>

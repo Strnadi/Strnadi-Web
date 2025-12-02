@@ -248,130 +248,142 @@ async function downloadSelectedRecordings() {
       <li
         v-for="recording in recordings"
         :key="recording.id"
-        class="flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+        class="button-secondary flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-4"
       >
-        <div class="flex flex-row justify-between items-center">
-          <div class="flex flex-row gap-x-2 items-center">
-            <input
-              type="checkbox"
-              class="form-checkbox h-5 w-5 text-blue-600"
-              :checked="
-                recordings
-                  .filter((r) => r.id === recording.id)
-                  .every(
-                    (r) =>
-                      r.parts &&
-                      r.parts.length > 0 &&
-                      r.parts?.every((p) => isPartSelected(r.id, p.id))
-                  )
-              "
-              @change="
-                recordings
-                  .filter((r) => r.id === recording.id)
-                  .forEach((r) =>
-                    r.parts?.forEach((p) => togglePartSelection(r.id, p.id))
-                  )
-              "
-            >
-            <h2 class="text-lg font-semibold mb-1">
-              {{
-                recording.name || `${t('recordings.id_prefix')} ${recording.id}`
-              }}
-            </h2>
-          </div>
-
-          <prefetch-link
-            :to="`/mapa/nahravka/${recording.id}/upravit-dialekt`"
-            class="button-secondary p-2 px-4"
+        <prefetch-link :to="`/mapa/nahravka/${recording.id}`">
+          <div
+            @click.stop
+            @mouseup.stop
+            @mouseenter.stop
           >
-            <TranslatedText identifier="admin.recordings.edit_dialects" />
-          </prefetch-link>
-        </div>
-        <div class="flex flex-row justify-between">
-          <!-- <small class="mb-2 text-gray-600">ID: {{ (await getUserInfo(accountStore.user!.id, recording.userId)) }}</small> -->
-          <small class="mb-2 text-gray-600">ID: {{ recording.id }}</small>
-        </div>
-        <ul v-if="recording.parts && recording.parts.length > 0">
-          <li
-            v-for="part in recording.parts"
-            :key="part.id"
-            class="flex flex-row gap-x-2 items-center py-1 border-t border-gray-200 first:border-t-0"
-          >
-            <input
-              type="checkbox"
-              :checked="isPartSelected(recording.id, part.id)"
-              class="form-checkbox h-5 w-5 text-blue-600"
-              @change="togglePartSelection(recording.id, part.id)"
-            >
-            <span class="text-sm">
-              {{ t('admin.recordings.part_prefix') }}{{ part.id }}
-            </span>
-            <TextualCoords
-              v-if="
-                part.gpsLatitudeStart !== undefined &&
-                  part.gpsLongitudeStart !== undefined
-              "
-              :lat="part.gpsLatitudeStart"
-              :lng="part.gpsLongitudeStart"
-              type="municipality_part"
-              class="text-xs text-gray-500"
-            />
-            <span
+            <div class="flex flex-row justify-between items-center">
+              <div class="flex flex-row gap-x-2 items-center">
+                <input
+                  type="checkbox"
+                  class="form-checkbox h-5 w-5 text-blue-600"
+                  :checked="
+                    recordings
+                      .filter((r) => r.id === recording.id)
+                      .every(
+                        (r) =>
+                          r.parts &&
+                          r.parts.length > 0 &&
+                          r.parts?.every((p) => isPartSelected(r.id, p.id))
+                      )
+                  "
+                  @change="
+                    recordings
+                      .filter((r) => r.id === recording.id)
+                      .forEach((r) =>
+                        r.parts?.forEach((p) => togglePartSelection(r.id, p.id))
+                      )
+                  "
+                />
+                <h2 class="text-lg font-semibold mb-1">
+                  {{
+                    recording.name ||
+                    `${t('recordings.id_prefix')} ${recording.id}`
+                  }}
+                </h2>
+              </div>
+              <prefetch-link
+                :to="`/mapa/nahravka/${recording.id}/upravit-dialekt`"
+                class="button-secondary p-2 px-4"
+              >
+                <TranslatedText identifier="admin.recordings.edit_dialects" />
+              </prefetch-link>
+              <prefetch-link
+                :to="`/uzivatel/${recording.userId}`"
+                class="button-secondary p-2 px-4"
+              >
+                <TranslatedText identifier="buttons.view" />
+              </prefetch-link>
+            </div>
+            <div class="flex flex-row justify-between">
+              <!-- <small class="mb-2 text-gray-600">ID: {{ (await getUserInfo(accountStore.user!.id, recording.userId)) }}</small> -->
+              <small class="mb-2 text-gray-600">ID: {{ recording.id }}</small>
+            </div>
+            <ul v-if="recording.parts && recording.parts.length > 0">
+              <li
+                v-for="part in recording.parts"
+                :key="part.id"
+                class="flex flex-row gap-x-2 items-center py-1 border-t border-gray-200 first:border-t-0"
+              >
+                <input
+                  type="checkbox"
+                  :checked="isPartSelected(recording.id, part.id)"
+                  class="form-checkbox h-5 w-5 text-blue-600"
+                  @change="togglePartSelection(recording.id, part.id)"
+                />
+                <span class="text-sm">
+                  {{ t('admin.recordings.part_prefix') }}{{ part.id }}
+                </span>
+                <TextualCoords
+                  v-if="
+                    part.gpsLatitudeStart !== undefined &&
+                    part.gpsLongitudeStart !== undefined
+                  "
+                  :lat="part.gpsLatitudeStart"
+                  :lng="part.gpsLongitudeStart"
+                  type="municipality_part"
+                  class="text-xs text-gray-500"
+                />
+                <span
+                  v-else
+                  class="text-xs text-gray-400"
+                >
+                  <TranslatedText identifier="admin.recordings.no_gps_data" />
+                </span>
+              </li>
+            </ul>
+            <p
               v-else
-              class="text-xs text-gray-400"
+              class="text-sm text-gray-500"
             >
-              <TranslatedText identifier="admin.recordings.no_gps_data" />
-            </span>
-          </li>
-        </ul>
-        <p
-          v-else
-          class="text-sm text-gray-500"
-        >
-          <TranslatedText identifier="admin.recordings.no_parts" />
-        </p>
-
-        <hr>
-
-        <ul>
-          <li
-            v-for="fr in filteredRecordings?.filter(
-              (fr) => fr.recordingId === recording.id
-            )"
-            :key="fr.id"
-            class="flex flex-row gap-x-2 items-center py-1 border-t border-gray-200 first:border-t-0"
-          >
-            <MultiColorSquare
-              size="16px"
-              :colors="
-                fr.detectedDialects?.map(
-                  (d) =>
-                    DialectColors.value?.[
-                      d.confirmedDialect as keyof typeof DialectColors.value
-                    ] ?? ''
-                ) ?? []
-              "
-            />
-            <span class="text-sm">
-              {{
-                formatDuration(
-                  new Date(fr.startDate).getTime() -
-                    new Date(recording.parts?.[0]?.startDate ?? 0).getTime()
-                )
-              }}
-              -
-              {{
-                formatDuration(
-                  new Date(fr.endDate).getTime() -
-                    new Date(recording.parts?.[0]?.startDate ?? 0).getTime()
-                )
-              }}
-            </span>
-            <span class="text-sm">
-              {{ fr.representantFlag ? 'Reprezentant' : 'Nereprezentant' }}
-            </span>
-          </li>
-        </ul>
+              <TranslatedText identifier="admin.recordings.no_parts" />
+            </p>
+            <hr />
+            <ul>
+              <li
+                v-for="fr in filteredRecordings?.filter(
+                  (fr) => fr.recordingId === recording.id
+                )"
+                :key="fr.id"
+                class="flex flex-row gap-x-2 items-center py-1 border-t border-gray-200 first:border-t-0"
+              >
+                <MultiColorSquare
+                  size="16px"
+                  :colors="
+                    fr.detectedDialects?.map(
+                      (d) =>
+                        DialectColors.value?.[
+                          d.confirmedDialect as keyof typeof DialectColors.value
+                        ] ?? ''
+                    ) ?? []
+                  "
+                />
+                <span class="text-sm">
+                  {{
+                    formatDuration(
+                      new Date(fr.startDate).getTime() -
+                        new Date(recording.parts?.[0]?.startDate ?? 0).getTime()
+                    )
+                  }}
+                  -
+                  {{
+                    formatDuration(
+                      new Date(fr.endDate).getTime() -
+                        new Date(recording.parts?.[0]?.startDate ?? 0).getTime()
+                    )
+                  }}
+                </span>
+                <span class="text-sm">
+                  {{ fr.representantFlag ? 'Reprezentant' : 'Nereprezentant' }}
+                </span>
+              </li>
+            </ul>
+          </div>
+        </prefetch-link>
       </li>
     </ul>
   </template>

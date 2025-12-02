@@ -198,7 +198,7 @@ watch(showCardShell, (isCardVisible) => {
       <router-view v-slot="{ Component, route: currentRoute }">
         <Transition
           name="mobile-card"
-          mode="out-in"
+          mode="default"
           appear
         >
           <div
@@ -267,7 +267,7 @@ watch(showCardShell, (isCardVisible) => {
 }
 
 .mobile-shell__card {
-  @apply relative mx-3 mt-auto flex w-auto max-h-[calc(100svh-4.5rem)] flex-col rounded-t-[36px] border border-white/30 bg-white/95 pb-[calc(2.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-18px_35px_rgba(15,23,42,0.28)] transition-transform duration-200 ease-out touch-pan-y;
+  @apply relative mx-3 mt-auto flex w-auto max-h-[calc(100svh-4.5rem)] flex-col rounded-t-[36px] border border-white/30 bg-white/95 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-18px_35px_rgba(15,23,42,0.28)] transition-transform duration-200 ease-out touch-pan-y;
 }
 
 .mobile-shell__card::before {

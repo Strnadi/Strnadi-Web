@@ -36,7 +36,7 @@ const changeLanguage = (lang: keyof typeof translations) => {
   <nav class="w-full">
     <div class="nav-container">
       <div
-        class="flex justify-between gap-x-4 items-center h-16 bg-white rounded-4xl m-2 desktop:m-5 pr-4"
+        class="nav-glass flex justify-between gap-x-4 items-center h-16 rounded-4xl m-2 desktop:m-5 pr-4"
       >
         <!-- Logo -->
         <div
@@ -174,4 +174,34 @@ nav {
 .nav-container {
   @apply flex flex-col;
 }
+
+.nav-glass {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 12px 40px rgba(32, 37, 51, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* @supports (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .nav-glass {
+    background: linear-gradient(
+      135deg,
+      rgba(253, 252, 220, 0.82),
+      rgba(255, 255, 255, 0.74)
+    );
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+  }
+} */
+
+/* @media (prefers-reduced-transparency: reduce) {
+  .nav-glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: #ffffff;
+  }
+} */
 </style>

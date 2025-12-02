@@ -29,7 +29,11 @@ const searchText = ref('');
       v-model:text="searchText"
       placeholder="Hledat..."
       class="drop-shadow-lg rounded-2xl m-2 p-4 w-full sm:w-auto h-[70px]"
-      @update:location="(newLocation) => MapStore.move(newLocation)"
+      @update:location="
+        (newLocation) => {
+          MapStore.move(newLocation, 12);
+        }
+      "
     />
 
     <div class="flex flex-row-reverse items-end">
@@ -85,17 +89,11 @@ const searchText = ref('');
         class="filter-select drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100"
         aria-label="Filter recordings"
       >
-        <option value="all">
-          Všechny nahrávky
-        </option>
+        <option value="all">Všechny nahrávky</option>
 
-        <option value="new">
-          Jen nové nahrávky
-        </option>
+        <option value="new">Jen nové nahrávky</option>
 
-        <option value="old">
-          Jen staré nahrávky
-        </option>
+        <option value="old">Jen staré nahrávky</option>
 
         <option
           v-if="accountStore.user"
@@ -111,9 +109,7 @@ const searchText = ref('');
           Jen nahrávky ostatních
         </option>
 
-        <option value="any-dialect">
-          Jen nahrávky s dialektem
-        </option>
+        <option value="any-dialect">Jen nahrávky s dialektem</option>
       </select>
     </div>
   </div>

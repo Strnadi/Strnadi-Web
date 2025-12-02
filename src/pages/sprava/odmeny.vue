@@ -4,7 +4,7 @@ meta:
 </route>
 
 <template>
-  <div class="flex w-full min-h-[60vh] flex-row gap-x-10">
+  <div class="flex w-2/3 min-h-[60vh] flex-row gap-x-10">
     <!-- Tabs for open editors -->
     <div
       :class="[
@@ -86,18 +86,10 @@ meta:
 
         <div class="flex flex-col gap-3">
           <div class="flex flex-row flex-wrap gap-2">
-            <button @click="generateAndExportSQL">
-              Export .sql
-            </button>
-            <button @click="generateSQL">
-              Generate SQL
-            </button>
-            <button @click="saveWorkspace">
-              Save XML
-            </button>
-            <button @click="loadWorkspace">
-              Load saved XML
-            </button>
+            <button @click="generateAndExportSQL">Export .sql</button>
+            <button @click="generateSQL">Generate SQL</button>
+            <button @click="saveWorkspace">Save XML</button>
+            <button @click="loadWorkspace">Load saved XML</button>
           </div>
 
           <label><strong>Generated SQL</strong></label>
