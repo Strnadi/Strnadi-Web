@@ -298,8 +298,10 @@ const recordingsCount = computed(() => recordingsList.value.length);
               identifier="pages.user_profile.admin.actions_section"
             />
           </h2>
-          <div class="flex flex-row">
-            <button class="secondary danger p-2">
+          <div class="flex flex-col md:flex-row w-full gap-3">
+            <button class="secondary p-2 w-full">Poslat oznámení</button>
+
+            <button class="secondary danger p-2 w-full">
               <TranslatedText
                 identifier="pages.user_profile.admin.delete_account_button"
               />

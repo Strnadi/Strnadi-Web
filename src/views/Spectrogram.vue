@@ -703,7 +703,7 @@ const props = withDefaults(defineProps<Props>(), {
     const isMobile = window.innerWidth < 640; // 640px = sm breakpoint
     return isMobile
       ? { top: 15, right: 10, bottom: 25, left: 35 }
-      : { top: 20, right: 20, bottom: 30, left: 50 };
+      : { top: 0, right: 0, bottom: 0, left: 0 };
   },
   maxFrequency: 12000,
   minFrequency: 3000,

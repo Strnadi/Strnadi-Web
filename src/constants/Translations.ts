@@ -226,6 +226,19 @@ export const translations = {
           'Nahrávání probíhá na pozadí. Můžete pokračovat v používání aplikace.',
         track_status: 'Sledujte průběh v horní liště.'
       },
+      details: {
+        heading: 'Detail nahrávky',
+        name_label: 'Název nahrávky',
+        name_placeholder: 'Nepojmenovaná nahrávka 1',
+        date_label: 'Datum',
+        time_label: 'Čas',
+        notifications_label: 'Chci dostávat upozornění k této nahrávce',
+        confirm_upload_label:
+          'Nahrávku jsem zkontroloval(a) a chci ji odeslat do databáze. Jsem si vědom(a) tím, že v ní zůstane i po smazání mého účtu a že smazána bude jen ve vyjimečných případech.',
+        comment_label: 'Komentář',
+        cta: 'Pokračovat na přidání lokace',
+        slider_more: 'více'
+      },
       preparing: 'Příprava nahrávky...'
     },
 
@@ -828,6 +841,20 @@ export const translations = {
           'Uploading runs in the background. You can continue using the app.',
         track_status: 'Track the progress in the top bar.'
       },
+      details: {
+        heading: 'Recording details',
+        name_label: 'Recording name',
+        name_placeholder: 'Untitled recording 1',
+        date_label: 'Date',
+        time_label: 'Time',
+        notifications_label:
+          'I want to receive notifications about this recording',
+        confirm_upload_label:
+          'I have checked the recording and want to submit it to the database. I am aware that it will remain there even after my<br> account is deleted and will only be removed in exceptional cases.',
+        comment_label: 'Comment',
+        cta: 'Continue to add location',
+        slider_more: 'more'
+      },
       preparing: 'Preparing the recording...'
     },
 
@@ -1063,6 +1090,7 @@ export const translations = {
         by_app_suffix: 'via the app',
         no_note: 'No note.',
         parts_heading: 'Recording parts',
+        photos_heading: 'Photos',
         detected_dialects_heading: 'Detected dialects',
         edit_dialects_title: 'Edit recording dialects',
         edit_recording_title: 'Edit recording',
@@ -1418,6 +1446,19 @@ export const translations = {
         background:
           'Der Upload läuft im Hintergrund. Sie können die App weiter nutzen.',
         track_status: 'Verfolgen Sie den Fortschritt in der oberen Leiste.'
+      },
+      details: {
+        heading: 'Aufnahmedetails',
+        name_label: 'Name der Aufnahme',
+        name_placeholder: 'Unbenannte Aufnahme 1',
+        date_label: 'Datum',
+        time_label: 'Zeit',
+        photos_heading: 'Fotografien',
+        notifications_label:
+          'Ich möchte Benachrichtigungen zu dieser Aufnahme erhalten',
+        comment_label: 'Kommentar',
+        cta: 'Weiter zur Standortauswahl',
+        slider_more: 'mehr'
       },
       preparing: 'Aufnahme wird vorbereitet...'
     },

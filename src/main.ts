@@ -365,7 +365,7 @@ const autoScrollbar = {
 app.use(router);
 app.use(firebasePlugin);
 app.use(VueQueryPlugin);
-app.use(Vue3RouterPrefetch, { type: 'hover', name: 'PrefetchLink' });
+app.use(Vue3RouterPrefetch as any, { type: 'hover', name: 'PrefetchLink' });
 app.use(VWave, {
   duration: 0.1
 });

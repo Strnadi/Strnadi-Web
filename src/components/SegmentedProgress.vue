@@ -37,32 +37,18 @@ const calculateFillAmount = (segmentIndex: number) => {
 </template>
 
 <style scoped>
+@reference "../styles/main.css";
+
 .segmented-progress-bar {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: stretch;
-  width: 100%;
-  height: 13px;
-  box-sizing: border-box;
-  margin-top: 5px;
-  margin-bottom: 5px;
-  overflow: hidden; /* In case of partial fill, ensures neat edges */
+  @apply flex flex-row justify-between items-stretch w-full md:h-3 h-6 box-border mt-1 mb-1 overflow-hidden;
 }
 
 .segment {
-  flex: 1;
-  position: relative;
-  margin: 2px;
-  background-color: #d5d5d5; /* Base color of each segment */
-  border-radius: 6px;
+  @apply flex-1 relative m-2 bg-gray-300 rounded-md;
 }
 
 /* The fill portion of the segment */
 .segment-fill {
-  height: 100%;
-  background-color: #ffc107; /* The "filled" color (yellow) */
-  transition: width 0.3s ease; /* Optional smooth transition */
-  border-radius: 6px;
+  @apply h-full bg-yellow-300 transition-all duration-300 rounded-md;
 }
 </style>

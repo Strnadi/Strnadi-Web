@@ -21,6 +21,9 @@ import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import type { FilteredPartModel } from '@/api/recordings';
 import UserCard from '@/views/UserCard.vue';
 import { getDialectStrings } from '@/utils/dialects';
+import RecordingsMap from '@/views/map/RecordingsMap.vue';
+import Map from '@/views/map/Map.vue';
+import { divIcon } from 'leaflet';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
@@ -238,8 +241,7 @@ const getDialectColorWithAlpha = (
     </span>
   </template>
   <template v-else-if="recording">
-    <div class="w-full">
-      <!-- Metadata Section -->
+    <div class="flex flex-col w-full gap-y-4">
       <div
         class="flex flex-col sm:flex-row justify-around w-full text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-0 sm:divide-x divide-gray-300"
       >
@@ -256,6 +258,148 @@ const getDialectColorWithAlpha = (
         }}</span>
       </div>
 
+      <div>
+        <div
+          class="-mx-4 sm:mx-0 p-3 sm:p-4 transition touch-manipulation gap-2 bg-white"
+        >
+          <Spectrogram
+            v-if="recording && filteredRec && DialectColors && segments"
+            :audio-urls="
+              recording.parts?.map(
+                (p) =>
+                  `${env.VITE_API_URL}/recordings/part/${recording.id}/${p.id}/sound`
+              ) ?? []
+            "
+            :height="200"
+            :readonly="true"
+            :download-only-selections="true"
+            :no-controls="true"
+            :selected="segments"
+          >
+            <template #range-tooltip="{ range, close }">
+              <div
+                class="p-2 bg-blue-100 border border-blue-300 rounded shadow-md"
+              >
+                <h4 class="font-bold">Custom Tooltip!</h4>
+                <p>Range ID: {{ range.id }}</p>
+                <p>Starts at: {{ range.start.toFixed(2) }}s</p>
+                <p>Ends at: {{ range.end.toFixed(2) }}s</p>
+                <button
+                  class="text-blue-500 hover:underline mt-1"
+                  @click="close"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </template>
+          </Spectrogram>
+        </div>
+        <div
+          v-if="filteredRec?.length"
+          class="space-y-3 sm:space-y-4 mt-4 sm:mt-6"
+        >
+          <h3 class="text-base sm:text-lg font-medium mb-2">
+            <TranslatedText
+              identifier="recordings.detail.detected_dialects_heading"
+            />
+          </h3>
+          <ul class="space-y-2 sm:space-y-3">
+            <li
+              v-for="fr in filteredRec.toSorted((a, b) =>
+                a.representantFlag === b.representantFlag
+                  ? 0
+                  : a.representantFlag
+                    ? -1
+                    : 1
+              )"
+              :key="fr.id"
+              class="flex flex-col gap-1 rounded-lg border p-3 sm:p-4 shadow-sm transition touch-manipulation"
+              :style="{
+                backgroundColor: getDialectColorWithAlpha(fr, 'background'),
+                borderColor: getDialectColorWithAlpha(fr, 'border')
+              }"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <!-- <MultiColorSquare
+                    size="14px"
+                    v-if="DialectColors?.['value']"
+                    :colors="(
+                      fr.detectedDialects?.map(dd => {
+                        const code = dd.confirmedDialect ?? dd.predictedDialect ?? dd.userGuessDialect;
+                        return code && DialectColors.value[code as keyof typeof DialectColors.value] ?? null;
+                      }).filter(Boolean) as string[]
+                    ) ?? []"
+                  /> -->
+                  <p class="font-semibold text-sm sm:text-base truncate">
+                    {{
+                      fr.detectedDialects?.[0]?.confirmedDialect ??
+                      fr.detectedDialects?.[0]?.predictedDialect ??
+                      fr.detectedDialects?.[0]?.userGuessDialect ??
+                      t('recordings.detail.unknown_dialect')
+                    }}
+                  </p>
+                </div>
+                <span
+                  v-if="fr.representantFlag"
+                  class="text-lg sm:text-xl flex-shrink-0"
+                  :style="{ color: getDialectColorWithAlpha(fr, 'star') }"
+                  >★</span
+                >
+              </div>
+              <span class="text-xs sm:text-sm text-gray-600">
+                {{ formatRelTime(fr.startDate) }} -
+                {{ formatRelTime(fr.endDate) }}
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flex w-full h-[400px] rounded-lg">
+        <Map
+          :position="[
+            recording.parts?.[0]?.gpsLatitudeStart ?? 0,
+            recording.parts?.[0]?.gpsLongitudeStart ?? 0,
+            17
+          ]"
+          :markers="[{
+            id: 'recording-location',
+            icon: divIcon({
+              className: '',
+              iconSize: [24, 24],
+              iconAnchor: [19, 19],
+              html: `<div class='w-2 h-2 bg-red-500 rounded-full'></div>`
+            }),
+            position: [
+              recording.parts?.[0]?.gpsLatitudeStart ?? 0,
+              recording.parts?.[0]?.gpsLongitudeStart ?? 0
+            ]
+          }]"
+        />
+      </div>
+
+      <div
+        class="flex flex-col w-full gap-y-4"
+        v-if="recording.photos?.length"
+      >
+        <h3 class="text-base sm:text-lg font-medium mb-2">
+          <TranslatedText identifier="recordings.detail.photos_heading" />
+        </h3>
+        <ul class="flex flex-row gap-x-2 overflow-x-auto">
+          <li
+            v-for="photo in recording.photos"
+            :key="photo.id"
+          >
+            <img
+              :src="photo.url"
+              :alt="photo.name"
+              class="w-24 h-24 object-cover rounded-lg"
+            />
+          </li>
+        </ul>
+      </div>
+
       <prefetch-link
         v-if="uploader"
         :to="`/uzivatel/${uploader.id}`"
@@ -263,9 +407,7 @@ const getDialectColorWithAlpha = (
         <UserCard :user="uploader" />
       </prefetch-link>
 
-      <blockquote
-        class="p-3 sm:p-4 bg-gray-50 border-l-4 border-gray-300 italic text-sm sm:text-base break-words"
-      >
+      <blockquote>
         <template v-if="recording.note">
           {{ recording.note }}
         </template>
@@ -273,107 +415,6 @@ const getDialectColorWithAlpha = (
           <TranslatedText identifier="recordings.detail.no_note" />
         </template>
       </blockquote>
-
-      <!-- Filtered Parts Section -->
-      <div
-        v-if="filteredRec?.length"
-        class="space-y-3 sm:space-y-4 mt-4 sm:mt-6"
-      >
-        <h3 class="text-base sm:text-lg font-medium mb-2">
-          <TranslatedText
-            identifier="recordings.detail.detected_dialects_heading"
-          />
-        </h3>
-        <ul class="space-y-2 sm:space-y-3">
-          <li
-            v-for="fr in filteredRec.toSorted((a, b) =>
-              a.representantFlag === b.representantFlag
-                ? 0
-                : a.representantFlag
-                  ? -1
-                  : 1
-            )"
-            :key="fr.id"
-            class="flex flex-col gap-1 rounded-lg border p-3 sm:p-4 shadow-sm transition touch-manipulation"
-            :style="{
-              backgroundColor: getDialectColorWithAlpha(fr, 'background'),
-              borderColor: getDialectColorWithAlpha(fr, 'border')
-            }"
-          >
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2 min-w-0">
-                <!-- <MultiColorSquare
-                  size="14px"
-                  v-if="DialectColors?.['value']"
-                  :colors="(
-                    fr.detectedDialects?.map(dd => {
-                      const code = dd.confirmedDialect ?? dd.predictedDialect ?? dd.userGuessDialect;
-                      return code && DialectColors.value[code as keyof typeof DialectColors.value] ?? null;
-                    }).filter(Boolean) as string[]
-                  ) ?? []"
-                /> -->
-                <p class="font-semibold text-sm sm:text-base truncate">
-                  {{
-                    fr.detectedDialects?.[0]?.confirmedDialect ??
-                    fr.detectedDialects?.[0]?.predictedDialect ??
-                    fr.detectedDialects?.[0]?.userGuessDialect ??
-                    t('recordings.detail.unknown_dialect')
-                  }}
-                </p>
-              </div>
-              <span
-                v-if="fr.representantFlag"
-                class="text-lg sm:text-xl flex-shrink-0"
-                :style="{ color: getDialectColorWithAlpha(fr, 'star') }"
-                >★</span
-              >
-            </div>
-            <span class="text-xs sm:text-sm text-gray-600">
-              {{ formatRelTime(fr.startDate) }} -
-              {{ formatRelTime(fr.endDate) }}
-            </span>
-          </li>
-        </ul>
-      </div>
-
-      <!-- <KeepAlive> -->
-      <div
-        class="-mx-4 sm:mx-0 rounded-lg border p-3 sm:p-4 shadow-sm transition touch-manipulation gap-2 border-gray-200 bg-whitehover:border-yellow-400"
-      >
-        <Spectrogram
-          v-if="recording && filteredRec && DialectColors && segments"
-          :audio-urls="
-            recording.parts?.map(
-              (p) =>
-                `${env.VITE_API_URL}/recordings/part/${recording.id}/${p.id}/sound`
-            ) ?? []
-          "
-          :height="350"
-          :readonly="true"
-          :download-only-selections="true"
-          :no-controls="true"
-          :selected="segments"
-        >
-          <template #range-tooltip="{ range, close }">
-            <div
-              class="p-2 bg-blue-100 border border-blue-300 rounded shadow-md"
-            >
-              <h4 class="font-bold">Custom Tooltip!</h4>
-              <p>Range ID: {{ range.id }}</p>
-              <p>Starts at: {{ range.start.toFixed(2) }}s</p>
-              <p>Ends at: {{ range.end.toFixed(2) }}s</p>
-              <button
-                class="text-blue-500 hover:underline mt-1"
-                @click="close"
-              >
-                Dismiss
-              </button>
-            </div>
-          </template>
-        </Spectrogram>
-      </div>
-      <!-- </KeepAlive> -->
-      <!-- End Filtered Parts Section -->
 
       <div class="flex flex-col gap-2 sm:gap-3">
         <prefetch-link

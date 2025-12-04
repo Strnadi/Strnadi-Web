@@ -15,6 +15,7 @@ import { useStepper } from '@vueuse/core';
 import { type RecordingPartUploadParams } from '@/api/recordings';
 import { divIcon, type Icon } from 'leaflet';
 import { uploadQueueStore } from '@/state/UploadStore';
+import SegmentedProgress from '@/components/SegmentedProgress.vue';
 
 import '@vuepic/vue-datepicker/dist/main.css';
 
@@ -39,6 +40,7 @@ export const uploadStore = reactive({
   device: '' as string | null,
   birdCount: 1,
   dateTime: new Date().toISOString(),
+  notificationsOptIn: false,
   confirmUpload: false,
 
   setRecordings(recordings: File[]) {
@@ -74,6 +76,7 @@ export const uploadStore = reactive({
     this.device = null;
     this.birdCount = 1;
     this.dateTime = new Date().toISOString();
+    this.notificationsOptIn = false;
   }
 });
 </script>
@@ -180,7 +183,7 @@ const stepper = useStepper<Record<StepIdentifier, Step>>({
     title: 'upload.steps.info',
     isValid: () =>
       !!uploadStore.dateTime &&
-      uploadStore.confirmUpload &&
+      uploadStore.title.trim().length > 0 &&
       !isSubmitting.value &&
       !uploadSuccess.value
   },
@@ -316,477 +319,536 @@ function allStepsBeforeAreValid(index: number): boolean {
 }
 
 const currentPartIndex = ref(0);
+
+const dateInputValue = computed({
+  get() {
+    if (!uploadStore.dateTime) return '';
+    const date = new Date(uploadStore.dateTime);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+    return date.toISOString().slice(0, 10);
+  },
+  set(value: string) {
+    if (!value) return;
+    const [year, month, day] = value
+      .split('-')
+      .map((segment) => Number(segment));
+    if (!year || !month || !day) return;
+    const current = uploadStore.dateTime
+      ? new Date(uploadStore.dateTime)
+      : new Date();
+    current.setFullYear(year, month - 1, day);
+    uploadStore.dateTime = new Date(current).toISOString();
+  }
+});
+
+const timeInputValue = computed({
+  get() {
+    if (!uploadStore.dateTime) return '';
+    const date = new Date(uploadStore.dateTime);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  },
+  set(value: string) {
+    if (!value) return;
+    const [hours, minutes] = value.split(':').map((segment) => Number(segment));
+    const current = uploadStore.dateTime
+      ? new Date(uploadStore.dateTime)
+      : new Date();
+    current.setHours(hours || 0, minutes || 0, 0, 0);
+    uploadStore.dateTime = new Date(current).toISOString();
+  }
+});
+
+const isInfoStepActive = computed(() => stepper.isCurrent('info'));
 </script>
 
 <template>
-  <template v-if="!accountStore.user">
-    <h1 class="text-xl sm:text-2xl">
-      <TranslatedText identifier="upload.title" />
-    </h1>
-    <p class="font-medium text-sm sm:text-base">
-      <TranslatedText identifier="upload.login_required" />
-    </p>
-  </template>
+  <div class="max-w-1/3!">
+    <template v-if="!accountStore.user">
+      <h1 class="text-xl sm:text-2xl">
+        <TranslatedText identifier="upload.title" />
+      </h1>
+      <p class="font-medium text-sm sm:text-base">
+        <TranslatedText identifier="upload.login_required" />
+      </p>
+    </template>
 
-  <template v-else-if="!accountStore.user.isEmailVerified">
-    <h1 class="text-xl sm:text-2xl">
-      <TranslatedText identifier="upload.title" />
-    </h1>
-    <p class="font-medium text-sm sm:text-base">
-      <TranslatedText identifier="upload.email_verification_required" />
-    </p>
-  </template>
+    <template v-else-if="!accountStore.user.isEmailVerified">
+      <h1 class="text-xl sm:text-2xl">
+        <TranslatedText identifier="upload.title" />
+      </h1>
+      <p class="font-medium text-sm sm:text-base">
+        <TranslatedText identifier="upload.email_verification_required" />
+      </p>
+    </template>
 
-  <template v-else>
-    <!-- Step Indicators at Top -->
-    <div
-      class="flex items-center justify-center gap-1 mb-6 overflow-x-auto px-2"
-    >
-      <div
-        v-for="(step, id, i) in stepper.steps.value"
-        :key="id"
-        class="flex items-center flex-shrink-0"
+    <template v-else>
+      <h1 class="text-lg sm:text-xl font-bold mb-2">
+        <TranslatedText :identifier="stepper.current.value.title" />
+      </h1>
+
+      <form
+        class="flex flex-col gap-4"
+        @submit.prevent="submitOrNext"
       >
-        <button
-          :disabled="!allStepsBeforeAreValid(i) && stepper.isBefore(id)"
-          class="step-indicator touch-manipulation"
-          :class="{
-            'step-active': stepper.isCurrent(id),
-            'step-completed': stepper.isAfter(id) && step.isValid(),
-            'step-incomplete': stepper.isAfter(id) && !step.isValid(),
-            'step-pending': stepper.isBefore(id) && allStepsBeforeAreValid(i),
-            'step-disabled': !allStepsBeforeAreValid(i) && stepper.isBefore(id)
-          }"
-          :title="step.title"
-          @click="stepper.goTo(id)"
-        >
-          <span class="step-number">{{ i + 1 }}</span>
-        </button>
-        <div
-          v-if="i < Object.keys(stepper.steps.value).length - 1"
-          class="step-connector"
-          :class="{
-            'step-connector-completed': stepper.isAfter(id) && step.isValid(),
-            'step-connector-active': stepper.isCurrent(id)
-          }"
-        />
-      </div>
-    </div>
-
-    <h1 class="text-lg sm:text-xl font-bold mb-2">
-      <TranslatedText :identifier="stepper.current.value.title" />
-    </h1>
-
-    <form
-      class="flex flex-col gap-4"
-      @submit.prevent="submitOrNext"
-    >
-      <template v-if="stepper.isCurrent('file')">
-        <Dropzone
-          :accept="soundAccept"
-          :multiple="true"
-          @drop="onSoundDrop"
-        >
-          <template #dragging>
-            <div class="text-center py-8">
-              <div class="text-4xl mb-2">
-                📁
-              </div>
-              <p class="text-sm sm:text-base font-medium">
-                <TranslatedText identifier="upload.drop_files_here" />
-              </p>
-            </div>
-          </template>
-
-          <div class="flex flex-col items-center gap-y-4 py-6">
-            <div class="text-5xl">
-              🎵
-            </div>
-            <div class="text-center px-4">
-              <p class="text-sm sm:text-base font-medium mb-2">
-                <TranslatedText identifier="upload.select_or_drag_files" />
-              </p>
-              <p class="text-xs sm:text-sm text-gray-600 mb-1">
-                <TranslatedText identifier="upload.select_multiple_audio" />
-              </p>
-              <p class="text-xs sm:text-sm text-gray-500">
-                <TranslatedText identifier="upload.audio_formats" />
-              </p>
-            </div>
-          </div>
-        </Dropzone>
-
-        <!-- File List Outside Dropzone -->
-        <ul
-          v-if="uploadStore.parts?.length"
-          class="flex flex-col w-full gap-3 mt-2"
-          @click.stop
-        >
-          <li
-            v-for="(file, index) in uploadStore.parts?.map((p) => p.file)"
-            :key="file.name"
-            class="flex flex-row w-full items-center gap-3 p-3 bg-white border-2 border-gray-200 rounded-lg shadow-sm"
+        <template v-if="stepper.isCurrent('file')">
+          <Dropzone
+            :accept="soundAccept"
+            :multiple="true"
+            @drop="onSoundDrop"
           >
-            <MaterialIcon
-              class="h-10 sm:h-12 flex-shrink-0 text-blue-500"
-              :filename="file.name"
-            />
-            <div class="flex flex-col min-w-0 flex-1">
-              <p class="text-sm sm:text-base font-medium truncate">
-                {{ file.name }}
-              </p>
-              <p class="text-xs sm:text-sm text-gray-500">
-                {{ (file.size / 1_000_000).toFixed(2) }} MB
-              </p>
-            </div>
-            <button
-              type="button"
-              class="danger-text text-sm sm:text-base px-3 py-2 touch-manipulation flex-shrink-0 font-medium"
-              @click="uploadStore.parts?.splice(index, 1)"
-            >
-              ✕
-            </button>
-          </li>
-        </ul>
-      </template>
-
-      <!-- Location Stage -->
-      <template v-if="stepper.isCurrent('location')">
-        <div class="flex flex-col gap-4">
-          <div class="info-card">
-            <div class="text-2xl mb-2">
-              📍
-            </div>
-            <p class="text-sm sm:text-base">
-              <TranslatedText identifier="upload.map_instructions" />
-            </p>
-          </div>
-
-          <ul class="space-y-3">
-            <li
-              v-for="(part, index) in uploadStore.parts"
-              :key="index"
-              class="location-item"
-              :class="{
-                'location-item-active': index == currentPartIndex
-              }"
-              :style="{
-                borderLeftColor: colors[index]
-              }"
-            >
-              <div
-                class="location-marker"
-                :style="{ backgroundColor: colors[index] }"
-              />
-              <div class="flex-1 min-w-0">
-                <p class="text-xs sm:text-sm font-medium truncate mb-1">
-                  {{ part.file.name }}
-                </p>
-                <p class="text-xs sm:text-sm text-gray-600">
-                  <TextualCoords
-                    v-if="part.location"
-                    :lat="part.location.lat"
-                    :lng="part.location.lng"
-                    type="municipality_part"
-                  />
-                  <template v-else>
-                    <TranslatedText identifier="upload.location_not_set" />
-                  </template>
+            <template #dragging>
+              <div class="text-center py-8">
+                <div class="text-4xl mb-2">📁</div>
+                <p class="text-sm sm:text-base font-medium">
+                  <TranslatedText identifier="upload.drop_files_here" />
                 </p>
               </div>
+            </template>
+
+            <div class="flex flex-col items-center gap-y-4 py-6">
+              <div class="text-5xl">🎵</div>
+              <div class="text-center px-4">
+                <p class="text-sm sm:text-base font-medium mb-2">
+                  <TranslatedText identifier="upload.select_or_drag_files" />
+                </p>
+                <p class="text-xs sm:text-sm text-gray-600 mb-1">
+                  <TranslatedText identifier="upload.select_multiple_audio" />
+                </p>
+                <p class="text-xs sm:text-sm text-gray-500">
+                  <TranslatedText identifier="upload.audio_formats" />
+                </p>
+              </div>
+            </div>
+          </Dropzone>
+
+          <!-- File List Outside Dropzone -->
+          <ul
+            v-if="uploadStore.parts?.length"
+            class="flex flex-col w-full gap-3 mt-2"
+            @click.stop
+          >
+            <li
+              v-for="(file, index) in uploadStore.parts?.map((p) => p.file)"
+              :key="file.name"
+              class="flex flex-row w-full items-center gap-3 p-3 bg-white border-2 border-gray-200 rounded-lg shadow-sm"
+            >
+              <MaterialIcon
+                class="h-10 sm:h-12 shrink-0 text-blue-500"
+                :filename="file.name"
+              />
+              <div class="flex flex-col min-w-0 flex-1">
+                <p class="text-sm sm:text-base font-medium truncate">
+                  {{ file.name }}
+                </p>
+                <p class="text-xs sm:text-sm text-gray-500">
+                  {{ (file.size / 1_000_000).toFixed(2) }} MB
+                </p>
+              </div>
+              <button
+                type="button"
+                class="danger-text text-sm sm:text-base px-3 py-2 touch-manipulation shrink-0 font-medium"
+                @click="uploadStore.parts?.splice(index, 1)"
+              >
+                ✕
+              </button>
             </li>
           </ul>
+        </template>
 
-          <!-- Embedded Map for Mobile -->
-          <div
-            v-if="!isDesktop"
-            class="map-container"
-          >
-            <RecordingsMap />
-          </div>
+        <!-- Location Stage -->
+        <template v-if="stepper.isCurrent('location')">
+          <div class="flex flex-col gap-4">
+            <div class="info-card">
+              <div class="text-2xl mb-2">📍</div>
+              <p class="text-sm sm:text-base">
+                <TranslatedText identifier="upload.map_instructions" />
+              </p>
+            </div>
 
-          <!-- Desktop instruction -->
-          <div
-            v-else
-            class="info-card bg-gray-50 border-gray-300"
-          >
-            <p class="text-xs sm:text-sm text-gray-700">
-              💡 Klikněte na mapu na pozadí pro výběr lokace
-            </p>
-          </div>
-        </div>
-      </template>
-
-      <!-- Info Stage -->
-      <template v-if="stepper.isCurrent('info')">
-        <div class="flex flex-col w-full gap-4">
-          <div class="form-section">
-            <VueDatePicker
-              v-model="uploadStore.dateTime"
-              :flow="['year', 'month', 'calendar', 'time']"
-              auto-apply
-              partial-flow
-              model-type="iso"
-            />
-          </div>
-
-          <div class="form-section">
-            <label
-              for="title"
-              class="form-label"
-            >
-              <TranslatedText identifier="upload.title_label" />
-            </label>
-            <input
-              id="title"
-              v-model="uploadStore.title"
-              type="text"
-              class="form-input"
-              placeholder=""
-            >
-          </div>
-
-          <div class="form-section">
-            <label
-              for="note"
-              class="form-label"
-            >
-              <TranslatedText identifier="upload.note_label" />
-            </label>
-            <textarea
-              id="note"
-              v-model="uploadStore.note"
-              class="form-input min-h-[100px]"
-              placeholder=""
-            />
-          </div>
-
-          <div class="form-section">
-            <label
-              for="device"
-              class="form-label"
-            >
-              <TranslatedText identifier="upload.device_label" />
-            </label>
-            <input
-              id="device"
-              v-model="uploadStore.device"
-              type="text"
-              class="form-input"
-              placeholder=""
-            >
-          </div>
-
-          <div class="form-section">
-            <label
-              for="birdCount"
-              class="form-label"
-            >
-              <TranslatedText identifier="upload.bird_count_label" />
-              <span class="text-blue-600 font-semibold ml-1">({{ uploadStore.birdCount }})</span>
-            </label>
-            <input
-              id="birdCount"
-              v-model="uploadStore.birdCount"
-              min="1"
-              max="2"
-              type="range"
-              class="w-full h-10 touch-manipulation"
-            >
-          </div>
-
-          <div
-            v-if="uploadStore.dialects.length > 0"
-            class="form-section"
-          >
-            <h3 class="form-label mb-2">
-              <TranslatedText identifier="upload.dialects" />
-            </h3>
-            <ul class="flex flex-wrap gap-2">
-              <li
-                v-for="(addedDialect, index) in uploadStore.dialects"
-                :key="index"
-                class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs sm:text-sm font-medium"
-              >
-                {{ addedDialect }}
-              </li>
-            </ul>
-          </div>
-
-          <div class="form-section">
-            <h3 class="form-label mb-3">
-              <TranslatedText identifier="upload.parts" />
-            </h3>
-            <ul class="flex flex-col gap-3">
+            <ul class="space-y-3">
               <li
                 v-for="(part, index) in uploadStore.parts"
                 :key="index"
-                class="flex flex-col sm:flex-row gap-3 items-start sm:items-center p-3 bg-gray-50 border border-gray-200 rounded-lg"
+                class="location-item"
+                :class="{
+                  'location-item-active': index == currentPartIndex
+                }"
+                :style="{
+                  borderLeftColor: colors[index]
+                }"
               >
-                <TextualCoords
-                  v-if="part.location"
-                  :lat="part.location.lat"
-                  :lng="part.location.lng"
-                  type="municipality_part"
-                  class="text-xs sm:text-sm flex-1 font-medium"
+                <div
+                  class="location-marker"
+                  :style="{ backgroundColor: colors[index] }"
                 />
-                <button
-                  type="button"
-                  class="secondary px-4 py-2 text-xs sm:text-sm touch-manipulation w-full sm:w-auto"
-                  @click="uploadStore.removePartByIndex(index)"
-                >
-                  <TranslatedText identifier="upload.remove" />
-                </button>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs sm:text-sm font-medium truncate mb-1">
+                    {{ part.file.name }}
+                  </p>
+                  <p class="text-xs sm:text-sm text-gray-600">
+                    <TextualCoords
+                      v-if="part.location"
+                      :lat="part.location.lat"
+                      :lng="part.location.lng"
+                      type="municipality_part"
+                    />
+                    <template v-else>
+                      <TranslatedText identifier="upload.location_not_set" />
+                    </template>
+                  </p>
+                </div>
               </li>
             </ul>
-          </div>
 
-          <div class="confirmation-box">
-            <input
-              id="confirmUpload"
-              v-model="uploadStore.confirmUpload"
-              class="confirmation-checkbox"
-              type="checkbox"
+            <!-- Embedded Map for Mobile -->
+            <div
+              v-if="!isDesktop"
+              class="map-container"
             >
-            <label
-              for="confirmUpload"
-              class="text-gray-700 text-xs sm:text-sm"
+              <RecordingsMap />
+            </div>
+
+            <!-- Desktop instruction -->
+            <div
+              v-else
+              class="info-card bg-gray-50 border-gray-300"
             >
-              <TranslatedText identifier="upload.confirm_upload_text" />
-            </label>
-          </div>
-        </div>
-      </template>
-
-      <!-- Photos Stage -->
-      <template v-if="stepper.isCurrent('photos')">
-        <Dropzone
-          :multiple="true"
-          :accept="photoAccept"
-          @drop="onPhotoDrop"
-        >
-          <template #dragging>
-            <div class="text-center py-8">
-              <div class="text-4xl mb-2">
-                📷
-              </div>
-              <p class="text-sm sm:text-base font-medium">
-                <TranslatedText identifier="upload.drop_files_here" />
-              </p>
-            </div>
-          </template>
-
-          <div class="flex flex-col items-center gap-y-4 py-6">
-            <div class="text-5xl">
-              📸
-            </div>
-            <div class="text-center px-4">
-              <p class="text-sm sm:text-base font-medium">
-                <TranslatedText identifier="upload.select_or_drag_photos" />
-              </p>
-              <p class="text-xs sm:text-sm text-gray-500 mt-1">
-                (Volitelné)
+              <p class="text-xs sm:text-sm text-gray-700">
+                💡 Klikněte na mapu na pozadí pro výběr lokace
               </p>
             </div>
           </div>
-        </Dropzone>
+        </template>
 
-        <!-- Photo List Outside Dropzone -->
-        <ul
-          v-if="uploadStore.photos?.length"
-          class="flex flex-col w-full gap-4 mt-4"
-          @click.stop
-        >
-          <li
-            v-for="(file, index) in uploadStore.photos"
-            :key="file.name"
-            class="flex flex-col sm:flex-row w-full items-center gap-3 p-3 bg-white border-2 border-gray-200 rounded-lg shadow-sm"
-          >
-            <img
-              :src="makeURL(file)"
-              class="w-full sm:w-32 h-32 object-cover rounded"
-            >
-            <div class="flex-1 text-center sm:text-left">
-              <p class="text-sm font-medium">
-                {{ file.name }}
-              </p>
-              <p class="text-xs text-gray-500">
-                {{ (file.size / 1_000_000).toFixed(2) }} MB
-              </p>
-            </div>
-            <button
-              type="button"
-              class="danger w-full sm:w-auto px-4 py-2 text-sm touch-manipulation"
-              @click="uploadStore.photos?.splice(index, 1)"
-            >
-              <TranslatedText identifier="upload.remove" />
-            </button>
-          </li>
-        </ul>
-      </template>
-
-      <template v-if="stepper.isCurrent('submit')">
-        <div class="flex flex-col gap-6 items-center justify-center py-12 px-4">
-          <template v-if="uploadSuccess">
-            <div class="text-7xl sm:text-8xl">
-              ✅
-            </div>
-            <div class="text-center">
-              <p class="text-xl sm:text-2xl font-bold text-green-600 mb-3">
-                <TranslatedText identifier="upload.success.queued" />
-              </p>
-              <p class="text-sm sm:text-base text-gray-600 mb-2">
-                <TranslatedText identifier="upload.success.background" />
-              </p>
-              <p class="text-sm sm:text-base text-gray-600">
-                <TranslatedText identifier="upload.success.track_status" />
-              </p>
-            </div>
-          </template>
-          <template v-else>
-            <div class="text-5xl animate-pulse">
-              ⏳
-            </div>
-            <p class="text-base sm:text-lg font-medium">
-              <TranslatedText identifier="upload.preparing" />
+        <!-- Info Stage -->
+        <template v-if="stepper.isCurrent('info')">
+          <section>
+            <!-- <div class="recording-details-heading">
+            <p class="details-heading">
+              <TranslatedText identifier="upload.details.heading" />
             </p>
-          </template>
-        </div>
-      </template>
+            <p class="details-subheading">
+              <TranslatedText identifier="upload.steps.info" />
+            </p>
+          </div> -->
 
-      <!-- Navigation Buttons -->
-      <div class="nav-buttons">
-        <button
-          v-if="!stepper.isFirst.value && !stepper.isLast.value"
-          type="button"
-          class="secondary flex-1 sm:flex-none py-3 px-6 text-sm sm:text-base touch-manipulation font-medium"
-          @click="stepper.goToPrevious()"
+            <div class="recording-details-form">
+              <div class="details-field details-field--full">
+                <label
+                  for="recordingTitle"
+                  class="details-label"
+                >
+                  <TranslatedText identifier="upload.details.name_label" />
+                </label>
+                <input
+                  id="recordingTitle"
+                  v-model="uploadStore.title"
+                  type="text"
+                  class="details-input"
+                  :placeholder="t('upload.details.name_placeholder')"
+                />
+              </div>
+
+              <div class="details-field details-field--full">
+                <label
+                  for="detailsComment"
+                  class="details-label"
+                >
+                  <TranslatedText identifier="upload.details.comment_label" />
+                </label>
+                <textarea
+                  id="detailsComment"
+                  v-model="uploadStore.note"
+                  class="details-input details-textarea"
+                  placeholder=""
+                ></textarea>
+              </div>
+
+              <div class="details-field">
+                <label
+                  for="recordingDate"
+                  class="details-label"
+                >
+                  <TranslatedText identifier="upload.details.date_label" />
+                </label>
+                <input
+                  id="recordingDate"
+                  v-model="dateInputValue"
+                  type="date"
+                  class="details-input"
+                />
+              </div>
+
+              <div class="details-field">
+                <label
+                  for="recordingTime"
+                  class="details-label"
+                >
+                  <TranslatedText identifier="upload.details.time_label" />
+                </label>
+                <input
+                  id="recordingTime"
+                  v-model="timeInputValue"
+                  type="time"
+                  class="details-input"
+                />
+              </div>
+
+              <div class="details-field details-field--full">
+                <div class="details-label-row">
+                  <label class="details-label">
+                    <TranslatedText identifier="upload.bird_count_label" />
+                  </label>
+                  <span class="details-bird-value">
+                    <template v-if="uploadStore.birdCount < 3">
+                      {{ uploadStore.birdCount }}
+                    </template>
+                    <template v-else>
+                      <TranslatedText identifier="upload.details.slider_more" />
+                    </template>
+                  </span>
+                </div>
+                <div class="bird-slider-wrapper">
+                  <input
+                    v-model.number="uploadStore.birdCount"
+                    type="range"
+                    min="1"
+                    max="3"
+                    step="1"
+                    class="bird-slider"
+                    :style="{
+                      '--slider-progress':
+                        ((uploadStore.birdCount - 1) / 2) * 100 + '%'
+                    }"
+                  />
+                  <div class="bird-slider-labels">
+                    <span>1</span>
+                    <span>2</span>
+                    <span>
+                      <TranslatedText identifier="upload.details.slider_more" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="details-field details-field--full">
+                <div class="details-toggle-card">
+                  <p class="details-toggle-text">
+                    <TranslatedText
+                      identifier="upload.details.notifications_label"
+                    />
+                  </p>
+                  <label class="toggle-switch">
+                    <input
+                      v-model="uploadStore.notificationsOptIn"
+                      type="checkbox"
+                      class="toggle-switch-input"
+                    />
+                    <span
+                      class="toggle-switch-track"
+                      :class="{
+                        'toggle-switch-track--active':
+                          uploadStore.notificationsOptIn
+                      }"
+                    >
+                      <span class="toggle-switch-thumb" />
+                    </span>
+                  </label>
+                </div>
+
+                <div class="details-toggle-card">
+                  <p class="details-toggle-text">
+                    <TranslatedText
+                      identifier="upload.details.confirm_upload_label"
+                    />
+                  </p>
+                  <label class="toggle-switch">
+                    <input
+                      v-model="uploadStore.confirmUpload"
+                      type="checkbox"
+                      class="toggle-switch-input"
+                    />
+                    <span
+                      class="toggle-switch-track"
+                      :class="{
+                        'toggle-switch-track--active': uploadStore.confirmUpload
+                      }"
+                    >
+                      <span class="toggle-switch-thumb" />
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </section>
+        </template>
+
+        <!-- Photos Stage -->
+        <template v-if="stepper.isCurrent('photos')">
+          <Dropzone
+            :multiple="true"
+            :accept="photoAccept"
+            @drop="onPhotoDrop"
+          >
+            <template #dragging>
+              <div class="text-center py-8">
+                <div class="text-4xl mb-2">📷</div>
+                <p class="text-sm sm:text-base font-medium">
+                  <TranslatedText identifier="upload.drop_files_here" />
+                </p>
+              </div>
+            </template>
+
+            <div class="flex flex-col items-center gap-y-4 py-6">
+              <div class="text-5xl">📸</div>
+              <div class="text-center px-4">
+                <p class="text-sm sm:text-base font-medium">
+                  <TranslatedText identifier="upload.select_or_drag_photos" />
+                </p>
+                <p class="text-xs sm:text-sm text-gray-500 mt-1">(Volitelné)</p>
+              </div>
+            </div>
+          </Dropzone>
+
+          <!-- Photo List Outside Dropzone -->
+          <ul
+            v-if="uploadStore.photos?.length"
+            class="flex flex-col w-full gap-4 mt-4"
+            @click.stop
+          >
+            <li
+              v-for="(file, index) in uploadStore.photos"
+              :key="file.name"
+              class="flex flex-col sm:flex-row w-full items-center gap-3 p-3 bg-white border-2 border-gray-200 rounded-lg shadow-sm"
+            >
+              <img
+                :src="makeURL(file)"
+                class="w-full sm:w-32 h-32 object-cover rounded"
+              />
+              <div class="flex-1 text-center sm:text-left">
+                <p class="text-sm font-medium">
+                  {{ file.name }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ (file.size / 1_000_000).toFixed(2) }} MB
+                </p>
+              </div>
+              <button
+                type="button"
+                class="danger w-full sm:w-auto px-4 py-2 text-sm touch-manipulation"
+                @click="uploadStore.photos?.splice(index, 1)"
+              >
+                <TranslatedText identifier="upload.remove" />
+              </button>
+            </li>
+          </ul>
+        </template>
+
+        <template v-if="stepper.isCurrent('submit')">
+          <div
+            class="flex flex-col gap-6 items-center justify-center py-12 px-4"
+          >
+            <template v-if="uploadSuccess">
+              <div class="text-7xl sm:text-8xl">✅</div>
+              <div class="text-center">
+                <p class="text-xl sm:text-2xl font-bold text-green-600 mb-3">
+                  <TranslatedText identifier="upload.success.queued" />
+                </p>
+                <p class="text-sm sm:text-base text-gray-600 mb-2">
+                  <TranslatedText identifier="upload.success.background" />
+                </p>
+                <p class="text-sm sm:text-base text-gray-600">
+                  <TranslatedText identifier="upload.success.track_status" />
+                </p>
+              </div>
+            </template>
+            <template v-else>
+              <div class="text-5xl animate-pulse">⏳</div>
+              <p class="text-base sm:text-lg font-medium">
+                <TranslatedText identifier="upload.preparing" />
+              </p>
+            </template>
+          </div>
+        </template>
+
+        <div
+          class="flex items-center justify-center gap-1 mb-6 overflow-x-auto px-2"
         >
-          ← <TranslatedText identifier="upload.back" />
-        </button>
-        <button
-          v-if="!stepper.isLast.value"
-          type="submit"
-          :disabled="
-            !(
-              stepper.current.value.isValid() &&
-              allStepsBeforeAreValid(stepper.index.value)
-            )
-          "
-          class="primary flex-1 sm:flex-none py-3 px-6 text-sm sm:text-base touch-manipulation font-medium"
-        >
-          <TranslatedText identifier="upload.next" /> →
-        </button>
-      </div>
-    </form>
-  </template>
+          <div
+            v-for="(step, id, i) in stepper.steps.value"
+            :key="id"
+            class="flex items-center shrink-0"
+          >
+            <button
+              :disabled="!allStepsBeforeAreValid(i) && stepper.isBefore(id)"
+              class="step-indicator touch-manipulation"
+              :class="{
+                'step-active': stepper.isCurrent(id),
+                'step-completed': stepper.isAfter(id) && step.isValid(),
+                'step-incomplete': stepper.isAfter(id) && !step.isValid(),
+                'step-pending':
+                  stepper.isBefore(id) && allStepsBeforeAreValid(i),
+                'step-disabled':
+                  !allStepsBeforeAreValid(i) && stepper.isBefore(id)
+              }"
+              :title="step.title"
+              @click="stepper.goTo(id)"
+            >
+              <span class="step-number">{{ i + 1 }}</span>
+            </button>
+            <div
+              v-if="i < Object.keys(stepper.steps.value).length - 1"
+              class="step-connector"
+              :class="{
+                'step-connector-completed':
+                  stepper.isAfter(id) && step.isValid(),
+                'step-connector-active': stepper.isCurrent(id)
+              }"
+            />
+          </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="nav-buttons">
+          <button
+            v-if="!stepper.isFirst.value && !stepper.isLast.value"
+            type="button"
+            class="secondary flex-1 sm:flex-none py-3 px-6 text-sm sm:text-base touch-manipulation font-medium"
+            @click="stepper.goToPrevious()"
+          >
+            ← <TranslatedText identifier="upload.back" />
+          </button>
+          <button
+            v-if="!stepper.isLast.value"
+            type="submit"
+            :disabled="
+              !(
+                stepper.current.value.isValid() &&
+                allStepsBeforeAreValid(stepper.index.value)
+              )
+            "
+            class="primary flex-1 sm:flex-none py-3 px-6 text-sm sm:text-base touch-manipulation font-medium"
+          >
+            <TranslatedText identifier="upload.next" /> →
+          </button>
+        </div>
+      </form>
+    </template>
+  </div>
 </template>
 
 <style scoped>
 @reference "../../styles/main.css";
 
 .step-indicator {
-  @apply w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 bg-white;
+  @apply w-8 h-8 sm:w-10 sm:h-10 rounded-lg border-2 bg-white;
   @apply flex items-center justify-center;
   @apply transition-all duration-200;
   @apply cursor-pointer;
@@ -798,7 +860,7 @@ const currentPartIndex = ref(0);
 }
 
 .step-pending:hover:not(:disabled) {
-  @apply border-blue-400 shadow-sm;
+  @apply border-yellow-400 shadow-sm;
 }
 
 .step-pending .step-number {
@@ -816,7 +878,7 @@ const currentPartIndex = ref(0);
 
 /* Active/Current state */
 .step-active {
-  @apply border-blue-500 bg-blue-500 shadow-md;
+  @apply border-yellow-300 bg-yellow-300 shadow-md;
 }
 
 .step-active .step-number {
@@ -825,7 +887,7 @@ const currentPartIndex = ref(0);
 
 /* Completed state - valid and past */
 .step-completed {
-  @apply border-green-500 bg-green-500 cursor-pointer;
+  @apply border-yellow-500 bg-yellow-500 cursor-pointer;
 }
 
 .step-completed:hover {
@@ -858,11 +920,11 @@ const currentPartIndex = ref(0);
 }
 
 .step-connector-active {
-  @apply bg-blue-400;
+  @apply bg-yellow-400;
 }
 
 .step-connector-completed {
-  @apply bg-green-500;
+  @apply bg-yellow-500;
 }
 
 .info-card {
@@ -879,7 +941,7 @@ const currentPartIndex = ref(0);
 }
 
 .location-marker {
-  @apply w-8 h-8 rounded-full flex-shrink-0;
+  @apply w-8 h-8 rounded-full shrink-0;
   @apply border-2 border-white shadow-md;
 }
 
@@ -904,7 +966,7 @@ const currentPartIndex = ref(0);
 }
 
 .confirmation-checkbox {
-  @apply mt-0.5 w-6 h-6 flex-shrink-0 touch-manipulation;
+  @apply mt-0.5 w-6 h-6 shrink-0 touch-manipulation;
   @apply text-blue-600 border-2 border-gray-300 rounded;
   @apply focus:ring-2 focus:ring-blue-200;
 }
@@ -929,5 +991,147 @@ const currentPartIndex = ref(0);
     height: 300px;
     min-height: 300px;
   }
+}
+
+.recording-details-card {
+  @apply w-full bg-white rounded-[30px] p-6 sm:p-10 border border-gray-100 flex flex-col gap-6;
+  box-shadow: 0 30px 60px rgba(15, 23, 42, 0.15);
+}
+
+.recording-details-heading {
+  @apply flex flex-col gap-1 text-left;
+}
+
+.details-heading {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+.details-subheading {
+  @apply text-sm text-gray-500 font-medium;
+}
+
+.recording-details-form {
+  @apply grid gap-5;
+}
+
+@media (min-width: 640px) {
+  .recording-details-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .details-field--full {
+    grid-column: span 2 / span 2;
+  }
+}
+
+.details-field {
+  @apply flex flex-col gap-2;
+}
+
+.details-label {
+  @apply text-sm font-semibold text-gray-600;
+}
+
+.details-input {
+  @apply w-full rounded-2xl border border-gray-200 bg-gray-50 text-gray-900 text-base px-4 py-3;
+  @apply focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:bg-white transition;
+}
+
+.details-textarea {
+  min-height: 130px;
+  resize: none;
+}
+
+.details-label-row {
+  @apply flex items-center justify-between;
+}
+
+.details-bird-value {
+  @apply text-base font-semibold text-gray-900;
+}
+
+.bird-slider-wrapper {
+  @apply flex flex-col gap-2;
+}
+
+.bird-slider {
+  --slider-progress: 0%;
+  @apply w-full h-3 rounded-full appearance-none cursor-pointer;
+  background: linear-gradient(
+    90deg,
+    #ffd400 0%,
+    #ffd400 var(--slider-progress),
+    #e5e7eb var(--slider-progress),
+    #e5e7eb 100%
+  );
+}
+
+.bird-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #ffd400;
+  border: 3px solid #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.bird-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #ffd400;
+  border: 3px solid #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.bird-slider-labels {
+  @apply flex justify-between text-xs uppercase tracking-wide text-gray-400 font-semibold;
+}
+
+.details-toggle-card {
+  @apply flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-2xl p-4 shadow-sm;
+}
+
+.details-toggle-text {
+  @apply text-sm sm:text-base font-medium text-gray-800;
+  @apply flex-1 min-w-0 wrap-anywhere;
+}
+
+.toggle-switch {
+  @apply relative inline-flex items-center cursor-pointer;
+}
+
+.toggle-switch-input {
+  @apply sr-only;
+}
+
+.toggle-switch-track {
+  @apply w-14 h-8 rounded-full bg-gray-200 flex items-center px-1 transition-colors duration-200;
+}
+
+.toggle-switch-track--active {
+  background-color: #ffd400;
+}
+
+.toggle-switch-thumb {
+  @apply w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200;
+  transform: translateX(0);
+}
+
+.toggle-switch-track--active .toggle-switch-thumb {
+  transform: translateX(1.5rem);
+}
+
+.details-primary-button {
+  @apply w-full text-center font-semibold text-base sm:text-lg py-4 rounded-full transition;
+  background-color: #ffd400;
+  color: #1f2937;
+  box-shadow: 0 12px 24px rgba(255, 212, 0, 0.35);
+}
+
+.details-primary-button:disabled {
+  @apply opacity-60 cursor-not-allowed;
+  box-shadow: none;
 }
 </style>

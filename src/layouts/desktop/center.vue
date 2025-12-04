@@ -35,7 +35,7 @@ const closePopup = () => {
           <Close />
         </button>
 
-        <div>
+        <div class="max-w-fit">
           <component :is="Component" />
         </div>
       </aside>

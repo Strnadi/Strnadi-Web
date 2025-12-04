@@ -235,7 +235,7 @@ export function ftsFuzzyMatchAsync(
 ) {
   const ITEMS_PER_CHECK = 1000; // performance.now can be very slow depending on platform
   const results = [];
-  const max_ms_per_frame = 1000.0 / 30.0; // 30FPS
+  let max_ms_per_frame = 1000.0 / 30.0; // 30FPS
   let dataIndex = 0;
   let resumeTimeout = null;
 

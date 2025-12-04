@@ -29,34 +29,33 @@ const { data: users, isLoading } = useQuery({
         v-for="user in users"
         :key="user.id"
         :to="`/uzivatel/${user.id}`"
-        class="flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition duration-200 gap-y-2"
+        class="flex flex-col button-secondary p-4 gap-y-2"
       >
-        <div>
-          <span>{{ user.firstName }} {{ user.lastName }}</span>
-          <div class="flex flex-row justify-between">
-            <span>{{ user.email ?? t('account.users.unknown_email') }}</span>
-            <span
-              class="text-sm"
-              :class="{
-                'text-lime-400': user.isEmailVerified,
-                'text-red-500': !user.isEmailVerified
-              }"
-            >
-              {{
-                t(
-                  user.isEmailVerified
-                    ? 'account.users.email_verified'
-                    : 'account.users.email_unverified'
-                )
-              }}
-            </span>
+        <div @click.stop>
+          <div>
+            <span>{{ user.firstName }} {{ user.lastName }}</span>
+            <div class="flex flex-row justify-between">
+              <span>{{ user.email ?? t('account.users.unknown_email') }}</span>
+              <span
+                class="text-sm"
+                :class="{
+                  'text-lime-400': user.isEmailVerified,
+                  'text-red-500': !user.isEmailVerified
+                }"
+              >
+                {{
+                  t(
+                    user.isEmailVerified
+                      ? 'account.users.email_verified'
+                      : 'account.users.email_unverified'
+                  )
+                }}
+              </span>
+            </div>
           </div>
-        </div>
-
-        <div class="flex flex-row justify-between">
-          <button class="secondary p-2">
-            Poslat oznámení
-          </button>
+          <div class="flex flex-row justify-between">
+            <button class="secondary p-2">Poslat oznámení</button>
+          </div>
         </div>
       </PrefetchLink>
     </ul>

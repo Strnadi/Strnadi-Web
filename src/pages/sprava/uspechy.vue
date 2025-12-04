@@ -756,18 +756,9 @@ const buildComparison = (
   return `${column} ${operator} ${formattedValue}`;
 };
 
-type AchievementSqlGenerator = Blockly.Generator & {
-  achievement_column(block: Block): string;
-  achievement_join(block: Block): string;
-  achievement_where(block: Block): string;
-  achievement_having(block: Block): string;
-  achievement_group_by(block: Block): string;
-  achievement_select(block: Block): string;
-};
+const SQL = new Blockly.Generator('ACH_SQL');
 
-const SQL = new Blockly.Generator('ACH_SQL') as AchievementSqlGenerator;
-
-SQL['achievement_column'] = function (block: Block) {
+SQL.forBlock['achievement_column'] = function (block: Block) {
   const expr = sanitizeIdentifier(block.getFieldValue('EXPR') || '*') || '*';
   const alias = sanitizeIdentifier(block.getFieldValue('ALIAS') || '');
   const aggregation = block.getFieldValue('AGGREGATION') || 'RAW';
@@ -800,7 +791,7 @@ SQL['achievement_column'] = function (block: Block) {
   return columnSql + ', ';
 };
 
-SQL['achievement_join'] = function (block: Block) {
+SQL.forBlock['achievement_join'] = function (block: Block) {
   const joinType = block.getFieldValue('TYPE') || 'INNER';
   const table = block.getFieldValue('TABLE') || 'recordings';
   const alias = sanitizeIdentifier(block.getFieldValue('ALIAS') || '');
@@ -811,7 +802,7 @@ SQL['achievement_join'] = function (block: Block) {
   return `${joinType} JOIN ${table}${alias ? ` ${alias}` : ''} ON ${onClause}\n`;
 };
 
-SQL['achievement_where'] = function (block: Block) {
+SQL.forBlock['achievement_where'] = function (block: Block) {
   const clause = buildComparison(
     block.getFieldValue('LEFT') || '',
     block.getFieldValue('OP') || '=',
@@ -822,28 +813,31 @@ SQL['achievement_where'] = function (block: Block) {
   return `${clause} AND `;
 };
 
-SQL['achievement_having'] = SQL['achievement_where'];
+SQL.forBlock['achievement_having'] = SQL.forBlock['achievement_where'];
 
-SQL['achievement_group_by'] = function (block: Block) {
+SQL.forBlock['achievement_group_by'] = function (block: Block) {
   const expr = sanitizeIdentifier(block.getFieldValue('EXPR') || '');
   if (!expr) return '';
   return expr + ', ';
 };
 
-SQL['achievement_select'] = function (block: Block) {
-  let columnsCode = SQL.statementToCode(block, 'COLUMNS') || '';
+SQL.forBlock['achievement_select'] = function (
+  block: Block,
+  generator: Blockly.Generator
+) {
+  let columnsCode = generator.statementToCode(block, 'COLUMNS') || '';
   columnsCode = columnsCode.replace(/,\s*$/, '');
   if (!columnsCode.trim()) {
     columnsCode = '*';
   }
   const table = block.getFieldValue('TABLE') || 'recordings';
   const alias = sanitizeIdentifier(block.getFieldValue('BASE_ALIAS') || '');
-  let joinsCode = SQL.statementToCode(block, 'JOINS') || '';
-  let whereCode = SQL.statementToCode(block, 'WHERE') || '';
+  let joinsCode = generator.statementToCode(block, 'JOINS') || '';
+  let whereCode = generator.statementToCode(block, 'WHERE') || '';
   whereCode = whereCode.replace(/\s*AND\s*$/i, '').trim();
-  let groupByCode = SQL.statementToCode(block, 'GROUP_BY') || '';
+  let groupByCode = generator.statementToCode(block, 'GROUP_BY') || '';
   groupByCode = groupByCode.replace(/,\s*$/, '').trim();
-  let havingCode = SQL.statementToCode(block, 'HAVING') || '';
+  let havingCode = generator.statementToCode(block, 'HAVING') || '';
   havingCode = havingCode.replace(/\s*AND\s*$/i, '').trim();
   const distinct =
     block.getFieldValue('DISTINCT_MODE') === 'DISTINCT' ? ' DISTINCT' : '';
@@ -979,7 +973,7 @@ onMounted(() => {
     comments: true,
     disable: false,
     trashcan: true,
-    scrollbars: true,
+    scrollbars: false,
     horizontalLayout: false
   });
 
