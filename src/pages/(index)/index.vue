@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Map, { MapEvents } from '@/views/map/RecordingsMap.vue';
+import RecordingsMap, { MapEvents } from '@/views/map/RecordingsMap.vue';
 import MapControls from '@/views/map/controls/Mobile.vue';
 import { useEventLast } from '@/utils/events';
 import { useCssVar, useMediaQuery } from '@vueuse/core';
@@ -30,7 +30,7 @@ useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
     v-if="!isDesktop"
     class="relative flex flex-1"
   >
-    <Map />
+    <RecordingsMap />
     <MapControls />
   </div>
 </template>
