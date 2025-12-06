@@ -207,9 +207,6 @@ export default defineConfig({
 
   server: {
     allowedHosts: true,
-    // https: {
-    //
-    // },
 
     headers: {
       'content-security-policy':

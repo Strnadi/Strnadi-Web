@@ -125,7 +125,7 @@ const submit = () => {
         type="text"
         :placeholder="t('placeholders.name')"
         class="w-full p-2 border rounded"
-      >
+      />
     </div>
     <div>
       <label
@@ -141,7 +141,7 @@ const submit = () => {
         type="text"
         :placeholder="t('placeholders.surname')"
         class="w-full p-2 border rounded"
-      >
+      />
     </div>
     <div>
       <label
@@ -157,7 +157,7 @@ const submit = () => {
         type="text"
         :placeholder="t('placeholders.nickname')"
         class="w-full p-2 border rounded"
-      >
+      />
     </div>
     <div>
       <label
@@ -173,7 +173,7 @@ const submit = () => {
         type="number"
         :placeholder="t('placeholders.postal_code')"
         class="w-full p-2 border rounded"
-      >
+      />
     </div>
     <LocationSearch
       v-model="town"
@@ -186,16 +186,22 @@ const submit = () => {
     </button>
   </form>
 
-  <hr class="my-4 px-8">
+  <hr class="my-4 px-8" />
 
   <h2>
     <TranslatedText identifier="account.personal_data.password_section_title" />
   </h2>
-  <div class="flex flex-col gap-y-2">
-    <RevealablePasswordInput v-model="password">
+  <div class="flex flex-col gap-y-2 w-full">
+    <RevealablePasswordInput
+      v-model="password"
+      class="p-2"
+    >
       <TranslatedText identifier="labels.password" />
     </RevealablePasswordInput>
-    <RevealablePasswordInput v-model="passwordAgain">
+    <RevealablePasswordInput
+      v-model="passwordAgain"
+      class="p-2"
+    >
       <TranslatedText identifier="labels.password_confirm" />
     </RevealablePasswordInput>
     <button

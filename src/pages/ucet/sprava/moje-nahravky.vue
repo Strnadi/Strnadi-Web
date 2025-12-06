@@ -25,43 +25,45 @@ console.log('Here');
 </script>
 
 <template>
-  <h1>
-    <TranslatedText identifier="account.my_recordings.title" />
-  </h1>
-  <template v-if="isLoading">
-    <TranslatedText identifier="loading" />...
-  </template>
-  <template v-if="isError">
-    <TranslatedText identifier="errors.recordings.loading" />
-  </template>
-  <template v-else>
-    <ul
-      v-if="recordingsLength > 0"
-      class="flex flex-col-reverse gap-y-3"
-    >
-      <li
-        v-for="rec in recordings"
-        :key="rec.id"
+  <div class="w-full">
+    <h1>
+      <TranslatedText identifier="account.my_recordings.title" />
+    </h1>
+    <template v-if="isLoading">
+      <TranslatedText identifier="loading" />...
+    </template>
+    <template v-if="isError">
+      <TranslatedText identifier="errors.recordings.loading" />
+    </template>
+    <template v-else>
+      <ul
+        v-if="recordingsLength > 0"
+        class="flex flex-col-reverse gap-y-3"
       >
-        <router-link
-          :to="`/mapa/nahravka/${rec.id}`"
-          class="flex flex-col justify-around bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition duration-200"
+        <li
+          v-for="rec in recordings"
+          :key="rec.id"
         >
-          <div class="flex flex-row justify-between">
-            <span class="text-lg font-bold">{{ rec.name }}</span>
-            <span class="text-lime-400">
-              <TranslatedText identifier="recordings.status.uploaded" />
-            </span>
-          </div>
-          <div class="flex flex-row justify-between">
-            <span />
-            <span>{{ new Date(rec.createdAt).toLocaleString() }}</span>
-          </div>
-        </router-link>
-      </li>
-    </ul>
-    <p v-else>
-      <translated-text identifier="empty" />
-    </p>
-  </template>
+          <router-link
+            :to="`/mapa/nahravka/${rec.id}`"
+            class="flex flex-col justify-around bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition duration-200"
+          >
+            <div class="flex flex-row justify-between">
+              <span class="text-lg font-bold">{{ rec.name }}</span>
+              <span class="text-lime-400">
+                <TranslatedText identifier="recordings.status.uploaded" />
+              </span>
+            </div>
+            <div class="flex flex-row justify-between">
+              <span />
+              <span>{{ new Date(rec.createdAt).toLocaleString() }}</span>
+            </div>
+          </router-link>
+        </li>
+      </ul>
+      <p v-else>
+        <translated-text identifier="empty" />
+      </p>
+    </template>
+  </div>
 </template>

@@ -74,19 +74,19 @@ onBeforeRouteUpdate(async (to) => {
 });
 
 const segments = computed<
-  | {
-      id: number;
-      start: number;
-      end: number;
-      color?: string;
-      colors?: string[];
-    }[]
-  | null
+  {
+    id: number;
+    start: number;
+    end: number;
+    color?: string;
+    colors?: string[];
+    payload?: FilteredPartModel;
+  }[]
 >(() => {
   if (filteredRec.value && DialectColors.value) {
     const firstPart = recording.value?.parts?.[0];
 
-    if (!firstPart) return null;
+    if (!firstPart) return [];
 
     let i = 0;
 
@@ -109,11 +109,12 @@ const segments = computed<
           (code) =>
             DialectColors.value?.[code as keyof typeof DialectColors.value]
         )
-        .filter(Boolean) as string[]
+        .filter(Boolean) as string[],
+      payload: fr
     }));
   }
 
-  return null;
+  return [];
 });
 
 // onMounted(() => {
@@ -263,7 +264,7 @@ const getDialectColorWithAlpha = (
           class="-mx-4 sm:mx-0 p-3 sm:p-4 transition touch-manipulation gap-2 bg-white"
         >
           <Spectrogram
-            v-if="recording && filteredRec && DialectColors && segments"
+            v-if="recording && filteredRec && DialectColors"
             :audio-urls="
               recording.parts?.map(
                 (p) =>
@@ -277,19 +278,18 @@ const getDialectColorWithAlpha = (
             :selected="segments"
           >
             <template #range-tooltip="{ range, close }">
-              <div
-                class="p-2 bg-blue-100 border border-blue-300 rounded shadow-md"
-              >
-                <h4 class="font-bold">Custom Tooltip!</h4>
-                <p>Range ID: {{ range.id }}</p>
-                <p>Starts at: {{ range.start.toFixed(2) }}s</p>
-                <p>Ends at: {{ range.end.toFixed(2) }}s</p>
-                <button
-                  class="text-blue-500 hover:underline mt-1"
-                  @click="close"
-                >
-                  Dismiss
-                </button>
+              <div>
+                <h4 class="font-bold">
+                  {{
+                    getDialectStrings(range.payload as FilteredPartModel).join(
+                      ', '
+                    )
+                  }}
+                </h4>
+                <p>
+                  {{ formatRelTime(range.payload?.startDate) }} -
+                  {{ formatRelTime(range.payload?.endDate) }}
+                </p>
               </div>
             </template>
           </Spectrogram>
@@ -363,19 +363,21 @@ const getDialectColorWithAlpha = (
             recording.parts?.[0]?.gpsLongitudeStart ?? 0,
             17
           ]"
-          :markers="[{
-            id: 'recording-location',
-            icon: divIcon({
-              className: '',
-              iconSize: [24, 24],
-              iconAnchor: [19, 19],
-              html: `<div class='w-2 h-2 bg-red-500 rounded-full'></div>`
-            }),
-            position: [
-              recording.parts?.[0]?.gpsLatitudeStart ?? 0,
-              recording.parts?.[0]?.gpsLongitudeStart ?? 0
-            ]
-          }]"
+          :markers="[
+            {
+              id: 'recording-location',
+              icon: divIcon({
+                className: '',
+                iconSize: [24, 24],
+                iconAnchor: [19, 19],
+                html: `<div class='w-2 h-2 bg-red-500 rounded-full'></div>`
+              }),
+              position: [
+                recording.parts?.[0]?.gpsLatitudeStart ?? 0,
+                recording.parts?.[0]?.gpsLongitudeStart ?? 0
+              ]
+            }
+          ]"
         />
       </div>
 

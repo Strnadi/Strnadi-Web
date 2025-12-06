@@ -369,7 +369,7 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
 </script>
 
 <template>
-  <div class="max-w-1/3!">
+  <div class="w-fit">
     <template v-if="!accountStore.user">
       <h1 class="text-xl sm:text-2xl">
         <TranslatedText identifier="upload.title" />
@@ -529,7 +529,7 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
 
         <!-- Info Stage -->
         <template v-if="stepper.isCurrent('info')">
-          <section>
+          <section class="info-section-container">
             <!-- <div class="recording-details-heading">
             <p class="details-heading">
               <TranslatedText identifier="upload.details.heading" />
@@ -537,7 +537,7 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
             <p class="details-subheading">
               <TranslatedText identifier="upload.steps.info" />
             </p>
-          </div> -->
+            </div> -->
 
             <div class="recording-details-form">
               <div class="details-field details-field--full">
@@ -780,6 +780,7 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
 
         <div
           class="flex items-center justify-center gap-1 mb-6 overflow-x-auto px-2"
+          :class="{ 'info-step-navigator': stepper.isCurrent('info') }"
         >
           <div
             v-for="(step, id, i) in stepper.steps.value"
@@ -816,7 +817,10 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
         </div>
 
         <!-- Navigation Buttons -->
-        <div class="nav-buttons">
+        <div
+          class="nav-buttons"
+          :class="{ 'info-step-nav-buttons': stepper.isCurrent('info') }"
+        >
           <button
             v-if="!stepper.isFirst.value && !stepper.isLast.value"
             type="button"
@@ -1095,7 +1099,10 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
 
 .details-toggle-text {
   @apply text-sm sm:text-base font-medium text-gray-800;
-  @apply flex-1 min-w-0 wrap-anywhere;
+  @apply flex-1 min-w-0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .toggle-switch {
@@ -1133,5 +1140,17 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
 .details-primary-button:disabled {
   @apply opacity-60 cursor-not-allowed;
   box-shadow: none;
+}
+
+.info-section-container {
+  @apply max-w-2xl w-full;
+}
+
+.info-step-navigator {
+  @apply max-w-2xl w-full mx-auto;
+}
+
+.info-step-nav-buttons {
+  @apply max-w-2xl w-full mx-auto;
 }
 </style>
