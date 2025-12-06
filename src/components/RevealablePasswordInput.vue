@@ -43,9 +43,13 @@ const isRevealed = ref(false);
         v-model="inputValue"
         :type="isRevealed ? 'text' : 'password'"
         class="w-full pr-16"
-      />
+      >
     </div>
-    <button class="text-xl" type="button" @click="isRevealed = !isRevealed">
+    <button
+      class="text-xl"
+      type="button"
+      @click="isRevealed = !isRevealed"
+    >
       {{ isRevealed ? '🫣' : '👁️' }}
     </button>
   </div>

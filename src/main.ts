@@ -23,7 +23,7 @@ import VueVirtualScroller from 'vue-virtual-scroller';
 import VueClickAway from 'vue3-click-away';
 import VWave from 'v-wave';
 import vSelect from 'vue-select';
-import VueDatePicker from '@vuepic/vue-datepicker';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
 import ExpandableImage from '@/components/ExpandableImage.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import { ApiError } from '@/classes/api-error';
@@ -232,10 +232,10 @@ const serverGuard = (
 // }
 
 let routes: RouteRecordRaw[];
-routes = generatedRoutes;
+routes = generatedRoutes as RouteRecordRaw[];
 // routes = removeUnlayoutedRoutes(routes, initialIsDesktop);
 routes = removeLayoutsRecursively(routes, initialIsDesktop);
-routes = setupLayouts(routes);
+routes = setupLayouts(routes) as RouteRecordRaw[];
 // routes = nameRoutes(routes, "guest", route => route.meta?.auth === false);
 // routes = nameRoutes(routes, "auth", route => !!route.meta?.auth);
 // routes = nameRoutes(routes, "admin", route => !!route.meta?.admin);
@@ -269,6 +269,44 @@ const router = createRouter({
     return { top: 0, left: 0, behavior: 'smooth' };
   }
 });
+
+const reducedMotionQuery = window.matchMedia(
+  '(prefers-reduced-motion: reduce)'
+);
+let allowViewTransitions = !reducedMotionQuery.matches;
+reducedMotionQuery.addEventListener('change', (event) => {
+  allowViewTransitions = !event.matches;
+});
+
+if ('startViewTransition' in document) {
+  let isViewTransitioning = false;
+
+  router.beforeEach((to, from, next) => {
+    if (
+      !allowViewTransitions ||
+      isViewTransitioning ||
+      !from.name ||
+      to.fullPath === from.fullPath
+    ) {
+      next();
+      return;
+    }
+
+    try {
+      isViewTransitioning = true;
+      const transition = document.startViewTransition(() => {
+        next();
+      });
+
+      transition.finished.finally(() => {
+        isViewTransitioning = false;
+      });
+    } catch (_error) {
+      isViewTransitioning = false;
+      next();
+    }
+  });
+}
 
 const sentryConfig = {
   app: app,
@@ -327,7 +365,7 @@ const autoScrollbar = {
 app.use(router);
 app.use(firebasePlugin);
 app.use(VueQueryPlugin);
-app.use(Vue3RouterPrefetch, { type: 'hover', name: 'PrefetchLink' });
+app.use(Vue3RouterPrefetch as any, { type: 'hover', name: 'PrefetchLink' });
 app.use(VWave, {
   duration: 0.1
 });

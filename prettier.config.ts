@@ -6,7 +6,8 @@ const config: Config = {
   semi: true,
   singleQuote: true,
   bracketSameLine: false,
-  bracketSpacing: true
+  bracketSpacing: true,
+  singleAttributePerLine: true
 };
 
 export default config;

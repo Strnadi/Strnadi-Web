@@ -4,7 +4,7 @@ meta:
 </route>
 
 <template>
-  <div class="flex w-full min-h-[60vh] flex-row gap-x-10">
+  <div class="flex w-2/3 min-h-[60vh] flex-row gap-x-10">
     <!-- Tabs for open editors -->
     <div
       :class="[
@@ -14,43 +14,52 @@ meta:
     >
       <div class="flex flex-row items-center gap-2 mb-4">
         <button
-          @click="toggleSidebar"
+          v-wave
           class="px-2 py-1 border rounded"
           :title="isSidebarCollapsed ? 'Show editors' : 'Hide editors'"
-          v-wave
+          @click="toggleSidebar"
         >
           <list-icon class="w-8 h-8" />
         </button>
-        <h3 v-if="!isSidebarCollapsed" class="text-lg font-semibold">
+        <h3
+          v-if="!isSidebarCollapsed"
+          class="text-lg font-semibold"
+        >
           Editors
         </h3>
         <button
           v-if="!isSidebarCollapsed"
-          @click="addEditor"
-          class="ml-auto px-2 py-1 border rounded"
           v-wave
+          class="ml-auto px-2 py-1 border rounded"
+          @click="addEditor"
         >
           +
         </button>
       </div>
 
-      <div v-if="!isSidebarCollapsed" class="flex flex-col gap-2">
-        <template v-for="(ed, i) in editors" :key="ed.id">
+      <div
+        v-if="!isSidebarCollapsed"
+        class="flex flex-col gap-2"
+      >
+        <template
+          v-for="(ed, i) in editors"
+          :key="ed.id"
+        >
           <div class="flex items-center">
             <button
+              v-wave
               :class="[
                 'flex-1 text-left px-3 py-2 rounded',
                 { 'bg-gray-200': currentEditorIndex === i }
               ]"
               @click="switchEditor(i)"
-              v-wave
             >
               {{ ed.title }}
             </button>
             <button
-              @click="closeEditor(i)"
-              class="ml-2 px-2 py-1 text-sm"
               v-wave
+              class="ml-2 px-2 py-1 text-sm"
+              @click="closeEditor(i)"
             >
               ✕
             </button>
@@ -65,11 +74,14 @@ meta:
 
     <div class="flex flex-1 flex-col gap-y-2 min-h-0">
       <div class="flex flex-1 flex-col gap-4 min-h-0 overflow-hidden">
-        <div ref="blocklyArea" class="relative flex-1 min-h-0 overflow-hidden">
+        <div
+          ref="blocklyArea"
+          class="relative flex-1 min-h-0 overflow-hidden"
+        >
           <div
             ref="blocklyDiv"
             class="h-full min-h-80 w-full overflow-hidden rounded-lg border border-gray-200 bg-white"
-          ></div>
+          />
         </div>
 
         <div class="flex flex-col gap-3">
@@ -85,7 +97,7 @@ meta:
             v-model="generatedSQL"
             class="w-full resize-y rounded border border-gray-200 p-2 font-mono text-sm"
             rows="2"
-          ></textarea>
+          />
         </div>
       </div>
     </div>
@@ -118,7 +130,11 @@ watch(
   }
 );
 
-type EditorTab = { id: string; title: string; xml: string };
+interface EditorTab {
+  id: string;
+  title: string;
+  xml: string;
+}
 
 const blocklyDiv = ref<HTMLElement | null>(null);
 const blocklyArea = ref<HTMLElement | null>(null);
@@ -204,7 +220,9 @@ function loadEditorXml(index: number) {
       console.warn('Failed to load editor xml', e);
     }
   }
-  nextTick(() => resizeWorkspace());
+  nextTick(() => {
+    resizeWorkspace();
+  });
 }
 
 function addEditor() {
@@ -215,7 +233,9 @@ function addEditor() {
   // switch to new editor after next tick
   currentEditorIndex.value = editors.value.length - 1;
   // load after next tick to ensure workspace updates
-  nextTick(() => loadEditorXml(currentEditorIndex.value));
+  nextTick(() => {
+    loadEditorXml(currentEditorIndex.value);
+  });
 }
 
 function switchEditor(i: number) {
@@ -423,14 +443,16 @@ onMounted(() => {
     horizontalLayout: false,
     scrollbars: false,
     sounds: true
-  }) as WorkspaceSvg;
+  });
 
   loadEditorXml(currentEditorIndex.value);
   resizeWorkspace();
 
   window.addEventListener('resize', resizeWorkspace);
   if (typeof ResizeObserver !== 'undefined' && blocklyArea.value) {
-    resizeObserver = new ResizeObserver(() => resizeWorkspace());
+    resizeObserver = new ResizeObserver(() => {
+      resizeWorkspace();
+    });
     resizeObserver.observe(blocklyArea.value);
   }
 });

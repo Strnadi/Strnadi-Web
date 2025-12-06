@@ -64,11 +64,13 @@ const locationLabel = computed(() => {
       class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-lime-100"
     >
       <!-- <ProfileIcon v-if="!user.profilePicture" class="h-12 w-12 text-lime-600" /> -->
-      <ProfilePhoto :userId="props.user.id" />
+      <ProfilePhoto :user-id="props.user.id" />
     </div>
     <div class="flex-1 space-y-2">
       <div class="flex flex-wrap items-center gap-3">
-        <h1 class="text-3xl font-semibold">{{ profileName }}</h1>
+        <h1 class="text-3xl font-semibold">
+          {{ profileName }}
+        </h1>
       </div>
       <div class="flex flex-wrap gap-4 text-sm text-gray-600">
         <span v-if="signupDate">

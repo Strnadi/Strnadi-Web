@@ -112,7 +112,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
 </script>
 
 <template>
-  <div class="space-y-10">
+  <div class="w-full space-y-10">
     <template v-if="isUserLoading">
       <p class="text-gray-500"><TranslatedText identifier="loading" />...</p>
     </template>
@@ -122,7 +122,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
       </p>
     </template>
     <template v-else>
-      <div class="space-y-6">
+      <div class="w-full space-y-6">
         <UserCard :user="user" />
 
         <section
@@ -194,7 +194,9 @@ const recordingsCount = computed(() => recordingsList.value.length);
             </div>
             <div v-if="accountStore.user?.role === 'admin'">
               <dt class="text-sm uppercase tracking-wide text-gray-500">ID</dt>
-              <dd class="mt-1 text-base text-gray-900">{{ user.id }}</dd>
+              <dd class="mt-1 text-base text-gray-900">
+                {{ user.id }}
+              </dd>
             </div>
           </dl>
         </section>
@@ -206,19 +208,34 @@ const recordingsCount = computed(() => recordingsList.value.length);
                 identifier="pages.user_profile.recordings_section"
               />
             </h2>
-            <span v-if="!isRecordingsLoading" class="text-sm text-gray-500">
+            <span
+              v-if="!isRecordingsLoading"
+              class="text-sm text-gray-500"
+            >
               {{ recordingsCount }}
             </span>
           </div>
-          <div v-if="isRecordingsLoading" class="text-gray-500">
+          <div
+            v-if="isRecordingsLoading"
+            class="text-gray-500"
+          >
             <TranslatedText identifier="loading" />...
           </div>
-          <div v-else-if="isRecordingsError" class="text-red-600">
+          <div
+            v-else-if="isRecordingsError"
+            class="text-red-600"
+          >
             <TranslatedText identifier="errors.recordings.loading" />
           </div>
           <template v-else>
-            <ul v-if="recordingsCount" class="space-y-3">
-              <li v-for="recording in recordingsList" :key="recording.id">
+            <ul
+              v-if="recordingsCount"
+              class="space-y-3"
+            >
+              <li
+                v-for="recording in recordingsList"
+                :key="recording.id"
+              >
                 <prefetch-link
                   :to="`/mapa/nahravka/${recording.id}`"
                   class="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-yellow-400 hover:shadow-md"
@@ -257,13 +274,19 @@ const recordingsCount = computed(() => recordingsList.value.length);
                       {{ recording.device }}
                     </span>
                   </div>
-                  <p v-if="recording.note" class="text-sm text-gray-700">
+                  <p
+                    v-if="recording.note"
+                    class="text-sm text-gray-700"
+                  >
                     {{ recording.note }}
                   </p>
                 </prefetch-link>
               </li>
             </ul>
-            <p v-else class="text-gray-500">
+            <p
+              v-else
+              class="text-gray-500"
+            >
               <TranslatedText identifier="empty" />
             </p>
           </template>
@@ -275,8 +298,10 @@ const recordingsCount = computed(() => recordingsList.value.length);
               identifier="pages.user_profile.admin.actions_section"
             />
           </h2>
-          <div class="flex flex-row">
-            <button class="secondary danger p-2">
+          <div class="flex flex-col md:flex-row w-full gap-3">
+            <button class="secondary p-2 w-full">Poslat oznámení</button>
+
+            <button class="secondary danger p-2 w-full">
               <TranslatedText
                 identifier="pages.user_profile.admin.delete_account_button"
               />

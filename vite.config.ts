@@ -132,7 +132,7 @@ export default defineConfig({
         ]
       }
     }),
-    Compression({ algorithm: 'brotliCompress' }),
+    Compression({ algorithms: ['brotliCompress'] }),
     SentryVitePlugin({
       org: 'delta-strnadi',
       project:
@@ -179,14 +179,11 @@ export default defineConfig({
 
   build: {
     target: 'ESNext',
+    cssTarget: 'es2022',
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-
-          return;
+        advancedChunks: {
+          groups: [{ name: 'vendor', test: /node_modules/ }]
         }
       }
     },
@@ -202,7 +199,7 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: /leaflet\/dist\/leaflet-src\.js(\?commonjs-es-import)?$/,
+        find: /leaflet\/dist\/leaflet-src\.js/,
         replacement: 'leaflet/dist/leaflet-src.esm.js'
       }
     ]
@@ -210,9 +207,6 @@ export default defineConfig({
 
   server: {
     allowedHosts: true,
-    // https: {
-    //
-    // },
 
     headers: {
       'content-security-policy':

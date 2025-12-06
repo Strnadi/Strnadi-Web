@@ -17,7 +17,7 @@ const isMobile = computed(() => {
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
     <div class="flex flex-col items-center gap-y-3">
-      <img src="/logo-no-text.svg" />
+      <img src="/logo-no-text.svg">
       <h2>
         <TranslatedText identifier="project_name" />
       </h2>

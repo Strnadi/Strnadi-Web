@@ -106,9 +106,16 @@ const submit = () => {
   <h2>
     <TranslatedText identifier="account.personal_data.title" />
   </h2>
-  <form ref="form" class="flex flex-col gap-y-2" @submit.prevent="submit">
+  <form
+    ref="form"
+    class="flex flex-col gap-y-2"
+    @submit.prevent="submit"
+  >
     <div>
-      <label for="name" class="block text-sm font-medium mb-1">
+      <label
+        for="name"
+        class="block text-sm font-medium mb-1"
+      >
         <TranslatedText identifier="labels.name" />
       </label>
       <input
@@ -121,7 +128,10 @@ const submit = () => {
       />
     </div>
     <div>
-      <label for="surname" class="block text-sm font-medium mb-1">
+      <label
+        for="surname"
+        class="block text-sm font-medium mb-1"
+      >
         <TranslatedText identifier="labels.surname" />
       </label>
       <input
@@ -134,7 +144,10 @@ const submit = () => {
       />
     </div>
     <div>
-      <label for="nickname" class="block text-sm font-medium mb-1">
+      <label
+        for="nickname"
+        class="block text-sm font-medium mb-1"
+      >
         <TranslatedText identifier="labels.nickname" />
       </label>
       <input
@@ -147,7 +160,10 @@ const submit = () => {
       />
     </div>
     <div>
-      <label for="zipcode" class="block text-sm font-medium mb-1">
+      <label
+        for="zipcode"
+        class="block text-sm font-medium mb-1"
+      >
         <TranslatedText identifier="labels.postal_code" />
       </label>
       <input
@@ -175,11 +191,17 @@ const submit = () => {
   <h2>
     <TranslatedText identifier="account.personal_data.password_section_title" />
   </h2>
-  <div class="flex flex-col gap-y-2">
-    <RevealablePasswordInput v-model="password">
+  <div class="flex flex-col gap-y-2 w-full">
+    <RevealablePasswordInput
+      v-model="password"
+      class="p-2"
+    >
       <TranslatedText identifier="labels.password" />
     </RevealablePasswordInput>
-    <RevealablePasswordInput v-model="passwordAgain">
+    <RevealablePasswordInput
+      v-model="passwordAgain"
+      class="p-2"
+    >
       <TranslatedText identifier="labels.password_confirm" />
     </RevealablePasswordInput>
     <button

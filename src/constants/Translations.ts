@@ -109,6 +109,7 @@ export const translations = {
     common: {
       or: 'Nebo',
       error_prefix: 'Chyba:',
+      ok: 'OK',
       irreversible_action: 'Tato akce je nevratná.',
       buttons: {
         resume: 'Pokračovat',
@@ -131,6 +132,15 @@ export const translations = {
       loading: 'Načítání...',
       saving: 'Ukládání...',
       deleting: 'Mazání...'
+    },
+
+    navigation: {
+      map: 'Mapa',
+      information: 'Informace',
+      upload: 'Nahrát',
+      app: 'Aplikace',
+      account: 'Účet',
+      login: 'Přihlásit'
     },
 
     pages: {
@@ -216,6 +226,19 @@ export const translations = {
           'Nahrávání probíhá na pozadí. Můžete pokračovat v používání aplikace.',
         track_status: 'Sledujte průběh v horní liště.'
       },
+      details: {
+        heading: 'Detail nahrávky',
+        name_label: 'Název nahrávky',
+        name_placeholder: 'Nepojmenovaná nahrávka 1',
+        date_label: 'Datum',
+        time_label: 'Čas',
+        notifications_label: 'Chci dostávat upozornění k této nahrávce',
+        confirm_upload_label:
+          'Nahrávku jsem zkontroloval(a) a chci ji odeslat do databáze. Jsem si vědom(a) tím, že v ní zůstane i po smazání mého účtu a že smazána bude jen ve vyjimečných případech.',
+        comment_label: 'Komentář',
+        cta: 'Pokračovat na přidání lokace',
+        slider_more: 'více'
+      },
       preparing: 'Příprava nahrávky...'
     },
 
@@ -232,7 +255,173 @@ export const translations = {
         title: 'Seznam uživatelů'
       },
       notifications: {
-        title: 'Správa oznámení'
+        title: 'Správa oznámení',
+        loadingUsers: 'Načítám seznam uživatelů…',
+        tabs: {
+          search: 'Vyhledávání',
+          table: 'Tabulka',
+          searchDescription:
+            'Rychle přidejte jednotlivé uživatele podle jména, přezdívky, e-mailu nebo města.',
+          tableDescription:
+            'Pracujte s filtrováním a hromadným výběrem podobně jako v Excelu.'
+        },
+        recipients: {
+          title: 'Vybraní příjemci',
+          helper:
+            'Přidejte uživatele pomocí vyhledávání nebo tabulky níže. Oznámení se odešle každému vybranému uživateli.',
+          clear: 'Vymazat výběr',
+          empty: 'Zatím nebyl vybrán žádný uživatel.'
+        },
+        search: {
+          title: 'Vyhledávání',
+          inputLabel: 'Hledat uživatele',
+          helper:
+            'Vyhledává podle jména, příjmení, přezdívky, e-mailu i města.',
+          placeholder: 'Zadejte alespoň {count} znaky…',
+          minChars: 'Zadejte alespoň {count} znaky pro zobrazení výsledků.',
+          limitedResults:
+            'Zobrazuji prvních {limit} výsledků. Upřesněte dotaz pro přesnější výběr.',
+          noResults: 'Žádní uživatelé neodpovídají dotazu.',
+          added: 'Přidáno'
+        },
+        table: {
+          filterLabel: 'Filtrovat tabulku',
+          filterPlaceholder: 'Filtr podle ID, jména, e-mailu nebo města',
+          clearFilter: 'Vymazat filtr',
+          headers: {
+            name: 'Jméno',
+            nickname: 'Přezdívka',
+            email: 'E-mail',
+            city: 'Město'
+          },
+          noMatches: 'Žádní uživatelé neodpovídají aktuálnímu filtru.',
+          visibleCountLabel: 'Zobrazeno:',
+          selectedCountLabel: 'Vybráno:',
+          idLabel: 'ID:'
+        },
+        filterMenu: {
+          triggerLabel: 'Filtrovat nebo seřadit',
+          sortTitle: 'Řazení',
+          sortAsc: 'A → Z',
+          sortAscHint: 'vzestupně',
+          sortDesc: 'Z → A',
+          sortDescHint: 'sestupně',
+          clearSort: 'Vymazat řazení',
+          optionsTitle: 'Možnosti filtru',
+          clearFilterPrefix: 'Vymazat filtr z',
+          textFiltersTitle: 'Textové filtry',
+          searchPlaceholder: 'Hledat hodnoty',
+          selectAll: '(Vybrat vše)',
+          noValues: 'Žádné hodnoty neodpovídají filtrům.'
+        },
+        content: {
+          heading: 'Obsah oznámení',
+          titles: {
+            cs: 'Titulek (CS)',
+            en: 'Titulek (EN)',
+            de: 'Titulek (DE)'
+          },
+          messages: {
+            cs: 'Zpráva (CS)',
+            en: 'Zpráva (EN)',
+            de: 'Zpráva (DE)'
+          },
+          placeholders: {
+            titleCs: 'Např. Novinky v aplikaci',
+            titleEn: 'Optional English title',
+            titleDe: 'Optional German title',
+            messageCs: 'Napište text oznámení pro české uživatele',
+            messageEn: 'Optional English message',
+            messageDe: 'Optional German message'
+          },
+          summary: {
+            recipients: 'Vybraní příjemci',
+            titleReady: 'Titulek vyplněn',
+            titleMissing: 'Chybí titulek',
+            bodyReady: 'Zpráva vyplněna',
+            bodyMissing: 'Chybí text zprávy'
+          },
+          sendButton: 'Odeslat oznámení',
+          sending: 'Odesílám…',
+          successMessage: 'Oznámení byla úspěšně odeslána všem příjemcům.',
+          errorPrefix: 'Odeslání se nezdařilo.',
+          errorUnknown: 'Neznámá chyba při odesílání.',
+          defaultHint: 'Oznámení se odešlou každému příjemci zvlášť.'
+        },
+        errors: {
+          loadUsers:
+            'Nepodařilo se načíst seznam uživatelů. Zkuste to prosím znovu.'
+        }
+      },
+      achievements: {
+        subtitle:
+          'Navrhujte SQL úspěchy a spravujte jejich lokalizovaný obsah.',
+        list: {
+          title: 'Nastavené úspěchy',
+          description: 'Zobrazte existující odznaky a jejich udělovací SQL.',
+          filterPlaceholder: 'Filtrovat podle názvu nebo části SQL',
+          reload: 'Znovu načíst',
+          error: 'Úspěchy se nepodařilo načíst.',
+          empty: 'Zatím nebyl nastaven žádný úspěch.',
+          identifier: 'Úspěch č.',
+          openEditor: 'Otevřít v editoru',
+          duplicate: 'Duplikovat návrh'
+        },
+        editor: {
+          activeLabel: 'Aktivní editor',
+          noEditor: 'Žádný editor',
+          newHint: 'Nový koncept úspěchu',
+          draftLabel: 'Koncept',
+          statusDirty: 'Neuložené změny',
+          statusClean: 'Vše uloženo',
+          modeEdit: 'Režim úprav',
+          modeCreate: 'Nový úspěch',
+          closeConfirm:
+            'Opravdu chcete zavřít tento editor? Neuložené změny budou ztraceny.'
+        },
+        builder: {
+          title: 'SQL editor',
+          description: 'Sestavte dotaz pomocí vizuálních bloků.',
+          templatesTitle: 'Šablony',
+          loadTemplate: 'Načíst šablonu',
+          toggleEditors: 'Skrýt/zobrazit editory',
+          editorsTitle: 'Editory',
+          templateLoaded: 'Šablona byla načtena do aktuálního editoru.',
+          saveSuccess: 'Všechny editory byly uloženy do tohoto prohlížeče.',
+          noSaved: 'Nenalezeny žádné uložené editory.',
+          loadSuccess: 'Editory byly obnoveny z úložiště.'
+        },
+        schema: {
+          title: 'Referenční schéma'
+        },
+        actions: {
+          generate: 'Vygenerovat SQL',
+          export: 'Exportovat .sql',
+          save: 'Uložit editory',
+          load: 'Načíst editory'
+        },
+        form: {
+          sqlLabel: 'Vygenerované SQL',
+          badgeLabel: 'Obrázek odznaku',
+          badgeHint: 'Ideální je PNG (do 1 MB) s průhledným pozadím.',
+          badgePlaceholder: 'Zatím není vybraný žádný obrázek.',
+          translationsLabel: 'Lokalizovaný obsah',
+          translationTitlePlaceholder: 'Název',
+          translationDescriptionPlaceholder: 'Popis',
+          submit: 'Vytvořit úspěch',
+          create: 'Vytvořit úspěch',
+          update: 'Uložit změny',
+          discard: 'Zahodit změny',
+          discardConfirm: 'Opravdu chcete zahodit neuložené změny?',
+          missingSql: 'Nejprve vygenerujte SQL.',
+          missingImage: 'Vyberte obrázek odznaku.',
+          missingContent: 'Vyplňte název a popis ve všech jazycích.',
+          missingToken:
+            'Pro vytvoření úspěchu se přihlaste jako administrátor.',
+          success: 'Úspěch byl úspěšně vytvořen.',
+          updated: 'Změny byly uloženy.',
+          error: 'Úspěch se nepodařilo vytvořit. Zkuste to prosím znovu.'
+        }
       },
       articles: {
         manage_title: 'Správa informací',
@@ -348,6 +537,8 @@ export const translations = {
       },
       users: {
         unknown_email: 'Neznámý e-mail',
+        unknown_nickname: 'bez přezdívky',
+        unknown_city: 'bez města',
         email_verified: 'Ověřený',
         email_unverified: 'Neověřený'
       }
@@ -533,6 +724,7 @@ export const translations = {
     common: {
       or: 'Or',
       error_prefix: 'Error:',
+      ok: 'OK',
       irreversible_action: 'This action cannot be undone.',
       buttons: {
         resume: 'Resume',
@@ -555,6 +747,15 @@ export const translations = {
       loading: 'Loading...',
       saving: 'Saving...',
       deleting: 'Deleting...'
+    },
+
+    navigation: {
+      map: 'Map',
+      information: 'Info',
+      upload: 'Upload',
+      app: 'App',
+      account: 'Account',
+      login: 'Login'
     },
 
     pages: {
@@ -640,6 +841,20 @@ export const translations = {
           'Uploading runs in the background. You can continue using the app.',
         track_status: 'Track the progress in the top bar.'
       },
+      details: {
+        heading: 'Recording details',
+        name_label: 'Recording name',
+        name_placeholder: 'Untitled recording 1',
+        date_label: 'Date',
+        time_label: 'Time',
+        notifications_label:
+          'I want to receive notifications about this recording',
+        confirm_upload_label:
+          'I have checked the recording and want to submit it to the database. I am aware that it will remain there even after my<br> account is deleted and will only be removed in exceptional cases.',
+        comment_label: 'Comment',
+        cta: 'Continue to add location',
+        slider_more: 'more'
+      },
       preparing: 'Preparing the recording...'
     },
 
@@ -653,7 +868,173 @@ export const translations = {
         achievments: 'Achievments'
       },
       notifications: {
-        title: 'Notifications'
+        title: 'Notifications',
+        loadingUsers: 'Loading user list…',
+        tabs: {
+          search: 'Search',
+          table: 'Table',
+          searchDescription:
+            'Quickly add individual users by name, nickname, email, or city.',
+          tableDescription:
+            'Work with filtering and bulk selection similar to Excel.'
+        },
+        recipients: {
+          title: 'Selected recipients',
+          helper:
+            'Add users using the search or table below. Each selected user receives the notification.',
+          clear: 'Clear selection',
+          empty: 'No users have been selected yet.'
+        },
+        search: {
+          title: 'Search',
+          inputLabel: 'Search users',
+          helper:
+            'Searches by first name, last name, nickname, email, and city.',
+          placeholder: 'Enter at least {count} characters…',
+          minChars: 'Enter at least {count} characters to show results.',
+          limitedResults:
+            'Showing the first {limit} results. Refine the query for a more precise selection.',
+          noResults: 'No users match the query.',
+          added: 'Added'
+        },
+        table: {
+          filterLabel: 'Filter table',
+          filterPlaceholder: 'Filter by ID, name, email, or city',
+          clearFilter: 'Clear filter',
+          headers: {
+            name: 'Name',
+            nickname: 'Nickname',
+            email: 'Email',
+            city: 'City'
+          },
+          noMatches: 'No users match the current filter.',
+          visibleCountLabel: 'Visible:',
+          selectedCountLabel: 'Selected:',
+          idLabel: 'ID:'
+        },
+        filterMenu: {
+          triggerLabel: 'Filter or sort',
+          sortTitle: 'Sort',
+          sortAsc: 'A → Z',
+          sortAscHint: 'ascending',
+          sortDesc: 'Z → A',
+          sortDescHint: 'descending',
+          clearSort: 'Clear sorting',
+          optionsTitle: 'Filter options',
+          clearFilterPrefix: 'Clear filter for',
+          textFiltersTitle: 'Text filters',
+          searchPlaceholder: 'Search values',
+          selectAll: '(Select all)',
+          noValues: 'No values match the filters.'
+        },
+        content: {
+          heading: 'Notification content',
+          titles: {
+            cs: 'Title (CS)',
+            en: 'Title (EN)',
+            de: 'Title (DE)'
+          },
+          messages: {
+            cs: 'Message (CS)',
+            en: 'Message (EN)',
+            de: 'Message (DE)'
+          },
+          placeholders: {
+            titleCs: 'E.g. App updates',
+            titleEn: 'Optional English title',
+            titleDe: 'Optional German title',
+            messageCs: 'Write the notification text for Czech users',
+            messageEn: 'Optional English message',
+            messageDe: 'Optional German message'
+          },
+          summary: {
+            recipients: 'Selected recipients',
+            titleReady: 'Title filled in',
+            titleMissing: 'Title missing',
+            bodyReady: 'Message filled in',
+            bodyMissing: 'Message missing'
+          },
+          sendButton: 'Send notification',
+          sending: 'Sending…',
+          successMessage: 'Notifications were sent to all selected users.',
+          errorPrefix: 'Sending failed.',
+          errorUnknown: 'Unknown error while sending.',
+          defaultHint:
+            'Notifications are delivered to each recipient separately.'
+        },
+        errors: {
+          loadUsers: 'Failed to load the user list. Please try again.'
+        }
+      },
+      achievements: {
+        subtitle:
+          'Design SQL-based achievements and manage their localized content.',
+        list: {
+          title: 'Configured achievements',
+          description: 'Review the existing badges and their awarding SQL.',
+          filterPlaceholder: 'Filter by title or SQL fragment',
+          reload: 'Reload',
+          error: 'Failed to load achievements.',
+          empty: 'No achievements have been configured yet.',
+          identifier: 'Achievement #',
+          openEditor: 'Open in editor',
+          duplicate: 'Duplicate draft'
+        },
+        editor: {
+          activeLabel: 'Active editor',
+          noEditor: 'No editor selected',
+          newHint: 'New achievement draft',
+          draftLabel: 'Draft',
+          statusDirty: 'Unsaved changes',
+          statusClean: 'All changes saved',
+          modeEdit: 'Edit mode',
+          modeCreate: 'New achievement',
+          closeConfirm: 'Close this editor? Any unsaved changes will be lost.'
+        },
+        builder: {
+          title: 'SQL builder',
+          description:
+            'Compose achievement queries using drag-and-drop blocks.',
+          templatesTitle: 'Templates',
+          loadTemplate: 'Load template',
+          toggleEditors: 'Toggle editors',
+          editorsTitle: 'Editors',
+          templateLoaded: 'Template loaded into the current editor.',
+          saveSuccess: 'All editors saved to this browser.',
+          noSaved: 'No saved editors were found.',
+          loadSuccess: 'Editors restored from storage.'
+        },
+        schema: {
+          title: 'Schema reference'
+        },
+        actions: {
+          generate: 'Generate SQL',
+          export: 'Export .sql',
+          save: 'Save editors',
+          load: 'Load editors'
+        },
+        form: {
+          sqlLabel: 'Generated SQL',
+          badgeLabel: 'Badge image',
+          badgeHint:
+            'PNG (up to 1 MB) with a transparent background works best.',
+          badgePlaceholder: 'No badge selected yet.',
+          translationsLabel: 'Localized content',
+          translationTitlePlaceholder: 'Title',
+          translationDescriptionPlaceholder: 'Description',
+          submit: 'Create achievement',
+          create: 'Create achievement',
+          update: 'Save changes',
+          discard: 'Discard changes',
+          discardConfirm: 'Discard all unsaved changes?',
+          missingSql: 'Generate SQL before creating an achievement.',
+          missingImage: 'Select a badge image.',
+          missingContent: 'Fill in title and description for all languages.',
+          missingToken: 'Sign in as an administrator to create achievements.',
+          success: 'Achievement created successfully.',
+          updated: 'Changes saved successfully.',
+          error: 'Failed to create the achievement. Please try again.'
+        }
       },
       users: {
         title: 'User list'
@@ -709,6 +1090,7 @@ export const translations = {
         by_app_suffix: 'via the app',
         no_note: 'No note.',
         parts_heading: 'Recording parts',
+        photos_heading: 'Photos',
         detected_dialects_heading: 'Detected dialects',
         edit_dialects_title: 'Edit recording dialects',
         edit_recording_title: 'Edit recording',
@@ -773,6 +1155,8 @@ export const translations = {
       },
       users: {
         unknown_email: 'Unknown e-mail',
+        unknown_nickname: 'no nickname',
+        unknown_city: 'no city',
         email_verified: 'Verified',
         email_unverified: 'Unverified'
       }
@@ -958,6 +1342,7 @@ export const translations = {
     common: {
       or: 'Oder',
       error_prefix: 'Fehler:',
+      ok: 'OK',
 
       buttons: {
         resume: 'Fortsetzen',
@@ -982,6 +1367,15 @@ export const translations = {
       loading: 'Wird geladen...',
       saving: 'Speichern...',
       deleting: 'Löschen...'
+    },
+
+    navigation: {
+      map: 'Karte',
+      information: 'Infos',
+      upload: 'Hochladen',
+      app: 'App',
+      account: 'Konto',
+      login: 'Anmelden'
     },
 
     pages: {
@@ -1053,6 +1447,19 @@ export const translations = {
           'Der Upload läuft im Hintergrund. Sie können die App weiter nutzen.',
         track_status: 'Verfolgen Sie den Fortschritt in der oberen Leiste.'
       },
+      details: {
+        heading: 'Aufnahmedetails',
+        name_label: 'Name der Aufnahme',
+        name_placeholder: 'Unbenannte Aufnahme 1',
+        date_label: 'Datum',
+        time_label: 'Zeit',
+        photos_heading: 'Fotografien',
+        notifications_label:
+          'Ich möchte Benachrichtigungen zu dieser Aufnahme erhalten',
+        comment_label: 'Kommentar',
+        cta: 'Weiter zur Standortauswahl',
+        slider_more: 'mehr'
+      },
       preparing: 'Aufnahme wird vorbereitet...'
     },
 
@@ -1066,7 +1473,178 @@ export const translations = {
         achievments: 'Erfolge'
       },
       notifications: {
-        title: 'Benachrichtigungen'
+        title: 'Benachrichtigungen',
+        loadingUsers: 'Benutzerliste wird geladen…',
+        tabs: {
+          search: 'Suche',
+          table: 'Tabelle',
+          searchDescription:
+            'Fügen Sie einzelne Benutzer schnell nach Name, Spitzname, E-Mail oder Stadt hinzu.',
+          tableDescription:
+            'Arbeiten Sie mit Filtern und Mehrfachauswahl ähnlich wie in Excel.'
+        },
+        recipients: {
+          title: 'Ausgewählte Empfänger',
+          helper:
+            'Fügen Sie Benutzer über die Suche oder Tabelle unten hinzu. Jede ausgewählte Person erhält die Benachrichtigung.',
+          clear: 'Auswahl löschen',
+          empty: 'Es wurden noch keine Benutzer ausgewählt.'
+        },
+        search: {
+          title: 'Suche',
+          inputLabel: 'Benutzer suchen',
+          helper: 'Sucht nach Vorname, Nachname, Spitzname, E-Mail und Stadt.',
+          placeholder: 'Mindestens {count} Zeichen eingeben…',
+          minChars:
+            'Geben Sie mindestens {count} Zeichen ein, um Ergebnisse anzuzeigen.',
+          limitedResults:
+            'Es werden die ersten {limit} Ergebnisse angezeigt. Verfeinern Sie die Suche für genauere Ergebnisse.',
+          noResults: 'Keine Benutzer entsprechen der Suche.',
+          added: 'Hinzugefügt'
+        },
+        table: {
+          filterLabel: 'Tabelle filtern',
+          filterPlaceholder: 'Nach ID, Name, E-Mail oder Ort filtern',
+          clearFilter: 'Filter löschen',
+          headers: {
+            name: 'Name',
+            nickname: 'Spitzname',
+            email: 'E-Mail',
+            city: 'Ort'
+          },
+          noMatches: 'Keine Benutzer entsprechen dem aktuellen Filter.',
+          visibleCountLabel: 'Sichtbar:',
+          selectedCountLabel: 'Ausgewählt:',
+          idLabel: 'ID:'
+        },
+        filterMenu: {
+          triggerLabel: 'Filtern oder sortieren',
+          sortTitle: 'Sortieren',
+          sortAsc: 'A → Z',
+          sortAscHint: 'aufsteigend',
+          sortDesc: 'Z → A',
+          sortDescHint: 'absteigend',
+          clearSort: 'Sortierung löschen',
+          optionsTitle: 'Filteroptionen',
+          clearFilterPrefix: 'Filter löschen für',
+          textFiltersTitle: 'Textfilter',
+          searchPlaceholder: 'Werte suchen',
+          selectAll: '(Alle auswählen)',
+          noValues: 'Keine Werte entsprechen den Filtern.'
+        },
+        content: {
+          heading: 'Inhalt der Benachrichtigung',
+          titles: {
+            cs: 'Titel (CS)',
+            en: 'Titel (EN)',
+            de: 'Titel (DE)'
+          },
+          messages: {
+            cs: 'Nachricht (CS)',
+            en: 'Nachricht (EN)',
+            de: 'Nachricht (DE)'
+          },
+          placeholders: {
+            titleCs: 'Z. B. Neuigkeiten in der App',
+            titleEn: 'Optionaler englischer Titel',
+            titleDe: 'Optionaler deutscher Titel',
+            messageCs: 'Text für tschechische Nutzer',
+            messageEn: 'Optionaler englischer Text',
+            messageDe: 'Optionaler deutscher Text'
+          },
+          summary: {
+            recipients: 'Ausgewählte Empfänger',
+            titleReady: 'Titel ausgefüllt',
+            titleMissing: 'Titel fehlt',
+            bodyReady: 'Text ausgefüllt',
+            bodyMissing: 'Text fehlt'
+          },
+          sendButton: 'Benachrichtigung senden',
+          sending: 'Senden…',
+          successMessage:
+            'Benachrichtigungen wurden an alle ausgewählten Benutzer gesendet.',
+          errorPrefix: 'Senden fehlgeschlagen.',
+          errorUnknown: 'Unbekannter Fehler beim Senden.',
+          defaultHint:
+            'Benachrichtigungen werden an jeden Empfänger einzeln gesendet.'
+        },
+        errors: {
+          loadUsers:
+            'Die Benutzerliste konnte nicht geladen werden. Bitte erneut versuchen.'
+        }
+      },
+      achievements: {
+        subtitle:
+          'Entwerfen Sie SQL-basierte Erfolge und verwalten Sie deren lokalisierte Inhalte.',
+        list: {
+          title: 'Konfigurierte Erfolge',
+          description:
+            'Sehen Sie vorhandene Abzeichen und deren SQL-Bedingungen.',
+          filterPlaceholder: 'Nach Titel oder SQL-Fragment filtern',
+          reload: 'Aktualisieren',
+          error: 'Erfolge konnten nicht geladen werden.',
+          empty: 'Es wurden noch keine Erfolge konfiguriert.',
+          identifier: 'Erfolg Nr.',
+          openEditor: 'Im Editor öffnen',
+          duplicate: 'Entwurf duplizieren'
+        },
+        editor: {
+          activeLabel: 'Aktiver Editor',
+          noEditor: 'Kein Editor ausgewählt',
+          newHint: 'Neuer Erfolgsentwurf',
+          draftLabel: 'Entwurf',
+          statusDirty: 'Ungespeicherte Änderungen',
+          statusClean: 'Alle Änderungen gespeichert',
+          modeEdit: 'Bearbeitungsmodus',
+          modeCreate: 'Neuer Erfolg',
+          closeConfirm:
+            'Diesen Editor wirklich schließen? Ungespeicherte Änderungen gehen verloren.'
+        },
+        builder: {
+          title: 'SQL-Editor',
+          description:
+            'Stellen Sie die Abfrage mit Drag-and-Drop-Blöcken zusammen.',
+          templatesTitle: 'Vorlagen',
+          loadTemplate: 'Vorlage laden',
+          toggleEditors: 'Editoren ein/ausblenden',
+          editorsTitle: 'Editoren',
+          templateLoaded: 'Vorlage wurde in den aktuellen Editor geladen.',
+          saveSuccess: 'Alle Editoren wurden im Browser gespeichert.',
+          noSaved: 'Keine gespeicherten Editoren gefunden.',
+          loadSuccess: 'Editoren aus dem Speicher wiederhergestellt.'
+        },
+        schema: {
+          title: 'Schema-Referenz'
+        },
+        actions: {
+          generate: 'SQL generieren',
+          export: '.sql exportieren',
+          save: 'Editoren speichern',
+          load: 'Editoren laden'
+        },
+        form: {
+          sqlLabel: 'Generiertes SQL',
+          badgeLabel: 'Abzeichenbild',
+          badgeHint:
+            'PNG (bis 1 MB) mit transparentem Hintergrund wird empfohlen.',
+          badgePlaceholder: 'Noch kein Bild ausgewählt.',
+          translationsLabel: 'Lokalisierte Inhalte',
+          translationTitlePlaceholder: 'Titel',
+          translationDescriptionPlaceholder: 'Beschreibung',
+          submit: 'Erfolg erstellen',
+          create: 'Erfolg erstellen',
+          update: 'Änderungen speichern',
+          discard: 'Änderungen verwerfen',
+          discardConfirm: 'Ungespeicherte Änderungen wirklich verwerfen?',
+          missingSql: 'Bitte zuerst SQL generieren.',
+          missingImage: 'Wählen Sie ein Abzeichenbild aus.',
+          missingContent: 'Titel und Beschreibung in allen Sprachen ausfüllen.',
+          missingToken:
+            'Melden Sie sich als Administrator an, um Erfolge zu erstellen.',
+          success: 'Erfolg wurde erstellt.',
+          updated: 'Änderungen wurden gespeichert.',
+          error: 'Erfolg konnte nicht erstellt werden. Bitte erneut versuchen.'
+        }
       },
       users: {
         title: 'Benutzerliste'
@@ -1187,6 +1765,8 @@ export const translations = {
       },
       users: {
         unknown_email: 'Unbekannte E-Mail',
+        unknown_nickname: 'kein Spitzname',
+        unknown_city: 'kein Ort',
         email_verified: 'Verifiziert',
         email_unverified: 'Nicht verifiziert'
       }

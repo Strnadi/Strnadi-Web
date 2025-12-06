@@ -38,5 +38,9 @@ const photoSource = computedAsync(async () => {
 </script>
 
 <template>
-  <img v-if="photoSource" :src="photoSource" alt="Profile photo" />
+  <img
+    v-if="photoSource"
+    :src="photoSource"
+    alt="Profile photo"
+  >
 </template>

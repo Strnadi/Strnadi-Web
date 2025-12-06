@@ -7,7 +7,7 @@
   >
     <div
       ref="spectrogramContainerRef"
-      class="relative w-full border border-gray-300 overflow-hidden"
+      class="relative w-full overflow-hidden"
       :style="{ height: `${containerHeight}px` }"
       @mousemove="onSpectrogramMouseMove"
       @mouseenter="onSpectrogramMouseEnter"
@@ -51,7 +51,10 @@
         />
 
         <!-- Already‐committed ranges -->
-        <template v-for="r in visibleRanges" :key="r.id">
+        <template
+          v-for="r in visibleRanges"
+          :key="r.id"
+        >
           <div
             class="range-fill absolute opacity-50 rounded"
             :style="{
@@ -63,6 +66,9 @@
             }"
             @contextmenu.prevent="onRangeContextMenu($event, r.id)"
             @click.stop="handleRangeFillClick(r.id, $event)"
+            @mouseenter="handleRangeFillHover(r.id, $event)"
+            @mouseleave="handleRangeFillHoverLeave(r.id)"
+            @mousemove="handleRangeFillMouseMove(r.id, $event)"
           />
           <div
             class="range-handle start absolute opacity-70 hover:opacity-100 transition-opacity touch-manipulation"
@@ -279,44 +285,48 @@
     </div>
 
     <!-- Context Menu for Ranges -->
-    <div
+    <Teleport
       v-if="isContextMenuVisible"
-      ref="contextMenuRef"
-      class="absolute bg-white border border-gray-300 rounded shadow-lg py-1 z-50"
-      :style="{
-        top: `${contextMenuPosition.y}px`,
-        left: `${contextMenuPosition.x}px`
-      }"
-      @click.stop
+      to="body"
     >
-      <ul>
-        <li
-          class="px-3 py-1.5 hover:bg-gray-100 cursor-pointer text-sm"
-          @click="deleteRangeFromContextMenu"
-        >
-          Smazat označení
-        </li>
-        <!-- Future actions can be added here -->
-      </ul>
-    </div>
+      <div
+        ref="contextMenuRef"
+        class="fixed bg-white border border-gray-300 rounded shadow-lg py-1 z-50"
+        :style="{
+          top: `${contextMenuPosition.y}px`,
+          left: `${contextMenuPosition.x}px`
+        }"
+        @click.stop
+      >
+        <slot
+          name="context-menu"
+          :range="contextMenuRangeId"
+          :close="closeContextMenu"
+        />
+      </div>
+    </Teleport>
 
     <!-- Range Tooltip -->
-    <div
+    <Teleport
       v-if="isRangeTooltipVisible && selectedRangeForTooltip"
-      ref="rangeTooltipRef"
-      class="absolute bg-white border border-gray-300 rounded shadow-lg p-2 z-51"
-      :style="{
-        top: `${rangeTooltipPosition.y}px`,
-        left: `${rangeTooltipPosition.x}px`
-      }"
-      @click.stop
+      to="body"
     >
-      <slot
-        name="range-tooltip"
-        :range="selectedRangeForTooltip"
-        :close="closeRangeTooltip"
-      />
-    </div>
+      <div
+        ref="rangeTooltipRef"
+        class="fixed bg-white border border-gray-300 rounded shadow-lg p-2 z-51"
+        :style="{
+          top: `${rangeTooltipPosition.y}px`,
+          left: `${rangeTooltipPosition.x}px`
+        }"
+        @click.stop
+      >
+        <slot
+          name="range-tooltip"
+          :range="selectedRangeForTooltip"
+          :close="closeRangeTooltip"
+        />
+      </div>
+    </Teleport>
 
     <!-- Playback controls if no external audio element -->
     <div
@@ -329,10 +339,13 @@
         @click="playAudio"
       >
         <TranslatedText
-          identifier="common.buttons.play"
           v-if="isPaused || currentTime > 0"
+          identifier="common.buttons.play"
         />
-        <TranslatedText identifier="common.buttons.resume" v-else />
+        <TranslatedText
+          v-else
+          identifier="common.buttons.resume"
+        />
       </button>
       <button
         class="px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300 active:enabled:bg-gray-400 transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation"
@@ -411,7 +424,10 @@
     </div>
 
     <!-- Scrollbars -->
-    <div v-if="isLoaded" class="w-full px-2 sm:px-2.5 mt-2 sm:mt-2.5 space-y-2">
+    <div
+      v-if="isLoaded"
+      class="w-full px-2 sm:px-2.5 mt-2 sm:mt-2.5 space-y-2"
+    >
       <!-- Pan Scrollbar -->
       <div
         v-if="spectrogramData.length > 0 && maxOffsetIndex > 0"
@@ -494,7 +510,10 @@
               zIndex: 1
             }"
           />
-          <div class="h-full bg-blue-400 rounded" style="z-index: 2" />
+          <div
+            class="h-full bg-blue-400 rounded"
+            style="z-index: 2"
+          />
         </div>
       </div>
 
@@ -553,9 +572,7 @@ import {
   onMounted,
   onUnmounted,
   nextTick,
-  defineProps,
-  withDefaults,
-  defineEmits
+  Teleport
 } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
 import type { Numeric } from '@/types/basic';
@@ -679,6 +696,7 @@ interface Props {
   noControls?: boolean;
   downloadOnlySelections?: boolean; // NEW
   joinSelectionSegments?: boolean; // Whether to concatenate selected regions without gaps
+  showTooltipOnHover?: boolean; // Whether to show tooltip on hover (readonly mode only)
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -691,7 +709,7 @@ const props = withDefaults(defineProps<Props>(), {
     const isMobile = window.innerWidth < 640; // 640px = sm breakpoint
     return isMobile
       ? { top: 15, right: 10, bottom: 25, left: 35 }
-      : { top: 20, right: 20, bottom: 30, left: 50 };
+      : { top: 0, right: 0, bottom: 0, left: 0 };
   },
   maxFrequency: 12000,
   minFrequency: 3000,
@@ -709,7 +727,8 @@ const props = withDefaults(defineProps<Props>(), {
   readonly: false, // Default readonly to false
   currentTime: 0,
   noControls: false,
-  downloadOnlySelections: false
+  downloadOnlySelections: false,
+  showTooltipOnHover: true // Default to true
 });
 
 const joinSelectionSegments = computed(() => {
@@ -740,13 +759,13 @@ function setColorAlpha(color: string, alpha: number): string {
   const parsedColor = ctx.fillStyle;
 
   // Try to extract RGB values from various formats
-  const rgbMatch = parsedColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  const rgbMatch = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(parsedColor);
   if (rgbMatch) {
     return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${alpha})`;
   }
 
   // Try HSL format
-  const hslMatch = parsedColor.match(/hsla?\((\d+),\s*(\d+)%,\s*(\d+)%/);
+  const hslMatch = /hsla?\((\d+),\s*(\d+)%,\s*(\d+)%/.exec(parsedColor);
   if (hslMatch) {
     return `hsla(${hslMatch[1]}, ${hslMatch[2]}%, ${hslMatch[3]}%, ${alpha})`;
   }
@@ -820,6 +839,7 @@ const contextMenuRangeId = ref<Numeric | null>(null);
 const isRangeTooltipVisible = ref(false);
 const selectedRangeForTooltip = ref<Range | null>(null);
 const rangeTooltipPosition = ref({ x: 0, y: 0 });
+const isTooltipOpenedByHover = ref(false); // Track if tooltip was opened by hover
 
 // AudioContext + nodes
 const internalAudioContext = ref<AudioContext | null>(null);
@@ -889,18 +909,17 @@ let panStartOffset = 0;
 const isDraggingProgress = ref(false);
 
 // Ranges
-const ranges = ref<Range[]>([]);
+const ranges = ref<Range[]>(cloneRanges(props.selected ?? []));
 const isSyncingSelectedFromParent = ref(false);
 const lastPropsSelectedSnapshot = ref<string | null>(
-  props.selected ? JSON.stringify(props.selected) : null
+  JSON.stringify(props.selected ?? [])
 );
-const lastEmittedSelectedSnapshot = ref<string | null>(
-  ranges.value ? JSON.stringify(ranges.value) : null
-);
+const lastEmittedSelectedSnapshot = ref<string | null>(null);
 
 function cloneRanges(source: Range[] | undefined | null): Range[] {
   return JSON.parse(JSON.stringify(source ?? []));
 }
+
 watch(
   () => props.selected,
   (newSelectedRanges) => {
@@ -1645,7 +1664,7 @@ async function loadAndProcessAudio() {
         sampleCount: number;
       }
 
-      const sortedSelections = [...props.selected!]
+      const sortedSelections = [...props.selected]
         .slice()
         .sort((a, b) =>
           a.start === b.start ? a.end - b.end : a.start - b.start
@@ -1753,11 +1772,11 @@ async function loadAndProcessAudio() {
         })
       );
 
-      type SelectionPayload = {
+      interface SelectionPayload {
         selectionIndex: number;
-        data: Uint8Array<ArrayBufferLike>;
+        data: Uint8Array;
         sampleCount: number;
-      };
+      }
 
       const partPayloads: SelectionPayload[] = [];
       for (const payload of fetchedParts) {
@@ -1816,7 +1835,7 @@ async function loadAndProcessAudio() {
     }
     const segments: Segment[] = [];
 
-    for (const sel of props.selected!) {
+    for (const sel of props.selected) {
       const selStart = Math.max(0, sel.start);
       const selEnd = Math.min(cum, sel.end);
       if (selEnd <= selStart) continue;
@@ -1859,9 +1878,10 @@ async function loadAndProcessAudio() {
     }
 
     segments.sort((a, b) => a.idx - b.idx || a.start - b.start);
-    const merged: Array<
-      Segment & { destSampleStart?: number; expectedSamples?: number }
-    > = [];
+    const merged: (Segment & {
+      destSampleStart?: number;
+      expectedSamples?: number;
+    })[] = [];
     for (const seg of segments) {
       const last = merged[merged.length - 1];
       if (last && last.idx === seg.idx && seg.start <= last.end + 1) {
@@ -2290,7 +2310,6 @@ function renderSpectrogram() {
   updateProgressLinePosition();
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function drawAxes(v0: number, v1: number) {
   if (!canvasRef.value) return;
   const ctx = canvasRef.value.getContext('2d');
@@ -4495,7 +4514,7 @@ function onRangeContextMenu(event: MouseEvent, rangeId: Numeric) {
   }
 
   contextMenuRangeId.value = rangeId;
-  contextMenuPosition.value = { x: 0, y: event.pageY };
+  contextMenuPosition.value = { x: event.clientX, y: event.clientY };
   isContextMenuVisible.value = true;
 
   nextTick(() => {
@@ -4536,6 +4555,7 @@ function closeRangeTooltip() {
   if (!isRangeTooltipVisible.value) return;
   isRangeTooltipVisible.value = false;
   selectedRangeForTooltip.value = null;
+  isTooltipOpenedByHover.value = false;
   document.removeEventListener(
     'click',
     handleClickOutsideRangeTooltipOnCapture,
@@ -4560,11 +4580,17 @@ function handleClickOutsideRangeTooltipOnCapture(event: MouseEvent) {
   }
 }
 
-function openRangeTooltip(range: Range, event: MouseEvent) {
+function openRangeTooltip(
+  range: Range,
+  event: MouseEvent,
+  openedByHover = false
+) {
   if (!props.readonly) return;
 
   // If clicking the same range that already has an open tooltip, toggle it (close it).
+  // Only toggle on click, not on hover
   if (
+    !openedByHover &&
     isRangeTooltipVisible.value &&
     selectedRangeForTooltip.value?.id === range.id
   ) {
@@ -4578,11 +4604,12 @@ function openRangeTooltip(range: Range, event: MouseEvent) {
   closeRangeTooltip();
 
   selectedRangeForTooltip.value = range;
+  isTooltipOpenedByHover.value = openedByHover;
   // Position tooltip slightly offset from cursor for better visibility
-  // Use pageX/pageY for document-relative positioning, similar to context menu.
+  // Use clientX/clientY for viewport-relative positioning (fixed positioning)
   rangeTooltipPosition.value = {
-    x: event.pageX + 15,
-    y: event.pageY + 15
+    x: event.clientX + 15,
+    y: event.clientY + 15
   };
   isRangeTooltipVisible.value = true;
 
@@ -4601,10 +4628,48 @@ function handleRangeFillClick(rangeId: Numeric, event: MouseEvent) {
   if (!range) return;
 
   if (props.readonly) {
-    openRangeTooltip(range, event);
+    openRangeTooltip(range, event, false); // false = opened by click, not hover
   }
   // In non-readonly mode, clicking a range fill currently does nothing by itself
   // as the event is stopped. This prevents interference with underlying canvas click handlers.
+}
+
+function handleRangeFillHover(rangeId: Numeric, event: MouseEvent) {
+  if (!props.readonly || !props.showTooltipOnHover) return;
+  const range = ranges.value.find((r) => r.id === rangeId);
+  if (!range) return;
+
+  // Only open tooltip on hover if it's not already open for this range
+  if (
+    !isRangeTooltipVisible.value ||
+    selectedRangeForTooltip.value?.id !== rangeId
+  ) {
+    openRangeTooltip(range, event, true); // true = opened by hover
+  }
+}
+
+function handleRangeFillHoverLeave(rangeId: Numeric) {
+  // Only close tooltip on hover leave if it was opened by hover
+  if (
+    isTooltipOpenedByHover.value &&
+    selectedRangeForTooltip.value?.id === rangeId
+  ) {
+    closeRangeTooltip();
+  }
+}
+
+function handleRangeFillMouseMove(rangeId: Numeric, event: MouseEvent) {
+  // Update tooltip position when mouse moves, but only if tooltip was opened by hover
+  if (
+    isTooltipOpenedByHover.value &&
+    isRangeTooltipVisible.value &&
+    selectedRangeForTooltip.value?.id === rangeId
+  ) {
+    rangeTooltipPosition.value = {
+      x: event.clientX + 15,
+      y: event.clientY + 15
+    };
+  }
 }
 
 watch(
@@ -4717,7 +4782,7 @@ async function fetchArrayBufferWithProgress(url: string): Promise<ArrayBuffer> {
     let lastLoaded = 0;
     let registeredTotalForDownload = 0;
 
-    xhr.onprogress = (event: ProgressEvent<EventTarget>) => {
+    xhr.onprogress = (event: ProgressEvent) => {
       if (event.lengthComputable && registeredTotalForDownload === 0) {
         registeredTotalForDownload = incrementTotalBytes(event.total);
       }

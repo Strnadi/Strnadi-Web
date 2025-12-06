@@ -26,3 +26,15 @@
 @theme {
   --breakpoint-desktop: 60rem;
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  #app {
+    view-transition-name: app-view;
+  }
+
+  ::view-transition-old(app-view),
+  ::view-transition-new(app-view) {
+    animation-duration: 280ms;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Map, { MapEvents } from '@/views/map/RecordingsMap.vue';
+import RecordingsMap, { MapEvents } from '@/views/map/RecordingsMap.vue';
 import MapControls from '@/views/map/controls/Mobile.vue';
 import { useEventLast } from '@/utils/events';
 import { useCssVar, useMediaQuery } from '@vueuse/core';
@@ -18,7 +18,7 @@ useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
   } else if (square) {
     // TODO: this gets cancelled for some reason
     // Error: Navigation cancelled from "/" to "/mapa/ctverec/5658" with a new navigation.
-    router.push(`/mapa/ctverec/${square}`);
+    console.log(router.push(`/mapa/ctverec/${square}`));
   } else {
     router.push('/');
   }
@@ -26,8 +26,11 @@ useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
 </script>
 
 <template>
-  <div v-if="!isDesktop" class="relative flex flex-1">
-    <Map />
+  <div
+    v-if="!isDesktop"
+    class="relative flex flex-1"
+  >
+    <RecordingsMap />
     <MapControls />
   </div>
 </template>

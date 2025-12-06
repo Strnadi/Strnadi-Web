@@ -39,7 +39,10 @@ const handleDeleteArticle = () => {
     </span>
   </span>
 
-  <button class="danger" @click="handleDeleteArticle">
+  <button
+    class="danger"
+    @click="handleDeleteArticle"
+  >
     <TranslatedText identifier="buttons.delete" />
   </button>
 </template>

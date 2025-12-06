@@ -10,7 +10,11 @@ const closePopup = () => {
 </script>
 
 <template>
-  <aside class="popup" @click="closePopup" @keydown.escape="closePopup">
+  <aside
+    class="popup"
+    @click="closePopup"
+    @keydown.escape="closePopup"
+  >
     <slot />
   </aside>
 </template>

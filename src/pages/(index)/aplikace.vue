@@ -93,7 +93,7 @@ const location = window.location.href;
             <img
               src="https://upload.wikimedia.org/wikipedia/commons/9/95/Instagram_logo_2022.svg"
               width="40px"
-            />
+            >
             <span>
               <TranslatedText identifier="pages.application.how_to_download" />
             </span>
@@ -101,7 +101,7 @@ const location = window.location.href;
         </a>
       </div>
 
-      <hr />
+      <hr>
 
       <span
         class="font-medium text-justify italic [text-align-last:center] text-sm text-red-600"

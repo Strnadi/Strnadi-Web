@@ -17,7 +17,10 @@ const closePopup = () => {
 <template>
   <router-view v-slot="{ Component }">
     <Transition>
-      <aside class="center" @keydown.escape="closePopup">
+      <aside
+        class="center"
+        @keydown.escape="closePopup"
+      >
         <button
           class="small absolute top-5 left-5 z-10 rounded-2xl"
           @click="goBack"
@@ -32,7 +35,7 @@ const closePopup = () => {
           <Close />
         </button>
 
-        <div>
+        <div class="max-w-fit">
           <component :is="Component" />
         </div>
       </aside>
