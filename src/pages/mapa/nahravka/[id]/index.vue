@@ -34,6 +34,8 @@ const env = import.meta.env;
 const selected = ref([]);
 const audio = ref<HTMLAudioElement | null>(null);
 
+const dontShowUnknownDialects = ref(true);
+
 const {
   data: recording,
   isError,
@@ -90,28 +92,39 @@ const segments = computed<
 
     let i = 0;
 
-    return filteredRec.value.map((fr) => ({
-      id: fr.id * 1000 + i++,
-      start: Number(
-        (new Date(fr.startDate).getTime() -
-          new Date(firstPart.startDate).getTime()) /
-          1000
-      ),
-      end: Number(
-        (new Date(fr.endDate).getTime() -
-          new Date(firstPart.startDate).getTime()) /
-          1000
-      ),
-      // --- color mapping fix ---
-      // Collect dialect codes in priority (confirmed > predicted > guess)
-      colors: getDialectStrings(fr)
-        .map(
-          (code) =>
-            DialectColors.value?.[code as keyof typeof DialectColors.value]
-        )
-        .filter(Boolean) as string[],
-      payload: fr
-    }));
+    return filteredRec.value
+      .filter((fr) => {
+        if (!dontShowUnknownDialects.value) {
+          return true;
+        }
+
+        return fr.detectedDialects?.some(
+          (dd) =>
+            dd.confirmedDialect || dd.predictedDialect || dd.userGuessDialect
+        );
+      })
+      .map((fr) => ({
+        id: fr.id * 1000 + i++,
+        start: Number(
+          (new Date(fr.startDate).getTime() -
+            new Date(firstPart.startDate).getTime()) /
+            1000
+        ),
+        end: Number(
+          (new Date(fr.endDate).getTime() -
+            new Date(firstPart.startDate).getTime()) /
+            1000
+        ),
+        // --- color mapping fix ---
+        // Collect dialect codes in priority (confirmed > predicted > guess)
+        colors: getDialectStrings(fr)
+          .map(
+            (code) =>
+              DialectColors.value?.[code as keyof typeof DialectColors.value]
+          )
+          .filter(Boolean) as string[],
+        payload: fr
+      }));
   }
 
   return [];
@@ -294,6 +307,26 @@ const getDialectColorWithAlpha = (
             </template>
           </Spectrogram>
         </div>
+        <div class="details-toggle-card">
+          <p class="details-toggle-text">
+            Nezobrazovat nedokončená a neznámá nářečí
+          </p>
+          <label class="toggle-switch">
+            <input
+              v-model="dontShowUnknownDialects"
+              type="checkbox"
+              class="toggle-switch-input"
+            />
+            <span
+              class="toggle-switch-track"
+              :class="{
+                'toggle-switch-track--active': dontShowUnknownDialects
+              }"
+            >
+              <span class="toggle-switch-thumb" />
+            </span>
+          </label>
+        </div>
         <div
           v-if="filteredRec?.length"
           class="space-y-3 sm:space-y-4 mt-4 sm:mt-6"
@@ -469,3 +502,19 @@ const getDialectColorWithAlpha = (
     </span>
   </template>
 </template>
+
+<style scoped>
+@reference '../../../../styles/main.css';
+
+.details-toggle-card {
+  @apply flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-2xl p-4 shadow-sm;
+}
+
+.details-toggle-text {
+  @apply text-sm sm:text-base font-medium text-gray-800;
+  @apply flex-1 min-w-0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+</style>
