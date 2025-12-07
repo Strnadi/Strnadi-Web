@@ -11,7 +11,7 @@
       :style="{ height: `${containerHeight}px` }"
       @mousemove="onSpectrogramMouseMove"
       @mouseenter="onSpectrogramMouseEnter"
-      @mouseleave="showHoverLine = false"
+      @mouseleave="onSpectrogramMouseLeave"
     >
       <canvas
         ref="canvasRef"
@@ -266,6 +266,169 @@
         @mousedown.stop.prevent="onProgressDragStart"
       />
 
+      <!-- Pan Control Overlay (Bottom) -->
+      <div
+        v-if="isLoaded"
+        class="pan-control-overlay absolute bottom-0 left-0 right-0 transition-opacity duration-200 pointer-events-none"
+        :class="{ 'opacity-0': !showControls, 'opacity-100': showControls }"
+        @mouseenter="showControls = true"
+        @mouseleave="showControls = false"
+      >
+        <div
+          v-if="spectrogramData.length > 0 && maxOffsetIndex > 0"
+          class="pan-scrollbar flex items-center rounded-t pointer-events-auto"
+        >
+          <!-- <span
+            class="text-[10px] sm:text-xs w-8 sm:w-10 text-right shrink-0 px-2"
+          >
+            <TranslatedText
+              identifier="common.playback_options.pan_scrollbar_label"
+            />:
+          </span> -->
+          <div
+            ref="panTrackRef"
+            class="pan-track flex-1 h-5 sm:h-4 bg-gray-300 rounded relative cursor-pointer touch-manipulation mx-2"
+            @mousedown.prevent="onPanTrackMouseDown"
+            @touchstart.prevent="onPanTrackTouchStart"
+          >
+            <div
+              v-for="region in panBarRegions"
+              :key="`panregion-${region.id}`"
+              class="absolute h-full rounded"
+              :style="{
+                left: `${region.leftPx}px`,
+                width: `${region.widthPx}px`,
+                background: region.background,
+                zIndex: 1
+              }"
+            />
+            <div
+              v-for="spliceMarker in panBarSpliceMarkers"
+              :key="spliceMarker.id"
+              class="absolute h-full"
+              :style="{
+                left: `${spliceMarker.leftPx}px`,
+                width: '2px',
+                backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                zIndex: 1
+              }"
+            />
+            <div
+              class="pan-thumb h-full bg-blue-500 rounded absolute touch-manipulation"
+              :style="panThumbStyle"
+              style="z-index: 2"
+              @mousedown.stop.prevent="onPanThumbMouseDown"
+              @touchstart.stop.prevent="onPanThumbTouchStart"
+            />
+          </div>
+        </div>
+        <div
+          v-else-if="spectrogramData.length > 0"
+          class="pan-scrollbar flex items-center backdrop-blur-sm rounded-t pointer-events-auto"
+        >
+          <!-- <span
+            class="text-[10px] sm:text-xs w-8 sm:w-10 text-right shrink-0 px-2"
+          >
+            <TranslatedText
+              identifier="common.playback_options.pan_scrollbar_label"
+            />:
+          </span> -->
+          <div
+            ref="panTrackRef"
+            class="pan-track flex-1 h-5 sm:h-4 bg-gray-300 rounded relative mx-2"
+          >
+            <div
+              v-for="region in panBarRegions"
+              :key="`panregion-static-${region.id}`"
+              class="absolute h-full rounded"
+              :style="{
+                left: `${region.leftPx}px`,
+                width: `${region.widthPx}px`,
+                background: region.background,
+                zIndex: 1
+              }"
+            />
+            <div
+              v-for="spliceMarker in panBarSpliceMarkers"
+              :key="`splice-static-${spliceMarker.id}`"
+              class="absolute h-full"
+              :style="{
+                left: `${spliceMarker.leftPx}px`,
+                width: '1px',
+                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                zIndex: 1
+              }"
+            />
+            <div
+              class="h-full bg-blue-400 rounded"
+              style="z-index: 2"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Zoom Control Overlay (Left, Vertical) -->
+      <div
+        v-if="isLoaded && zoomRange > 0"
+        class="zoom-control-overlay absolute left-0 top-0 bottom-0 transition-opacity duration-200 pointer-events-none"
+        :class="{ 'opacity-0': !showControls, 'opacity-100': showControls }"
+        @mouseenter="showControls = true"
+        @mouseleave="showControls = false"
+      >
+        <div
+          class="zoom-scrollbar-vertical h-full flex flex-col rounded-r pointer-events-auto"
+        >
+          <!-- <span
+            class="text-[10px] sm:text-xs h-8 sm:h-10 text-center writing-vertical-rl transform rotate-180 shrink-0 py-2"
+          >
+            <TranslatedText
+              identifier="common.playback_options.zoom_scrollbar_label"
+            />:
+          </span> -->
+          <div
+            ref="zoomTrackRef"
+            class="zoom-track-vertical flex-1 w-5 sm:w-4 bg-gray-300 rounded relative cursor-pointer touch-manipulation mx-2"
+            @mousedown.prevent="onZoomTrackMouseDown"
+            @touchstart.prevent="onZoomTrackTouchStart"
+          >
+            <div
+              class="zoom-thumb-vertical w-full bg-green-500 rounded absolute touch-manipulation"
+              :style="zoomThumbStyleVertical"
+              @mousedown.stop.prevent="onZoomThumbMouseDown"
+              @touchstart.stop.prevent="onZoomThumbTouchStart"
+            />
+          </div>
+        </div>
+      </div>
+      <div
+        v-else-if="isLoaded"
+        class="zoom-control-overlay absolute left-0 top-0 bottom-0 transition-opacity duration-200 pointer-events-none"
+        :class="{ 'opacity-0': !showControls, 'opacity-100': showControls }"
+        @mouseenter="showControls = true"
+        @mouseleave="showControls = false"
+      >
+        <div
+          class="zoom-scrollbar-vertical h-full flex flex-col rounded-r pointer-events-auto"
+        >
+          <!-- <span
+            class="text-[10px] sm:text-xs h-8 sm:h-10 text-center writing-vertical-rl transform rotate-180 shrink-0 py-2"
+          >
+            <TranslatedText
+              identifier="common.playback_options.zoom_scrollbar_label"
+            />:
+          </span> -->
+          <div
+            ref="zoomTrackRef"
+            class="zoom-track-vertical flex-1 w-5 sm:w-4 bg-gray-300 rounded relative mx-2"
+          >
+            <div
+              class="w-full bg-green-400 rounded absolute"
+              :style="{ height: `${Z_THUMB_W}px`, top: '0px' }"
+            />
+          </div>
+        </div>
+      </div>
+
       <!-- Loading spinner -->
       <div
         v-if="isLoading && !isLoaded"
@@ -422,145 +585,6 @@
         <TranslatedText identifier="common.playback_options.auto_scroll" />
       </label>
     </div>
-
-    <!-- Scrollbars -->
-    <div
-      v-if="isLoaded"
-      class="w-full px-2 sm:px-2.5 mt-2 sm:mt-2.5 space-y-2"
-    >
-      <!-- Pan Scrollbar -->
-      <div
-        v-if="spectrogramData.length > 0 && maxOffsetIndex > 0"
-        class="pan-scrollbar min-h-[44px] flex items-center space-x-1.5 sm:space-x-2 py-2"
-      >
-        <span class="text-[10px] sm:text-xs w-8 sm:w-10 text-right shrink-0">
-          <TranslatedText
-            identifier="common.playback_options.pan_scrollbar_label"
-          />:
-        </span>
-        <div
-          ref="panTrackRef"
-          class="pan-track flex-1 h-5 sm:h-4 bg-gray-300 rounded relative cursor-pointer touch-manipulation"
-          @mousedown.prevent="onPanTrackMouseDown"
-          @touchstart.prevent="onPanTrackTouchStart"
-        >
-          <div
-            v-for="region in panBarRegions"
-            :key="`panregion-${region.id}`"
-            class="absolute h-full rounded"
-            :style="{
-              left: `${region.leftPx}px`,
-              width: `${region.widthPx}px`,
-              background: region.background,
-              zIndex: 1
-            }"
-          />
-          <div
-            v-for="spliceMarker in panBarSpliceMarkers"
-            :key="spliceMarker.id"
-            class="absolute h-full"
-            :style="{
-              left: `${spliceMarker.leftPx}px`,
-              width: '2px',
-              backgroundColor: 'rgba(0, 0, 0, 0.1)', // Semi-transparent black for splice markers
-              zIndex: 1 // Same level as regions, or 2 to be above regions but below thumb
-            }"
-          />
-          <div
-            class="pan-thumb h-full bg-blue-500 rounded absolute touch-manipulation"
-            :style="panThumbStyle"
-            style="z-index: 2"
-            @mousedown.stop.prevent="onPanThumbMouseDown"
-            @touchstart.stop.prevent="onPanThumbTouchStart"
-          />
-        </div>
-      </div>
-      <div
-        v-else-if="spectrogramData.length > 0"
-        class="pan-scrollbar min-h-[44px] flex items-center space-x-1.5 sm:space-x-2 py-2"
-      >
-        <span class="text-[10px] sm:text-xs w-8 sm:w-10 text-right shrink-0">
-          <TranslatedText
-            identifier="common.playback_options.pan_scrollbar_label"
-          />:
-        </span>
-        <div
-          ref="panTrackRef"
-          class="pan-track flex-1 h-5 sm:h-4 bg-gray-300 rounded relative"
-        >
-          <div
-            v-for="region in panBarRegions"
-            :key="`panregion-static-${region.id}`"
-            class="absolute h-full rounded"
-            :style="{
-              left: `${region.leftPx}px`,
-              width: `${region.widthPx}px`,
-              background: region.background,
-              zIndex: 1
-            }"
-          />
-          <div
-            v-for="spliceMarker in panBarSpliceMarkers"
-            :key="`splice-static-${spliceMarker.id}`"
-            class="absolute h-full"
-            :style="{
-              left: `${spliceMarker.leftPx}px`,
-              width: '1px',
-              backgroundColor: 'rgba(0, 0, 0, 0.4)',
-              zIndex: 1
-            }"
-          />
-          <div
-            class="h-full bg-blue-400 rounded"
-            style="z-index: 2"
-          />
-        </div>
-      </div>
-
-      <!-- Zoom Scrollbar -->
-      <div
-        v-if="zoomRange > 0"
-        class="zoom-scrollbar min-h-[44px] flex items-center space-x-1.5 sm:space-x-2 py-2"
-      >
-        <span class="text-[10px] sm:text-xs w-8 sm:w-10 text-right shrink-0">
-          <TranslatedText
-            identifier="common.playback_options.zoom_scrollbar_label"
-          />:
-        </span>
-        <div
-          ref="zoomTrackRef"
-          class="zoom-track flex-1 h-5 sm:h-4 bg-gray-300 rounded relative cursor-pointer touch-manipulation"
-          @mousedown.prevent="onZoomTrackMouseDown"
-          @touchstart.prevent="onZoomTrackTouchStart"
-        >
-          <div
-            class="zoom-thumb h-full bg-green-500 rounded absolute touch-manipulation"
-            :style="zoomThumbStyle"
-            @mousedown.stop.prevent="onZoomThumbMouseDown"
-            @touchstart.stop.prevent="onZoomThumbTouchStart"
-          />
-        </div>
-      </div>
-      <div
-        v-else-if="isLoaded"
-        class="zoom-scrollbar min-h-[44px] flex items-center space-x-1.5 sm:space-x-2 py-2"
-      >
-        <span class="text-[10px] sm:text-xs w-8 sm:w-10 text-right shrink-0">
-          <TranslatedText
-            identifier="common.playback_options.zoom_scrollbar_label"
-          />:
-        </span>
-        <div
-          ref="zoomTrackRef"
-          class="zoom-track flex-1 h-5 sm:h-4 bg-gray-300 rounded relative"
-        >
-          <div
-            class="h-full bg-green-400 rounded absolute"
-            :style="{ width: `${Z_THUMB_W}px`, left: '0px' }"
-          />
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -627,7 +651,7 @@ const getRangeFillBackground = (range: Range): string => {
 };
 
 const DEFAULT_BASE_ZOOM = 1;
-const DEFAULT_GAIN = 2;
+const DEFAULT_GAIN = 4;
 const MIN_ZOOM_LEVEL = 1; // New constant for minimum zoom out
 // Maximum safe canvas width before browsers start throwing errors (varies by engine)
 const CANVAS_COL_LIMIT = 8192;
@@ -1008,6 +1032,7 @@ const draggingHandle = ref<'start' | 'end' | null>(null);
 
 // Hover line
 const showHoverLine = ref(false);
+const showControls = ref(false);
 const hoverLineX = ref(0);
 const nextRangeColor = ref<string>('');
 // Initialize nextRangeColor
@@ -1165,15 +1190,28 @@ function incrementReceivedBytes(bytes: number) {
   updateAudioProgressFromCounters();
 }
 
-function createSpectrogramCacheKey(urls: string[]): string {
+function createSpectrogramCacheKey(
+  urls: string[],
+  includeSelections = false
+): string {
   const normalized = urls.slice().sort().join('|');
-  return [
+  const parts = [
     normalized,
     props.minFrequency,
     props.maxFrequency,
     props.sampleSize,
     props.colorScheme.join(',')
-  ].join('::');
+  ];
+
+  // Include selections in cache key when downloadOnlySelections is enabled
+  if (includeSelections && props.downloadOnlySelections && props.selected) {
+    const selectionsKey = JSON.stringify(
+      props.selected.map((s) => ({ id: s.id, start: s.start, end: s.end }))
+    );
+    parts.push(selectionsKey);
+  }
+
+  return parts.join('::');
 }
 function hexToRgb(h: string): [number, number, number] {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);
@@ -1561,12 +1599,14 @@ function handleResize() {
     canvasRef.value.width = containerWidth.value;
     canvasRef.value.height = containerHeight.value;
   }
-  // Update scrollbar track widths
+  // Update scrollbar track widths/heights
   nextTick(() => {
     if (panTrackRef.value)
       panTrackDOMWidth.value = panTrackRef.value.offsetWidth;
-    if (zoomTrackRef.value)
+    if (zoomTrackRef.value) {
       zoomTrackDOMWidth.value = zoomTrackRef.value.offsetWidth;
+      zoomTrackDOMHeight.value = zoomTrackRef.value.offsetHeight;
+    }
   });
   debouncedRender();
 }
@@ -1588,7 +1628,10 @@ async function loadAndProcessAudio() {
   const urls = Array.isArray(props.audioUrls)
     ? props.audioUrls
     : [props.audioUrls];
-  const cacheKey = createSpectrogramCacheKey(urls);
+  const cacheKey = createSpectrogramCacheKey(
+    urls,
+    props.downloadOnlySelections
+  );
   const cached = getSpectrogramCache(cacheKey);
 
   if (cached?.audioBuffer) {
@@ -2804,9 +2847,16 @@ function onSpectrogramMouseMove(e: MouseEvent) {
 }
 
 function onSpectrogramMouseEnter() {
-  if (!props.noControls) {
+  if (!props.readonly) {
     showHoverLine.value = true;
   }
+  // Always show pan/zoom controls on hover, even if noControls is true
+  showControls.value = true;
+}
+
+function onSpectrogramMouseLeave() {
+  showHoverLine.value = false;
+  showControls.value = false;
 }
 
 function onCanvasMouseDown(e: MouseEvent) {
@@ -3481,6 +3531,9 @@ function updateZoom(newZoom: number, centerPx?: number) {
   windowSize.value = newWin;
   offsetIndex.value = newOff;
 
+  // Show controls while zooming
+  showControls.value = true;
+
   // console.log(newWin);
 
   renderSpectrogram();
@@ -3973,6 +4026,9 @@ function onWheel(e: WheelEvent) {
     const zoomFactor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
     const newZoom = zoomLevel.value * zoomFactor;
 
+    // Show controls while zooming
+    showControls.value = true;
+
     updateZoom(newZoom, mouseXOnCanvas);
   }
 }
@@ -4004,6 +4060,26 @@ watch(
     stopAudio();
     loadAndProcessAudio();
   }
+);
+
+// Watch for changes in selected segments when downloadOnlySelections is enabled
+watch(
+  () => props.selected,
+  (newSelected, oldSelected) => {
+    if (!props.downloadOnlySelections) return;
+    // Only refresh if segments actually changed
+    const newSnapshot = JSON.stringify(newSelected ?? []);
+    const oldSnapshot = JSON.stringify(oldSelected ?? []);
+    if (newSnapshot !== oldSnapshot) {
+      resetAndCleanupAudioResources();
+      // Restore ranges from props.selected after reset (since reset clears ranges)
+      isSyncingSelectedFromParent.value = true;
+      ranges.value = cloneRanges(newSelected ?? []);
+      isSyncingSelectedFromParent.value = false;
+      loadAndProcessAudio();
+    }
+  },
+  { deep: true }
 );
 
 watch(
@@ -4048,6 +4124,7 @@ const panTrackRef = ref<HTMLElement | null>(null);
 const zoomTrackRef = ref<HTMLElement | null>(null);
 const panTrackDOMWidth = ref(0);
 const zoomTrackDOMWidth = ref(0);
+const zoomTrackDOMHeight = ref(0);
 
 const isDraggingPanThumb = ref(false);
 const isDraggingZoomThumb = ref(false);
@@ -4135,6 +4212,20 @@ const zoomThumbStyle = computed(() => ({
   left: `${zoomThumbLeftPx.value}px`,
   cursor: isDraggingZoomThumb.value ? 'grabbing' : 'grab',
   width: `${Z_THUMB_W}px`
+}));
+
+const zoomThumbTopPx = computed(() => {
+  if (!zoomTrackDOMHeight.value) return 0;
+  const scrollableTrackHeight = zoomTrackDOMHeight.value - Z_THUMB_W;
+  if (scrollableTrackHeight <= 0) return 0;
+  // Invert: top is 0 when zoom is max, bottom when zoom is min
+  return (1 - normalizedZoom.value) * scrollableTrackHeight;
+});
+
+const zoomThumbStyleVertical = computed(() => ({
+  top: `${zoomThumbTopPx.value}px`,
+  cursor: isDraggingZoomThumb.value ? 'grabbing' : 'grab',
+  height: `${Z_THUMB_W}px`
 }));
 
 const centerPxToMaintainForZoom = computed(() => {
@@ -4254,7 +4345,8 @@ function onPanTrackTouchStart(e: TouchEvent) {
 function onZoomThumbMouseDown(e: MouseEvent) {
   if (!isLoaded.value || zoomRange.value <= 0) return;
   isDraggingZoomThumb.value = true;
-  zoomDragStartX = e.clientX;
+  // Use Y for vertical, X for horizontal (backward compatibility)
+  zoomDragStartX = zoomTrackDOMHeight.value > 0 ? e.clientY : e.clientX;
   // zoomDragInitialLevel = zoomLevel.value; // No longer needed
   zoomDragInitialLogZoom = Math.log(zoomLevel.value);
   document.addEventListener('mousemove', onZoomThumbMouseMove);
@@ -4266,7 +4358,8 @@ function onZoomThumbTouchStart(e: TouchEvent) {
   const touch = e.touches[0];
   if (!touch) return;
   isDraggingZoomThumb.value = true;
-  zoomDragStartX = touch.clientX;
+  // Use Y for vertical, X for horizontal (backward compatibility)
+  zoomDragStartX = zoomTrackDOMHeight.value > 0 ? touch.clientY : touch.clientX;
   zoomDragInitialLogZoom = Math.log(zoomLevel.value);
   document.addEventListener('touchmove', onZoomThumbTouchMove, {
     passive: false
@@ -4280,15 +4373,25 @@ function onZoomThumbTouchMove(e: TouchEvent) {
   if (!isDraggingZoomThumb.value || !zoomTrackRef.value) return;
   const touch = e.touches[0];
   if (!touch) return;
-  const deltaX = touch.clientX - zoomDragStartX;
-  const scrollableTrackWidth = zoomTrackDOMWidth.value - Z_THUMB_W;
-  if (scrollableTrackWidth <= 0) return;
+
+  // Use vertical if height is set, otherwise horizontal
+  const isVertical = zoomTrackDOMHeight.value > 0;
+  const delta = isVertical
+    ? touch.clientY - zoomDragStartX
+    : touch.clientX - zoomDragStartX;
+  const scrollableTrackSize = isVertical
+    ? zoomTrackDOMHeight.value - Z_THUMB_W
+    : zoomTrackDOMWidth.value - Z_THUMB_W;
+  if (scrollableTrackSize <= 0) return;
 
   if (LOG_ZOOM_RANGE_EFFECTIVE.value <= 1e-9) {
     return;
   }
 
-  const logPositionChangeRatio = deltaX / scrollableTrackWidth;
+  // Invert for vertical (top is max zoom)
+  const logPositionChangeRatio = isVertical
+    ? -delta / scrollableTrackSize
+    : delta / scrollableTrackSize;
   const newLogZoom =
     zoomDragInitialLogZoom +
     logPositionChangeRatio * LOG_ZOOM_RANGE_EFFECTIVE.value;
@@ -4307,15 +4410,25 @@ function onZoomThumbTouchEnd() {
 
 function onZoomThumbMouseMove(e: MouseEvent) {
   if (!isDraggingZoomThumb.value || !zoomTrackRef.value) return;
-  const deltaX = e.clientX - zoomDragStartX;
-  const scrollableTrackWidth = zoomTrackDOMWidth.value - Z_THUMB_W;
-  if (scrollableTrackWidth <= 0) return;
+
+  // Use vertical if height is set, otherwise horizontal
+  const isVertical = zoomTrackDOMHeight.value > 0;
+  const delta = isVertical
+    ? e.clientY - zoomDragStartX
+    : e.clientX - zoomDragStartX;
+  const scrollableTrackSize = isVertical
+    ? zoomTrackDOMHeight.value - Z_THUMB_W
+    : zoomTrackDOMWidth.value - Z_THUMB_W;
+  if (scrollableTrackSize <= 0) return;
 
   if (LOG_ZOOM_RANGE_EFFECTIVE.value <= 1e-9) {
     return; // No change if no effective log range
   }
 
-  const logPositionChangeRatio = deltaX / scrollableTrackWidth;
+  // Invert for vertical (top is max zoom)
+  const logPositionChangeRatio = isVertical
+    ? -delta / scrollableTrackSize
+    : delta / scrollableTrackSize;
   const newLogZoom =
     zoomDragInitialLogZoom +
     logPositionChangeRatio * LOG_ZOOM_RANGE_EFFECTIVE.value;
@@ -4342,12 +4455,18 @@ function onZoomTrackMouseDown(e: MouseEvent) {
   }
 
   const rect = zoomTrackRef.value.getBoundingClientRect();
-  const clickX = e.clientX - rect.left;
-  const scrollableTrackWidth = zoomTrackDOMWidth.value - Z_THUMB_W;
+  const isVertical = zoomTrackDOMHeight.value > 0;
+  const clickPos = isVertical ? e.clientY - rect.top : e.clientX - rect.left;
+  const scrollableTrackSize = isVertical
+    ? zoomTrackDOMHeight.value - Z_THUMB_W
+    : zoomTrackDOMWidth.value - Z_THUMB_W;
 
-  if (scrollableTrackWidth <= 0) {
+  if (scrollableTrackSize <= 0) {
+    const trackSize = isVertical
+      ? zoomTrackDOMHeight.value
+      : zoomTrackDOMWidth.value;
     const targetNormalizedLogPosition =
-      clickX < zoomTrackDOMWidth.value / 2 ? 0 : 1;
+      clickPos < trackSize / 2 ? (isVertical ? 1 : 0) : isVertical ? 0 : 1;
     const newLogZoom =
       LOG_MIN_ZOOM_LEVEL_EFFECTIVE.value +
       targetNormalizedLogPosition * LOG_ZOOM_RANGE_EFFECTIVE.value;
@@ -4359,12 +4478,16 @@ function onZoomTrackMouseDown(e: MouseEvent) {
     return;
   }
 
-  const targetThumbStartX = clickX - Z_THUMB_W / 2;
-  const targetNormalizedLogPosition = clamp(
-    targetThumbStartX / scrollableTrackWidth,
+  const targetThumbStart = clickPos - Z_THUMB_W / 2;
+  // Invert for vertical (top is max zoom)
+  let targetNormalizedLogPosition = clamp(
+    targetThumbStart / scrollableTrackSize,
     0,
     1
   );
+  if (isVertical) {
+    targetNormalizedLogPosition = 1 - targetNormalizedLogPosition;
+  }
   const newLogZoom =
     LOG_MIN_ZOOM_LEVEL_EFFECTIVE.value +
     targetNormalizedLogPosition * LOG_ZOOM_RANGE_EFFECTIVE.value;
@@ -4387,12 +4510,20 @@ function onZoomTrackTouchStart(e: TouchEvent) {
   }
 
   const rect = zoomTrackRef.value.getBoundingClientRect();
-  const touchX = touch.clientX - rect.left;
-  const scrollableTrackWidth = zoomTrackDOMWidth.value - Z_THUMB_W;
+  const isVertical = zoomTrackDOMHeight.value > 0;
+  const touchPos = isVertical
+    ? touch.clientY - rect.top
+    : touch.clientX - rect.left;
+  const scrollableTrackSize = isVertical
+    ? zoomTrackDOMHeight.value - Z_THUMB_W
+    : zoomTrackDOMWidth.value - Z_THUMB_W;
 
-  if (scrollableTrackWidth <= 0) {
+  if (scrollableTrackSize <= 0) {
+    const trackSize = isVertical
+      ? zoomTrackDOMHeight.value
+      : zoomTrackDOMWidth.value;
     const targetNormalizedLogPosition =
-      touchX < zoomTrackDOMWidth.value / 2 ? 0 : 1;
+      touchPos < trackSize / 2 ? (isVertical ? 1 : 0) : isVertical ? 0 : 1;
     const newLogZoom =
       LOG_MIN_ZOOM_LEVEL_EFFECTIVE.value +
       targetNormalizedLogPosition * LOG_ZOOM_RANGE_EFFECTIVE.value;
@@ -4404,12 +4535,16 @@ function onZoomTrackTouchStart(e: TouchEvent) {
     return;
   }
 
-  const targetThumbStartX = touchX - Z_THUMB_W / 2;
-  const targetNormalizedLogPosition = clamp(
-    targetThumbStartX / scrollableTrackWidth,
+  const targetThumbStart = touchPos - Z_THUMB_W / 2;
+  // Invert for vertical (top is max zoom)
+  let targetNormalizedLogPosition = clamp(
+    targetThumbStart / scrollableTrackSize,
     0,
     1
   );
+  if (isVertical) {
+    targetNormalizedLogPosition = 1 - targetNormalizedLogPosition;
+  }
   const newLogZoom =
     LOG_MIN_ZOOM_LEVEL_EFFECTIVE.value +
     targetNormalizedLogPosition * LOG_ZOOM_RANGE_EFFECTIVE.value;

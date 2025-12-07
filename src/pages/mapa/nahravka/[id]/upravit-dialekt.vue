@@ -1,15 +1,3 @@
-<!--
-TODO:
-
- - Refine - this component is only accessible to admins, so don't do any checks or just one basic check in the UI
- - Fix segments being always submitted with start and end at 00:00 - 00:00 to the backend
-  - Also overhaul the part patching submit logic since detected dialects are not a part of the DTO for new filtered parts
- - Fix the right click menu
-   - Confirming model/user predicted dialects, and when a confirmed dialect exists, remove the confirm UI
-   - Management of confirmed dialects - list/add/remove/change
-
--->
-
 <route lang="yaml">
 meta:
   layout: desktop/center
@@ -69,6 +57,22 @@ interface DialectSelection {
   confirmedDialectId: number | null;
 }
 
+interface FilteredPartPatchPayload {
+  recordingId: number;
+  parentId: number | null;
+  startDate: string;
+  endDate: string;
+  state: number;
+  representantFlag?: boolean;
+}
+
+interface FilteredPartCreatePayload {
+  recordingId: number;
+  startDate: string;
+  endDate: string;
+  dialectCode: string;
+}
+
 const env = import.meta.env;
 const id = useRouteParams<Numeric>('id');
 
@@ -113,11 +117,21 @@ const availableDialects = computed<DialectDefinition[]>(
   () => dialectDefinitions.value ?? []
 );
 
-const canEditDialects = computed(() => Boolean(accountStore.token));
+const isAdmin = computed(() => accountStore.user?.role === 'admin');
+const canEditDialects = computed(() => isAdmin.value);
+
+function parseIsoDate(value?: string | null) {
+  if (!value) return null;
+  const hasTimezone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(value);
+  const normalized = hasTimezone ? value : `${value}Z`;
+  const ts = Date.parse(normalized);
+  return Number.isFinite(ts) ? ts : null;
+}
 
 const anchorTimestamp = computed(() => {
-  const part = recording.value?.parts?.[0];
-  return part ? new Date(part.startDate).getTime() : null;
+  const recordingStart = recording.value?.parts?.[0]?.startDate;
+  const filteredStart = filteredParts.value?.[0]?.startDate;
+  return parseIsoDate(recordingStart ?? filteredStart);
 });
 
 function selectionColorResolver() {
@@ -214,13 +228,14 @@ function inferDialectCode(part: FilteredPartModel) {
 
 function convertIsoToRelative(iso: string) {
   const anchor = anchorTimestamp.value;
-  if (!anchor) return 0;
-  return (new Date(iso).getTime() - anchor) / 1000;
+  const target = parseIsoDate(iso);
+  if (anchor === null || target === null) return 0;
+  return (target - anchor) / 1000;
 }
 
 function convertRelativeToIso(seconds: number) {
   const anchor = anchorTimestamp.value;
-  if (anchor === null) return null;
+  if (anchor === null || !Number.isFinite(seconds)) return null;
   return new Date(anchor + seconds * 1000).toISOString();
 }
 
@@ -407,13 +422,6 @@ function isApproximatelyEqual(a: number, b: number) {
   return Math.abs(a - b) < 0.01;
 }
 
-function updateSegmentDialect(meta: SegmentMeta, value: string | null) {
-  meta.dialectCode = value;
-  meta.dirty = true;
-  const target = segments.value?.find((range) => range.id === meta.key);
-  if (target) target.colors = computeRangeColors(meta);
-}
-
 function toggleRepresentant(meta: SegmentMeta, value: boolean) {
   meta.representant = value;
   meta.dirty = true;
@@ -451,16 +459,11 @@ function resetSegments() {
 }
 
 const saveSegmentChanges = async () => {
-  if (!canEditDialects.value) {
-    segmentError.value = 'Pro úpravy dialektů se prosím přihlaste.';
-    return;
-  }
   if (!recording.value) {
     segmentError.value = 'Chybí metadata nahrávky.';
     return;
   }
-  const anchor = anchorTimestamp.value;
-  if (anchor === null) {
+  if (anchorTimestamp.value === null) {
     segmentError.value = 'Není k dispozici časový základ pro nahrávku.';
     return;
   }
@@ -494,15 +497,19 @@ const saveSegmentChanges = async () => {
       if (!startDate || !endDate) {
         throw new Error('Nepodařilo se převést čas úseku.');
       }
-      await patchFilteredPart(token, meta.filteredPart!.id, {
+      const parentId = meta.filteredPart?.parentId;
+      // if (parentId == null) {
+      //   throw new Error('Chybí parentId úseku.');
+      // }
+      const payload: FilteredPartPatchPayload = {
         recordingId: recording.value.id,
+        parentId,
         startDate,
         endDate,
         state: meta.state,
-        // detectedDialects: meta.filteredPart?.detectedDialects ?? null,
         representantFlag: meta.representant
-        // representant: meta.representant
-      } as Omit<FilteredPartModel, 'id'>);
+      };
+      await patchFilteredPart(token, meta.filteredPart!.id, payload);
     }
     for (const meta of creations) {
       if (!meta.dialectCode) {
@@ -513,12 +520,13 @@ const saveSegmentChanges = async () => {
       if (!startDate || !endDate) {
         throw new Error('Nepodařilo se převést čas úseku.');
       }
-      await postFilteredPart(token, {
+      const payload: FilteredPartCreatePayload = {
         recordingId: recording.value.id,
         startDate,
         endDate,
         dialectCode: meta.dialectCode
-      });
+      };
+      await postFilteredPart(token, payload);
     }
     await refetchFilteredParts();
     segmentSuccess.value = 'Změny úseků byly uloženy.';
@@ -542,10 +550,6 @@ const ensureDetectionForm = (detected: DetectedDialect): DialectSelection => {
 };
 
 const saveDetection = async (detected: DetectedDialect) => {
-  if (!canEditDialects.value) {
-    detectionError.value = 'Pro úpravy dialektů se prosím přihlaste.';
-    return;
-  }
   const form = ensureDetectionForm(detected);
   detectionSaving[detected.id] = true;
   detectionError.value = null;
@@ -570,10 +574,6 @@ const saveDetection = async (detected: DetectedDialect) => {
 };
 
 const deleteDetection = async (detected: DetectedDialect) => {
-  if (!canEditDialects.value) {
-    detectionError.value = 'Pro úpravy dialektů se prosím přihlaste.';
-    return;
-  }
   detectionSaving[detected.id] = true;
   detectionError.value = null;
   detectionMessage.value = null;
@@ -592,10 +592,6 @@ const deleteDetection = async (detected: DetectedDialect) => {
 };
 
 const createDetection = async (meta: SegmentMeta) => {
-  if (!canEditDialects.value) {
-    detectionError.value = 'Pro úpravy dialektů se prosím přihlaste.';
-    return;
-  }
   if (!meta.filteredPart) {
     detectionError.value = 'Nejprve uložte úsek.';
     return;
@@ -675,15 +671,94 @@ const getDefaultDialectIdForRange = (
   return null;
 };
 
+const getDetectedDialectsForRange = (
+  rangeId: Numeric | number | null
+): DetectedDialect[] => {
+  const range = findRangeById(rangeId);
+  return range?.payload?.filteredPart?.detectedDialects ?? [];
+};
+
+const getConfirmedDialectsForRange = (
+  rangeId: Numeric | number | null
+): DetectedDialect[] =>
+  getDetectedDialectsForRange(rangeId).filter(
+    (detected) => detected.confirmedDialectId != null
+  );
+
+const getUnconfirmedConfirmableDetectionsForRange = (
+  rangeId: Numeric | number | null
+): DetectedDialect[] =>
+  getDetectedDialectsForRange(rangeId).filter(
+    (detected) =>
+      detected.confirmedDialectId == null &&
+      (detected.predictedDialectId != null ||
+        detected.userGuessDialectId != null)
+  );
+
+const confirmExistingDetection = async (
+  detected: DetectedDialect,
+  dialectId: number | null,
+  close?: () => void
+) => {
+  if (!dialectId) {
+    detectionError.value = 'Vyberte dialekt k potvrzení.';
+    return;
+  }
+  const form = ensureDetectionForm(detected);
+  detectionSaving[detected.id] = true;
+  detectionError.value = null;
+  detectionMessage.value = null;
+  try {
+    await updateDetectedDialect(accountStore.token!, {
+      id: detected.id,
+      userGuessDialectId: form.userGuessDialectId,
+      predictedDialectId: form.predictedDialectId,
+      confirmedDialectId: dialectId
+    });
+    detectionMessage.value = 'Dialekt byl potvrzen.';
+    if (close) close();
+    await refetchFilteredParts();
+  } catch (err) {
+    detectionError.value =
+      err instanceof Error ? err.message : 'Nepodařilo se potvrdit dialekt.';
+  } finally {
+    detectionSaving[detected.id] = false;
+  }
+};
+
+const clearConfirmedDialect = async (
+  detected: DetectedDialect,
+  close?: () => void
+) => {
+  const form = ensureDetectionForm(detected);
+  detectionSaving[detected.id] = true;
+  detectionError.value = null;
+  detectionMessage.value = null;
+  try {
+    await updateDetectedDialect(accountStore.token!, {
+      id: detected.id,
+      userGuessDialectId: form.userGuessDialectId,
+      predictedDialectId: form.predictedDialectId,
+      confirmedDialectId: null
+    });
+    detectionMessage.value = 'Potvrzený dialekt byl odebrán.';
+    if (close) close();
+    await refetchFilteredParts();
+  } catch (err) {
+    detectionError.value =
+      err instanceof Error
+        ? err.message
+        : 'Nepodařilo se odebrat potvrzení dialektu.';
+  } finally {
+    detectionSaving[detected.id] = false;
+  }
+};
+
 const quickConfirmDialect = async (
   meta: SegmentMeta,
   dialectId: number | null,
   close: () => void
 ) => {
-  if (!canEditDialects.value) {
-    detectionError.value = 'Pro úpravy dialektů se prosím přihlaste.';
-    return;
-  }
   if (!meta.filteredPart) {
     detectionError.value = 'Nejprve uložte úsek.';
     return;
@@ -740,10 +815,6 @@ const quickCreateFilteredPart = async (
   dialectId: number | null,
   close: () => void
 ) => {
-  if (!canEditDialects.value) {
-    segmentError.value = 'Pro úpravy dialektů se prosím přihlaste.';
-    return;
-  }
   if (!recording.value) {
     segmentError.value = 'Chybí metadata nahrávky.';
     return;
@@ -805,10 +876,6 @@ const quickAddDetectedDialect = async (
   dialectId: number | null,
   close: () => void
 ) => {
-  if (!canEditDialects.value) {
-    detectionError.value = 'Pro úpravy dialektů se prosím přihlaste.';
-    return;
-  }
   if (!meta.filteredPart) {
     detectionError.value = 'Nejprve uložte úsek.';
     return;
@@ -863,7 +930,16 @@ const quickAddDetectedDialect = async (
   </template>
 
   <template v-else>
-    <div class="flex flex-col gap-y-6">
+    <div
+      v-if="!isAdmin"
+      class="text-sm text-gray-600"
+    >
+      Tato stránka je dostupná pouze administrátorům.
+    </div>
+    <div
+      v-else
+      class="flex flex-col gap-y-6"
+    >
       <Spectrogram
         v-if="
           recording &&
@@ -1021,37 +1097,127 @@ const quickAddDetectedDialect = async (
               </button>
             </div>
 
-            <!-- Admin: Confirm dialect -->
-            <template v-if="accountStore.user?.role === 'admin'">
+            <!-- Admin: Confirm dialect / manage confirmed dialects -->
+            <template
+              v-if="
+                accountStore.user?.role === 'admin' &&
+                findRangeById(rangeId)?.payload?.filteredPart
+              "
+            >
               <div
-                v-if="findRangeById(rangeId)?.payload?.filteredPart"
+                v-if="getConfirmedDialectsForRange(rangeId).length"
+                class="space-y-2 pt-2 border-t border-gray-200"
+              >
+                <div class="text-xs font-semibold text-gray-700">
+                  Potvrzené dialekty
+                </div>
+                <div
+                  v-for="detected in getConfirmedDialectsForRange(rangeId)"
+                  :key="`confirmed-${detected.id}`"
+                  class="border border-gray-200 rounded px-2 py-2 space-y-2 bg-gray-50"
+                >
+                  <div class="text-[11px] text-gray-500">
+                    ID #{{ detected.id }}
+                  </div>
+                  <select
+                    v-model="detectionForms[detected.id]!.confirmedDialectId"
+                    class="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                    :disabled="detectionSaving[detected.id]"
+                  >
+                    <option :value="null">Vyberte dialekt</option>
+                    <option
+                      v-for="dialect in availableDialects"
+                      :key="dialect.id"
+                      :value="dialect.id"
+                    >
+                      {{ dialect.dialectCode }}
+                    </option>
+                  </select>
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      class="button-primary px-2 py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                      :disabled="detectionSaving[detected.id]"
+                      @click="saveDetection(detected)"
+                    >
+                      Uložit
+                    </button>
+                    <button
+                      class="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      :disabled="detectionSaving[detected.id]"
+                      @click="clearConfirmedDialect(detected, close)"
+                    >
+                      Odebrat potvrzení
+                    </button>
+                    <button
+                      class="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      :disabled="detectionSaving[detected.id]"
+                      @click="deleteDetection(detected)"
+                    >
+                      Smazat záznam
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                v-else
                 class="space-y-2 pt-2 border-t border-gray-200"
               >
                 <div class="text-xs font-semibold text-gray-700">
                   Potvrdit dialekt
                 </div>
+
                 <div
                   v-if="
-                    findRangeById(
-                      rangeId
-                    )?.payload?.filteredPart?.detectedDialects?.some(
-                      (d: DetectedDialect) => d.confirmedDialect
-                    )
+                    getUnconfirmedConfirmableDetectionsForRange(rangeId).length
                   "
-                  class="text-xs text-emerald-600"
+                  class="space-y-1 text-xs"
                 >
-                  Potvrzeno:
-                  {{
-                    (() => {
-                      const r = findRangeById(rangeId);
-                      const detected =
-                        r?.payload?.filteredPart?.detectedDialects?.find(
-                          (d: DetectedDialect) => d.confirmedDialect
-                        );
-                      return detected?.confirmedDialect ?? '';
-                    })()
-                  }}
+                  <div class="text-[11px] text-gray-500">Rychlé potvrzení</div>
+                  <div
+                    v-for="detected in getUnconfirmedConfirmableDetectionsForRange(
+                      rangeId
+                    )"
+                    :key="`confirmable-${detected.id}`"
+                    class="flex flex-col gap-1"
+                  >
+                    <button
+                      v-if="detected.predictedDialectId"
+                      class="w-full px-2 py-1 border border-gray-200 rounded hover:bg-gray-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                      :disabled="detectionSaving[detected.id]"
+                      @click="
+                        confirmExistingDetection(
+                          detected,
+                          detected.predictedDialectId,
+                          close
+                        )
+                      "
+                    >
+                      Potvrdit model ({{
+                        detected.predictedDialect ??
+                        detected.predictedDialectId
+                      }})
+                    </button>
+                    <button
+                      v-if="detected.userGuessDialectId"
+                      class="w-full px-2 py-1 border border-gray-200 rounded hover:bg-gray-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                      :disabled="detectionSaving[detected.id]"
+                      @click="
+                        confirmExistingDetection(
+                          detected,
+                          detected.userGuessDialectId,
+                          close
+                        )
+                      "
+                    >
+                      Potvrdit uživatel ({{
+                        detected.userGuessDialect ??
+                        detected.userGuessDialectId
+                      }})
+                    </button>
+                  </div>
                 </div>
+
                 <select
                   v-model="tooltipConfirmedDialectId"
                   class="w-full text-xs border border-gray-300 rounded px-2 py-1"
@@ -1266,7 +1432,7 @@ const quickAddDetectedDialect = async (
                   <label class="flex flex-col flex-1 gap-1">
                     Model
                     <span
-                      class="border border-gray-300 rounded px-2 py-1 bg-gray-50 text-gray-600 cursor-not-allowed select-none min-h-[2.25rem] flex items-center"
+                      class="border border-gray-300 rounded px-2 py-1 bg-gray-50 text-gray-600 cursor-not-allowed select-none min-h-9 flex items-center"
                     >
                       {{
                         (() => {
