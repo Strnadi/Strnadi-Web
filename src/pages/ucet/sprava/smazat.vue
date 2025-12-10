@@ -16,7 +16,7 @@ meta:
       id="agreement"
       v-model="enabled"
       type="checkbox"
-    >
+    />
     <label for="agreement">
       <span class="text-sm">
         <TranslatedText identifier="account.delete.confirmation_label" />
@@ -33,7 +33,7 @@ meta:
   </button>
 </template>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { deleteAccount } from '@/api/account';
 import { accountStore } from '@/state/AccountStore';
 import { useMutation } from '@tanstack/vue-query';

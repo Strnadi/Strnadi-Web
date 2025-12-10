@@ -3,7 +3,7 @@ meta:
   layout: desktop/center
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { useQuery, useMutation } from '@tanstack/vue-query';
 import {
@@ -107,13 +107,13 @@ const { mutate: submitArticle } = useMutation({
       type="text"
       :placeholder="t('placeholders.title')"
       class="p-2"
-    >
+    />
     <input
       v-model="description"
       type="text"
       :placeholder="t('placeholders.description')"
       class="p-2"
-    >
+    />
   </div>
 
   <div class="flex flex-row items-center gap-x-2">

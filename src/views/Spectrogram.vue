@@ -588,7 +588,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import {
   ref,
   computed,
@@ -1032,7 +1032,7 @@ const draggingHandle = ref<'start' | 'end' | null>(null);
 
 // Hover line
 const showHoverLine = ref(false);
-const showControls = ref(false);
+const showControls = ref(true);
 const hoverLineX = ref(0);
 const nextRangeColor = ref<string>('');
 // Initialize nextRangeColor

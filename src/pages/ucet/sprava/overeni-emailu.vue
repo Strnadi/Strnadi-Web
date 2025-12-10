@@ -3,7 +3,7 @@ meta:
   layout: desktop/popup
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { getResendVerifyEmail } from '@/api/account';
 import SegmentedProgress from '@/components/SegmentedProgress.vue';
 import { accountStore } from '@/state/AccountStore';

@@ -65,13 +65,13 @@ const { mutate: submitCategory } = useMutation({
       type="text"
       :placeholder="t('placeholders.title')"
       class="p-2"
-    >
+    />
     <input
       v-model="label"
       type="text"
       :placeholder="t('placeholders.description')"
       class="p-2"
-    >
+    />
     <div>
       <h2>
         <TranslatedText identifier="admin.articles.included_articles" />
@@ -87,8 +87,10 @@ const { mutate: submitCategory } = useMutation({
             <button>
               <TranslatedText identifier="buttons.delete" />
             </button>
-            <span>{{ articles?.find((a) => a.id === article)?.name }} (ID:
-              {{ articles?.find((a) => a.id === article)?.id }})</span>
+            <span
+              >{{ articles?.find((a) => a.id === article)?.name }} (ID:
+              {{ articles?.find((a) => a.id === article)?.id }})</span
+            >
           </div>
         </template>
 

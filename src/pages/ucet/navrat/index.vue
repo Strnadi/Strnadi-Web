@@ -3,7 +3,7 @@ meta:
   layout: empty
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { onMounted } from 'vue';
 import { useCountdown } from '@vueuse/core';
 import { type OAuthPopupResult } from '@/components/OAuthButton.vue';

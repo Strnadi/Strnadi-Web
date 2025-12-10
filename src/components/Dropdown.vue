@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 
 const isOpen = ref(false);

@@ -5,12 +5,12 @@
   >
     <div
       v-if="dot === 'true'"
-      class="absolute m-auto top-0 left-0 right-0 bottom-0 w-1/2 h-1/2 bg-black rounded-full"
+      class="absolute m-auto top-0 left-0 right-0 bottom-0 w-2/5 h-2/5 bg-black rounded-full"
     />
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed, defineProps } from 'vue';
 
 const props = defineProps<{
@@ -49,7 +49,7 @@ const squareStyle = computed(() => {
       width: props.size,
       height: props.size,
       background: 'transparent',
-      border: '1px solid grey',
+      border: '2px solid white',
       'border-radius': '0.2rem'
     };
   }
@@ -77,7 +77,7 @@ const squareStyle = computed(() => {
   return {
     width: props.size,
     height: props.size,
-    border: '1px solid black',
+    border: '2px solid white',
     background: backgroundValue,
     'border-radius': '0.2rem'
   };

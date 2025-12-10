@@ -18,7 +18,7 @@ export const translatedDict = computed(
 );
 </script>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 const props = defineProps<{
   identifier: TranslationIdentifier;
 }>();

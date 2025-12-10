@@ -3,7 +3,7 @@ meta:
   layout: desktop/small-popup
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { patchPasswordChange } from '@/api/account';
 import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue';
 import { useMutation } from '@tanstack/vue-query';
@@ -69,13 +69,13 @@ const submitPasswordChange = () => {
       >
         <TranslatedText identifier="buttons.change_password" />
       </button>
-      <prefetch-link
+      <RouterLink
         v-else-if="isSuccess"
         to="/"
         class="button-secondary p-2 w-full"
       >
         <TranslatedText identifier="buttons.go_home" />
-      </prefetch-link>
+      </RouterLink>
     </div>
   </div>
 </template>

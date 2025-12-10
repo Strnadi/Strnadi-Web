@@ -3,15 +3,13 @@ meta:
   layout: mobile/default
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { accountStore } from '@/state/AccountStore';
 </script>
 
 <template>
   <div class="p-4">
-    <h1 class="text-2xl font-bold mb-6">
-      Propojené účty
-    </h1>
+    <h1 class="text-2xl font-bold mb-6">Propojené účty</h1>
 
     <div class="space-y-4">
       <p class="text-gray-600 text-sm mb-4">
@@ -28,12 +26,8 @@ import { accountStore } from '@/state/AccountStore';
             <span class="text-white font-bold">G</span>
           </div>
           <div>
-            <p class="font-semibold">
-              Google
-            </p>
-            <p class="text-sm text-gray-600">
-              Nepřipojeno
-            </p>
+            <p class="font-semibold">Google</p>
+            <p class="text-sm text-gray-600">Nepřipojeno</p>
           </div>
         </div>
         <button
@@ -53,12 +47,8 @@ import { accountStore } from '@/state/AccountStore';
             <span class="text-white font-bold">F</span>
           </div>
           <div>
-            <p class="font-semibold">
-              Facebook
-            </p>
-            <p class="text-sm text-gray-600">
-              Nepřipojeno
-            </p>
+            <p class="font-semibold">Facebook</p>
+            <p class="text-sm text-gray-600">Nepřipojeno</p>
           </div>
         </div>
         <button
@@ -78,12 +68,8 @@ import { accountStore } from '@/state/AccountStore';
             <span class="text-white font-bold">A</span>
           </div>
           <div>
-            <p class="font-semibold">
-              Apple
-            </p>
-            <p class="text-sm text-gray-600">
-              Nepřipojeno
-            </p>
+            <p class="font-semibold">Apple</p>
+            <p class="text-sm text-gray-600">Nepřipojeno</p>
           </div>
         </div>
         <button

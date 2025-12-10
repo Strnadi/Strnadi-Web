@@ -31,8 +31,7 @@ const accountLabelIdentifier = computed(() =>
     role="navigation"
     aria-label="Bottom navigation"
   >
-    <prefetch-link
-      v-wave
+    <RouterLink
       to="/"
       class="mobile-nav__link"
       :class="{ 'mobile-nav__link--active': matchesRoute('/') }"
@@ -42,10 +41,9 @@ const accountLabelIdentifier = computed(() =>
       <span class="mobile-nav__label">
         <TranslatedText identifier="navigation.map" />
       </span>
-    </prefetch-link>
+    </RouterLink>
 
-    <prefetch-link
-      v-wave
+    <RouterLink
       to="/informace"
       class="mobile-nav__link"
       :class="{ 'mobile-nav__link--active': matchesRoute('/informace') }"
@@ -55,11 +53,10 @@ const accountLabelIdentifier = computed(() =>
       <span class="mobile-nav__label">
         <TranslatedText identifier="navigation.information" />
       </span>
-    </prefetch-link>
+    </RouterLink>
 
-    <prefetch-link
+    <RouterLink
       v-if="accountStore.user"
-      v-wave
       to="/mapa/nahrat"
       class="mobile-nav__link"
       :class="{ 'mobile-nav__link--active': matchesRoute('/mapa/nahrat') }"
@@ -69,10 +66,9 @@ const accountLabelIdentifier = computed(() =>
       <span class="mobile-nav__label">
         <TranslatedText identifier="navigation.upload" />
       </span>
-    </prefetch-link>
+    </RouterLink>
 
-    <prefetch-link
-      v-wave
+    <RouterLink
       to="/aplikace"
       class="mobile-nav__link"
       :class="{ 'mobile-nav__link--active': matchesRoute('/aplikace') }"
@@ -82,10 +78,9 @@ const accountLabelIdentifier = computed(() =>
       <span class="mobile-nav__label">
         <TranslatedText identifier="navigation.app" />
       </span>
-    </prefetch-link>
+    </RouterLink>
 
-    <prefetch-link
-      v-wave
+    <RouterLink
       :to="accountLink"
       class="mobile-nav__link"
       :class="{ 'mobile-nav__link--active': matchesRoute('/ucet') }"
@@ -95,7 +90,7 @@ const accountLabelIdentifier = computed(() =>
       <span class="mobile-nav__label">
         <TranslatedText :identifier="accountLabelIdentifier" />
       </span>
-    </prefetch-link>
+    </RouterLink>
   </nav>
 </template>
 

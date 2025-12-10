@@ -2,9 +2,15 @@ import * as Sentry from '@sentry/vue';
 import App from '@/App.vue';
 import posthogPlugin from '@/plugins/vue/posthog';
 import firebasePlugin from '@/plugins/vue/firebase';
-import Vue3RouterPrefetch from 'vue3-router-prefetch';
+// import Vue3RouterPrefetch from 'vue3-router-prefetch';
 import axios from 'axios';
-import { createApp, defineCustomElement } from 'vue';
+import {
+  // createApp,
+  createVaporApp,
+  // defineCustomElement,
+  defineVaporCustomElement,
+  vaporInteropPlugin
+} from 'vue';
 import {
   createRouter,
   createWebHistory,
@@ -15,13 +21,13 @@ import {
 import { VueQueryPlugin } from '@tanstack/vue-query';
 import { routes as generatedRoutes } from 'vue-router/auto-routes';
 import { setupLayouts } from 'virtual:meta-layouts';
-import { useTimeoutFn, useEventListener } from '@vueuse/core';
+// import { useTimeoutFn, useEventListener } from '@vueuse/core';
 
 // @ts-expect-error No types available.
 import VueVirtualScroller from 'vue-virtual-scroller';
 
 import VueClickAway from 'vue3-click-away';
-import VWave from 'v-wave';
+// import VWave from 'v-wave';
 import vSelect from 'vue-select';
 import { VueDatePicker } from '@vuepic/vue-datepicker';
 import ExpandableImage from '@/components/ExpandableImage.vue';
@@ -249,7 +255,9 @@ routes = routes.guarded(welcomeGuard);
 
 // console.log(routes)
 
-const app = createApp(App);
+const app = createVaporApp(App as any);
+app.use(vaporInteropPlugin);
+
 const router = createRouter({
   history: createWebHistory(),
   routes: routes,
@@ -342,47 +350,47 @@ axios.interceptors.response.use(
 );
 
 // Directive definition
-const autoScrollbar = {
-  mounted(el: HTMLElement) {
-    el.setAttribute('data-auto-scrollbar', '');
+// const autoScrollbar = {
+//   mounted(el: HTMLElement) {
+//     el.setAttribute('data-auto-scrollbar', '');
 
-    const { start: hideScrollbar } = useTimeoutFn(() => {
-      el.classList.remove('scrolling');
-    }, 800);
+//     const { start: hideScrollbar } = useTimeoutFn(() => {
+//       el.classList.remove('scrolling');
+//     }, 800);
 
-    useEventListener(
-      el,
-      'scroll',
-      () => {
-        el.classList.add('scrolling');
-        hideScrollbar();
-      },
-      { passive: true }
-    );
-  }
-};
+//     useEventListener(
+//       el,
+//       'scroll',
+//       () => {
+//         el.classList.add('scrolling');
+//         hideScrollbar();
+//       },
+//       { passive: true }
+//     );
+//   }
+// };
 
 app.use(router);
 app.use(firebasePlugin);
 app.use(VueQueryPlugin);
-app.use(Vue3RouterPrefetch as any, { type: 'hover', name: 'PrefetchLink' });
-app.use(VWave, {
-  duration: 0.1
-});
+// app.use(Vue3RouterPrefetch as any, { type: 'hover', name: 'RouterLink' });
+// app.use(VWave, {
+//   duration: 0.1
+// });
 app.use(VueClickAway);
 app.use(VueVirtualScroller);
 
-app.component('VSelect', vSelect);
+app.component('VSelect', vSelect as any);
 app.component('VueDatePicker', VueDatePicker);
-app.directive('auto-scrollbar', autoScrollbar);
+// app.directive('auto-scrollbar', autoScrollbar);
 
 customElements.define(
   'multi-color-square',
-  defineCustomElement(MultiColorSquare, { shadowRoot: false })
+  defineVaporCustomElement(MultiColorSquare)
 );
 customElements.define(
   'expandable-image',
-  defineCustomElement(ExpandableImage, { shadowRoot: false })
+  defineVaporCustomElement(ExpandableImage)
 );
 
 app.mount('#app');

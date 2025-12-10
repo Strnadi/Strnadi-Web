@@ -88,7 +88,9 @@ const displayName = computed(() => {
             class="text-gray-600"
           >
             {{ accountStore.user?.city }}
-            <span v-if="accountStore.user?.postCode">({{ accountStore.user?.postCode }})</span>
+            <span v-if="accountStore.user?.postCode"
+              >({{ accountStore.user?.postCode }})</span
+            >
           </span>
           <span
             v-else
@@ -102,7 +104,7 @@ const displayName = computed(() => {
 
     <!-- Navigation links -->
     <div class="grid md:grid-cols-2 gap-3 mb-6">
-      <prefetch-link
+      <RouterLink
         to="/ucet/sprava/moje-nahravky"
         class="link"
       >
@@ -114,9 +116,9 @@ const displayName = computed(() => {
             identifier="account.profile.my_recordings_description"
           />
         </span>
-      </prefetch-link>
+      </RouterLink>
 
-      <prefetch-link
+      <RouterLink
         to="/ucet/sprava/uspechy"
         class="link"
       >
@@ -128,9 +130,9 @@ const displayName = computed(() => {
             identifier="account.profile.achievements_description"
           />
         </span>
-      </prefetch-link>
+      </RouterLink>
 
-      <prefetch-link
+      <RouterLink
         to="/ucet/sprava/odmeny"
         class="link"
       >
@@ -140,17 +142,17 @@ const displayName = computed(() => {
         <span class="text-sm text-gray-600">
           <TranslatedText identifier="account.profile.rewards_description" />
         </span>
-      </prefetch-link>
+      </RouterLink>
 
-      <!-- <prefetch-link
+      <!-- <RouterLink
         to="/ucet/sprava/oznameni"
         class="link"
       >
         <span class="font-medium">Notifications</span>
         <span class="text-sm text-gray-600">Manage notifications</span>
-      </prefetch-link> -->
+      </RouterLink> -->
 
-      <!-- <prefetch-link
+      <!-- <RouterLink
         v-if="accountStore.user?.role === 'admin'"
         to="/sprava"
         class="link bg-blue-50 border-blue-200"
@@ -163,7 +165,7 @@ const displayName = computed(() => {
             identifier="account.profile.administration_description"
           />
         </span>
-      </prefetch-link> -->
+      </RouterLink> -->
     </div>
 
     <!-- Account actions -->
@@ -172,7 +174,7 @@ const displayName = computed(() => {
         <TranslatedText identifier="account.settings.title" />
       </h2>
 
-      <prefetch-link
+      <RouterLink
         v-if="!accountStore.user?.isEmailVerified"
         to="/ucet/sprava/overeni-emailu"
         class="flex items-center p-3 mb-3 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100"
@@ -180,9 +182,9 @@ const displayName = computed(() => {
         <span class="font-medium">
           <TranslatedText identifier="account.settings.resend_verification" />
         </span>
-      </prefetch-link>
+      </RouterLink>
 
-      <prefetch-link
+      <RouterLink
         to="/ucet/sprava/osobni-udaje"
         class="link"
       >
@@ -194,16 +196,16 @@ const displayName = computed(() => {
             identifier="account.profile.personal_data_description"
           />
         </span>
-      </prefetch-link>
+      </RouterLink>
 
-      <prefetch-link
+      <RouterLink
         to="/ucet/sprava/smazat"
         class="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100"
       >
         <span class="text-red-600 font-medium">
           <TranslatedText identifier="buttons.delete_account" />
         </span>
-      </prefetch-link>
+      </RouterLink>
     </div>
 
     <!-- Logout button -->

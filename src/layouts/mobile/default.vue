@@ -201,36 +201,38 @@ watch(showCardShell, (isCardVisible) => {
           mode="default"
           appear
         >
-          <div
-            v-if="showCardShell"
-            :key="`sheet-${currentRoute.fullPath}`"
-            class="mobile-shell__card"
-            ref="cardRef"
-            :style="cardStyle"
-            @pointerdown="onPointerDown"
-            @pointermove="onPointerMove"
-            @pointerup="onPointerEnd"
-            @pointercancel="onPointerEnd"
-            @touchstart="onTouchStart"
-            @touchmove="onTouchMove"
-            @touchend="onTouchEnd"
-            @touchcancel="onTouchEnd"
-          >
-            <span class="mobile-shell__grabber" />
+          <template>
             <div
-              ref="cardScrollRef"
-              class="mobile-shell__card-scroll"
+              v-if="showCardShell"
+              :key="`sheet-${currentRoute.fullPath}`"
+              class="mobile-shell__card"
+              ref="cardRef"
+              :style="cardStyle"
+              @pointerdown="onPointerDown"
+              @pointermove="onPointerMove"
+              @pointerup="onPointerEnd"
+              @pointercancel="onPointerEnd"
+              @touchstart="onTouchStart"
+              @touchmove="onTouchMove"
+              @touchend="onTouchEnd"
+              @touchcancel="onTouchEnd"
+            >
+              <span class="mobile-shell__grabber" />
+              <div
+                ref="cardScrollRef"
+                class="mobile-shell__card-scroll"
+              >
+                <component :is="Component" />
+              </div>
+            </div>
+            <div
+              v-else
+              class="mobile-shell__map-page"
+              :key="`map-${currentRoute.fullPath}`"
             >
               <component :is="Component" />
             </div>
-          </div>
-          <div
-            v-else
-            class="mobile-shell__map-page"
-            :key="`map-${currentRoute.fullPath}`"
-          >
-            <component :is="Component" />
-          </div>
+          </template>
         </Transition>
       </router-view>
     </div>

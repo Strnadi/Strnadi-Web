@@ -80,7 +80,7 @@ const { mutate: mutateCategory } = useMutation({
         type="text"
         :placeholder="t('placeholders.title')"
         class="w-full p-2 border rounded"
-      >
+      />
     </div>
     <div class="w-full">
       <label
@@ -97,7 +97,7 @@ const { mutate: mutateCategory } = useMutation({
         type="text"
         :placeholder="t('placeholders.description')"
         class="w-full p-2 border rounded"
-      >
+      />
     </div>
 
     <draggable
@@ -128,7 +128,7 @@ const { mutate: mutateCategory } = useMutation({
     </draggable>
     <button
       class="primary p-2"
-      @click="mutateCategory"
+      @click="() => mutateCategory()"
     >
       <TranslatedText identifier="buttons.save" />
     </button>

@@ -81,7 +81,7 @@ export const uploadStore = reactive({
 });
 </script>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import Dropzone from '@/components/Dropzone.vue';
 import MaterialIcon from '@/components/MaterialIcon.vue';
 import TextualCoords from '@/components/map/TextualCoords.vue';

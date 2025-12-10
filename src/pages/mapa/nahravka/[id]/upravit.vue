@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRouteParams } from '@vueuse/router';
@@ -91,7 +91,7 @@ async function save() {
           v-model="name"
           type="text"
           class="mt-1 block w-full border px-3 py-2 rounded"
-        >
+        />
       </div>
       <div>
         <label

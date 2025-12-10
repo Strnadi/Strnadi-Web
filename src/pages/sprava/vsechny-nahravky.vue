@@ -250,7 +250,7 @@ async function downloadSelectedRecordings() {
         :key="recording.id"
         class="button-secondary flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-4"
       >
-        <prefetch-link :to="`/mapa/nahravka/${recording.id}`">
+        <RouterLink :to="`/mapa/nahravka/${recording.id}`">
           <div
             @click.stop
             @mouseup.stop
@@ -286,18 +286,18 @@ async function downloadSelectedRecordings() {
                   }}
                 </h2>
               </div>
-              <prefetch-link
+              <RouterLink
                 :to="`/mapa/nahravka/${recording.id}/upravit-dialekt`"
                 class="button-secondary p-2 px-4"
               >
                 <TranslatedText identifier="admin.recordings.edit_dialects" />
-              </prefetch-link>
-              <prefetch-link
+              </RouterLink>
+              <RouterLink
                 :to="`/uzivatel/${recording.userId}`"
                 class="button-secondary p-2 px-4"
               >
                 <TranslatedText identifier="buttons.view" />
-              </prefetch-link>
+              </RouterLink>
             </div>
             <div class="flex flex-row justify-between">
               <!-- <small class="mb-2 text-gray-600">ID: {{ (await getUserInfo(accountStore.user!.id, recording.userId)) }}</small> -->
@@ -383,7 +383,7 @@ async function downloadSelectedRecordings() {
               </li>
             </ul>
           </div>
-        </prefetch-link>
+        </RouterLink>
       </li>
     </ul>
   </template>

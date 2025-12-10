@@ -25,7 +25,7 @@ const { data: users, isLoading } = useQuery({
   </template>
   <template v-else>
     <ul class="flex flex-col-reverse gap-y-3">
-      <PrefetchLink
+      <RouterLink
         v-for="user in users"
         :key="user.id"
         :to="`/uzivatel/${user.id}`"
@@ -57,7 +57,7 @@ const { data: users, isLoading } = useQuery({
             <button class="secondary p-2">Poslat oznámení</button>
           </div>
         </div>
-      </PrefetchLink>
+      </RouterLink>
     </ul>
   </template>
 </template>

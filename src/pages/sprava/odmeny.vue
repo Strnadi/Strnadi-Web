@@ -14,7 +14,6 @@ meta:
     >
       <div class="flex flex-row items-center gap-2 mb-4">
         <button
-          v-wave
           class="px-2 py-1 border rounded"
           :title="isSidebarCollapsed ? 'Show editors' : 'Hide editors'"
           @click="toggleSidebar"
@@ -29,7 +28,6 @@ meta:
         </h3>
         <button
           v-if="!isSidebarCollapsed"
-          v-wave
           class="ml-auto px-2 py-1 border rounded"
           @click="addEditor"
         >
@@ -47,7 +45,6 @@ meta:
         >
           <div class="flex items-center">
             <button
-              v-wave
               :class="[
                 'flex-1 text-left px-3 py-2 rounded',
                 { 'bg-gray-200': currentEditorIndex === i }
@@ -57,7 +54,6 @@ meta:
               {{ ed.title }}
             </button>
             <button
-              v-wave
               class="ml-2 px-2 py-1 text-sm"
               @click="closeEditor(i)"
             >
@@ -68,7 +64,7 @@ meta:
       </div>
       <!-- 
       <div v-else class="flex flex-col items-center gap-2">
-        <button @click="addEditor" class="px-2 py-1 border rounded" v-wave>+</button>
+        <button @click="addEditor" class="px-2 py-1 border rounded" >+</button>
       </div> -->
     </div>
 
@@ -104,7 +100,7 @@ meta:
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import * as Blockly from 'blockly/core';
 import 'blockly/blocks';

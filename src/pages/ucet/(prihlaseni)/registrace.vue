@@ -248,14 +248,14 @@ watch(
                 <TranslatedText
                   identifier="auth.register.email_exists.prefix"
                 />
-                <PrefetchLink
+                <RouterLink
                   to="/ucet/zapomenute-heslo"
                   class="underline"
                 >
                   <TranslatedText
                     identifier="auth.register.email_exists.link"
                   />
-                </PrefetchLink>
+                </RouterLink>
                 <TranslatedText
                   identifier="auth.register.email_exists.suffix"
                 />
@@ -270,9 +270,9 @@ watch(
                   <span>
                     <TranslatedText identifier="labels.email" />
                   </span>
-                  <PrefetchLink to="/ucet/zapomenute-heslo">
+                  <RouterLink to="/ucet/zapomenute-heslo">
                     <TranslatedText identifier="buttons.forgotten_password" />?
-                  </PrefetchLink>
+                  </RouterLink>
                 </div>
               </label>
               <input
@@ -283,26 +283,26 @@ watch(
                 class="p-2"
                 required
                 :placeholder="t('placeholders.email')"
-              >
+              />
             </div>
             <div class="flex flex-row items-center gap-x-2 m-4">
               <input
                 id="agreement"
                 v-model="registerStore.dataAgreement"
                 type="checkbox"
-              >
+              />
               <label for="agreement">
                 <span class="text-sm">
                   <TranslatedText identifier="auth.register.agreement.prefix" />
                   <span class="mx-1">
                     <TranslatedText identifier="project_name" />
                   </span>
-                  <PrefetchLink
+                  <RouterLink
                     to="/podminky-pouziti"
                     class="underline"
                   >
                     <TranslatedText identifier="auth.register.agreement.link" />
-                  </PrefetchLink>
+                  </RouterLink>
                   <TranslatedText identifier="auth.register.agreement.suffix" />
                 </span>
               </label>
@@ -329,7 +329,7 @@ watch(
               class="p-2"
               type="text"
               required
-            >
+            />
           </div>
           <div class="flex flex-col gap-y-1">
             <label for="surname">
@@ -341,7 +341,7 @@ watch(
               class="p-2"
               type="text"
               required
-            >
+            />
           </div>
           <div class="flex flex-col gap-y-1">
             <label for="nickname">
@@ -352,7 +352,7 @@ watch(
               v-model="registerStore.nickname"
               class="p-2"
               type="text"
-            >
+            />
             <p class="text-gray-600 text-sm">
               <TranslatedText identifier="auth.register.nickname_hint" />
             </p>
@@ -402,8 +402,8 @@ watch(
           <template
             v-if="
               !stepper.current.value.isValid() &&
-                registerStore.password !== '' &&
-                registerStore.passwordConfirm === registerStore.password
+              registerStore.password !== '' &&
+              registerStore.passwordConfirm === registerStore.password
             "
           >
             <span>
@@ -413,7 +413,7 @@ watch(
           <template
             v-if="
               registerStore.password !== registerStore.passwordConfirm &&
-                registerStore.passwordConfirm !== ''
+              registerStore.passwordConfirm !== ''
             "
           >
             <span>

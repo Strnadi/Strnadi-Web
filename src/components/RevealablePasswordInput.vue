@@ -9,8 +9,7 @@ defineOptions({
   inheritAttrs: false
 });
 
-interface RevealablePasswordInputProps
-  extends /* @vue-ignore */ InputHTMLAttributes {
+interface RevealablePasswordInputProps extends /* @vue-ignore */ InputHTMLAttributes {
   modelValue?: string;
 }
 
@@ -43,7 +42,7 @@ const isRevealed = ref(false);
         v-model="inputValue"
         :type="isRevealed ? 'text' : 'password'"
         class="w-full pr-16"
-      >
+      />
     </div>
     <button
       class="text-xl"

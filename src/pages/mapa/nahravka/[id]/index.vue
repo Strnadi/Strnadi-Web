@@ -100,7 +100,9 @@ const segments = computed<
 
         return fr.detectedDialects?.some(
           (dd) =>
-            dd.confirmedDialect || dd.predictedDialect || dd.userGuessDialect
+            (dd.confirmedDialect && dd.confirmedDialect !== 'Unfinished') ||
+            (dd.predictedDialect && dd.predictedDialect !== 'Unfinished') ||
+            (dd.userGuessDialect && dd.userGuessDialect !== 'Unfinished')
         );
       })
       .map((fr) => ({
@@ -435,12 +437,12 @@ const getDialectColorWithAlpha = (
         </ul>
       </div>
 
-      <prefetch-link
+      <RouterLink
         v-if="uploader"
         :to="`/uzivatel/${uploader.id}`"
       >
         <UserCard :user="uploader" />
-      </prefetch-link>
+      </RouterLink>
 
       <blockquote>
         <template v-if="recording.note">
@@ -452,7 +454,7 @@ const getDialectColorWithAlpha = (
       </blockquote>
 
       <div class="flex flex-col gap-2 sm:gap-3">
-        <prefetch-link
+        <RouterLink
           v-if="
             accountStore.user?.role === 'admin' ||
             accountStore.user?.id === recording.userId
@@ -461,10 +463,10 @@ const getDialectColorWithAlpha = (
           class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
         >
           <TranslatedText identifier="admin.recordings.edit_dialects" />
-        </prefetch-link>
+        </RouterLink>
 
         <div class="flex flex-col md:flex-row gap-2 w-full">
-          <prefetch-link
+          <RouterLink
             v-if="
               accountStore.user?.role == 'admin' ||
               accountStore.user?.id == recording?.userId
@@ -473,15 +475,15 @@ const getDialectColorWithAlpha = (
             class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation w-full"
           >
             <TranslatedText identifier="buttons.edit" />
-          </prefetch-link>
-          <prefetch-link
+          </RouterLink>
+          <RouterLink
             v-if="accountStore.user?.role == 'admin'"
             :to="`./${recordingId}/smazat`"
             class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation w-full"
           >
             <TranslatedText identifier="recordings.detail.delete_recording" />
-          </prefetch-link>
-          <prefetch-link
+          </RouterLink>
+          <RouterLink
             v-else-if="
               accountStore.user?.role == 'user' &&
               accountStore.user?.id == recording.userId
@@ -490,7 +492,7 @@ const getDialectColorWithAlpha = (
             class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation w-full"
           >
             <TranslatedText identifier="recordings.detail.request_delete" />
-          </prefetch-link>
+          </RouterLink>
         </div>
       </div>
     </div>
