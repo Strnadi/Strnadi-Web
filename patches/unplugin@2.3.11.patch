@@ -1,0 +1,26 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index ea16378374869fad2350a468f8fb6298ba94ba97..49cf94a5f5c5ab5114ba2b6b413ba753b86ca784 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -249,7 +249,7 @@ function buildSetup() {
+ 					watchFiles: mixedContext.getWatchFiles()
+ 				};
+ 			});
+-			if (plugin.load) onLoad({ filter: onLoadFilter }, async (args) => {
++			if (plugin.load) onLoad({ filter: onLoadFilter, namespace: plugin.name }, async (args) => {
+ 				const { handler, filter } = require_context.normalizeObjectHook("load", plugin.load);
+ 				const id = args.path + (args.suffix || "");
+ 				if (plugin.loadInclude && !plugin.loadInclude(id)) return;
+diff --git a/dist/index.js b/dist/index.js
+index 8ace91a08f343a611a372841b558a7d4736acc97..a95f83a0866edb9152359c8ebe71935b0dca6b74 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -243,7 +243,7 @@ function buildSetup() {
+ 					watchFiles: mixedContext.getWatchFiles()
+ 				};
+ 			});
+-			if (plugin.load) onLoad({ filter: onLoadFilter }, async (args) => {
++			if (plugin.load) onLoad({ filter: onLoadFilter, namespace: plugin.name }, async (args) => {
+ 				const { handler, filter } = normalizeObjectHook("load", plugin.load);
+ 				const id = args.path + (args.suffix || "");
+ 				if (plugin.loadInclude && !plugin.loadInclude(id)) return;

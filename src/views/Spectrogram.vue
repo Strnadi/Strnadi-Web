@@ -518,6 +518,7 @@
         <TranslatedText identifier="common.buttons.pause" />
       </button>
       <button
+        v-if="!simpleControls"
         class="px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300 active:enabled:bg-gray-400 transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation"
         :disabled="!isLoaded || (!isPlaying && !isPaused)"
         @click="stopAudio"
@@ -525,6 +526,7 @@
         <TranslatedText identifier="common.buttons.stop" />
       </button>
       <button
+        v-if="!simpleControls"
         class="px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300 active:enabled:bg-gray-400 transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation"
         :disabled="!isLoaded"
         @click="rewindToAbsoluteStart"
@@ -535,7 +537,7 @@
 
     <!-- Playback options -->
     <div
-      v-if="isLoaded && !props.noControls"
+      v-if="isLoaded && !(props.noControls || props.simpleControls)"
       class="playback-options-container w-full flex items-center justify-center gap-x-3 sm:gap-x-4 gap-y-2 mt-1 px-2 sm:px-2.5 flex-wrap"
     >
       <label
@@ -596,7 +598,8 @@ import {
   onMounted,
   onUnmounted,
   nextTick,
-  Teleport
+  Teleport,
+  onBeforeUnmount
 } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
 import type { Numeric } from '@/types/basic';
@@ -718,6 +721,7 @@ interface Props {
   readonly?: boolean; // Add readonly prop
   currentTime?: number;
   noControls?: boolean;
+  simpleControls?: boolean;
   downloadOnlySelections?: boolean; // NEW
   joinSelectionSegments?: boolean; // Whether to concatenate selected regions without gaps
   showTooltipOnHover?: boolean; // Whether to show tooltip on hover (readonly mode only)
@@ -4619,6 +4623,12 @@ function closeContextMenu() {
   document.removeEventListener('click', closeContextMenuOnClickOutside);
   document.removeEventListener('contextmenu', closeContextMenuOnClickOutside);
 }
+
+onBeforeUnmount(() => {
+  // Ensure context menu and range tooltip are closed and listeners removed
+  closeContextMenu();
+  closeRangeTooltip();
+});
 
 function closeContextMenuOnClickOutside(event: MouseEvent | PointerEvent) {
   // Only close if the menu is visible, the ref exists,

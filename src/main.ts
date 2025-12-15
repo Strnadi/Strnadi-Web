@@ -11,6 +11,7 @@ import {
   defineVaporCustomElement,
   vaporInteropPlugin
 } from 'vue';
+import { createHead } from '@unhead/vue/client';
 import {
   createRouter,
   createWebHistory,
@@ -26,7 +27,7 @@ import { setupLayouts } from 'virtual:meta-layouts';
 // @ts-expect-error No types available.
 import VueVirtualScroller from 'vue-virtual-scroller';
 
-import VueClickAway from 'vue3-click-away';
+// import VueClickAway from 'vue3-click-away';
 // import VWave from 'v-wave';
 import vSelect from 'vue-select';
 import { VueDatePicker } from '@vuepic/vue-datepicker';
@@ -258,6 +259,9 @@ routes = routes.guarded(welcomeGuard);
 const app = createVaporApp(App as any);
 app.use(vaporInteropPlugin);
 
+const head = createHead();
+app.use(head);
+
 const router = createRouter({
   history: createWebHistory(),
   routes: routes,
@@ -377,7 +381,7 @@ app.use(VueQueryPlugin);
 // app.use(VWave, {
 //   duration: 0.1
 // });
-app.use(VueClickAway);
+// app.use(VueClickAway);
 app.use(VueVirtualScroller);
 
 app.component('VSelect', vSelect as any);
@@ -386,11 +390,7 @@ app.component('VueDatePicker', VueDatePicker);
 
 customElements.define(
   'multi-color-square',
-  defineVaporCustomElement(MultiColorSquare)
-);
-customElements.define(
-  'expandable-image',
-  defineVaporCustomElement(ExpandableImage)
+  defineVaporCustomElement(MultiColorSquare, { shadowRoot: false })
 );
 
 app.mount('#app');

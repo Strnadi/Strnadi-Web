@@ -35,6 +35,9 @@ const selected = ref([]);
 const audio = ref<HTMLAudioElement | null>(null);
 
 const dontShowUnknownDialects = ref(true);
+const showOnlyRepresentants = ref(true);
+
+const showAllDialects = ref(false);
 
 const {
   data: recording,
@@ -98,12 +101,12 @@ const segments = computed<
           return true;
         }
 
-        return fr.detectedDialects?.some(
-          (dd) =>
-            (dd.confirmedDialect && dd.confirmedDialect !== 'Unfinished') ||
-            (dd.predictedDialect && dd.predictedDialect !== 'Unfinished') ||
-            (dd.userGuessDialect && dd.userGuessDialect !== 'Unfinished')
-        );
+        if (showOnlyRepresentants.value && !fr.representantFlag) {
+          return false;
+        }
+
+        const dialectStrings = getDialectStrings(fr);
+        return dialectStrings.some((ds) => ds && ds !== 'Unfinished');
       })
       .map((fr) => ({
         id: fr.id * 1000 + i++,
@@ -239,7 +242,9 @@ const getDialectColorWithAlpha = (
       {{ recording.name }}
     </template>
     <template v-else>
-      {{ t('recordings.detail.fallback_prefix') }}{{ recordingId }}
+      <TranslatedText identifier="recordings.detail.fallback_prefix" />{{
+        recordingId
+      }}
     </template>
   </h1>
 
@@ -289,7 +294,8 @@ const getDialectColorWithAlpha = (
             :height="200"
             :readonly="true"
             :download-only-selections="true"
-            :no-controls="true"
+            :no-controls="false"
+            :simple-controls="true"
             :selected="segments"
           >
             <template #range-tooltip="{ range, close }">
@@ -329,6 +335,24 @@ const getDialectColorWithAlpha = (
             </span>
           </label>
         </div>
+        <div class="details-toggle-card">
+          <p class="details-toggle-text">Zobrazit jen reprezentanty</p>
+          <label class="toggle-switch">
+            <input
+              v-model="showOnlyRepresentants"
+              type="checkbox"
+              class="toggle-switch-input"
+            />
+            <span
+              class="toggle-switch-track"
+              :class="{
+                'toggle-switch-track--active': showOnlyRepresentants
+              }"
+            >
+              <span class="toggle-switch-thumb" />
+            </span>
+          </label>
+        </div>
         <div
           v-if="filteredRec?.length"
           class="space-y-3 sm:space-y-4 mt-4 sm:mt-6"
@@ -340,13 +364,15 @@ const getDialectColorWithAlpha = (
           </h3>
           <ul class="space-y-2 sm:space-y-3">
             <li
-              v-for="fr in filteredRec.toSorted((a, b) =>
-                a.representantFlag === b.representantFlag
-                  ? 0
-                  : a.representantFlag
-                    ? -1
-                    : 1
-              )"
+              v-for="fr in filteredRec
+                .toSorted((a, b) =>
+                  a.representantFlag === b.representantFlag
+                    ? 0
+                    : a.representantFlag
+                      ? -1
+                      : 1
+                )
+                .slice(0, showAllDialects ? undefined : 4)"
               :key="fr.id"
               class="flex flex-col gap-1 rounded-lg border p-3 sm:p-4 shadow-sm transition touch-manipulation"
               :style="{
@@ -356,16 +382,6 @@ const getDialectColorWithAlpha = (
             >
               <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 min-w-0">
-                  <!-- <MultiColorSquare
-                    size="14px"
-                    v-if="DialectColors?.['value']"
-                    :colors="(
-                      fr.detectedDialects?.map(dd => {
-                        const code = dd.confirmedDialect ?? dd.predictedDialect ?? dd.userGuessDialect;
-                        return code && DialectColors.value[code as keyof typeof DialectColors.value] ?? null;
-                      }).filter(Boolean) as string[]
-                    ) ?? []"
-                  /> -->
                   <p class="font-semibold text-sm sm:text-base truncate">
                     {{
                       fr.detectedDialects?.[0]?.confirmedDialect ??
@@ -388,24 +404,34 @@ const getDialectColorWithAlpha = (
               </span>
             </li>
           </ul>
+          <button
+            v-if="filteredRec.length > 5 && !showAllDialects"
+            @click="showAllDialects = true"
+            class="px-4 py-2 text-sm sm:text-base w-full text-center button-secondary touch-manipulation"
+          >
+            <TranslatedText identifier="buttons.show_more" />
+          </button>
         </div>
       </div>
 
-      <div class="flex w-full h-[400px] rounded-lg">
+      <div class="flex flex-col w-full h-[400px] rounded-lg">
+        <h2>
+          <TranslatedText identifier="recordings.detail.map_heading" />
+        </h2>
         <Map
           :position="[
             recording.parts?.[0]?.gpsLatitudeStart ?? 0,
             recording.parts?.[0]?.gpsLongitudeStart ?? 0,
-            17
+            15
           ]"
           :markers="[
             {
               id: 'recording-location',
               icon: divIcon({
                 className: '',
-                iconSize: [24, 24],
+                iconSize: [16, 16],
                 iconAnchor: [19, 19],
-                html: `<div class='w-2 h-2 bg-red-500 rounded-full'></div>`
+                html: `<div class='w-full h-full bg-red-500 rounded-full'></div>`
               }),
               position: [
                 recording.parts?.[0]?.gpsLatitudeStart ?? 0,

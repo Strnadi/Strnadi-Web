@@ -53,6 +53,29 @@ const searchText = ref('');
             <MapIcon v-if="MapStore.aerial" />
             <PictureIcon v-else />
           </button>
+
+          <button
+            class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 w-16 h-16 text-xs text-justify"
+            @click="MapStore.grouping = !MapStore.grouping"
+            :class="{
+              'bg-gray-200': MapStore.grouping,
+              'bg-white': !MapStore.grouping
+            }"
+          >
+            Sesk. bodů
+          </button>
+
+          <!-- TODO -->
+          <button
+            class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 w-16 h-16 text-xs text-justify"
+            @click="MapStore.grouping = !MapStore.grouping"
+            :class="{
+              'bg-gray-200': MapStore.grouping,
+              'bg-white': !MapStore.grouping
+            }"
+          >
+            Nedok. zpěv.
+          </button>
         </div>
 
         <button

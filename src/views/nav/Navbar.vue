@@ -35,18 +35,12 @@ const changeLanguage = (lang: keyof typeof translations) => {
 <template>
   <nav class="w-full">
     <div class="nav-container">
-      <div
-        class="nav-glass flex justify-between gap-x-4 items-center h-16 rounded-4xl m-2 desktop:m-5 pr-4"
-      >
+      <div class="nav-glass flex justify-between gap-x-4 items-center h-16 rounded-4xl m-2 desktop:m-5 pr-4">
         <!-- Logo -->
         <div
-          class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc] shrink-0"
-        >
+          class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc] shrink-0">
           <RouterLink to="/vitejte">
-            <img
-              src="/logo.svg"
-              alt="Logo"
-            />
+            <img src="/logo.svg" alt="Logo" />
           </RouterLink>
         </div>
 
@@ -63,38 +57,24 @@ const changeLanguage = (lang: keyof typeof translations) => {
           <ul class="flex flex-row gap-x-4 items-center">
             <template v-if="accountStore.user">
               <li>
-                <RouterLink
-                  to="/mapa/nahrat"
-                  class="dropdown-item"
-                >
+                <RouterLink to="/mapa/nahrat" class="dropdown-item">
                   <UploadIcon />
                   <TranslatedText identifier="upload.title" />
                 </RouterLink>
               </li>
             </template>
 
-            <Dropdown
-              v-for="category in categories"
-              :key="category.name"
-            >
+            <Dropdown v-for="category in categories" :key="category.name">
               <template #title>
                 {{ category.label }}
                 <DropdownIcon />
               </template>
 
-              <li
-                v-for="article in category.articles"
-                :key="article.id"
-              >
-                <RouterLink
-                  :to="`/informace/${category.name}/${kebabize(article.name)}`"
-                  class="dropdown-item flex! flex-col! items-start!"
-                >
+              <li v-for="article in category.articles" :key="article.id">
+                <RouterLink :to="`/informace/${category.name}/${kebabize(article.name)}`"
+                  class="dropdown-item flex! flex-col! items-start!">
                   <span>{{ article.name }}</span>
-                  <span
-                    v-if="article.description"
-                    class="italic"
-                  >
+                  <span v-if="article.description" class="italic">
                     {{ article.description }}
                   </span>
                 </RouterLink>
@@ -114,19 +94,11 @@ const changeLanguage = (lang: keyof typeof translations) => {
               </template>
 
               <ul>
-                <li
-                  v-for="key in Object.keys(
-                    translations
-                  ) as (keyof typeof translations)[]"
-                  :key="key"
-                  class="dropdown-item"
-                >
-                  <button
-                    :class="
-                      key === applicationStore.language ? 'font-bold' : ''
-                    "
-                    @click="changeLanguage(key)"
-                  >
+                <li v-for="key in Object.keys(
+                  translations
+                ) as (keyof typeof translations)[]" :key="key" class="dropdown-item">
+                  <button :class="key === applicationStore.language ? 'font-bold' : ''
+                    " @click="changeLanguage(key)">
                     {{ translations[key].lang_name }}
                   </button>
                 </li>
@@ -135,19 +107,12 @@ const changeLanguage = (lang: keyof typeof translations) => {
 
             <li>
               <AccountDropdown v-if="accountStore.user" />
-              <RouterLink
-                v-else
-                to="/ucet/vitejte"
-                class="button-secondary py-2 px-4"
-              >
+              <RouterLink v-else to="/ucet/vitejte" class="button-secondary py-2 px-4">
                 <TranslatedText identifier="buttons.login" />
               </RouterLink>
             </li>
 
-            <RouterLink
-              to="/aplikace"
-              class="button-primary py-2 px-4 max-sm:text-sm"
-            >
+            <RouterLink to="/aplikace" class="button-primary py-3 px-4 max-sm:text-sm">
               <TranslatedText identifier="buttons.app" />
             </RouterLink>
           </ul>

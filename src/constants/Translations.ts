@@ -53,6 +53,7 @@ export const translations = {
     },
 
     buttons: {
+      show_more: 'Zobrazit více',
       enter: 'Vstoupit',
       app: 'Stáhnout aplikaci',
       contacts: 'Kontakty',
@@ -512,6 +513,8 @@ export const translations = {
         delete_category_title: 'Smazání kategorie',
         delete_post_title: 'Smazání příspěvku',
         delete_post_prompt: 'Opravdu si přejete tento příspěvek smazat?',
+        leave_dirty_warning:
+          'Máte neuložené změny. Opravdu chcete odejít bez uložení?',
         no_articles_in_category: 'Žádné příspěvky v této kategorii',
         uncategorized: {
           title: 'Nezařazené příspěvky',
@@ -541,6 +544,7 @@ export const translations = {
         uploaded: 'Nahráno'
       },
       detail: {
+        map_heading: 'Mapa',
         editing_prefix: 'Upravování:',
         fallback_prefix: 'Nahrávka #',
         by_app_suffix: 'přes aplikaci',
@@ -740,6 +744,7 @@ export const translations = {
     },
 
     buttons: {
+      show_more: 'Show more',
       enter: 'Enter',
       app: 'Download the app',
       contacts: 'Contacts',
@@ -1199,6 +1204,8 @@ export const translations = {
         delete_category_title: 'Delete category',
         delete_post_title: 'Delete article',
         delete_post_prompt: 'Do you really want to delete this article?',
+        leave_dirty_warning:
+          'You have unsaved changes. Leave this page without saving?',
         no_articles_in_category: 'No articles in this category',
         uncategorized: {
           title: 'Uncategorized articles',
@@ -1228,6 +1235,7 @@ export const translations = {
         uploaded: 'Uploaded'
       },
       detail: {
+        map_heading: 'Map',
         editing_prefix: 'Editing:',
         fallback_prefix: 'Recording #',
         by_app_suffix: 'via the app',
@@ -1429,6 +1437,7 @@ export const translations = {
     },
 
     buttons: {
+      show_more: 'Mehr anzeigen',
       enter: 'Eintreten',
       app: 'App herunterladen',
       contacts: 'Kontakte',
@@ -1887,6 +1896,8 @@ export const translations = {
         delete_category_title: 'Kategorie löschen',
         delete_post_title: 'Beitrag löschen',
         delete_post_prompt: 'Möchten Sie diesen Beitrag wirklich löschen?',
+        leave_dirty_warning:
+          'Sie haben ungespeicherte Änderungen. Seite wirklich ohne Speichern verlassen?',
         no_articles_in_category: 'Keine Beiträge in dieser Kategorie',
         uncategorized: {
           title: 'Nicht zugeordnete Beiträge',
@@ -1916,6 +1927,7 @@ export const translations = {
         uploaded: 'Hochgeladen'
       },
       detail: {
+        map_heading: 'Karte',
         editing_prefix: 'Bearbeitung:',
         fallback_prefix: 'Aufnahme #',
         by_app_suffix: 'über die App',

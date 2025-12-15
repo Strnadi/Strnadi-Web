@@ -26,6 +26,7 @@ export interface MapProps {
    * If omitted, all markers can be clustered together.
    */
   clusterTest?: (a: Marker, b: Marker) => boolean;
+  allowedClustering?: [Marker, Marker][];
 }
 </script>
 
@@ -82,7 +83,16 @@ function rebuildClusters() {
   props.markers.forEach((m) => {
     // find existing compatible group
     let targetGroupObj: (typeof clusterGroups)[number] | undefined;
-    if (props.clusterTest) {
+
+    if (props.allowedClustering) {
+      targetGroupObj = clusterGroups.find((cg) =>
+        props.allowedClustering!.some(
+          (pair) =>
+            (pair[0] === m && pair[1] === cg.sample) ||
+            (pair[1] === m && pair[0] === cg.sample)
+        )
+      );
+    } else if (props.clusterTest) {
       targetGroupObj = clusterGroups.find((cg) =>
         props.clusterTest!(m, cg.sample)
       );
@@ -234,7 +244,7 @@ watch([zoom, center], updateBounds);
 
 // Rebuild clusters whenever markers or clusterTest changes or when map ready
 watch(
-  () => [props.markers, props.clusterTest],
+  () => [props.markers, props.clusterTest, props.allowedClustering],
   () => {
     rebuildClusters();
   },
