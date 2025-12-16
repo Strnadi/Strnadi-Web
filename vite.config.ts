@@ -34,7 +34,7 @@ export default defineConfig({
   plugins: [
     Inspect(),
     QRCode(),
-    purgePolyfills.rollup({}),
+    purgePolyfills.rollup({ logLevel: 'verbose' }),
     TSConfigPaths({ loose: true }),
     TailwindCSS(),
     DocsPlugin(),
@@ -141,7 +141,7 @@ export default defineConfig({
           : 'strnadi-web-staging',
       telemetry: false
     }),
-    mkcert(),
+    // mkcert(),
     vueDevTools({
       launchEditor: 'subl4'
     }),

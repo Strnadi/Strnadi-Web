@@ -23,10 +23,10 @@ import { routes as generatedRoutes } from 'vue-router/auto-routes';
 import { setupLayouts } from 'virtual:meta-layouts';
 // import { useTimeoutFn, useEventListener } from '@vueuse/core';
 
-// @ts-expect-error No types available.
-import VueVirtualScroller from 'vue-virtual-scroller';
+// // @ts-expect-error No types available.
+// import VueVirtualScroller from 'vue-virtual-scroller';
 
-import VueClickAway from 'vue3-click-away';
+// import VueClickAway from 'vue3-click-away';
 // import VWave from 'v-wave';
 import vSelect from 'vue-select';
 import { VueDatePicker } from '@vuepic/vue-datepicker';
@@ -377,8 +377,8 @@ app.use(VueQueryPlugin);
 // app.use(VWave, {
 //   duration: 0.1
 // });
-app.use(VueClickAway);
-app.use(VueVirtualScroller);
+// app.use(VueClickAway);
+// app.use(VueVirtualScroller);
 
 app.component('VSelect', vSelect as any);
 app.component('VueDatePicker', VueDatePicker);
