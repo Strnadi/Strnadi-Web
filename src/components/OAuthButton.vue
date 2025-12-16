@@ -22,7 +22,7 @@ import * as jose from 'jose';
 import { onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
-const env = import.meta.env;
+const env = process.env;
 
 const router = useRouter();
 const route = useRoute();

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --clearScreen=false",
-    "build": "vue-tsc -b && vite build",
+    "build": "vue-tsc -b && bun build.ts",
     "preview": "vite preview",
     "format": "prettier --write src",
     "check": "vue-tsc --noEmit -p tsconfig.app.json",
@@ -72,7 +72,6 @@
     "typescript-eslint": "^8.48.0",
     "unplugin-purge-polyfills": "^0.1.0",
     "unplugin-vue-router": "^0.17.1",
-    "vite": "^8.0.0-beta.2",
     "vite-plugin-compression2": "^2.3.1",
     "vite-plugin-inspect": "^11.3.3",
     "vite-plugin-mkcert": "^1.17.9",
@@ -101,7 +100,7 @@
     "unplugin@2.3.11": "patches/unplugin@2.3.11.patch"
   },
   "overrides": {
-    "vite": "^8.0.0-beta.0",
-    "vue": "npm:vue@alpha"
+    "vue": "npm:vue@alpha",
+    "unplugin": "2.3.11"
   }
 }

@@ -11,7 +11,7 @@ import AppleIcon from '@/icons/apple.svg';
 import AndroidIcon from '@/icons/android.svg';
 import TranslatedText from '@/components/TranslatedText.vue';
 
-const env = import.meta.env;
+const env = process.env;
 
 const isApple = (): boolean => {
   const userAgent =
@@ -54,7 +54,7 @@ const location = window.location.href;
           class="w-fit"
           background="transparent"
           :image-settings="{
-            src: `${env.VITE_PUBLIC_URL}/WIP.png`,
+            src: `${env.PUBLIC_URL}/WIP.png`,
             width: 48,
             height: 48,
             excavate: true

@@ -25,7 +25,7 @@ import { setupLayouts } from 'virtual:meta-layouts';
 // import { useTimeoutFn, useEventListener } from '@vueuse/core';
 
 // @ts-expect-error No types available.
-import VueVirtualScroller from 'vue-virtual-scroller';
+// import VueVirtualScroller from 'vue-virtual-scroller';
 
 // import VueClickAway from 'vue3-click-away';
 // import VWave from 'v-wave';
@@ -35,7 +35,9 @@ import ExpandableImage from '@/components/ExpandableImage.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import { ApiError } from '@/classes/api-error';
 import './styles/main.css';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
+// import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
+
+// console.log(process.env);
 
 declare global {
   interface Array<T> {
@@ -248,7 +250,7 @@ routes = setupLayouts(routes) as RouteRecordRaw[];
 // routes = nameRoutes(routes, "admin", route => !!route.meta?.admin);
 // routes = routes.guarded(authGuard);
 
-if (!import.meta.env.MODE) {
+if (!process.env.MODE) {
   routes = routes.guarded(serverGuard);
 }
 
@@ -325,7 +327,7 @@ const sentryConfig = {
   integrations: [Sentry.browserTracingIntegration({ router })]
 };
 
-if (import.meta.env.MODE === 'production') {
+if (process.env.MODE === 'production') {
   app.use(posthogPlugin);
 
   Sentry.init({
@@ -334,14 +336,14 @@ if (import.meta.env.MODE === 'production') {
   });
 }
 
-if (import.meta.env.MODE === 'staging') {
+if (process.env.MODE === 'staging') {
   Sentry.init({
     ...sentryConfig,
     dsn: 'https://02fdb339d395fe6066c7d0d5b5d4d4d8@o4508834111291392.ingest.de.sentry.io/4509155946266704'
   });
 }
 
-axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+axios.defaults.baseURL = process.env.PUBLIC_API_URL;
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -382,7 +384,7 @@ app.use(VueQueryPlugin);
 //   duration: 0.1
 // });
 // app.use(VueClickAway);
-app.use(VueVirtualScroller);
+// app.use(VueVirtualScroller);
 
 app.component('VSelect', vSelect as any);
 app.component('VueDatePicker', VueDatePicker);

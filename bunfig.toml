@@ -1,9 +1,0 @@
-[serve.static]
-dir = "public"
-plugins = [
-    "bun-plugin-tailwind",
-    "unplugin-vue-router/esbuild",
-    "./plugins/polyfills.ts",
-    "./plugins/vue.ts",
-    "./plugins/layouts.ts",
-]

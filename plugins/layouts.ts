@@ -44,20 +44,41 @@ function createVirtualModuleID(name: string) {
   return { virtualModuleId, resolvedVirtualModuleId };
 }
 
-function createVirtualGlob(
-  target: string,
-  isSync: boolean,
-  excludes: string[]
-) {
-  const excludeGlobs = excludes
-    .map((exclude) => `"!${target}/${exclude}"`)
-    .join(',');
-  const glob =
-    excludeGlobs === ''
-      ? `"${target}/**/*.vue"`
-      : `["${target}/**/*.vue", ${excludeGlobs}]`;
+type LayoutEntry = {
+  absolutePath: string;
+  key: string;
+};
 
-  return `import.meta.glob(${glob}, { eager: ${isSync} })`;
+async function discoverLayouts(target: string, excludes: string[]) {
+  const projectRoot = posix.normalize(process.cwd());
+  const glob = new Bun.Glob(posix.join(target, '**/*.vue'));
+  const excludeGlobs = excludes.map(
+    (pattern) => new Bun.Glob(posix.join(target, pattern))
+  );
+  const targetAbs = normalizePath(posix.join(projectRoot, target));
+
+  const layouts: LayoutEntry[] = [];
+
+  for await (const file of glob.scan({ cwd: projectRoot })) {
+    const normalizedRel = posix.normalize(file);
+    const shouldExclude = excludeGlobs.some((exclude) =>
+      exclude.match(normalizedRel)
+    );
+
+    if (shouldExclude) continue;
+
+    const absolutePath = normalizePath(posix.join(projectRoot, normalizedRel));
+    const key = absolutePath
+      .replace(`${targetAbs}/`, '')
+      .replace('.vue', '');
+
+    layouts.push({
+      absolutePath,
+      key
+    });
+  }
+
+  return layouts.sort((a, b) => a.key.localeCompare(b.key));
 }
 
 function createVirtualModuleCode(options: {
@@ -65,86 +86,98 @@ function createVirtualModuleCode(options: {
   defaultLayout: string;
   importMode: 'sync' | 'async';
   skipTopLevelRouteLayout: boolean;
-  excludes: string[];
   metaName: string;
+  layouts: LayoutEntry[];
 }) {
   const {
-    target,
     defaultLayout,
     importMode,
     skipTopLevelRouteLayout,
-    excludes,
-    metaName
+    metaName,
+    layouts
   } = options;
-
-  const normalizedTarget = normalizePath(target);
   const isSync = importMode === 'sync';
 
-  const skipCode = `// unplugin-vue-router adds a top-level route to the routing group, which we should skip. (ref → https://github.com/JohnCampionJr/vite-plugin-vue-layouts/issues/134)
-		const skipLayout = !route.component && route.children?.find(r => (r.path === '' || r.path === '/') && r.meta?.isLayout)
+  const imports = isSync
+    ? layouts
+        .map(
+          (layout, index) =>
+            `import __layout${index} from '${layout.absolutePath}';`
+        )
+        .join('\n')
+    : '';
 
-		if (skipLayout) {
-			return route
-		}`;
+  const layoutEntries = layouts
+    .map((layout, index) => {
+      const value = isSync
+        ? `__layout${index}`
+        : `() => import('${layout.absolutePath}')`;
+      return `\t"${layout.key}": ${value}`;
+    })
+    .join(',\n');
+
+  const skipCode = `// unplugin-vue-router adds a top-level route to the routing group, which we should skip. (ref → https://github.com/JohnCampionJr/vite-plugin-vue-layouts/issues/134)
+    const skipLayout = !route.component && route.children?.find(r => (r.path === '' || r.path === '/') && r.meta?.isLayout)
+
+    if (skipLayout) {
+      return route
+    }`;
 
   return `
+${imports}
+
 export function createGetRoutes(router, withLayout = false) {
-	const routes = router.getRoutes()
-	if (withLayout) {
-		return routes
-	}
-	return () => routes.filter(route => !route.meta.isLayout)
+  const routes = router.getRoutes()
+  if (withLayout) {
+    return routes
+  }
+  return () => routes.filter(route => !route.meta.isLayout)
 }
 
 export function setupLayouts(routes) {
-	const layouts = {}
+  const layouts = {
+${layoutEntries}
+  }
 
-	const modules = ${createVirtualGlob(normalizedTarget, isSync, excludes)}
-
-	Object.entries(modules).forEach(([name, module]) => {
-		let key = name.replace("${normalizedTarget}/", '').replace('.vue', '')
-		layouts[key] = ${isSync ? 'module.default' : 'module'}
-	})
-
-	function deepSetupLayout(routes, top = true) {
-		return routes.map(route => {
-			if (route.children?.length > 0) {
-				route.children = deepSetupLayout(route.children, false)
-			}
+  function deepSetupLayout(routes, top = true) {
+    return routes.map(route => {
+      if (route.children?.length > 0) {
+        route.children = deepSetupLayout(route.children, false)
+      }
       
-			if (top) {
-				${skipTopLevelRouteLayout ? skipCode : ''}
-				if (route.meta?.${metaName} !== false && !route.meta?.isLayout) {
-					return {
-						path: route.path,
-						component: layouts[route.meta?.${metaName} || '${defaultLayout}'],
-						// ref → https://github.com/JohnCampionJr/vite-plugin-vue-layouts/pull/97
-						children: route.path === '/' ? [route] : [{...route, path: ''}],
-						meta: {
-							...route.meta,
-							isLayout: true
-						}
-					}
-				}
-			}
+      if (top) {
+        ${skipTopLevelRouteLayout ? skipCode : ''}
+        if (route.meta?.${metaName} !== false && !route.meta?.isLayout) {
+          return {
+            path: route.path,
+            component: layouts[route.meta?.${metaName} || '${defaultLayout}'],
+            // ref → https://github.com/JohnCampionJr/vite-plugin-vue-layouts/pull/97
+            children: route.path === '/' ? [route] : [{...route, path: ''}],
+            meta: {
+              ...route.meta,
+              isLayout: true
+            }
+          }
+        }
+      }
 
-			if (route.meta?.${metaName} && !route.meta?.isLayout) {
-				return { 
-					path: route.path,
-					component: layouts[route.meta?.${metaName}],
-					children: [ {...route, path: ''} ],
-					meta: {
-						...route.meta,
-						isLayout: true
-					}
-				}
-			}
+      if (route.meta?.${metaName} && !route.meta?.isLayout) {
+        return { 
+          path: route.path,
+          component: layouts[route.meta?.${metaName}],
+          children: [ {...route, path: ''} ],
+          meta: {
+            ...route.meta,
+            isLayout: true
+          }
+        }
+      }
 
-			return route
-		})
-	}
+      return route
+    })
+  }
 
-	return deepSetupLayout(routes)
+  return deepSetupLayout(routes)
 }`;
 }
 
@@ -152,7 +185,7 @@ export default function MetaLayouts(options: Partial<Options> = {}): BunPlugin {
   const {
     target = 'src/layouts',
     defaultLayout = 'default',
-    importMode = process.env.VITE_SSG ? 'sync' : 'async',
+    importMode = process.env.SSG ? 'sync' : 'async',
     skipTopLevelRouteLayout = false,
     excludes = [],
     metaName = 'layout'
@@ -178,8 +211,8 @@ export default function MetaLayouts(options: Partial<Options> = {}): BunPlugin {
           importMode,
           defaultLayout,
           skipTopLevelRouteLayout,
-          excludes,
-          metaName
+          metaName,
+          layouts: await discoverLayouts(target, excludes)
         }),
         loader: 'ts'
       }));

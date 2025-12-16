@@ -16,7 +16,7 @@ import { Head } from '@unhead/vue/components';
 import { MdPreview, MdCatalog } from 'md-editor-v3';
 import 'md-editor-v3/lib/preview.css';
 
-const env = import.meta.env;
+const env = process.env;
 
 const category = useRouteParams<string>('category');
 const slug = useRouteParams<string>('slug');
@@ -40,7 +40,7 @@ const { data: markdown } = useQuery({
   enabled: computed(() => !!id.value)
 });
 
-const fileBase = computed(() => `${env.VITE_API_URL}/articles/${id.value}`);
+const fileBase = computed(() => `${env.PUBLIC_API_URL}/articles/${id.value}`);
 
 
 const scrollElement = ref<HTMLElement | null>(null);

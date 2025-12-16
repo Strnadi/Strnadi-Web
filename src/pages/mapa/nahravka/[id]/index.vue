@@ -29,7 +29,7 @@ import { divIcon } from 'leaflet';
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
 const recordingId = useRouteParams<Numeric>('id');
 
-const env = import.meta.env;
+const env = process.env;
 
 const selected = ref([]);
 const audio = ref<HTMLAudioElement | null>(null);
@@ -288,7 +288,7 @@ const getDialectColorWithAlpha = (
             :audio-urls="
               recording.parts?.map(
                 (p) =>
-                  `${env.VITE_API_URL}/recordings/part/${recording.id}/${p.id}/sound`
+                  `${env.PUBLIC_API_URL}/recordings/part/${recording.id}/${p.id}/sound`
               ) ?? []
             "
             :height="200"

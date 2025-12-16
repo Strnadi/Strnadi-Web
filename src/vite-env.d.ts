@@ -13,16 +13,14 @@ interface ViteTypeOptions {
   strictImportMetaEnv: unknown;
 }
 
-interface ImportMetaEnv {
-  readonly VITE_GOOGLE_CLIENT_ID: string;
-  readonly VITE_APPLE_CLIENT_ID: string;
-  readonly VITE_API_URL: string;
-  readonly VITE_POSTHOG_KEY: string;
-  readonly VITE_PUBLIC_URL: string;
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
+namespace NodeJS {
+  interface ProcessEnv {
+    readonly PUBLIC_GOOGLE_CLIENT_ID: string;
+    readonly PUBLIC_APPLE_CLIENT_ID: string;
+    readonly PUBLIC_API_URL: string;
+    readonly PUBLIC_POSTHOG_KEY: string;
+    readonly PUBLIC_URL: string;
+  }
 }
 
 declare global {

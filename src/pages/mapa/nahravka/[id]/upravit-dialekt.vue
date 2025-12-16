@@ -73,7 +73,7 @@ interface FilteredPartCreatePayload {
   dialectCode: string;
 }
 
-const env = import.meta.env;
+const env = process.env;
 const id = useRouteParams<Numeric>('id');
 
 const {
@@ -837,7 +837,7 @@ const quickAddDetectedDialect = async (
         :audio-urls="
           recording.parts.map(
             (p) =>
-              `${env.VITE_API_URL}/recordings/part/${recording?.id}/${p.id}/sound`
+              `${env.PUBLIC_API_URL}/recordings/part/${recording?.id}/${p.id}/sound`
           )
         "
         :height="400"

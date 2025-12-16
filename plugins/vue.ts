@@ -164,7 +164,8 @@ function resolveCompileTimeFlags(
 
 function setVueCompileTimeFlags(
   build: Bun.PluginBuilder,
-  flags: ReturnType<typeof resolveCompileTimeFlags>
+  flags: ReturnType<typeof resolveCompileTimeFlags>,
+  isProduction: boolean
 ) {
   build.config.define ??= {};
   build.config.define['__VUE_PROD_DEVTOOLS__'] = flags.prodDevtools
@@ -175,6 +176,10 @@ function setVueCompileTimeFlags(
     : 'false';
   build.config.define['__VUE_PROD_HYDRATION_MISMATCH_DETAILS__'] =
     flags.prodHydrationMismatchDetails ? 'true' : 'false';
+  // Set NODE_ENV to eliminate dev-only code paths in Vue runtime
+  build.config.define['process.env.NODE_ENV'] = isProduction
+    ? '"production"'
+    : '"development"';
 }
 
 function createDescriptor(
@@ -420,15 +425,40 @@ function createMainModule(
   inlineTemplate: boolean
 ) {
   const scopeId = `data-v-${descriptor.id}`;
-  let code = `import script from ${JSON.stringify(
-    `${descriptor.filename}?vue&type=script`
-  )}\n`;
+  // @ts-expect-error vapor flag from Vue 3.6+
+  const isVapor = !!(descriptor as any).vapor;
+  let code = '';
+
+  // When using inline template (script setup), the compiled script exports the component
+  // as a named export matching scriptIdentifier, not as default
+  if (inlineTemplate) {
+    code += `import { ${scriptIdentifier} } from ${JSON.stringify(
+      `${descriptor.filename}?vue&type=script`
+    )}\n`;
+    code += `export * from ${JSON.stringify(
+      `${descriptor.filename}?vue&type=script`
+    )}\n`;
+  } else {
+    // For non-inline template, generate the script placeholder with vapor flag if needed
+    const vaporFlag = isVapor ? '__vapor: true' : '';
+    code += `const ${scriptIdentifier} = { ${vaporFlag} }\n`;
+    
+    if (descriptor.script || descriptor.scriptSetup) {
+      code += `import __script from ${JSON.stringify(
+        `${descriptor.filename}?vue&type=script`
+      )}\n`;
+      code += `export * from ${JSON.stringify(
+        `${descriptor.filename}?vue&type=script`
+      )}\n`;
+      code += `Object.assign(${scriptIdentifier}, __script)\n`;
+    }
+  }
 
   if (descriptor.template && !inlineTemplate) {
     code += `import { render as _sfc_render } from ${JSON.stringify(
       `${descriptor.filename}?vue&type=template`
     )}\n`;
-    code += 'script.render = _sfc_render\n';
+    code += `${scriptIdentifier}.render = _sfc_render\n`;
   }
 
   descriptor.styles.forEach((style, index) => {
@@ -441,29 +471,33 @@ function createMainModule(
 
   descriptor.customBlocks?.forEach((block, index) => {
     const langQuery = block.lang ? `&lang=${block.lang}` : '';
-    code += `import ${JSON.stringify(
+    code += `import block${index} from ${JSON.stringify(
       `${descriptor.filename}?vue&type=${block.type}&index=${index}${langQuery}`
     )}\n`;
+    code += `if (typeof block${index} === 'function') block${index}(${scriptIdentifier})\n`;
   });
 
-  code += 'const __script = script\n';
-
   if (descriptor.styles.some((s) => s.scoped)) {
-    code += `__script.__scopeId = ${JSON.stringify(scopeId)}\n`;
+    code += `${scriptIdentifier}.__scopeId = ${JSON.stringify(scopeId)}\n`;
   }
 
   if (options.devToolsEnabled) {
     const file = options.isProduction
       ? path.basename(descriptor.filename)
       : descriptor.filename;
-    code += `__script.__file = ${JSON.stringify(file)}\n`;
+    code += `${scriptIdentifier}.__file = ${JSON.stringify(file)}\n`;
   }
 
   if (customElement) {
-    code += `__script.__isCustomElement = true\n`;
+    code += `${scriptIdentifier}.__isCustomElement = true\n`;
   }
 
-  code += 'export default __script\n';
+  // Add vapor flag to the component if it's a vapor component
+  if (isVapor && inlineTemplate) {
+    code += `${scriptIdentifier}.__vapor = true\n`;
+  }
+
+  code += `export default ${scriptIdentifier}\n`;
   return code;
 }
 
@@ -492,7 +526,7 @@ export default function plugin(options: VuePluginOptions = {}): BunPlugin {
     name: 'vue',
 
     setup(build) {
-      setVueCompileTimeFlags(build, flags);
+      setVueCompileTimeFlags(build, flags, !!isProduction);
 
       // Only intercept virtual sub-requests so the host resolver (and TS path aliases)
       // handle bare/aliased `.vue` imports.
@@ -529,13 +563,29 @@ export default function plugin(options: VuePluginOptions = {}): BunPlugin {
           resolved.features?.customElement ?? resolved.customElement
         );
         const script = resolveScript(descriptor, resolved, customElement);
+        // @ts-expect-error vapor flag from Vue 3.6+
+        const isVapor = !!(descriptor as any).vapor;
 
         if (!script) {
-          return { contents: 'export default {}', loader: 'js' };
+          // Return empty component with vapor flag if applicable
+          const vaporFlag = isVapor ? '__vapor: true' : '';
+          return { contents: `export default { ${vaporFlag} }`, loader: 'js' };
+        }
+
+        let contents = script.content;
+        
+        // When using inline template (script setup), the compiler generates
+        // `const _sfc_main = ...` but doesn't export it. We need to add the export.
+        if (isUseInlineTemplate(descriptor)) {
+          // Check if it already has an export for _sfc_main
+          if (!contents.includes(`export { ${scriptIdentifier}`) && 
+              !contents.includes(`export default ${scriptIdentifier}`)) {
+            contents += `\nexport { ${scriptIdentifier} }\n`;
+          }
         }
 
         return {
-          contents: script.content,
+          contents,
           loader: script.lang === 'ts' ? 'ts' : 'js'
         };
       });
@@ -634,6 +684,11 @@ export default function plugin(options: VuePluginOptions = {}): BunPlugin {
           for (const [flag, value] of vueFlags) {
             source = source.replaceAll(flag!, value!);
           }
+
+          // Replace process.env.NODE_ENV checks to eliminate dev-only code paths
+          // This is critical for Vapor mode where startMeasure expects appContext
+          const nodeEnv = resolved.isProduction ? '"production"' : '"development"';
+          source = source.replaceAll('process.env.NODE_ENV', nodeEnv);
 
           return { contents: source, loader: 'js' };
         }

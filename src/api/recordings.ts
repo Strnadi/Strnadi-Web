@@ -235,7 +235,7 @@ export const deleteFilteredPart = async (
 
 export const getDialects = async (): Promise<DialectDefinition[]> => {
   const response = await axios.get(
-    `${import.meta.env.VITE_API_URL}/recordings/dialects`
+    `${process.env.PUBLIC_API_URL}/recordings/dialects`
   );
   return response.data as DialectDefinition[];
 };

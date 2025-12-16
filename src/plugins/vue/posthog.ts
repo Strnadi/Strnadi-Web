@@ -1,6 +1,6 @@
 import posthog from 'posthog-js';
 
-const posthogInstance = posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+const posthogInstance = posthog.init(process.env.PUBLIC_POSTHOG_KEY, {
   api_host: 'https://eu.i.posthog.com'
 });
 

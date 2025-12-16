@@ -52,7 +52,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import type { MarkerClusterGroup, MarkerCluster } from 'leaflet';
 
-const env = import.meta.env;
+const env = process.env;
 let leafletMap: LeafletMap | null = null;
 
 // --- Clustering ---
@@ -272,7 +272,7 @@ watch(
       <!--        :z-index="0"-->
       <!--      />-->
       <l-tile-layer
-        :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode !== 'aerial' ? '256@2x' : '256'}/{z}/{x}/{y}`"
+        :url="`${env.PUBLIC_API_URL}/map/v1/maptiles/${mode}/${mode !== 'aerial' ? '256@2x' : '256'}/{z}/{x}/{y}`"
         :max-zoom="19"
         :min-zoom="5"
         :z-index="1"
@@ -280,7 +280,7 @@ watch(
       />
       <l-tile-layer
         v-if="mode === 'aerial'"
-        :url="`${env.VITE_API_URL}/map/v1/maptiles/names-overlay/256/{z}/{x}/{y}`"
+        :url="`${env.PUBLIC_API_URL}/map/v1/maptiles/names-overlay/256/{z}/{x}/{y}`"
         :max-zoom="19"
         :min-zoom="5"
         :z-index="2"
