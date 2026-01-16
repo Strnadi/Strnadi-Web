@@ -1,7 +1,7 @@
 <template>
   <div
     :style="squareStyle"
-    class="inline-block box-border"
+    class="inline-block box-border hover:scale-120 transition-transform relative"
   >
     <div
       v-if="dot === 'true'"
@@ -49,7 +49,7 @@ const squareStyle = computed(() => {
       width: props.size,
       height: props.size,
       background: 'transparent',
-      border: '2px solid white',
+      border: '1px solid black',
       'border-radius': '0.2rem'
     };
   }
@@ -77,7 +77,7 @@ const squareStyle = computed(() => {
   return {
     width: props.size,
     height: props.size,
-    border: '2px solid white',
+    border: '1px solid black',
     background: backgroundValue,
     'border-radius': '0.2rem'
   };

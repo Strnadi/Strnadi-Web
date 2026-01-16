@@ -185,7 +185,8 @@ const stepper = useStepper<Record<StepIdentifier, Step>>({
       !!uploadStore.dateTime &&
       uploadStore.title.trim().length > 0 &&
       !isSubmitting.value &&
-      !uploadSuccess.value
+      !uploadSuccess.value &&
+      uploadStore.confirmUpload
   },
 
   photos: {

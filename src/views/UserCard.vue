@@ -15,15 +15,14 @@ const profileName = computed(() => {
     return t('labels.user');
   }
 
-  const first = current.firstName?.trim();
-  const last = current.lastName?.trim();
-
-  if (first || last) {
-    return [first, last].filter(Boolean).join(' ');
-  }
-
   if (current.nickname) {
     return `@${current.nickname}`;
+  }
+
+  const first = current.firstName?.trim();
+  const last = current.lastName?.trim();
+  if (first || last) {
+    return [first, last].filter(Boolean).join(' ');
   }
 
   return `${t('labels.user')} #${current.id}`;
@@ -73,10 +72,10 @@ const locationLabel = computed(() => {
         </h1>
       </div>
       <div class="flex flex-wrap gap-4 text-sm text-gray-600">
-        <span v-if="signupDate">
+        <!-- <span v-if="signupDate">
           <TranslatedText identifier="pages.user_profile.joined_label" />:
           <span class="font-medium text-gray-800">{{ signupDate }}</span>
-        </span>
+        </span> -->
         <span v-if="accountStore.user?.role === 'admin'">
           <TranslatedText identifier="pages.user_profile.role_label" />:
           <span class="font-medium text-gray-800">{{ props.user.role }}</span>

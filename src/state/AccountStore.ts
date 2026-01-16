@@ -49,6 +49,7 @@ persist(accountStore, {
       // Let's renew the token if it's expired
       if (exp && now > exp) {
         const newJWT = await getRenewedJWT(store.token);
+        store.logout();
         store.login(newJWT);
       }
     }

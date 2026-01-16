@@ -33,11 +33,13 @@ export const MapStore = reactive<{
   scale: boolean;
   aerial: boolean;
   filter: MapFilter;
+  grouping: boolean;
   unmove(): void;
   move(newCenter: [number, number], newZoom?: number, override?: boolean): void;
 }>({
   scale: false,
   aerial: false,
+  grouping: false,
   filter: 'new',
   markers: {},
 
@@ -140,8 +142,8 @@ function getIconDimensions() {
   const isMobile =
     typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   return {
-    iconSize: isMobile ? 20 : 12,
-    iconAnchor: isMobile ? 10 : 6
+    iconSize: isMobile ? 20 : 16,
+    iconAnchor: isMobile ? 10 : 8
   };
 }
 
@@ -175,6 +177,8 @@ function matchesMapFilter(
 
 // Helper to compare dialect color sets for clustering
 function clusterTest(a: Marker, b: Marker): boolean {
+  if (MapStore.grouping === false) return false;
+
   const colorsA = (a.data?.colors ?? []) as string[];
   const colorsB = (b.data?.colors ?? []) as string[];
   if (colorsA.length !== colorsB.length) return false;
@@ -192,6 +196,23 @@ function clusterTest(a: Marker, b: Marker): boolean {
 
   return true;
 }
+
+const allowedClustering = computed<[Marker, Marker][]>(() => {
+  if (!MapStore.grouping) return [];
+
+  const allowedPairs: [Marker, Marker][] = [];
+
+  for (const m1 of allMarkers.value) {
+    for (const m2 of allMarkers.value) {
+      if (m1.id >= m2.id) continue; // avoid duplicates and self-comparison
+
+      if (clusterTest(m1, m2)) {
+        allowedPairs.push([m1, m2]);
+      }
+    }
+  }
+  return allowedPairs;
+});
 
 const { data: recordings } = useQuery({
   queryKey: ['all-recordings'],
@@ -348,7 +369,9 @@ const markers = computed<Marker[]>(() => {
       data: {
         recording: rec,
         part: lastPart,
-        colors
+        colors,
+        fromModel,    // <-- přidáno
+        fromUser      // <-- přidáno
       }
     });
   }
@@ -409,7 +432,7 @@ const allMarkers = computed<Marker[]>(() => [
     :scale-bar="MapStore.scale"
     :polygons="polygons"
     :markers="allMarkers"
-    :cluster-test="clusterTest"
+    :allowed-clustering="allowedClustering"
     :mode="MapStore.aerial ? 'aerial' : 'outdoor'"
     :position="currentCenter"
     :zoom-control="true"

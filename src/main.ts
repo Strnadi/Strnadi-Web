@@ -11,6 +11,7 @@ import {
   defineVaporCustomElement,
   vaporInteropPlugin
 } from 'vue';
+import { createHead } from '@unhead/vue/client';
 import {
   createRouter,
   createWebHistory,
@@ -34,7 +35,9 @@ import ExpandableImage from '@/components/ExpandableImage.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import { ApiError } from '@/classes/api-error';
 import './styles/main.css';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
+// import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
+
+// console.log(process.env);
 
 declare global {
   interface Array<T> {
@@ -258,6 +261,9 @@ routes = routes.guarded(welcomeGuard);
 const app = createVaporApp(App as any);
 app.use(vaporInteropPlugin);
 
+const head = createHead();
+app.use(head);
+
 const router = createRouter({
   history: createWebHistory(),
   routes: routes,
@@ -386,11 +392,7 @@ app.component('VueDatePicker', VueDatePicker);
 
 customElements.define(
   'multi-color-square',
-  defineVaporCustomElement(MultiColorSquare)
-);
-customElements.define(
-  'expandable-image',
-  defineVaporCustomElement(ExpandableImage)
+  defineVaporCustomElement(MultiColorSquare, { shadowRoot: false })
 );
 
 app.mount('#app');

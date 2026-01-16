@@ -24,6 +24,7 @@
     "@progress/jszip-esm": "^1.0.4",
     "@sentry/vue": "^10.27.0",
     "@tanstack/vue-query": "^5.91.2",
+    "@unhead/vue": "^2.0.19",
     "@vavt/v3-extension": "^4.0.0",
     "@vue-leaflet/vue-leaflet": "^0.10.1",
     "@vuepic/vue-datepicker": "^12.0.5",
@@ -43,7 +44,6 @@
     "posthog-js": "^1.298.0",
     "qrcode.vue": "^3.6.0",
     "vue": "npm:vue@alpha",
-    "vue-markdown-render": "^2.3.0",
     "vue-router": "https://pkg.pr.new/vue-router@2509",
     "vue-select": "npm:vue-select@beta",
     "vue-virtual-scroller": "^2.0.0-beta.8",
@@ -69,9 +69,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.0",
     "unplugin-purge-polyfills": "^0.1.0",
-    "unplugin-vue-markdown": "^29.2.0",
     "unplugin-vue-router": "^0.17.1",
-    "vite": "^8.0.0-beta.2",
+    "vite": "^8.0.0-beta.8",
     "vite-plugin-compression2": "^2.3.1",
     "vite-plugin-inspect": "^11.3.3",
     "vite-plugin-mkcert": "^1.17.9",
@@ -100,7 +99,7 @@
     "vite-plugin-vue-meta-layouts@0.5.1": "patches/vite-plugin-vue-meta-layouts@0.5.1.patch"
   },
   "overrides": {
-    "vite": "^8.0.0-beta.0",
+    "vite": "npm:vite@beta",
     "vue": "npm:vue@alpha"
   }
 }
