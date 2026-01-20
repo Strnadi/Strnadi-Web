@@ -293,10 +293,10 @@ watch(
       <l-polygon
         v-for="polygon in polygons"
         :key="polygon.id"
-        :color="polygon.color"
-        :weight="polygon.weight"
+        :color="hoveredPolygon === polygon.id ? '#000000' : polygon.color"
+        :weight="hoveredPolygon === polygon.id ? polygon.weight * 2 : polygon.weight"
         :lat-lngs="polygon.position"
-        :fill-opacity="hoveredPolygon === polygon.id ? 0.1 : 0"
+        :fill-opacity="hoveredPolygon === polygon.id ? 0.05 : 0"
         :bubbling-mouse-events="false"
         @mouseover="hoveredPolygon = polygon.id"
         @mouseleave="hoveredPolygon = null"

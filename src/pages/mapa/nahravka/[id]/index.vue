@@ -370,7 +370,16 @@ const getDialectColorWithAlpha = (
                   : a.representantFlag
                     ? -1
                     : 1
-              ).slice(0, showAllDialects ? filteredRec.length : 3)"
+              ).slice(0, showAllDialects ? filteredRec.length : 3).filter(fr => {
+                if (dontShowUnknownDialects && showOnlyRepresentants) {
+                  return fr.representantFlag && getDialectStrings(fr).some(ds => ds && ds !== 'Unfinished');
+                } else if (dontShowUnknownDialects) {
+                  return getDialectStrings(fr).some(ds => ds && ds !== 'Unfinished');
+                } else if (showOnlyRepresentants) {
+                  return fr.representantFlag;
+                }
+                return true;
+              })"
               :key="fr.id"
               class="flex flex-col gap-1 rounded-lg border p-3 sm:p-4 shadow-sm transition touch-manipulation"
               :style="{

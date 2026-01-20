@@ -833,7 +833,9 @@ const loadingProgress = computed(() => {
   const audioFrac = totalAudioBytes.value
     ? clamp(receivedAudioBytes.value / totalAudioBytes.value, 0, 1)
     : audioProgress.value; // fallback
-  return clamp(audioFrac * 0.4 + spectroProgress.value * 0.6, 0, 1);
+  // Use a weighted average where audio download/decode takes up most of the bar,
+  // since isLoaded is set to true (hiding the spinner) as soon as decoding is done.
+  return clamp(audioFrac * 0.9 + spectroProgress.value * 0.1, 0, 1);
 });
 const startTime = ref(0);
 const currentTime = ref(props.currentTime);
@@ -1620,6 +1622,8 @@ async function loadAndProcessAudio() {
   isLoading.value = true;
   audioProgress.value = 0;
   spectroProgress.value = 0;
+  totalAudioBytes.value = 0;
+  receivedAudioBytes.value = 0;
   isLoaded.value = false;
   spliceTimes.value = [];
   cancelSpectrogramGeneration?.();
@@ -1641,6 +1645,7 @@ async function loadAndProcessAudio() {
   if (cached?.audioBuffer) {
     audioBuffer.value = cached.audioBuffer;
     audioDuration.value = cached.audioBuffer.duration;
+    audioProgress.value = 1;
     await generateSpectrogramDataOffline(cacheKey);
     isLoading.value = false;
     return;

@@ -302,7 +302,7 @@ const polygons = refDebounced(
   computed<Polygon[]>(() => [
     ...(zoom.value > 10 && zoom.value < 12 ? makeGrid(10 / 60, 6 / 60) : []),
     ...(zoom.value >= 12 && zoom.value < 14 ? makeGrid(5 / 60, 3 / 60) : []),
-    ...(zoom.value >= 14 ? makeGrid(2.5 / 60, 1.5 / 60) : [])
+    // ...(zoom.value >= 14 ? makeGrid(2.5 / 60, 1.5 / 60) : [])
   ]),
   75
 );
@@ -408,6 +408,9 @@ const onClick = ({
 
       const y = Math.floor(560 - lat * 10);
       const x = Math.floor(lng * 6 - 34);
+
+      // a-d for the subsquares, a = top left
+      // const z = zoom.value >= 12 ? () : '';
       MapEvents.emit('click', { event, square: `${y}${x}` });
     } else {
       // Handle cases where polygon.position might be too short, though makeGrid should prevent this.

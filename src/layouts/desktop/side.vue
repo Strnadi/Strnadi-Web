@@ -59,7 +59,7 @@ aside>div {
   @apply rounded-4xl;
   @apply p-8;
   @apply pb-20;
-  @apply wrap-break-word;
+  /* @apply wrap-normal text-balance; */
   @apply pr-[24px];
   @apply bg-white;
   @apply gap-y-2;

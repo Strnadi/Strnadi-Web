@@ -54,7 +54,7 @@ const scrollElement = ref<HTMLElement | null>(null);
   </Head>
 
   <div class="flex flex-col max-w-full" ref="scrollElement">
-    <MdPreview :id="slug" :modelValue="markdown" />
+    <MdPreview :id="slug" :modelValue="markdown" class="wrap-normal" />
     <!-- <MdCatalog :editorId="slug" :scroll-element="scrollElement" /> -->
   </div>
 
