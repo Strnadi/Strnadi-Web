@@ -43,7 +43,7 @@
     "md-editor-v3": "^6.2.0",
     "posthog-js": "^1.298.0",
     "qrcode.vue": "^3.6.0",
-    "vue": "npm:vue@alpha",
+    "vue": "npm:vue@beta",
     "vue-router": "https://pkg.pr.new/vue-router@2509",
     "vue-select": "npm:vue-select@beta",
     "vue-virtual-scroller": "^2.0.0-beta.8",
@@ -100,6 +100,6 @@
   },
   "overrides": {
     "vite": "npm:vite@beta",
-    "vue": "npm:vue@alpha"
+    "vue": "npm:vue@beta"
   }
 }

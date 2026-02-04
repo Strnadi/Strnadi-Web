@@ -806,25 +806,44 @@ const quickAddDetectedDialect = async (
     <TranslatedText identifier="recordings.detail.edit_dialects_title" />
   </h1>
 
-  <template v-if="isLoading">
-    <span>
-      <TranslatedText identifier="loading" />
-    </span>
-  </template>
-
-  <template v-if="error">
-    <span>{{ error.message }}</span>
-  </template>
-
-  <template v-else>
+  <div class="mt-4 space-y-2">
     <div
-      v-if="!isAdmin"
-      class="text-sm text-gray-600"
+      v-if="error || segmentError || detectionError"
+      class="p-3 rounded-md bg-red-50 text-red-700 border border-red-200"
+      role="alert"
     >
-      Tato stránka je dostupná pouze administrátorům.
+      <strong class="font-semibold mr-2">Chyba:</strong>
+      <span>{{ segmentError ?? detectionError ?? error?.message }}</span>
     </div>
+
     <div
-      v-else
+      v-if="segmentSuccess || detectionMessage"
+      class="p-3 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200"
+      role="status"
+    >
+      <strong class="font-semibold mr-2">Hotovo:</strong>
+      <span>{{ segmentSuccess ?? detectionMessage }}</span>
+    </div>
+
+    <div
+      v-if="isLoading"
+      class="p-3 rounded-md bg-blue-50 text-blue-700 border border-blue-200"
+      role="status"
+    >
+      <strong class="font-semibold mr-2">Načítání:</strong>
+      <span><TranslatedText identifier="loading" /></span>
+    </div>
+  </div>
+
+  <div
+    v-if="!isAdmin"
+    class="text-sm text-gray-600"
+  >
+    Tato stránka je dostupná pouze administrátorům.
+  </div>
+
+  <template>
+    <div
       class="flex flex-col gap-y-6"
     >
       <Spectrogram
@@ -1058,66 +1077,84 @@ const quickAddDetectedDialect = async (
                     >
                       Uložit
                     </button>
-                    <button
+                    <!-- <button
                       v-if="detected.confirmedDialectId"
                       class="px-2 text-xs border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                       :disabled="detectionSaving[detected.id]"
                       @click="clearConfirmedDialect(detected, close)"
                     >
-                      Odebrat
-                    </button>
+                      Odebrat potvrzení
+                    </button> -->
                     <button
                       class="px-2 text-xs border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                       :disabled="detectionSaving[detected.id]"
                       @click="deleteDetection(detected)"
                     >
-                      Smazat
+                      Smazat záznam
                     </button>
                   </div>
                 </div>
               </div>
 
-              <div class="text-xs font-semibold text-gray-700">
-                Přidat záznam dialektu
-              </div>
-              <select
-                v-model="tooltipAddDetectionDialectId"
-                class="w-full text-xs border border-gray-300 rounded px-2 py-1"
-                :disabled="tooltipAddDetectionSaving"
-              >
-                <option :value="null">Vyberte dialekt</option>
-                <option
-                  v-for="dialect in availableDialects"
-                  :key="dialect.id"
-                  :value="dialect.id"
+              <template v-if="getDetectedDialectsForRange(rangeId).length == 0">
+                <div class="text-xs font-semibold text-gray-700">
+                  Přidat záznam dialektu
+                </div>
+                <select
+                  v-model="tooltipAddDetectionDialectId"
+                  class="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                  :disabled="tooltipAddDetectionSaving"
                 >
-                  {{ dialect.dialectCode }}
-                </option>
-              </select>
-              <button
-                class="w-full button-primary px-2 py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="
-                  !tooltipAddDetectionDialectId ||
-                  tooltipAddDetectionSaving ||
-                  !findRangeById(rangeId)?.payload
-                "
-                @click="
-                  (() => {
-                    const r = findRangeById(rangeId);
-                    if (r?.payload) {
-                      quickAddDetectedDialect(
-                        r.payload,
-                        tooltipAddDetectionDialectId,
-                        close
-                      );
-                    }
-                  })()
-                "
-              >
-                <span v-if="tooltipAddDetectionSaving">Přidávání...</span>
-                <span v-else>Přidat záznam</span>
-              </button>
+                  <option :value="null">Vyberte dialekt</option>
+                  <option
+                    v-for="dialect in availableDialects"
+                    :key="dialect.id"
+                    :value="dialect.id"
+                  >
+                    {{ dialect.dialectCode }}
+                  </option>
+                </select>
+                <button
+                  class="w-full button-primary px-2 py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="
+                    !tooltipAddDetectionDialectId ||
+                    tooltipAddDetectionSaving ||
+                    !findRangeById(rangeId)?.payload
+                  "
+                  @click="
+                    (() => {
+                      const r = findRangeById(rangeId);
+                      if (r?.payload) {
+                        quickAddDetectedDialect(
+                          r.payload,
+                          tooltipAddDetectionDialectId,
+                          close
+                        );
+                      }
+                    })()
+                  "
+                >
+                  <span v-if="tooltipAddDetectionSaving">Přidávání...</span>
+                  <span v-else>Přidat záznam</span>
+                </button>
+              </template>
             </div>
+
+            <button
+              v-if="canEditDialects && findRangeById(rangeId)"
+              class="w-full text-xs text-red-600 hover:text-red-700 font-semibold pt-2 border-t border-gray-200"
+              @click="
+                (() => {
+                  const r = findRangeById(rangeId);
+                  if (r?.payload) {
+                    removeSegment(r.payload);
+                    close();
+                  }
+                })()
+              "
+            >
+              Smazat celý úsek
+            </button>
 
             <button
               class="w-full text-xs text-gray-500 hover:text-gray-700 mt-2 pt-2 border-t border-gray-200"
