@@ -71,7 +71,7 @@
             @mousemove="handleRangeFillMouseMove(r.id, $event)"
           />
           <div
-            class="range-handle start absolute opacity-70 hover:opacity-100 transition-opacity touch-manipulation"
+            class="range-handle start absolute opacity-50 hover:opacity-70 transition-opacity touch-manipulation"
             :class="{
               'scale-x-150':
                 draggingRangeId === r.id && draggingHandle === 'start',
@@ -116,7 +116,7 @@
             </template>
           </div>
           <div
-            class="range-handle end absolute opacity-70 hover:opacity-100 transition-opacity touch-manipulation"
+            class="range-handle end absolute opacity-50 hover:opacity-70 transition-opacity touch-manipulation"
             :class="{
               'scale-x-150':
                 draggingRangeId === r.id && draggingHandle === 'end',
@@ -177,7 +177,7 @@
           />
           <!-- Start handle for temporary selection -->
           <div
-            class="range-handle start absolute opacity-70 transition-opacity pointer-events-none"
+            class="range-handle start absolute opacity-50 transition-opacity pointer-events-none"
             :style="{
               left: `${Math.min(selectStartXPx, selectCurrentXPx)}px`,
               top: `${margin.top}px`,
@@ -216,7 +216,7 @@
           </div>
           <!-- End handle for temporary selection -->
           <div
-            class="range-handle end absolute opacity-70 transition-opacity pointer-events-none"
+            class="range-handle end absolute opacity-50 transition-opacity pointer-events-none"
             :style="{
               left: `${Math.min(selectStartXPx, selectCurrentXPx) + Math.abs(selectCurrentXPx - selectStartXPx)}px`,
               top: `${margin.top}px`,
@@ -518,6 +518,7 @@
         <TranslatedText identifier="common.buttons.pause" />
       </button>
       <button
+        v-if="!simpleControls"
         class="px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300 active:enabled:bg-gray-400 transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation"
         :disabled="!isLoaded || (!isPlaying && !isPaused)"
         @click="stopAudio"
@@ -525,6 +526,7 @@
         <TranslatedText identifier="common.buttons.stop" />
       </button>
       <button
+        v-if="!simpleControls"
         class="px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-200 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-gray-300 active:enabled:bg-gray-400 transition-colors text-xs sm:text-sm min-h-[44px] touch-manipulation"
         :disabled="!isLoaded"
         @click="rewindToAbsoluteStart"
@@ -535,7 +537,7 @@
 
     <!-- Playback options -->
     <div
-      v-if="isLoaded && !props.noControls"
+      v-if="isLoaded && !(props.noControls || props.simpleControls)"
       class="playback-options-container w-full flex items-center justify-center gap-x-3 sm:gap-x-4 gap-y-2 mt-1 px-2 sm:px-2.5 flex-wrap"
     >
       <label
@@ -588,7 +590,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import {
   ref,
   computed,
@@ -596,7 +598,8 @@ import {
   onMounted,
   onUnmounted,
   nextTick,
-  Teleport
+  Teleport,
+  onBeforeUnmount
 } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
 import type { Numeric } from '@/types/basic';
@@ -718,6 +721,7 @@ interface Props {
   readonly?: boolean; // Add readonly prop
   currentTime?: number;
   noControls?: boolean;
+  simpleControls?: boolean;
   downloadOnlySelections?: boolean; // NEW
   joinSelectionSegments?: boolean; // Whether to concatenate selected regions without gaps
   showTooltipOnHover?: boolean; // Whether to show tooltip on hover (readonly mode only)
@@ -829,7 +833,9 @@ const loadingProgress = computed(() => {
   const audioFrac = totalAudioBytes.value
     ? clamp(receivedAudioBytes.value / totalAudioBytes.value, 0, 1)
     : audioProgress.value; // fallback
-  return clamp(audioFrac * 0.4 + spectroProgress.value * 0.6, 0, 1);
+  // Use a weighted average where audio download/decode takes up most of the bar,
+  // since isLoaded is set to true (hiding the spinner) as soon as decoding is done.
+  return clamp(audioFrac * 0.9 + spectroProgress.value * 0.1, 0, 1);
 });
 const startTime = ref(0);
 const currentTime = ref(props.currentTime);
@@ -1032,7 +1038,7 @@ const draggingHandle = ref<'start' | 'end' | null>(null);
 
 // Hover line
 const showHoverLine = ref(false);
-const showControls = ref(false);
+const showControls = ref(true);
 const hoverLineX = ref(0);
 const nextRangeColor = ref<string>('');
 // Initialize nextRangeColor
@@ -1616,6 +1622,8 @@ async function loadAndProcessAudio() {
   isLoading.value = true;
   audioProgress.value = 0;
   spectroProgress.value = 0;
+  totalAudioBytes.value = 0;
+  receivedAudioBytes.value = 0;
   isLoaded.value = false;
   spliceTimes.value = [];
   cancelSpectrogramGeneration?.();
@@ -1637,6 +1645,7 @@ async function loadAndProcessAudio() {
   if (cached?.audioBuffer) {
     audioBuffer.value = cached.audioBuffer;
     audioDuration.value = cached.audioBuffer.duration;
+    audioProgress.value = 1;
     await generateSpectrogramDataOffline(cacheKey);
     isLoading.value = false;
     return;
@@ -4619,6 +4628,12 @@ function closeContextMenu() {
   document.removeEventListener('click', closeContextMenuOnClickOutside);
   document.removeEventListener('contextmenu', closeContextMenuOnClickOutside);
 }
+
+onBeforeUnmount(() => {
+  // Ensure context menu and range tooltip are closed and listeners removed
+  closeContextMenu();
+  closeRangeTooltip();
+});
 
 function closeContextMenuOnClickOutside(event: MouseEvent | PointerEvent) {
   // Only close if the menu is visible, the ref exists,

@@ -3,7 +3,7 @@ meta:
   layout: desktop/center
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { onClickOutside, useEventListener } from '@vueuse/core';
 import { useQuery } from '@tanstack/vue-query';

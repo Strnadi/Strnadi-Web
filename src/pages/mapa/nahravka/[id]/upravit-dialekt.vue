@@ -3,7 +3,7 @@ meta:
   layout: desktop/center
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
 import Spectrogram from '@/views/Spectrogram.vue';
 import { useRouteParams } from '@vueuse/router';
@@ -176,7 +176,6 @@ watch(segments, (newRanges, oldRanges) => {
 
 watch(currentContextMenuRangeId, (rangeId) => {
   if (rangeId != null) {
-    tooltipConfirmedDialectId.value = getDefaultDialectIdForRange(rangeId);
     tooltipCreateDialectId.value = null;
     tooltipAddDetectionDialectId.value = null;
   }
@@ -646,54 +645,12 @@ const findRangeById = (
   return segments.value.find((r) => r.id === numId) ?? null;
 };
 
-const getDefaultDialectIdForRange = (
-  rangeId: Numeric | number | null
-): number | null => {
-  const range = findRangeById(rangeId);
-  if (!range?.payload?.filteredPart) return null;
-
-  const detectedDialects = range.payload.filteredPart.detectedDialects ?? [];
-
-  // First, try to find predicted dialect ID
-  for (const detected of detectedDialects) {
-    if (detected.predictedDialectId != null) {
-      return detected.predictedDialectId;
-    }
-  }
-
-  // If no predicted, try user guess
-  for (const detected of detectedDialects) {
-    if (detected.userGuessDialectId != null) {
-      return detected.userGuessDialectId;
-    }
-  }
-
-  return null;
-};
-
 const getDetectedDialectsForRange = (
   rangeId: Numeric | number | null
 ): DetectedDialect[] => {
   const range = findRangeById(rangeId);
   return range?.payload?.filteredPart?.detectedDialects ?? [];
 };
-
-const getConfirmedDialectsForRange = (
-  rangeId: Numeric | number | null
-): DetectedDialect[] =>
-  getDetectedDialectsForRange(rangeId).filter(
-    (detected) => detected.confirmedDialectId != null
-  );
-
-const getUnconfirmedConfirmableDetectionsForRange = (
-  rangeId: Numeric | number | null
-): DetectedDialect[] =>
-  getDetectedDialectsForRange(rangeId).filter(
-    (detected) =>
-      detected.confirmedDialectId == null &&
-      (detected.predictedDialectId != null ||
-        detected.userGuessDialectId != null)
-  );
 
 const confirmExistingDetection = async (
   detected: DetectedDialect,
@@ -754,115 +711,49 @@ const clearConfirmedDialect = async (
   }
 };
 
-const quickConfirmDialect = async (
-  meta: SegmentMeta,
-  dialectId: number | null,
-  close: () => void
-) => {
-  if (!meta.filteredPart) {
-    detectionError.value = 'Nejprve uložte úsek.';
-    return;
-  }
-  if (!dialectId) {
-    detectionError.value = 'Vyberte dialekt k potvrzení.';
-    return;
-  }
-
-  tooltipSaving.value = true;
-  detectionError.value = null;
-  detectionMessage.value = null;
-
-  try {
-    // Check if there's an existing detected dialect for this part
-    const existingDetected = meta.filteredPart.detectedDialects?.find(
-      (det) => det.id
-    );
-
-    if (existingDetected) {
-      // Update existing detection
-      const form = ensureDetectionForm(existingDetected);
-      await updateDetectedDialect(accountStore.token!, {
-        id: existingDetected.id,
-        userGuessDialectId: form.userGuessDialectId,
-        predictedDialectId: form.predictedDialectId,
-        confirmedDialectId: dialectId
-      });
-    } else {
-      // Create new detection with confirmed dialect
-      await postDetectedDialect(accountStore.token!, {
-        filteredPartId: meta.filteredPart.id,
-        userGuessDialectId: null,
-        predictedDialectId: null,
-        confirmedDialectId: dialectId
-      });
-    }
-
-    detectionMessage.value = 'Dialekt byl potvrzen.';
-    tooltipConfirmedDialectId.value = null;
-    currentContextMenuRangeId.value = null;
-    await refetchFilteredParts();
-    close();
-  } catch (err) {
-    detectionError.value =
-      err instanceof Error ? err.message : 'Nepodařilo se potvrdit dialekt.';
-  } finally {
-    tooltipSaving.value = false;
-  }
-};
-
 const quickCreateFilteredPart = async (
   range: SpectrogramRange,
   dialectId: number | null,
-  close: () => void
+  close?: () => void
 ) => {
   if (!recording.value) {
     segmentError.value = 'Chybí metadata nahrávky.';
     return;
   }
-  if (!dialectId) {
-    segmentError.value = 'Vyberte dialekt.';
+  if (!Number.isFinite(range.start) || !Number.isFinite(range.end)) {
+    segmentError.value = 'Úsek nemá platný čas.';
     return;
   }
-  const anchor = anchorTimestamp.value;
-  if (anchor === null) {
-    segmentError.value = 'Není k dispozici časový základ pro nahrávku.';
+  if (dialectId == null) {
+    segmentError.value = 'Vyberte dialekt pro nový úsek.';
     return;
   }
-
-  const meta = segmentMetas[range.id];
-  if (meta?.filteredPart) {
-    segmentError.value = 'Úsek již existuje.';
+  const dialect = availableDialects.value.find((d) => d.id === dialectId);
+  if (!dialect) {
+    segmentError.value = 'Vybraný dialekt nebyl nalezen.';
     return;
   }
-
+  const startDate = convertRelativeToIso(range.start);
+  const endDate = convertRelativeToIso(range.end);
+  if (!startDate || !endDate) {
+    segmentError.value = 'Nepodařilo se převést čas úseku.';
+    return;
+  }
   tooltipCreateSaving.value = true;
   segmentError.value = null;
   segmentSuccess.value = null;
-
   try {
-    const startDate = convertRelativeToIso(range.start);
-    const endDate = convertRelativeToIso(range.end);
-    if (!startDate || !endDate) {
-      throw new Error('Nepodařilo se převést čas úseku.');
-    }
-
-    const dialect = availableDialects.value.find((d) => d.id === dialectId);
-    if (!dialect) {
-      throw new Error('Dialekt nenalezen.');
-    }
-
     await postFilteredPart(accountStore.token!, {
       recordingId: recording.value.id,
       startDate,
       endDate,
       dialectCode: dialect.dialectCode
     });
-
-    segmentSuccess.value = 'Úsek byl vytvořen.';
     tooltipCreateDialectId.value = null;
     currentContextMenuRangeId.value = null;
+    segmentSuccess.value = 'Úsek byl vytvořen.';
+    if (close) close();
     await refetchFilteredParts();
-    close();
   } catch (err) {
     segmentError.value =
       err instanceof Error ? err.message : 'Nepodařilo se vytvořit úsek.';
@@ -874,35 +765,31 @@ const quickCreateFilteredPart = async (
 const quickAddDetectedDialect = async (
   meta: SegmentMeta,
   dialectId: number | null,
-  close: () => void
+  close?: () => void
 ) => {
   if (!meta.filteredPart) {
     detectionError.value = 'Nejprve uložte úsek.';
     return;
   }
-  if (!dialectId) {
-    detectionError.value = 'Vyberte dialekt.';
+  if (dialectId == null) {
+    detectionError.value = 'Vyberte dialekt pro záznam.';
     return;
   }
-
   tooltipAddDetectionSaving.value = true;
   detectionError.value = null;
   detectionMessage.value = null;
-
   try {
-    const isAdmin = accountStore.user?.role === 'admin';
     await postDetectedDialect(accountStore.token!, {
       filteredPartId: meta.filteredPart.id,
-      userGuessDialectId: isAdmin ? null : dialectId,
+      userGuessDialectId: null,
       predictedDialectId: null,
-      confirmedDialectId: isAdmin ? dialectId : null
+      confirmedDialectId: dialectId
     });
-
-    detectionMessage.value = 'Záznam dialektu byl přidán.';
     tooltipAddDetectionDialectId.value = null;
     currentContextMenuRangeId.value = null;
+    detectionMessage.value = 'Záznam dialektu byl přidán.';
+    if (close) close();
     await refetchFilteredParts();
-    close();
   } catch (err) {
     detectionError.value =
       err instanceof Error
@@ -919,25 +806,44 @@ const quickAddDetectedDialect = async (
     <TranslatedText identifier="recordings.detail.edit_dialects_title" />
   </h1>
 
-  <template v-if="isLoading">
-    <span>
-      <TranslatedText identifier="loading" />
-    </span>
-  </template>
-
-  <template v-if="error">
-    <span>{{ error.message }}</span>
-  </template>
-
-  <template v-else>
+  <div class="mt-4 space-y-2">
     <div
-      v-if="!isAdmin"
-      class="text-sm text-gray-600"
+      v-if="error || segmentError || detectionError"
+      class="p-3 rounded-md bg-red-50 text-red-700 border border-red-200"
+      role="alert"
     >
-      Tato stránka je dostupná pouze administrátorům.
+      <strong class="font-semibold mr-2">Chyba:</strong>
+      <span>{{ segmentError ?? detectionError ?? error?.message }}</span>
     </div>
+
     <div
-      v-else
+      v-if="segmentSuccess || detectionMessage"
+      class="p-3 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200"
+      role="status"
+    >
+      <strong class="font-semibold mr-2">Hotovo:</strong>
+      <span>{{ segmentSuccess ?? detectionMessage }}</span>
+    </div>
+
+    <div
+      v-if="isLoading"
+      class="p-3 rounded-md bg-blue-50 text-blue-700 border border-blue-200"
+      role="status"
+    >
+      <strong class="font-semibold mr-2">Načítání:</strong>
+      <span><TranslatedText identifier="loading" /></span>
+    </div>
+  </div>
+
+  <div
+    v-if="!isAdmin"
+    class="text-sm text-gray-600"
+  >
+    Tato stránka je dostupná pouze administrátorům.
+  </div>
+
+  <template>
+    <div
       class="flex flex-col gap-y-6"
     >
       <Spectrogram
@@ -994,7 +900,7 @@ const quickAddDetectedDialect = async (
                       typeof r.start !== 'number' ||
                       typeof r.end !== 'number'
                     ) {
-                      return '--:-- → --:--';
+                      return '--:-- – --:--';
                     }
                     return `${formatAbsoluteFromSeconds(r.start)} → ${formatAbsoluteFromSeconds(r.end)}`;
                   })()
@@ -1048,7 +954,7 @@ const quickAddDetectedDialect = async (
               </button>
             </div>
 
-            <!-- Add detected dialect to existing filtered part -->
+            <!-- Manage detected dialects on existing filtered part -->
             <div
               v-if="
                 findRangeById(rangeId)?.payload?.filteredPart && canEditDialects
@@ -1056,72 +962,102 @@ const quickAddDetectedDialect = async (
               class="space-y-2 pt-2 border-t border-gray-200"
             >
               <div class="text-xs font-semibold text-gray-700">
-                Přidat záznam dialektu
+                Záznamy dialektů
               </div>
-              <select
-                v-model="tooltipAddDetectionDialectId"
-                class="w-full text-xs border border-gray-300 rounded px-2 py-1"
-                :disabled="tooltipAddDetectionSaving"
+              <p
+                v-if="!getDetectedDialectsForRange(rangeId).length"
+                class="text-xs text-gray-500"
               >
-                <option :value="null">Vyberte dialekt</option>
-                <option
-                  v-for="dialect in availableDialects"
-                  :key="dialect.id"
-                  :value="dialect.id"
-                >
-                  {{ dialect.dialectCode }}
-                </option>
-              </select>
-              <button
-                class="w-full button-primary px-2 py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="
-                  !tooltipAddDetectionDialectId ||
-                  tooltipAddDetectionSaving ||
-                  !findRangeById(rangeId)?.payload
-                "
-                @click="
-                  (() => {
-                    const r = findRangeById(rangeId);
-                    if (r?.payload) {
-                      quickAddDetectedDialect(
-                        r.payload,
-                        tooltipAddDetectionDialectId,
-                        close
-                      );
-                    }
-                  })()
-                "
-              >
-                <span v-if="tooltipAddDetectionSaving">Přidávání...</span>
-                <span v-else>Přidat záznam</span>
-              </button>
-            </div>
-
-            <!-- Admin: Confirm dialect / manage confirmed dialects -->
-            <template
-              v-if="
-                accountStore.user?.role === 'admin' &&
-                findRangeById(rangeId)?.payload?.filteredPart
-              "
-            >
+                Žádné záznamy pro tento úsek.
+              </p>
               <div
-                v-if="getConfirmedDialectsForRange(rangeId).length"
-                class="space-y-2 pt-2 border-t border-gray-200"
+                v-for="detected in getDetectedDialectsForRange(rangeId)"
+                :key="`detected-${detected.id}`"
+                class="border border-gray-200 rounded px-2 py-2 space-y-2 bg-gray-50"
               >
-                <div class="text-xs font-semibold text-gray-700">
-                  Potvrzené dialekty
+                <div class="text-[11px] text-gray-500">
+                  ID #{{ detected.id }}
                 </div>
+                <div class="text-[11px] text-gray-500 flex flex-col gap-0.5">
+                  <span>
+                    Model:
+                    {{
+                      detected.predictedDialect ??
+                      detected.predictedDialectId ??
+                      'Nezadán'
+                    }}
+                  </span>
+                  <span v-if="detected.userGuessDialectId">
+                    Uživatel:
+                    {{
+                      detected.userGuessDialect ?? detected.userGuessDialectId
+                    }}
+                  </span>
+                  <span
+                    :class="[
+                      'font-semibold',
+                      detected.confirmedDialectId
+                        ? 'text-emerald-600'
+                        : 'text-amber-600'
+                    ]"
+                  >
+                    {{
+                      detected.confirmedDialectId
+                        ? `Potvrzeno: ${
+                            detected.confirmedDialect ??
+                            detected.confirmedDialectId
+                          }`
+                        : 'Nepotvrzeno'
+                    }}
+                  </span>
+                </div>
+
                 <div
-                  v-for="detected in getConfirmedDialectsForRange(rangeId)"
-                  :key="`confirmed-${detected.id}`"
-                  class="border border-gray-200 rounded px-2 py-2 space-y-2 bg-gray-50"
+                  v-if="
+                    !detected.confirmedDialectId &&
+                    (detected.predictedDialectId || detected.userGuessDialectId)
+                  "
+                  class="space-y-1 text-xs"
                 >
-                  <div class="text-[11px] text-gray-500">
-                    ID #{{ detected.id }}
-                  </div>
+                  <div class="text-[11px] text-gray-500">Rychlé potvrzení</div>
+                  <button
+                    v-if="detected.predictedDialectId"
+                    class="w-full px-2 py-1 border border-gray-200 rounded hover:bg-gray-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="detectionSaving[detected.id]"
+                    @click="
+                      confirmExistingDetection(
+                        detected,
+                        detected.predictedDialectId,
+                        close
+                      )
+                    "
+                  >
+                    Potvrdit model ({{
+                      detected.predictedDialect ?? detected.predictedDialectId
+                    }})
+                  </button>
+                  <button
+                    v-if="detected.userGuessDialectId"
+                    class="w-full px-2 py-1 border border-gray-200 rounded hover:bg-gray-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="detectionSaving[detected.id]"
+                    @click="
+                      confirmExistingDetection(
+                        detected,
+                        detected.userGuessDialectId,
+                        close
+                      )
+                    "
+                  >
+                    Potvrdit uživatel ({{
+                      detected.userGuessDialect ?? detected.userGuessDialectId
+                    }})
+                  </button>
+                </div>
+
+                <div class="flex flex-row gap-x-2">
                   <select
                     v-model="detectionForms[detected.id]!.confirmedDialectId"
-                    class="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                    class="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
                     :disabled="detectionSaving[detected.id]"
                   >
                     <option :value="null">Vyberte dialekt</option>
@@ -1133,23 +1069,24 @@ const quickAddDetectedDialect = async (
                       {{ dialect.dialectCode }}
                     </option>
                   </select>
-                  <div class="flex flex-wrap gap-2">
+                  <div class="flex flex-row gap-1">
                     <button
-                      class="button-primary px-2 py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="button-primary px-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                       :disabled="detectionSaving[detected.id]"
                       @click="saveDetection(detected)"
                     >
                       Uložit
                     </button>
-                    <button
-                      class="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                    <!-- <button
+                      v-if="detected.confirmedDialectId"
+                      class="px-2 text-xs border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                       :disabled="detectionSaving[detected.id]"
                       @click="clearConfirmedDialect(detected, close)"
                     >
                       Odebrat potvrzení
-                    </button>
+                    </button> -->
                     <button
-                      class="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="px-2 text-xs border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                       :disabled="detectionSaving[detected.id]"
                       @click="deleteDetection(detected)"
                     >
@@ -1159,69 +1096,14 @@ const quickAddDetectedDialect = async (
                 </div>
               </div>
 
-              <div
-                v-else
-                class="space-y-2 pt-2 border-t border-gray-200"
-              >
+              <template v-if="getDetectedDialectsForRange(rangeId).length == 0">
                 <div class="text-xs font-semibold text-gray-700">
-                  Potvrdit dialekt
+                  Přidat záznam dialektu
                 </div>
-
-                <div
-                  v-if="
-                    getUnconfirmedConfirmableDetectionsForRange(rangeId).length
-                  "
-                  class="space-y-1 text-xs"
-                >
-                  <div class="text-[11px] text-gray-500">Rychlé potvrzení</div>
-                  <div
-                    v-for="detected in getUnconfirmedConfirmableDetectionsForRange(
-                      rangeId
-                    )"
-                    :key="`confirmable-${detected.id}`"
-                    class="flex flex-col gap-1"
-                  >
-                    <button
-                      v-if="detected.predictedDialectId"
-                      class="w-full px-2 py-1 border border-gray-200 rounded hover:bg-gray-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
-                      :disabled="detectionSaving[detected.id]"
-                      @click="
-                        confirmExistingDetection(
-                          detected,
-                          detected.predictedDialectId,
-                          close
-                        )
-                      "
-                    >
-                      Potvrdit model ({{
-                        detected.predictedDialect ??
-                        detected.predictedDialectId
-                      }})
-                    </button>
-                    <button
-                      v-if="detected.userGuessDialectId"
-                      class="w-full px-2 py-1 border border-gray-200 rounded hover:bg-gray-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
-                      :disabled="detectionSaving[detected.id]"
-                      @click="
-                        confirmExistingDetection(
-                          detected,
-                          detected.userGuessDialectId,
-                          close
-                        )
-                      "
-                    >
-                      Potvrdit uživatel ({{
-                        detected.userGuessDialect ??
-                        detected.userGuessDialectId
-                      }})
-                    </button>
-                  </div>
-                </div>
-
                 <select
-                  v-model="tooltipConfirmedDialectId"
+                  v-model="tooltipAddDetectionDialectId"
                   class="w-full text-xs border border-gray-300 rounded px-2 py-1"
-                  :disabled="tooltipSaving"
+                  :disabled="tooltipAddDetectionSaving"
                 >
                   <option :value="null">Vyberte dialekt</option>
                   <option
@@ -1235,33 +1117,48 @@ const quickAddDetectedDialect = async (
                 <button
                   class="w-full button-primary px-2 py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                   :disabled="
-                    !tooltipConfirmedDialectId ||
-                    tooltipSaving ||
+                    !tooltipAddDetectionDialectId ||
+                    tooltipAddDetectionSaving ||
                     !findRangeById(rangeId)?.payload
                   "
                   @click="
                     (() => {
                       const r = findRangeById(rangeId);
                       if (r?.payload) {
-                        quickConfirmDialect(
+                        quickAddDetectedDialect(
                           r.payload,
-                          tooltipConfirmedDialectId,
+                          tooltipAddDetectionDialectId,
                           close
                         );
                       }
                     })()
                   "
                 >
-                  <span v-if="tooltipSaving">Ukládání...</span>
-                  <span v-else>Potvrdit</span>
+                  <span v-if="tooltipAddDetectionSaving">Přidávání...</span>
+                  <span v-else>Přidat záznam</span>
                 </button>
-              </div>
-            </template>
+              </template>
+            </div>
+
+            <button
+              v-if="canEditDialects && findRangeById(rangeId)"
+              class="w-full text-xs text-red-600 hover:text-red-700 font-semibold pt-2 border-t border-gray-200"
+              @click="
+                (() => {
+                  const r = findRangeById(rangeId);
+                  if (r?.payload) {
+                    removeSegment(r.payload);
+                    close();
+                  }
+                })()
+              "
+            >
+              Smazat celý úsek
+            </button>
 
             <button
               class="w-full text-xs text-gray-500 hover:text-gray-700 mt-2 pt-2 border-t border-gray-200"
               @click="
-                tooltipConfirmedDialectId = null;
                 tooltipCreateDialectId = null;
                 tooltipAddDetectionDialectId = null;
                 currentContextMenuRangeId = null;

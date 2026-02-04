@@ -35,19 +35,13 @@ const changeLanguage = (lang: keyof typeof translations) => {
 <template>
   <nav class="w-full">
     <div class="nav-container">
-      <div
-        class="nav-glass flex justify-between gap-x-4 items-center h-16 rounded-4xl m-2 desktop:m-5 pr-4"
-      >
+      <div class="nav-glass flex justify-between gap-x-4 items-center h-16 rounded-4xl m-2 desktop:m-5 pr-4">
         <!-- Logo -->
         <div
-          class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc] shrink-0"
-        >
-          <PrefetchLink to="/vitejte">
-            <img
-              src="/logo.svg"
-              alt="Logo"
-            />
-          </PrefetchLink>
+          class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc] shrink-0">
+          <RouterLink to="/vitejte">
+            <img src="/logo.svg" alt="Logo" />
+          </RouterLink>
         </div>
 
         <span v-if="isLoading">
@@ -63,43 +57,27 @@ const changeLanguage = (lang: keyof typeof translations) => {
           <ul class="flex flex-row gap-x-4 items-center">
             <template v-if="accountStore.user">
               <li>
-                <PrefetchLink
-                  v-wave
-                  to="/mapa/nahrat"
-                  class="dropdown-item"
-                >
+                <RouterLink to="/mapa/nahrat" class="dropdown-item">
                   <UploadIcon />
                   <TranslatedText identifier="upload.title" />
-                </PrefetchLink>
+                </RouterLink>
               </li>
             </template>
 
-            <Dropdown
-              v-for="category in categories"
-              :key="category.name"
-            >
+            <Dropdown v-for="category in categories" :key="category.name">
               <template #title>
                 {{ category.label }}
                 <DropdownIcon />
               </template>
 
-              <li
-                v-for="article in category.articles"
-                :key="article.id"
-              >
-                <prefetch-link
-                  v-wave
-                  :to="`/informace/${category.name}/${kebabize(article.name)}`"
-                  class="dropdown-item flex! flex-col! items-start!"
-                >
+              <li v-for="article in category.articles" :key="article.id">
+                <RouterLink :to="`/informace/${category.name}/${kebabize(article.name)}`"
+                  class="dropdown-item flex! flex-col! items-start!">
                   <span>{{ article.name }}</span>
-                  <span
-                    v-if="article.description"
-                    class="italic"
-                  >
+                  <span v-if="article.description" class="italic">
                     {{ article.description }}
                   </span>
-                </prefetch-link>
+                </RouterLink>
               </li>
             </Dropdown>
           </ul>
@@ -116,20 +94,11 @@ const changeLanguage = (lang: keyof typeof translations) => {
               </template>
 
               <ul>
-                <li
-                  v-for="key in Object.keys(
-                    translations
-                  ) as (keyof typeof translations)[]"
-                  :key="key"
-                  v-wave
-                  class="dropdown-item"
-                >
-                  <button
-                    :class="
-                      key === applicationStore.language ? 'font-bold' : ''
-                    "
-                    @click="changeLanguage(key)"
-                  >
+                <li v-for="key in Object.keys(
+                  translations
+                ) as (keyof typeof translations)[]" :key="key" class="dropdown-item">
+                  <button :class="key === applicationStore.language ? 'font-bold' : ''
+                    " @click="changeLanguage(key)">
                     {{ translations[key].lang_name }}
                   </button>
                 </li>
@@ -138,21 +107,14 @@ const changeLanguage = (lang: keyof typeof translations) => {
 
             <li>
               <AccountDropdown v-if="accountStore.user" />
-              <PrefetchLink
-                v-else
-                to="/ucet/vitejte"
-                class="button-secondary py-2 px-4"
-              >
+              <RouterLink v-else to="/ucet/vitejte" class="button-secondary py-2 px-4">
                 <TranslatedText identifier="buttons.login" />
-              </PrefetchLink>
+              </RouterLink>
             </li>
 
-            <PrefetchLink
-              to="/aplikace"
-              class="button-primary py-2 px-4 max-sm:text-sm"
-            >
+            <RouterLink to="/aplikace" class="button-primary py-3 px-4 max-sm:text-sm">
               <TranslatedText identifier="buttons.app" />
-            </PrefetchLink>
+            </RouterLink>
           </ul>
         </div>
       </div>
@@ -176,11 +138,7 @@ nav {
 }
 
 .nav-glass {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  box-shadow:
-    0 12px 40px rgba(32, 37, 51, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  @apply bg-white;
 }
 
 /* @supports (

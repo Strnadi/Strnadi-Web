@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref, computed } from 'vue';
 import { useDropZone, useFileDialog } from '@vueuse/core';
 import { validateFiles } from '@/utils/files.ts';

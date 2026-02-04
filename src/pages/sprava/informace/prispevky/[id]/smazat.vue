@@ -3,7 +3,7 @@ meta:
   layout: desktop/small-popup
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { useMutation } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router';
 import { useRouter } from 'vue-router';

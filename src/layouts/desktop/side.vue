@@ -17,24 +17,15 @@ const closePopup = () => {
 <template>
   <router-view v-slot="{ Component }">
     <aside class="side relative">
-      <button
-        class="small absolute top-5 left-5 z-10 rounded-2xl"
-        @click="goBack"
-      >
+      <button class="small absolute top-5 left-5 z-10 rounded-2xl" @click="goBack">
         <Back />
       </button>
 
-      <button
-        class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl"
-        @click="closePopup"
-      >
+      <button class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl" @click="closePopup">
         <Close />
       </button>
 
-      <div
-        v-auto-scrollbar
-        class="relative"
-      >
+      <div class="relative">
         <component :is="Component" />
       </div>
       <div class="bottom-fade" />
@@ -61,23 +52,25 @@ aside.side {
   @apply backdrop-blur-3xl;
 }
 
-aside > div {
-  @apply /*grid grid-cols-[auto_1fr] */ flex flex-col overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
+aside>div {
+  @apply
+  /*grid grid-cols-[auto_1fr] */
+  flex flex-col overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
   @apply rounded-4xl;
   @apply p-8;
   @apply pb-20;
-  @apply wrap-anywhere;
+  /* @apply wrap-normal text-balance; */
   @apply pr-[24px];
-  @apply bg-white/90;
+  @apply bg-white;
   @apply gap-y-2;
   @apply relative;
 }
 
-aside > div > button.small {
+aside>div>button.small {
   @apply py-1 mr-4 self-start flex flex-row items-center border-none bg-transparent;
 }
 
-aside > div > button.big {
+aside>div>button.big {
   @apply py-1 -ml-3 mr-4 self-start flex flex-row items-center border-none bg-transparent;
 }
 
@@ -114,10 +107,8 @@ aside > div > button.big {
   left: 0;
   right: 0;
   height: 7rem;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 1) 100%
-  );
+  background: linear-gradient(to bottom,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 1) 100%);
 }
 </style>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import LocationSearch from '@/components/map/LocationSearch.vue';
 import { MapStore } from '@/views/map/RecordingsMap.vue';
 import LocationArrowIcon from '@/icons/interface/icon-location-arrow.svg';
@@ -38,7 +38,7 @@ const { coords, isSupported: isGeolocationSupported } = useGeolocation();
     <div
       class="absolute bottom-0 right-0 flex flex-col p-2 pointer-events-auto"
     >
-      <PrefetchLink
+      <RouterLink
         class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
         to="/mapa/legenda"
       >
@@ -46,7 +46,7 @@ const { coords, isSupported: isGeolocationSupported } = useGeolocation();
           width="24"
           height="24"
         />
-      </PrefetchLink>
+      </RouterLink>
       <button
         class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
         @click="MapStore.scale = !MapStore.scale"

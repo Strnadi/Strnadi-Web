@@ -24,7 +24,7 @@ const submit = () => {
 
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
-    <img src="/logo-no-text.svg">
+    <img src="/logo-no-text.svg" />
     <h1 class="text-center">
       <TranslatedText identifier="auth.reset_password.title" />
     </h1>
@@ -46,7 +46,7 @@ const submit = () => {
           type="email"
           class="p-2"
           :placeholder="t('placeholders.email')"
-        >
+        />
       </div>
       <button
         class="secondary p-2 w-full"

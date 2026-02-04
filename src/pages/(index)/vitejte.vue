@@ -16,7 +16,7 @@ const route = useRoute();
       <img
         src="/WIP.png"
         class="w-32 sm:w-36"
-      >
+      />
       <div class="flex flex-col text-center sm:text-left">
         <h4 class="text-sm sm:text-base">
           <TranslatedText identifier="buttons.contacts" />
@@ -25,18 +25,22 @@ const route = useRoute();
           external="true"
           href="mailto:info@strnadi.cz"
           class="text-xs sm:text-sm break-all"
-        >info@strnadi.cz</a>
+          >info@strnadi.cz</a
+        >
         <a
           external="true"
           href="mailto:developers@strnadi.cz"
           class="text-xs sm:text-sm break-all"
-        >developers@strnadi.cz</a>
+          >developers@strnadi.cz</a
+        >
       </div>
     </div>
     <h1 class="text-center text-xl sm:text-2xl">
       <TranslatedText identifier="project_name" />
     </h1>
-    <span class="text-sm sm:text-base text-justify [text-align-last:center]"><TranslatedText identifier="project_description" /></span>
+    <span class="text-sm sm:text-base text-justify [text-align-last:center]"
+      ><TranslatedText identifier="project_description"
+    /></span>
 
     <span class="font-bold text-justify text-xs sm:text-sm text-red-400">
       <TranslatedText identifier="development" />
@@ -57,21 +61,21 @@ const route = useRoute();
       <h2 class="text-xl">Photo of the Week</h2>
     </div> -->
 
-    <hr class="w-full">
+    <hr class="w-full" />
 
     <div class="flex flex-col w-full gap-y-2">
-      <PrefetchLink
+      <RouterLink
         to="/informace/projekt/projekt-podporuji"
         class="button-secondary text-sm sm:text-base py-3 px-4 w-full text-center touch-manipulation"
       >
         <TranslatedText identifier="buttons.supporters" />
-      </PrefetchLink>
-      <PrefetchLink
+      </RouterLink>
+      <RouterLink
         to="/informace/projekt/nas-tym"
         class="button-secondary text-sm sm:text-base py-3 px-4 w-full text-center touch-manipulation"
       >
         <TranslatedText identifier="buttons.about_us" />
-      </PrefetchLink>
+      </RouterLink>
     </div>
   </div>
 </template>

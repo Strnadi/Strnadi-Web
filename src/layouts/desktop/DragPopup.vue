@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import Back from '@/icons/interface/icon-back.svg';
-import TranslatedText from '@/components/TranslatedText.vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();

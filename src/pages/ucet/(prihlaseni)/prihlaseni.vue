@@ -154,7 +154,7 @@ const errorHandler = (error: string) => {
               :placeholder="t('placeholders.email')"
               class="w-full p-3 border rounded text-sm sm:text-base touch-manipulation"
               autocomplete="email"
-            >
+            />
           </div>
           <div class="w-full">
             <RevealablePasswordInput
@@ -167,12 +167,12 @@ const errorHandler = (error: string) => {
                 class="text-xs sm:text-sm font-medium mb-1.5 flex flex-row justify-between items-center"
               >
                 <span><TranslatedText identifier="labels.password" /></span>
-                <PrefetchLink
+                <RouterLink
                   to="/ucet/zapomenute-heslo"
                   class="text-blue-600 hover:underline"
                 >
                   <TranslatedText identifier="buttons.forgotten_password" />
-                </PrefetchLink>
+                </RouterLink>
               </div>
             </RevealablePasswordInput>
           </div>

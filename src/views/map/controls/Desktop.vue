@@ -1,7 +1,3 @@
-<script lang="ts">
-import FilterIcon from '@/icons/interface/icon-filter2.svg';
-</script>
-
 <script setup lang="ts">
 import { ref } from 'vue';
 
@@ -28,7 +24,7 @@ const searchText = ref('');
     <LocationSearch
       v-model:text="searchText"
       placeholder="Hledat..."
-      class="drop-shadow-lg rounded-2xl m-2 p-4 w-full sm:w-auto h-[70px]"
+      class="drop-shadow-lg rounded-2xl m-2 p-4 w-full sm:w-auto h-[70px] bg-white"
       @update:location="
         (newLocation) => {
           MapStore.move(newLocation, 12);
@@ -43,7 +39,6 @@ const searchText = ref('');
           class="flex flex-col-reverse gap-x-2"
         >
           <button
-            v-wave
             class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
             @click="MapStore.scale = !MapStore.scale"
           >
@@ -52,17 +47,38 @@ const searchText = ref('');
           </button>
 
           <button
-            v-wave
             class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
             @click="MapStore.aerial = !MapStore.aerial"
           >
             <MapIcon v-if="MapStore.aerial" />
             <PictureIcon v-else />
           </button>
+
+          <button
+            class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 w-16 h-16 text-xs text-justify"
+            @click="MapStore.grouping = !MapStore.grouping"
+            :class="{
+              'bg-gray-200': MapStore.grouping,
+              'bg-white': !MapStore.grouping
+            }"
+          >
+            Sesk. bodů
+          </button>
+
+          <!-- TODO -->
+          <button
+            class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 w-16 h-16 text-xs text-justify"
+            @click="MapStore.grouping = !MapStore.grouping"
+            :class="{
+              'bg-gray-200': MapStore.grouping,
+              'bg-white': !MapStore.grouping
+            }"
+          >
+            Nedok. zpěv.
+          </button>
         </div>
 
         <button
-          v-wave
           class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
           @click="toolsShown = !toolsShown"
         >
@@ -73,8 +89,7 @@ const searchText = ref('');
         </button>
       </div>
 
-      <PrefetchLink
-        v-wave
+      <RouterLink
         class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
         to="/mapa/legenda"
       >
@@ -82,7 +97,7 @@ const searchText = ref('');
           width="32"
           height="32"
         />
-      </PrefetchLink>
+      </RouterLink>
 
       <select
         v-model="MapStore.filter"

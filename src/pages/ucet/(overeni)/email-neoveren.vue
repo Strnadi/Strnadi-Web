@@ -3,7 +3,7 @@ meta:
   layout: desktop/small-popup
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed } from 'vue';
 import TranslatedText from '@/components/TranslatedText.vue';
 
@@ -17,7 +17,7 @@ const isMobile = computed(() => {
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
     <div class="flex flex-col items-center gap-y-3">
-      <img src="/logo-no-text.svg">
+      <img src="/logo-no-text.svg" />
       <h2>
         <TranslatedText identifier="project_name" />
       </h2>
@@ -32,13 +32,13 @@ const isMobile = computed(() => {
     >
       <TranslatedText identifier="buttons.back_to_app" />
     </a>
-    <PrefetchLink
+    <RouterLink
       v-else
       class="button-primary p-2 w-full text-center"
       :replace="true"
       to="/"
     >
       <TranslatedText identifier="buttons.complete_registration" />
-    </PrefetchLink>
+    </RouterLink>
   </div>
 </template>

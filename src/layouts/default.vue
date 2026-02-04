@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import MobileDefault from '@/layouts/mobile/default.vue';
 import DesktopDefault from '@/layouts/desktop/default.vue';
 import { useCssVar, useMediaQuery } from '@vueuse/core';

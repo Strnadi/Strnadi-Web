@@ -25,6 +25,10 @@ import mkcert from 'vite-plugin-mkcert';
 import path from 'node:path';
 import fs from 'node:fs';
 
+import { NetworkFirst, CacheFirst } from 'workbox-strategies';
+
+// import * as workbox from 'workbox';
+
 // Add a unique build identifier that changes on every deployment. This will be appended
 // to runtime cache names so they become versioned and won‘t clash with older builds.
 const BUILD_VERSION = new Date().toISOString().replace(/[-:T.Z]/g, '');
@@ -34,7 +38,7 @@ export default defineConfig({
   plugins: [
     Inspect(),
     QRCode(),
-    purgePolyfills.rollup({}),
+    purgePolyfills.rollup({ logLevel: 'verbose' }),
     TSConfigPaths({ loose: true }),
     TailwindCSS(),
     DocsPlugin(),
@@ -141,7 +145,7 @@ export default defineConfig({
           : 'strnadi-web-staging',
       telemetry: false
     }),
-    mkcert(),
+    // mkcert(),
     vueDevTools({
       launchEditor: 'subl4'
     }),
@@ -196,7 +200,13 @@ export default defineConfig({
     sourcemap: true
   },
 
+  // experimental: {
+  //   enableNativePlugin: true
+  // },
+
   resolve: {
+    // tsconfigPaths: true,
+
     alias: [
       {
         find: /leaflet\/dist\/leaflet-src\.js/,

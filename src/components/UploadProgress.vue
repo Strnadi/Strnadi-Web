@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue';
 import { uploadQueueStore } from '@/state/UploadStore';
 
@@ -79,9 +79,7 @@ onUnmounted(() => {
       class="upload-error"
     >
       <span class="error-icon">⚠️</span>
-      <div class="error-text">
-        Chyba při nahrávání
-      </div>
+      <div class="error-text">Chyba při nahrávání</div>
       <button
         class="dismiss-button"
         title="Zavřít"

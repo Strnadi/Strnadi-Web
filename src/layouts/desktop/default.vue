@@ -5,11 +5,8 @@ import MapControls from '@/views/map/controls/Desktop.vue';
 import Navbar from '@/views/nav/Navbar.vue';
 import Notification from '@/views/Notification.vue';
 import { useEventLast } from '@/utils/events';
-import { uploadStore } from '@/pages/mapa/nahrat.vue';
-import { soundAccept } from '@/pages/mapa/nahrat.vue';
 
 import { useRouter } from 'vue-router';
-import Dropzone from '@/components/Dropzone.vue';
 
 const router = useRouter();
 const goHome = () => {
@@ -88,6 +85,6 @@ aside.notifications {
   @apply grid grid-cols-[auto_1fr] overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
   @apply rounded-4xl;
   @apply p-8;
-  @apply bg-white/90;
+  @apply bg-white;
 }
 </style>

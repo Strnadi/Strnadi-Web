@@ -16,55 +16,48 @@ const user = accountStore.user!;
         <img
           v-else
           :src="user.profilePicture"
-        >
+        />
 
         <template v-if="user.nickname && !user.firstName && !user.lastName">
           @{{ user.nickname }}
         </template>
-        <template v-else>
-          {{ user.firstName }} {{ user.lastName }}
-        </template>
+        <template v-else> {{ user.firstName }} {{ user.lastName }} </template>
         <DropdownIcon />
       </div>
     </template>
     <li>
-      <PrefetchLink
-        v-wave
+      <RouterLink
         to="/ucet/muj-ucet"
         class="dropdown-item"
       >
         Můj profil
-      </PrefetchLink>
+      </RouterLink>
     </li>
     <li>
-      <PrefetchLink
-        v-wave
+      <RouterLink
         to="/ucet/sprava/oznameni"
         class="dropdown-item"
       >
         Oznámení
-      </PrefetchLink>
+      </RouterLink>
     </li>
     <li>
-      <PrefetchLink
-        v-wave
+      <RouterLink
         to="/nastaveni"
         class="dropdown-item"
       >
         Nastavení webové aplikace
-      </PrefetchLink>
+      </RouterLink>
     </li>
     <li v-if="accountStore.user?.role === 'admin'">
-      <PrefetchLink
-        v-wave
+      <RouterLink
         to="/sprava"
         class="dropdown-item"
       >
         Administrace systému
-      </PrefetchLink>
+      </RouterLink>
     </li>
     <li
-      v-wave
       class="cursor-pointer dropdown-item"
       @click="accountStore.logout"
     >

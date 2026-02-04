@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import RecordingsMap, { MapEvents } from '@/views/map/RecordingsMap.vue';
 import MapControls from '@/views/map/controls/Mobile.vue';
 import { useEventLast } from '@/utils/events';

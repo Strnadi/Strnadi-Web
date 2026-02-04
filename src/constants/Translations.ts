@@ -53,6 +53,7 @@ export const translations = {
     },
 
     buttons: {
+      show_more: 'Zobrazit více',
       enter: 'Vstoupit',
       app: 'Stáhnout aplikaci',
       contacts: 'Kontakty',
@@ -391,6 +392,78 @@ export const translations = {
           noSaved: 'Nenalezeny žádné uložené editory.',
           loadSuccess: 'Editory byly obnoveny z úložiště.'
         },
+        tableBuilder: {
+          blocklyDescription: 'Návrh dotazu pomocí blokového editoru.',
+          tableDescription: 'Tabulkový návrhář podobný Accessu nebo Excelu.',
+          modeBlocks: 'Bloky',
+          modeTable: 'Tabulka',
+          sections: {
+            setup: 'Nastavení dotazu',
+            surface: 'Návrhová plocha',
+            grid: 'Tabulkový návrh'
+          },
+          settings: {
+            baseTable: 'Výchozí tabulka',
+            distinct: 'Pouze unikátní řádky',
+            distinctHint: 'Vrátí pouze unikátní kombinace sloupců',
+            limit: 'Limit (nepovinné)'
+          },
+          palette: {
+            title: 'Dostupné tabulky',
+            helper: 'Kliknutím přidáte tabulku na návrhovou plochu.',
+            add: 'Přidat tabulku'
+          },
+          tables: {
+            title: 'Tabulky v dotazu',
+            description:
+              'Zkontrolujte dostupné sloupce před jejich použitím níže.',
+            placeholder: 'Přidat tabulku…',
+            none: 'Přidejte další tabulku pro zobrazení jejích sloupců.'
+          },
+          surface: {
+            empty: 'Přidejte alespoň jednu tabulku pro tvorbu dotazu.'
+          },
+          fields: {
+            title: 'Návrhová mřížka',
+            helper:
+              "Do kritérií zadejte i operátor, např. = 'Laptop' nebo > 10.",
+            add: 'Přidat sloupec',
+            field: 'Pole',
+            table: 'Tabulka',
+            aggregation: 'Agregace',
+            alias: 'Alias',
+            aliasPlaceholder: 'Volitelný alias',
+            sort: 'Řazení',
+            show: 'Zobrazit',
+            criteria: 'Kritéria',
+            or: 'Nebo',
+            criteriaPlaceholder: "např. = 'Laptop' nebo > 5",
+            orPlaceholder: 'Alternativní kritérium',
+            remove: 'Odebrat'
+          },
+          joins: {
+            title: 'Spojení',
+            description: 'Propojte související tabulky podle klíčů.',
+            selectType: 'Vyberte typ spojení',
+            add: 'Přidat spojení',
+            left: 'Z tabulky',
+            right: 'Spojit s tabulkou',
+            type: 'Typ',
+            none: 'Zatím nebylo přidáno žádné spojení.'
+          },
+          preview: {
+            title: 'Náhled SQL',
+            description: 'Před použitím si zkontrolujte vygenerovaný dotaz.',
+            apply: 'Použít v editoru'
+          },
+          sort: {
+            none: 'Bez řazení',
+            asc: 'Vzestupně',
+            desc: 'Sestupně'
+          },
+          previewEmpty: 'Pro náhled vyberte alespoň jeden zobrazený sloupec.',
+          applied: 'Dotaz z tabulkového návrháře byl vložen do editoru.'
+        },
         schema: {
           title: 'Referenční schéma'
         },
@@ -440,6 +513,8 @@ export const translations = {
         delete_category_title: 'Smazání kategorie',
         delete_post_title: 'Smazání příspěvku',
         delete_post_prompt: 'Opravdu si přejete tento příspěvek smazat?',
+        leave_dirty_warning:
+          'Máte neuložené změny. Opravdu chcete odejít bez uložení?',
         no_articles_in_category: 'Žádné příspěvky v této kategorii',
         uncategorized: {
           title: 'Nezařazené příspěvky',
@@ -469,6 +544,7 @@ export const translations = {
         uploaded: 'Nahráno'
       },
       detail: {
+        map_heading: 'Mapa',
         editing_prefix: 'Upravování:',
         fallback_prefix: 'Nahrávka #',
         by_app_suffix: 'přes aplikaci',
@@ -668,6 +744,7 @@ export const translations = {
     },
 
     buttons: {
+      show_more: 'Show more',
       enter: 'Enter',
       app: 'Download the app',
       contacts: 'Contacts',
@@ -1004,6 +1081,77 @@ export const translations = {
           noSaved: 'No saved editors were found.',
           loadSuccess: 'Editors restored from storage.'
         },
+        tableBuilder: {
+          blocklyDescription: 'Design the query with the Blockly editor.',
+          tableDescription: 'Table-style designer similar to Access or Excel.',
+          modeBlocks: 'Blocks',
+          modeTable: 'Table grid',
+          sections: {
+            setup: 'Query setup',
+            surface: 'Design surface',
+            grid: 'Design grid'
+          },
+          settings: {
+            baseTable: 'Base table',
+            distinct: 'Distinct rows',
+            distinctHint: 'Returns only unique row combinations',
+            limit: 'Limit (optional)'
+          },
+          palette: {
+            title: 'Available tables',
+            helper: 'Click a table to add it to the surface.',
+            add: 'Add table'
+          },
+          tables: {
+            title: 'Tables in query',
+            description: 'Review available columns before using them below.',
+            placeholder: 'Add table…',
+            none: 'Add another table to inspect its columns.'
+          },
+          surface: {
+            empty: 'Add at least one table to start designing.'
+          },
+          fields: {
+            title: 'Design grid',
+            helper:
+              "Include the operator inside Criteria, e.g. = 'Laptop' or > 10.",
+            add: 'Add field',
+            field: 'Field',
+            table: 'Table',
+            aggregation: 'Aggregation',
+            alias: 'Alias',
+            aliasPlaceholder: 'Optional alias',
+            sort: 'Sort',
+            show: 'Show',
+            criteria: 'Criteria',
+            or: 'Or',
+            criteriaPlaceholder: "e.g. = 'Laptop' or > 5",
+            orPlaceholder: 'Alternate criteria',
+            remove: 'Remove'
+          },
+          joins: {
+            title: 'Joins',
+            description: 'Link related tables by their key columns.',
+            selectType: 'Select join type',
+            add: 'Add join',
+            left: 'From table',
+            right: 'Join table',
+            type: 'Type',
+            none: 'No joins have been added yet.'
+          },
+          preview: {
+            title: 'SQL preview',
+            description: 'Review the generated query before applying it.',
+            apply: 'Use in editor'
+          },
+          sort: {
+            none: 'No sort',
+            asc: 'Ascending',
+            desc: 'Descending'
+          },
+          previewEmpty: 'Configure at least one visible field to preview SQL.',
+          applied: 'Table-builder SQL copied to the editor.'
+        },
         schema: {
           title: 'Schema reference'
         },
@@ -1056,6 +1204,8 @@ export const translations = {
         delete_category_title: 'Delete category',
         delete_post_title: 'Delete article',
         delete_post_prompt: 'Do you really want to delete this article?',
+        leave_dirty_warning:
+          'You have unsaved changes. Leave this page without saving?',
         no_articles_in_category: 'No articles in this category',
         uncategorized: {
           title: 'Uncategorized articles',
@@ -1085,6 +1235,7 @@ export const translations = {
         uploaded: 'Uploaded'
       },
       detail: {
+        map_heading: 'Map',
         editing_prefix: 'Editing:',
         fallback_prefix: 'Recording #',
         by_app_suffix: 'via the app',
@@ -1286,6 +1437,7 @@ export const translations = {
     },
 
     buttons: {
+      show_more: 'Mehr anzeigen',
       enter: 'Eintreten',
       app: 'App herunterladen',
       contacts: 'Kontakte',
@@ -1613,6 +1765,84 @@ export const translations = {
           noSaved: 'Keine gespeicherten Editoren gefunden.',
           loadSuccess: 'Editoren aus dem Speicher wiederhergestellt.'
         },
+        tableBuilder: {
+          blocklyDescription: 'Entwerfen Sie die Abfrage im Blockly-Editor.',
+          tableDescription:
+            'Tabellenbasierter Designer ähnlich wie in Access oder Excel.',
+          modeBlocks: 'Blöcke',
+          modeTable: 'Tabelle',
+          sections: {
+            setup: 'Abfrageeinstellungen',
+            surface: 'Entwurfsfläche',
+            grid: 'Tabellenentwurf'
+          },
+          settings: {
+            baseTable: 'Basistabelle',
+            distinct: 'Nur eindeutige Zeilen',
+            distinctHint: 'Gibt nur eindeutige Zeilenkombinationen zurück',
+            limit: 'Limit (optional)'
+          },
+          palette: {
+            title: 'Verfügbare Tabellen',
+            helper:
+              'Klicken Sie auf eine Tabelle, um sie der Entwurfsfläche hinzuzufügen.',
+            add: 'Tabelle hinzufügen'
+          },
+          tables: {
+            title: 'Tabellen in der Abfrage',
+            description:
+              'Prüfen Sie die verfügbaren Spalten, bevor Sie sie unten nutzen.',
+            placeholder: 'Tabelle hinzufügen…',
+            none: 'Fügen Sie eine weitere Tabelle hinzu, um ihre Spalten zu sehen.'
+          },
+          surface: {
+            empty:
+              'Fügen Sie mindestens eine Tabelle hinzu, um mit dem Entwurf zu beginnen.'
+          },
+          fields: {
+            title: 'Entwurfsraster',
+            helper:
+              "Geben Sie den Operator direkt in die Kriterien ein, z. B. = 'Laptop' oder > 10.",
+            add: 'Feld hinzufügen',
+            field: 'Feld',
+            table: 'Tabelle',
+            aggregation: 'Aggregation',
+            alias: 'Alias',
+            aliasPlaceholder: 'Optionaler Alias',
+            sort: 'Sortierung',
+            show: 'Anzeigen',
+            criteria: 'Kriterium',
+            or: 'Oder',
+            criteriaPlaceholder: "z. B. = 'Laptop' oder > 5",
+            orPlaceholder: 'Alternatives Kriterium',
+            remove: 'Entfernen'
+          },
+          joins: {
+            title: 'Verknüpfungen',
+            description:
+              'Verknüpfen Sie verwandte Tabellen über ihre Schlüssel.',
+            selectType: 'Verknüpfungstyp wählen',
+            add: 'Verknüpfung hinzufügen',
+            left: 'Aus Tabelle',
+            right: 'Mit Tabelle',
+            type: 'Typ',
+            none: 'Es wurden noch keine Verknüpfungen hinzugefügt.'
+          },
+          preview: {
+            title: 'SQL-Vorschau',
+            description:
+              'Prüfen Sie die generierte Abfrage, bevor Sie sie übernehmen.',
+            apply: 'In Editor übernehmen'
+          },
+          sort: {
+            none: 'Keine Sortierung',
+            asc: 'Aufsteigend',
+            desc: 'Absteigend'
+          },
+          previewEmpty:
+            'Fügen Sie mindestens ein sichtbares Feld hinzu, um eine Vorschau zu erhalten.',
+          applied: 'Die Tabellenabfrage wurde in den Editor kopiert.'
+        },
         schema: {
           title: 'Schema-Referenz'
         },
@@ -1666,6 +1896,8 @@ export const translations = {
         delete_category_title: 'Kategorie löschen',
         delete_post_title: 'Beitrag löschen',
         delete_post_prompt: 'Möchten Sie diesen Beitrag wirklich löschen?',
+        leave_dirty_warning:
+          'Sie haben ungespeicherte Änderungen. Seite wirklich ohne Speichern verlassen?',
         no_articles_in_category: 'Keine Beiträge in dieser Kategorie',
         uncategorized: {
           title: 'Nicht zugeordnete Beiträge',
@@ -1695,6 +1927,7 @@ export const translations = {
         uploaded: 'Hochgeladen'
       },
       detail: {
+        map_heading: 'Karte',
         editing_prefix: 'Bearbeitung:',
         fallback_prefix: 'Aufnahme #',
         by_app_suffix: 'über die App',

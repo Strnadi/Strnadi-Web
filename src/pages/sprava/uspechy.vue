@@ -3,7 +3,7 @@ meta:
   layout: desktop/center
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import {
   computed,
   nextTick,
@@ -404,6 +404,832 @@ const builderTemplates = [
   }
 ] as const;
 
+const schemaTableMap = schemaTables.reduce<Record<string, SchemaTable>>(
+  (acc, table) => {
+    acc[table.name] = table;
+    return acc;
+  },
+  {}
+);
+
+type TableBuilderField = {
+  id: string;
+  table: string;
+  column: string;
+  alias: string;
+  aggregation: string;
+  sort: '' | 'ASC' | 'DESC';
+  criteria: string[];
+  orCriteria: string[];
+  output: boolean;
+};
+
+type TableBuilderJoin = {
+  id: string;
+  type: string;
+  leftTable: string;
+  leftColumn: string;
+  rightTable: string;
+  rightColumn: string;
+};
+
+type TableCardLayout = {
+  x: number;
+  y: number;
+};
+
+type TableCardPosition = {
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  columnOffsets: Record<string, number>;
+};
+
+type DragState = {
+  mode: 'column' | 'table';
+  sourceTable: string;
+  sourceColumn: string;
+  startX: number;
+  startY: number;
+  mouseX: number;
+  mouseY: number;
+} | null;
+
+type JoinPopupState = {
+  visible: boolean;
+  x: number;
+  y: number;
+  leftTable: string;
+  leftColumn: string;
+  rightTable: string;
+  rightColumn: string;
+} | null;
+
+const queryBuilderMode = ref<'blockly' | 'table'>('blockly');
+const tableBuilderDistinct = ref(false);
+const tableBuilderLimit = ref(0);
+const tableBuilderSelectedTables = ref<string[]>([]);
+const tableBuilderMessage = ref<string | null>(null);
+const tableBuilderError = ref<string | null>(null);
+const tableBuilderTableToAdd = ref('');
+const designSurfaceRef = ref<HTMLElement | null>(null);
+const tableCardRefs = ref<Record<string, HTMLElement | null>>({});
+const tableCardPositions = ref<Record<string, TableCardPosition>>({});
+const tableCardLayouts = ref<Record<string, TableCardLayout>>({});
+const dragState = ref<DragState>(null);
+const joinPopup = ref<JoinPopupState>(null);
+const designSurfaceHeight = ref(250);
+const isResizingSurface = ref(false);
+
+const firstSelectedTable = computed(
+  () => tableBuilderSelectedTables.value[0] ?? ''
+);
+
+const tableBuilderSortOptions = [
+  { labelKey: 'admin.achievements.tableBuilder.sort.none', value: '' },
+  { labelKey: 'admin.achievements.tableBuilder.sort.asc', value: 'ASC' },
+  { labelKey: 'admin.achievements.tableBuilder.sort.desc', value: 'DESC' }
+] as const;
+
+let tableBuilderIdCounter = 0;
+const nextTableBuilderId = (prefix: string) =>
+  `${prefix}-${Date.now()}-${tableBuilderIdCounter++}`;
+
+const addTableToSurface = (tableName: string) => {
+  if (!tableName) return;
+  if (!tableBuilderSelectedTables.value.includes(tableName)) {
+    tableBuilderSelectedTables.value = [
+      ...tableBuilderSelectedTables.value,
+      tableName
+    ];
+    nextTick(() => updateTableCardPositions());
+  }
+};
+
+const ensureFieldColumn = (field: TableBuilderField) => {
+  const columns = schemaTableMap[field.table]?.columns ?? [];
+  if (!columns.includes(field.column)) {
+    field.column = columns[0] ?? '';
+  }
+};
+
+const ensureJoinColumn = (join: TableBuilderJoin, side: 'left' | 'right') => {
+  const tableName = side === 'left' ? join.leftTable : join.rightTable;
+  const columns = schemaTableMap[tableName]?.columns ?? [];
+  const currentValue = side === 'left' ? join.leftColumn : join.rightColumn;
+  if (!columns.includes(currentValue)) {
+    if (side === 'left') {
+      join.leftColumn = columns[0] ?? '';
+    } else {
+      join.rightColumn = columns[0] ?? '';
+    }
+  }
+};
+
+const createTableBuilderField = (
+  init?: Partial<TableBuilderField>
+): TableBuilderField => {
+  const table =
+    init?.table || firstSelectedTable.value || schemaTables[0]?.name || '';
+  const field: TableBuilderField = {
+    id: init?.id || nextTableBuilderId('field'),
+    table,
+    column: init?.column || schemaTableMap[table]?.columns[0] || '',
+    alias: init?.alias ?? '',
+    aggregation: init?.aggregation ?? 'RAW',
+    sort: init?.sort ?? '',
+    criteria: init?.criteria ?? [''],
+    orCriteria: init?.orCriteria ?? [''],
+    output: init?.output ?? true
+  };
+  addTableToSurface(table);
+  ensureFieldColumn(field);
+  return field;
+};
+
+const createTableBuilderJoin = (
+  init?: Partial<TableBuilderJoin>
+): TableBuilderJoin => {
+  const leftTable = init?.leftTable || firstSelectedTable.value || '';
+  const rightTable =
+    init?.rightTable ||
+    tableBuilderSelectedTables.value.find((name) => name !== leftTable) ||
+    leftTable;
+  const join: TableBuilderJoin = {
+    id: init?.id || nextTableBuilderId('join'),
+    type: init?.type || 'INNER',
+    leftTable,
+    leftColumn: init?.leftColumn || schemaTableMap[leftTable]?.columns[0] || '',
+    rightTable,
+    rightColumn:
+      init?.rightColumn || schemaTableMap[rightTable]?.columns[0] || ''
+  };
+  addTableToSurface(leftTable);
+  addTableToSurface(rightTable);
+  ensureJoinColumn(join, 'left');
+  ensureJoinColumn(join, 'right');
+  return join;
+};
+
+const tableBuilderFields = ref<TableBuilderField[]>([
+  createTableBuilderField()
+]);
+const tableBuilderJoins = ref<TableBuilderJoin[]>([]);
+
+const resolveTableColumns = (tableName: string) =>
+  schemaTableMap[tableName]?.columns ?? [];
+const resolveTableAlias = (tableName: string) =>
+  schemaTableMap[tableName]?.alias ?? tableName;
+
+const addTableBuilderField = () => {
+  tableBuilderFields.value = [
+    ...tableBuilderFields.value,
+    createTableBuilderField()
+  ];
+};
+
+const removeTableBuilderField = (id: string) => {
+  if (tableBuilderFields.value.length === 1) {
+    tableBuilderFields.value = [createTableBuilderField()];
+    return;
+  }
+  tableBuilderFields.value = tableBuilderFields.value.filter(
+    (field) => field.id !== id
+  );
+};
+
+const removeTableBuilderJoin = (id: string) => {
+  tableBuilderJoins.value = tableBuilderJoins.value.filter(
+    (join) => join.id !== id
+  );
+};
+
+const handleFieldTableChange = (field: TableBuilderField) => {
+  addTableToSurface(field.table);
+  ensureFieldColumn(field);
+};
+
+const addTableToSelection = () => {
+  if (!tableBuilderTableToAdd.value) return;
+  addTableToSurface(tableBuilderTableToAdd.value);
+  tableBuilderTableToAdd.value = '';
+};
+
+const removeTableFromSurface = (tableName: string) => {
+  if (!tableName) return;
+  tableBuilderSelectedTables.value = tableBuilderSelectedTables.value.filter(
+    (name) => name !== tableName
+  );
+  tableBuilderJoins.value = tableBuilderJoins.value.filter(
+    (join) => join.leftTable !== tableName && join.rightTable !== tableName
+  );
+  tableBuilderFields.value = tableBuilderFields.value.filter(
+    (field) => field.table !== tableName
+  );
+  if (tableBuilderFields.value.length === 0 && firstSelectedTable.value) {
+    tableBuilderFields.value = [
+      createTableBuilderField({ table: firstSelectedTable.value })
+    ];
+  }
+  nextTick(() => updateTableCardPositions());
+};
+
+const getDefaultTableLayout = (index: number): TableCardLayout => ({
+  x: 16 + (index % 4) * 180,
+  y: 16 + Math.floor(index / 4) * 180
+});
+
+const ensureTableLayout = (tableName: string) => {
+  if (!tableCardLayouts.value[tableName]) {
+    const idx = tableBuilderSelectedTables.value.indexOf(tableName);
+    tableCardLayouts.value[tableName] = getDefaultTableLayout(
+      idx >= 0 ? idx : Object.keys(tableCardLayouts.value).length
+    );
+  }
+};
+
+const updateTableCardPositions = () => {
+  if (!designSurfaceRef.value) return;
+  const surfaceRect = designSurfaceRef.value.getBoundingClientRect();
+  const positions: Record<string, TableCardPosition> = {};
+  tableBuilderSelectedTables.value.forEach((tableName) => {
+    ensureTableLayout(tableName);
+    const cardEl = tableCardRefs.value[tableName];
+    if (!cardEl) return;
+    const layout = tableCardLayouts.value[tableName];
+    const cardRect = cardEl.getBoundingClientRect();
+    const columnOffsets: Record<string, number> = {};
+    const columnEls = cardEl.querySelectorAll('[data-column]');
+    columnEls.forEach((el) => {
+      const column = (el as HTMLElement).dataset['column'];
+      if (column) {
+        const elRect = el.getBoundingClientRect();
+        columnOffsets[column] =
+          elRect.top - surfaceRect.top + elRect.height / 2;
+      }
+    });
+    positions[tableName] = {
+      name: tableName,
+      x: layout?.x ?? 0,
+      y: layout?.y ?? 0,
+      width: cardRect.width,
+      height: cardRect.height,
+      columnOffsets
+    };
+  });
+  tableCardPositions.value = positions;
+};
+
+const getJoinLineData = (join: TableBuilderJoin) => {
+  const leftPos = tableCardPositions.value[join.leftTable];
+  const rightPos = tableCardPositions.value[join.rightTable];
+  if (!leftPos || !rightPos) return null;
+
+  const leftColumnY = leftPos.columnOffsets[join.leftColumn] ?? leftPos.y + 40;
+  const rightColumnY =
+    rightPos.columnOffsets[join.rightColumn] ?? rightPos.y + 40;
+
+  // Determine which side to connect based on relative positions
+  let leftX: number, rightX: number;
+  if (leftPos.x + leftPos.width < rightPos.x) {
+    // Left table is to the left of right table
+    leftX = leftPos.x + leftPos.width;
+    rightX = rightPos.x;
+  } else if (rightPos.x + rightPos.width < leftPos.x) {
+    // Right table is to the left of left table
+    leftX = leftPos.x;
+    rightX = rightPos.x + rightPos.width;
+  } else {
+    // Tables overlap horizontally, connect from closest edges
+    leftX = leftPos.x + leftPos.width / 2;
+    rightX = rightPos.x + rightPos.width / 2;
+  }
+
+  const midX = (leftX + rightX) / 2;
+  const midY = (leftColumnY + rightColumnY) / 2;
+  const path = `M ${leftX} ${leftColumnY} C ${midX} ${leftColumnY}, ${midX} ${rightColumnY}, ${rightX} ${rightColumnY}`;
+
+  return {
+    path,
+    midX,
+    midY,
+    leftX,
+    leftY: leftColumnY,
+    rightX,
+    rightY: rightColumnY
+  };
+};
+
+const getJoinTypeSymbol = (joinType: string) => {
+  switch (joinType) {
+    case 'INNER':
+      return '⋈';
+    case 'LEFT':
+      return '⟕';
+    case 'RIGHT':
+      return '⟖';
+    case 'FULL':
+      return '⟗';
+    case 'CROSS':
+      return '×';
+    default:
+      return '⋈';
+  }
+};
+
+// Table dragging handlers
+const handleTableDragStart = (event: MouseEvent, tableName: string) => {
+  // Ensure layout exists before dragging
+  ensureTableLayout(tableName);
+  const layout = tableCardLayouts.value[tableName];
+  if (!layout) return;
+
+  dragState.value = {
+    mode: 'table',
+    sourceTable: tableName,
+    sourceColumn: '',
+    startX: layout.x,
+    startY: layout.y,
+    mouseX: event.clientX,
+    mouseY: event.clientY
+  };
+
+  // Use capture phase for more reliable event handling
+  document.addEventListener('mousemove', handleTableDragMove, {
+    capture: true
+  });
+  document.addEventListener('mouseup', handleTableDragEnd, { capture: true });
+};
+
+const handleTableDragMove = (event: MouseEvent) => {
+  if (!dragState.value || dragState.value.mode !== 'table') return;
+  event.preventDefault();
+  event.stopPropagation();
+
+  const dx = event.clientX - dragState.value.mouseX;
+  const dy = event.clientY - dragState.value.mouseY;
+
+  tableCardLayouts.value = {
+    ...tableCardLayouts.value,
+    [dragState.value.sourceTable]: {
+      x: Math.max(0, dragState.value.startX + dx),
+      y: Math.max(0, dragState.value.startY + dy)
+    }
+  };
+  nextTick(() => updateTableCardPositions());
+};
+
+const handleTableDragEnd = (event: MouseEvent) => {
+  event.preventDefault();
+  event.stopPropagation();
+
+  document.removeEventListener('mousemove', handleTableDragMove, {
+    capture: true
+  });
+  document.removeEventListener('mouseup', handleTableDragEnd, {
+    capture: true
+  });
+
+  if (dragState.value?.mode === 'table') {
+    dragState.value = null;
+  }
+};
+
+// Column dragging handlers (for joins)
+const handleColumnDragStart = (
+  event: DragEvent,
+  tableName: string,
+  column: string
+) => {
+  event.dataTransfer?.setData('text/plain', `${tableName}:${column}`);
+  dragState.value = {
+    mode: 'column',
+    sourceTable: tableName,
+    sourceColumn: column,
+    startX: 0,
+    startY: 0,
+    mouseX: event.clientX,
+    mouseY: event.clientY
+  };
+};
+
+const handleColumnDragOver = (event: DragEvent) => {
+  event.preventDefault();
+  if (dragState.value && dragState.value.mode === 'column') {
+    dragState.value.mouseX = event.clientX;
+    dragState.value.mouseY = event.clientY;
+  }
+};
+
+const handleColumnDrop = (
+  event: DragEvent,
+  targetTable: string,
+  targetColumn: string
+) => {
+  event.preventDefault();
+  if (!dragState.value || dragState.value.mode !== 'column') return;
+  const { sourceTable, sourceColumn } = dragState.value;
+  if (sourceTable === targetTable) {
+    dragState.value = null;
+    return;
+  }
+  const surfaceRect = designSurfaceRef.value?.getBoundingClientRect();
+  joinPopup.value = {
+    visible: true,
+    x: surfaceRect ? event.clientX - surfaceRect.left : event.clientX,
+    y: surfaceRect ? event.clientY - surfaceRect.top : event.clientY,
+    leftTable: sourceTable,
+    leftColumn: sourceColumn,
+    rightTable: targetTable,
+    rightColumn: targetColumn
+  };
+  dragState.value = null;
+};
+
+const handleColumnDragEnd = () => {
+  if (dragState.value?.mode === 'column') {
+    dragState.value = null;
+  }
+};
+
+// Surface resize handlers
+const handleSurfaceResizeStart = (event: MouseEvent) => {
+  event.preventDefault();
+  isResizingSurface.value = true;
+  const startY = event.clientY;
+  const startHeight = designSurfaceHeight.value;
+
+  const handleMove = (e: MouseEvent) => {
+    const dy = e.clientY - startY;
+    designSurfaceHeight.value = Math.max(150, Math.min(600, startHeight + dy));
+  };
+
+  const handleEnd = () => {
+    isResizingSurface.value = false;
+    document.removeEventListener('mousemove', handleMove);
+    document.removeEventListener('mouseup', handleEnd);
+  };
+
+  document.addEventListener('mousemove', handleMove);
+  document.addEventListener('mouseup', handleEnd);
+};
+
+const confirmJoinFromPopup = (joinType: string) => {
+  if (!joinPopup.value) return;
+  const newJoin = createTableBuilderJoin({
+    leftTable: joinPopup.value.leftTable,
+    leftColumn: joinPopup.value.leftColumn,
+    rightTable: joinPopup.value.rightTable,
+    rightColumn: joinPopup.value.rightColumn,
+    type: joinType
+  });
+  tableBuilderJoins.value = [...tableBuilderJoins.value, newJoin];
+  joinPopup.value = null;
+  nextTick(() => updateTableCardPositions());
+};
+
+const cancelJoinPopup = () => {
+  joinPopup.value = null;
+};
+
+const addFieldFromColumn = (tableName: string, column: string) => {
+  const newField = createTableBuilderField({
+    table: tableName,
+    column
+  });
+  tableBuilderFields.value = [...tableBuilderFields.value, newField];
+};
+
+// Criteria rows management
+const maxCriteriaRows = computed(() => {
+  let max = 1;
+  tableBuilderFields.value.forEach((field) => {
+    if (field.criteria.length > max) {
+      max = field.criteria.length;
+    }
+  });
+  return max;
+});
+
+const maxOrCriteriaRows = computed(() => {
+  let max = 1;
+  tableBuilderFields.value.forEach((field) => {
+    if (field.orCriteria.length > max) {
+      max = field.orCriteria.length;
+    }
+  });
+  return max;
+});
+
+const addCriteriaRow = () => {
+  tableBuilderFields.value.forEach((field) => {
+    field.criteria = [...field.criteria, ''];
+  });
+};
+
+const addOrCriteriaRow = () => {
+  tableBuilderFields.value.forEach((field) => {
+    field.orCriteria = [...field.orCriteria, ''];
+  });
+};
+
+const updateFieldCriteria = (
+  field: TableBuilderField,
+  index: number,
+  value: string
+) => {
+  while (field.criteria.length <= index) {
+    field.criteria.push('');
+  }
+  field.criteria[index] = value;
+};
+
+const updateFieldOrCriteria = (
+  field: TableBuilderField,
+  index: number,
+  value: string
+) => {
+  while (field.orCriteria.length <= index) {
+    field.orCriteria.push('');
+  }
+  field.orCriteria[index] = value;
+};
+
+const tableBuilderSelectedTableDetails = computed(() =>
+  tableBuilderSelectedTables.value
+    .map((name) => schemaTableMap[name])
+    .filter((table): table is SchemaTable => Boolean(table))
+);
+
+const tableBuilderAvailableTables = computed(() => {
+  const selected = new Set(tableBuilderSelectedTables.value);
+  return schemaTables.filter((table) => !selected.has(table.name));
+});
+
+const resetTableBuilderFeedback = () => {
+  tableBuilderMessage.value = null;
+  tableBuilderError.value = null;
+};
+
+const applyAggregationExpression = (expr: string, aggregation: string) => {
+  switch (aggregation) {
+    case 'COUNT':
+      return `COUNT(${expr})`;
+    case 'COUNT_DISTINCT':
+      return `COUNT(DISTINCT ${expr})`;
+    case 'SUM':
+      return `SUM(${expr})`;
+    case 'AVG':
+      return `AVG(${expr})`;
+    case 'MIN':
+      return `MIN(${expr})`;
+    case 'MAX':
+      return `MAX(${expr})`;
+    default:
+      return expr;
+  }
+};
+
+const buildBooleanClause = (andParts: string[], orParts: string[]) => {
+  const andClause = andParts.length ? `(${andParts.join(' AND ')})` : '';
+  const orClause = orParts.length ? `(${orParts.join(' OR ')})` : '';
+  if (andClause && orClause) {
+    return `${andClause} OR ${orClause}`;
+  }
+  return andClause || orClause;
+};
+
+const buildTableBuilderSQL = () => {
+  const baseTable = firstSelectedTable.value;
+  if (!baseTable) {
+    return '';
+  }
+  const baseDefinition = schemaTableMap[baseTable];
+  if (!baseDefinition) {
+    return '';
+  }
+  const selectParts: string[] = [];
+  const orderByParts: string[] = [];
+  const whereAndClauses: string[] = [];
+  const whereOrClauses: string[] = [];
+  const havingAndClauses: string[] = [];
+  const havingOrClauses: string[] = [];
+  const groupBySet = new Set<string>();
+  let usesAggregation = false;
+  let hasOutput = false;
+
+  tableBuilderFields.value.forEach((field) => {
+    if (!field.table || !field.column) {
+      return;
+    }
+    const alias = resolveTableAlias(field.table);
+    if (!alias) return;
+    const expr = `${alias}.${field.column}`;
+    const aggregatedExpr = applyAggregationExpression(expr, field.aggregation);
+    if (field.output) {
+      hasOutput = true;
+      let projection = aggregatedExpr;
+      if (field.alias.trim()) {
+        projection += ` AS ${sanitizeIdentifier(field.alias)}`;
+      }
+      selectParts.push(projection);
+    }
+    if (field.aggregation !== 'RAW') {
+      usesAggregation = true;
+    } else if (
+      field.output ||
+      field.criteria.some((c) => c.trim()) ||
+      field.orCriteria.some((c) => c.trim())
+    ) {
+      groupBySet.add(expr);
+    }
+    if (field.sort) {
+      orderByParts.push(`${aggregatedExpr} ${field.sort}`);
+    }
+    // Process all criteria (AND conditions)
+    field.criteria.forEach((criterion) => {
+      const trimmed = criterion.trim();
+      if (trimmed) {
+        const target = field.aggregation === 'RAW' ? expr : aggregatedExpr;
+        (field.aggregation === 'RAW' ? whereAndClauses : havingAndClauses).push(
+          `${target} ${trimmed}`
+        );
+      }
+    });
+    // Process all OR criteria
+    field.orCriteria.forEach((criterion) => {
+      const trimmed = criterion.trim();
+      if (trimmed) {
+        const target = field.aggregation === 'RAW' ? expr : aggregatedExpr;
+        (field.aggregation === 'RAW' ? whereOrClauses : havingOrClauses).push(
+          `${target} ${trimmed}`
+        );
+      }
+    });
+  });
+
+  if (!hasOutput) {
+    return '';
+  }
+
+  // Build the FROM clause with proper join ordering
+  // Track which tables have been included in the query
+  const includedTables = new Set<string>([baseTable]);
+
+  let sql = `SELECT${tableBuilderDistinct.value ? ' DISTINCT' : ''} ${
+    selectParts.length ? selectParts.join(', ') : '*'
+  }\nFROM ${baseDefinition.name} ${baseDefinition.alias}\n`;
+
+  // Process joins - need to order them so each join references an already-included table
+  const pendingJoins = [...tableBuilderJoins.value];
+  const processedJoins = new Set<string>();
+  let maxIterations = pendingJoins.length * 2;
+
+  while (pendingJoins.length > 0 && maxIterations > 0) {
+    maxIterations--;
+    const joinIndex = pendingJoins.findIndex((j) => {
+      // A join can be processed if at least one of its tables is already included
+      return (
+        includedTables.has(j.leftTable) || includedTables.has(j.rightTable)
+      );
+    });
+
+    if (joinIndex === -1) break; // No more processable joins
+
+    const joinItem = pendingJoins.splice(joinIndex, 1)[0];
+    if (!joinItem || processedJoins.has(joinItem.id)) continue;
+    processedJoins.add(joinItem.id);
+
+    // Determine which table to join (the one not yet included)
+    let fromTable: string,
+      toTable: string,
+      fromColumn: string,
+      toColumn: string;
+    if (
+      includedTables.has(joinItem.leftTable) &&
+      !includedTables.has(joinItem.rightTable)
+    ) {
+      fromTable = joinItem.leftTable;
+      toTable = joinItem.rightTable;
+      fromColumn = joinItem.leftColumn;
+      toColumn = joinItem.rightColumn;
+    } else if (
+      includedTables.has(joinItem.rightTable) &&
+      !includedTables.has(joinItem.leftTable)
+    ) {
+      fromTable = joinItem.rightTable;
+      toTable = joinItem.leftTable;
+      fromColumn = joinItem.rightColumn;
+      toColumn = joinItem.leftColumn;
+    } else if (
+      includedTables.has(joinItem.leftTable) &&
+      includedTables.has(joinItem.rightTable)
+    ) {
+      // Both tables already included - this is an additional condition, skip for now
+      // In a full implementation, this could add to WHERE clause
+      continue;
+    } else {
+      // Neither table included yet - defer this join
+      pendingJoins.push(joinItem);
+      continue;
+    }
+
+    const toDefinition = schemaTableMap[toTable];
+    if (!toDefinition) continue;
+
+    const fromAlias = resolveTableAlias(fromTable);
+    const toAlias = resolveTableAlias(toTable);
+    if (!fromAlias || !toAlias) continue;
+
+    includedTables.add(toTable);
+
+    if (joinItem.type === 'CROSS') {
+      sql += `CROSS JOIN ${toDefinition.name} ${toAlias}\n`;
+    } else {
+      const joinType = joinItem.type || 'INNER';
+      sql += `${joinType} JOIN ${toDefinition.name} ${toAlias} ON ${fromAlias}.${fromColumn} = ${toAlias}.${toColumn}\n`;
+    }
+  }
+
+  const whereClause = buildBooleanClause(whereAndClauses, whereOrClauses);
+  if (whereClause) {
+    sql += `WHERE ${whereClause}\n`;
+  }
+
+  if (usesAggregation && groupBySet.size) {
+    sql += `GROUP BY ${Array.from(groupBySet).join(', ')}\n`;
+  }
+
+  const havingClause = buildBooleanClause(havingAndClauses, havingOrClauses);
+  if (havingClause) {
+    sql += `HAVING ${havingClause}\n`;
+  }
+
+  if (orderByParts.length) {
+    sql += `ORDER BY ${orderByParts.join(', ')}\n`;
+  }
+
+  if (tableBuilderLimit.value > 0) {
+    sql += `LIMIT ${Math.floor(tableBuilderLimit.value)}\n`;
+  }
+
+  sql += ';\n';
+  return sql;
+};
+
+const tableBuilderSqlPreview = computed(() => buildTableBuilderSQL());
+const hasTableBuilderPreview = computed(() =>
+  Boolean(tableBuilderSqlPreview.value.trim())
+);
+
+const applyTableBuilderSqlToEditor = () => {
+  if (!hasTableBuilderPreview.value) {
+    tableBuilderError.value = t('admin.achievements.tableBuilder.previewEmpty');
+    tableBuilderMessage.value = null;
+    return;
+  }
+  generatedSQL.value = tableBuilderSqlPreview.value.trim();
+  tableBuilderMessage.value = t('admin.achievements.tableBuilder.applied');
+  tableBuilderError.value = null;
+};
+
+watch(
+  [
+    tableBuilderFields,
+    tableBuilderJoins,
+    tableBuilderSelectedTables,
+    tableBuilderDistinct,
+    tableBuilderLimit
+  ],
+  () => {
+    resetTableBuilderFeedback();
+  },
+  { deep: true }
+);
+
+watch(
+  tableBuilderSelectedTables,
+  () => {
+    nextTick(() => updateTableCardPositions());
+  },
+  { deep: true }
+);
+
+watch(tableBuilderLimit, (limit) => {
+  if (!Number.isFinite(limit) || limit < 0) {
+    tableBuilderLimit.value = 0;
+  }
+});
+
+watch(queryBuilderMode, (mode) => {
+  if (mode === 'blockly') {
+    nextTick(() => {
+      resizeWorkspace();
+    });
+  }
+});
 const draftTitle = (index: number) =>
   `${t('admin.achievements.editor.draftLabel')} ${index}`;
 
@@ -1385,7 +2211,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
             <button
               type="button"
               class="rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50"
-              v-wave
               @click="refetchAchievements()"
             >
               {{ t('admin.achievements.list.reload') }}
@@ -1456,7 +2281,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
               <button
                 type="button"
                 class="rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-white"
-                v-wave
                 @click="openAchievementInEditor(achievement)"
               >
                 {{ t('admin.achievements.list.openEditor') }}
@@ -1464,7 +2288,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
               <button
                 type="button"
                 class="rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-white"
-                v-wave
                 @click="duplicateAchievement(achievement)"
               >
                 {{ t('admin.achievements.list.duplicate') }}
@@ -1536,7 +2359,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
             type="button"
             class="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
             :disabled="!canSaveCurrentEditor"
-            v-wave
             @click="handleSaveCurrentEditor"
           >
             <span v-if="isSaving">{{ t('states.loading') }}</span>
@@ -1552,7 +2374,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
             type="button"
             class="rounded border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400"
             :disabled="!canDiscardCurrentEditor"
-            v-wave
             @click="handleDiscardChanges"
           >
             {{ t('admin.achievements.form.discard') }}
@@ -1586,7 +2407,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
                 type="button"
                 class="rounded border border-gray-200 p-1"
                 :title="t('admin.achievements.builder.toggleEditors')"
-                v-wave
                 @click="toggleSidebar"
               >
                 <ListIcon class="h-6 w-6" />
@@ -1601,7 +2421,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
                 v-if="!isSidebarCollapsed"
                 type="button"
                 class="ml-auto rounded border border-gray-200 px-2 py-1 text-sm hover:bg-gray-50"
-                v-wave
                 @click="addEditor"
               >
                 {{ t('buttons.add') }}
@@ -1623,7 +2442,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
                   :class="{
                     'bg-gray-100 font-medium': currentEditorIndex === index
                   }"
-                  v-wave
                   @click="switchEditor(index)"
                 >
                   {{ editor.title }}
@@ -1631,7 +2449,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
                 <button
                   type="button"
                   class="rounded px-2 py-1 text-sm text-gray-600 hover:bg-gray-100"
-                  v-wave
                   @click="closeEditor(index)"
                 >
                   ✕
@@ -1658,7 +2475,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
                 <button
                   type="button"
                   class="mt-2 rounded border border-gray-300 px-2 py-1 text-xs hover:bg-gray-50"
-                  v-wave
                   @click="handleTemplateLoad(template.id)"
                 >
                   {{ t('admin.achievements.builder.loadTemplate') }}
@@ -1690,13 +2506,786 @@ function finalizeEditorAfterSave(editor: EditorTab) {
 
           <div class="flex flex-1 flex-col gap-4">
             <div
-              ref="blocklyArea"
-              class="relative flex-1 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+              class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
             >
               <div
-                ref="blocklyDiv"
-                class="h-full w-full"
-              />
+                class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3"
+              >
+                <div>
+                  <p class="text-sm font-semibold">
+                    {{ t('admin.achievements.builder.title') }}
+                  </p>
+                  <p class="text-xs text-gray-500">
+                    {{
+                      queryBuilderMode === 'blockly'
+                        ? t(
+                            'admin.achievements.tableBuilder.blocklyDescription'
+                          )
+                        : t('admin.achievements.tableBuilder.tableDescription')
+                    }}
+                  </p>
+                </div>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    class="rounded-full px-3 py-1 text-xs font-semibold"
+                    :class="
+                      queryBuilderMode === 'blockly'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-600'
+                    "
+                    @click="queryBuilderMode = 'blockly'"
+                  >
+                    {{ t('admin.achievements.tableBuilder.modeBlocks') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-full px-3 py-1 text-xs font-semibold"
+                    :class="
+                      queryBuilderMode === 'table'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-600'
+                    "
+                    @click="queryBuilderMode = 'table'"
+                  >
+                    {{ t('admin.achievements.tableBuilder.modeTable') }}
+                  </button>
+                </div>
+              </div>
+
+              <div class="space-y-4 pt-4">
+                <div
+                  v-show="queryBuilderMode === 'blockly'"
+                  ref="blocklyArea"
+                  class="relative h-[520px] w-full overflow-hidden rounded-xl border border-dashed border-gray-200 bg-white"
+                >
+                  <div
+                    ref="blocklyDiv"
+                    class="h-full w-full"
+                  />
+                </div>
+
+                <div
+                  v-show="queryBuilderMode === 'table'"
+                  class="flex flex-col"
+                >
+                  <!-- MS Access-style Design Surface -->
+                  <div
+                    class="flex flex-col rounded-xl border border-gray-300 bg-[#e8e8e8]"
+                  >
+                    <!-- Table Cards Area with SVG overlay for join lines -->
+                    <div
+                      class="relative border-b border-gray-400 bg-gradient-to-b from-[#f0f0f0] to-[#d8d8d8]"
+                    >
+                      <!-- Toolbar -->
+                      <div
+                        class="flex items-center gap-2 border-b border-gray-300 bg-gradient-to-b from-[#f5f5f5] to-[#e0e0e0] px-2 py-1"
+                      >
+                        <select
+                          v-model="tableBuilderTableToAdd"
+                          class="rounded border border-gray-400 bg-white px-2 py-0.5 text-xs shadow-sm"
+                        >
+                          <option value="">
+                            {{
+                              t(
+                                'admin.achievements.tableBuilder.tables.placeholder'
+                              )
+                            }}
+                          </option>
+                          <option
+                            v-for="table in tableBuilderAvailableTables"
+                            :key="table.name"
+                            :value="table.name"
+                          >
+                            {{ table.label }}
+                          </option>
+                        </select>
+                        <button
+                          type="button"
+                          class="rounded border border-gray-400 bg-gradient-to-b from-white to-gray-100 px-2 py-0.5 text-xs font-medium shadow-sm hover:from-gray-50 hover:to-gray-200 disabled:opacity-50"
+                          :disabled="!tableBuilderTableToAdd"
+                          @click="addTableToSelection"
+                        >
+                          {{ t('admin.achievements.tableBuilder.palette.add') }}
+                        </button>
+                        <div
+                          class="ml-auto flex items-center gap-3 text-xs text-gray-600"
+                        >
+                          <label class="flex items-center gap-1">
+                            <input
+                              v-model="tableBuilderDistinct"
+                              type="checkbox"
+                              class="h-3 w-3"
+                            />
+                            DISTINCT
+                          </label>
+                          <label class="flex items-center gap-1">
+                            LIMIT
+                            <input
+                              v-model.number="tableBuilderLimit"
+                              type="number"
+                              min="0"
+                              class="w-14 rounded border border-gray-400 bg-white px-1 py-0.5 text-xs"
+                            />
+                          </label>
+                        </div>
+                      </div>
+
+                      <!-- Design Surface with table cards -->
+                      <div
+                        ref="designSurfaceRef"
+                        class="relative overflow-auto"
+                        :style="{ height: designSurfaceHeight + 'px' }"
+                        @dragover="handleColumnDragOver"
+                      >
+                        <!-- SVG layer for join lines with type indicators -->
+                        <div
+                          class="pointer-events-none absolute inset-0 select-none"
+                          style="z-index: 0"
+                        >
+                          <svg
+                            class="h-full w-full"
+                            style="pointer-events: none"
+                          >
+                            <g
+                              v-for="join in tableBuilderJoins"
+                              :key="join.id"
+                            >
+                              <template v-if="getJoinLineData(join)">
+                                <!-- Join line -->
+                                <path
+                                  :d="getJoinLineData(join)!.path"
+                                  fill="none"
+                                  stroke="#1a56db"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  style="pointer-events: none"
+                                />
+                                <!-- Join type label background -->
+                                <rect
+                                  :x="getJoinLineData(join)!.midX - 18"
+                                  :y="getJoinLineData(join)!.midY - 10"
+                                  width="36"
+                                  height="20"
+                                  rx="4"
+                                  fill="white"
+                                  stroke="#1a56db"
+                                  stroke-width="1"
+                                  style="pointer-events: none"
+                                />
+                                <!-- Join type label -->
+                                <text
+                                  :x="getJoinLineData(join)!.midX"
+                                  :y="getJoinLineData(join)!.midY + 4"
+                                  text-anchor="middle"
+                                  class="select-none"
+                                  style="
+                                    font-size: 10px;
+                                    font-weight: bold;
+                                    pointer-events: none;
+                                  "
+                                  fill="#1a56db"
+                                >
+                                  {{ join.type || 'INNER' }}
+                                </text>
+                                <!-- Cardinality indicators -->
+                                <text
+                                  :x="getJoinLineData(join)!.leftX + 8"
+                                  :y="getJoinLineData(join)!.leftY - 6"
+                                  class="select-none"
+                                  style="font-size: 9px; pointer-events: none"
+                                  fill="#666"
+                                >
+                                  1
+                                </text>
+                                <text
+                                  :x="getJoinLineData(join)!.rightX - 12"
+                                  :y="getJoinLineData(join)!.rightY - 6"
+                                  class="select-none"
+                                  style="font-size: 9px; pointer-events: none"
+                                  fill="#666"
+                                >
+                                  ∞
+                                </text>
+                              </template>
+                            </g>
+                            <!-- Drag preview line -->
+                            <line
+                              v-if="dragState && dragState.mode === 'column'"
+                              :x1="
+                                (tableCardPositions[dragState.sourceTable]?.x ??
+                                  0) +
+                                (tableCardPositions[dragState.sourceTable]
+                                  ?.width ?? 0)
+                              "
+                              :y1="
+                                tableCardPositions[dragState.sourceTable]
+                                  ?.columnOffsets[dragState.sourceColumn] ?? 0
+                              "
+                              :x2="
+                                dragState.mouseX -
+                                (designSurfaceRef?.getBoundingClientRect()
+                                  .left ?? 0)
+                              "
+                              :y2="
+                                dragState.mouseY -
+                                (designSurfaceRef?.getBoundingClientRect()
+                                  .top ?? 0)
+                              "
+                              stroke="#9ca3af"
+                              stroke-width="2"
+                              stroke-dasharray="4"
+                              style="pointer-events: none"
+                            />
+                          </svg>
+                        </div>
+
+                        <!-- Empty state -->
+                        <div
+                          v-if="!tableBuilderSelectedTableDetails.length"
+                          class="flex h-full items-center justify-center text-sm text-gray-500"
+                        >
+                          {{
+                            t('admin.achievements.tableBuilder.surface.empty')
+                          }}
+                        </div>
+
+                        <!-- Table Cards (absolutely positioned for free dragging) -->
+                        <div
+                          v-for="table in tableBuilderSelectedTableDetails"
+                          :key="table.name"
+                          :ref="
+                            (el) =>
+                              (tableCardRefs[table.name] = el as HTMLElement)
+                          "
+                          class="absolute w-40 rounded border border-gray-500 bg-white shadow-md select-none"
+                          :style="{
+                            left: (tableCardLayouts[table.name]?.x ?? 0) + 'px',
+                            top: (tableCardLayouts[table.name]?.y ?? 0) + 'px',
+                            zIndex:
+                              dragState?.mode === 'table' &&
+                              dragState.sourceTable === table.name
+                                ? 50
+                                : 20
+                          }"
+                        >
+                          <!-- Table header (Access-style blue title bar) - draggable -->
+                          <div
+                            class="flex cursor-grab items-center justify-between bg-gradient-to-r from-[#1e3a8a] to-[#1e40af] px-2 py-1 text-white active:cursor-grabbing"
+                            @mousedown.stop.prevent="
+                              handleTableDragStart($event, table.name)
+                            "
+                          >
+                            <span
+                              class="truncate text-xs font-bold pointer-events-none"
+                              >{{ table.label }}</span
+                            >
+                            <button
+                              type="button"
+                              class="ml-1 text-[10px] text-white/70 hover:text-white pointer-events-auto"
+                              @click.stop.prevent="
+                                removeTableFromSurface(table.name)
+                              "
+                              @mousedown.stop
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <!-- Column list -->
+                          <ul class="max-h-32 overflow-y-auto text-[11px]">
+                            <li
+                              v-for="column in table.columns"
+                              :key="`${table.name}-${column}`"
+                              :data-column="column"
+                              draggable="true"
+                              class="cursor-grab border-b border-gray-100 px-2 py-0.5 hover:bg-blue-50"
+                              @dragstart="
+                                handleColumnDragStart(
+                                  $event,
+                                  table.name,
+                                  column
+                                )
+                              "
+                              @dragend="handleColumnDragEnd"
+                              @drop="
+                                handleColumnDrop($event, table.name, column)
+                              "
+                              @dragover.prevent
+                              @dblclick="addFieldFromColumn(table.name, column)"
+                            >
+                              {{ column }}
+                            </li>
+                          </ul>
+                        </div>
+
+                        <!-- Join Type Popup -->
+                        <div
+                          v-if="joinPopup?.visible"
+                          class="absolute rounded border border-gray-400 bg-white shadow-lg"
+                          :style="{
+                            left: joinPopup.x + 'px',
+                            top: joinPopup.y + 'px',
+                            zIndex: 100
+                          }"
+                        >
+                          <div
+                            class="border-b border-gray-200 bg-gray-100 px-3 py-1 text-xs font-bold"
+                          >
+                            {{
+                              t(
+                                'admin.achievements.tableBuilder.joins.selectType'
+                              )
+                            }}
+                          </div>
+                          <div class="flex flex-col py-1">
+                            <button
+                              v-for="[label, value] in joinTypeOptions"
+                              :key="value"
+                              type="button"
+                              class="px-3 py-1 text-left text-xs hover:bg-blue-100"
+                              @click="confirmJoinFromPopup(value)"
+                            >
+                              {{ getJoinTypeSymbol(value) }} {{ label }}
+                            </button>
+                          </div>
+                          <div class="border-t border-gray-200 px-3 py-1">
+                            <button
+                              type="button"
+                              class="text-xs text-gray-500 hover:text-gray-700"
+                              @click="cancelJoinPopup"
+                            >
+                              {{ t('buttons.cancel') }}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Resize handle for surface -->
+                      <div
+                        class="h-2 cursor-ns-resize bg-gradient-to-b from-gray-200 to-gray-300 hover:from-blue-200 hover:to-blue-300"
+                        @mousedown="handleSurfaceResizeStart"
+                      ></div>
+
+                      <!-- Joins list (for editing existing joins) -->
+                      <div
+                        v-if="tableBuilderJoins.length"
+                        class="border-t border-gray-300 bg-gray-50 px-2 py-1"
+                      >
+                        <div class="flex flex-wrap gap-2 text-[10px]">
+                          <div
+                            v-for="join in tableBuilderJoins"
+                            :key="join.id"
+                            class="flex items-center gap-1 rounded bg-white px-2 py-0.5 shadow-sm"
+                          >
+                            <span class="font-medium"
+                              >{{ resolveTableAlias(join.leftTable) }}.{{
+                                join.leftColumn
+                              }}</span
+                            >
+                            <select
+                              v-model="join.type"
+                              class="border-none bg-transparent px-1 text-[10px] font-bold text-blue-700"
+                            >
+                              <option
+                                v-for="[, value] in joinTypeOptions"
+                                :key="value"
+                                :value="value"
+                              >
+                                {{ value }}
+                              </option>
+                            </select>
+                            <span class="font-medium"
+                              >{{ resolveTableAlias(join.rightTable) }}.{{
+                                join.rightColumn
+                              }}</span
+                            >
+                            <button
+                              type="button"
+                              class="ml-1 text-gray-400 hover:text-red-500"
+                              @click="removeTableBuilderJoin(join.id)"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- QBE Grid (Access-style horizontal grid) -->
+                    <div class="overflow-x-auto bg-white">
+                      <table class="w-full border-collapse text-[11px]">
+                        <!-- Each row is a property, each column is a field -->
+                        <thead>
+                          <tr class="border-b border-gray-300 bg-gray-100">
+                            <th
+                              class="w-24 border-r border-gray-300 px-2 py-1 text-left font-bold text-gray-700"
+                            >
+                              <!-- Row labels column -->
+                            </th>
+                            <th
+                              v-for="field in tableBuilderFields"
+                              :key="field.id"
+                              class="min-w-[120px] border-r border-gray-300 px-1 py-1 text-center font-normal"
+                            >
+                              <button
+                                type="button"
+                                class="text-[10px] text-gray-400 hover:text-red-500"
+                                @click="removeTableBuilderField(field.id)"
+                              >
+                                ✕
+                              </button>
+                            </th>
+                            <th class="w-8 px-1">
+                              <button
+                                type="button"
+                                class="rounded bg-gray-200 px-2 py-0.5 text-[10px] font-medium hover:bg-gray-300"
+                                @click="addTableBuilderField"
+                              >
+                                +
+                              </button>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <!-- Field row -->
+                          <tr class="border-b border-gray-200">
+                            <td
+                              class="border-r border-gray-300 bg-gray-50 px-2 py-1 font-medium text-gray-700"
+                            >
+                              {{
+                                t(
+                                  'admin.achievements.tableBuilder.fields.field'
+                                )
+                              }}
+                            </td>
+                            <td
+                              v-for="field in tableBuilderFields"
+                              :key="field.id + '-field'"
+                              class="border-r border-gray-200 p-0"
+                            >
+                              <select
+                                v-model="field.column"
+                                class="w-full border-none bg-transparent px-1 py-1 text-[11px] focus:ring-0"
+                              >
+                                <option
+                                  v-for="col in resolveTableColumns(
+                                    field.table
+                                  )"
+                                  :key="col"
+                                  :value="col"
+                                >
+                                  {{ col }}
+                                </option>
+                              </select>
+                            </td>
+                            <td></td>
+                          </tr>
+                          <!-- Table row -->
+                          <tr class="border-b border-gray-200">
+                            <td
+                              class="border-r border-gray-300 bg-gray-50 px-2 py-1 font-medium text-gray-700"
+                            >
+                              {{
+                                t(
+                                  'admin.achievements.tableBuilder.fields.table'
+                                )
+                              }}
+                            </td>
+                            <td
+                              v-for="field in tableBuilderFields"
+                              :key="field.id + '-table'"
+                              class="border-r border-gray-200 p-0"
+                            >
+                              <select
+                                v-model="field.table"
+                                class="w-full border-none bg-transparent px-1 py-1 text-[11px] focus:ring-0"
+                                @change="handleFieldTableChange(field)"
+                              >
+                                <option
+                                  v-for="table in tableBuilderSelectedTableDetails"
+                                  :key="table.name"
+                                  :value="table.name"
+                                >
+                                  {{ table.label }}
+                                </option>
+                              </select>
+                            </td>
+                            <td></td>
+                          </tr>
+                          <!-- Aggregation row -->
+                          <tr class="border-b border-gray-200">
+                            <td
+                              class="border-r border-gray-300 bg-gray-50 px-2 py-1 font-medium text-gray-700"
+                            >
+                              {{
+                                t(
+                                  'admin.achievements.tableBuilder.fields.aggregation'
+                                )
+                              }}
+                            </td>
+                            <td
+                              v-for="field in tableBuilderFields"
+                              :key="field.id + '-agg'"
+                              class="border-r border-gray-200 p-0"
+                            >
+                              <select
+                                v-model="field.aggregation"
+                                class="w-full border-none bg-transparent px-1 py-1 text-[11px] focus:ring-0"
+                              >
+                                <option
+                                  v-for="[label, value] in aggregatorOptions"
+                                  :key="value"
+                                  :value="value"
+                                >
+                                  {{ label }}
+                                </option>
+                              </select>
+                            </td>
+                            <td></td>
+                          </tr>
+                          <!-- Alias row -->
+                          <tr class="border-b border-gray-200">
+                            <td
+                              class="border-r border-gray-300 bg-gray-50 px-2 py-1 font-medium text-gray-700"
+                            >
+                              {{
+                                t(
+                                  'admin.achievements.tableBuilder.fields.alias'
+                                )
+                              }}
+                            </td>
+                            <td
+                              v-for="field in tableBuilderFields"
+                              :key="field.id + '-alias'"
+                              class="border-r border-gray-200 p-0"
+                            >
+                              <input
+                                v-model="field.alias"
+                                type="text"
+                                class="w-full border-none bg-transparent px-1 py-1 text-[11px] focus:ring-0"
+                                :placeholder="
+                                  t(
+                                    'admin.achievements.tableBuilder.fields.aliasPlaceholder'
+                                  )
+                                "
+                              />
+                            </td>
+                            <td></td>
+                          </tr>
+                          <!-- Sort row -->
+                          <tr class="border-b border-gray-200">
+                            <td
+                              class="border-r border-gray-300 bg-gray-50 px-2 py-1 font-medium text-gray-700"
+                            >
+                              {{
+                                t('admin.achievements.tableBuilder.fields.sort')
+                              }}
+                            </td>
+                            <td
+                              v-for="field in tableBuilderFields"
+                              :key="field.id + '-sort'"
+                              class="border-r border-gray-200 p-0"
+                            >
+                              <select
+                                v-model="field.sort"
+                                class="w-full border-none bg-transparent px-1 py-1 text-[11px] focus:ring-0"
+                              >
+                                <option
+                                  v-for="option in tableBuilderSortOptions"
+                                  :key="option.value || 'none'"
+                                  :value="option.value"
+                                >
+                                  {{ t(option.labelKey) }}
+                                </option>
+                              </select>
+                            </td>
+                            <td></td>
+                          </tr>
+                          <!-- Show row -->
+                          <tr class="border-b border-gray-200">
+                            <td
+                              class="border-r border-gray-300 bg-gray-50 px-2 py-1 font-medium text-gray-700"
+                            >
+                              {{
+                                t('admin.achievements.tableBuilder.fields.show')
+                              }}
+                            </td>
+                            <td
+                              v-for="field in tableBuilderFields"
+                              :key="field.id + '-show'"
+                              class="border-r border-gray-200 p-0 text-center"
+                            >
+                              <input
+                                v-model="field.output"
+                                type="checkbox"
+                                class="h-3 w-3"
+                              />
+                            </td>
+                            <td></td>
+                          </tr>
+                          <!-- Criteria rows (multiple AND conditions) -->
+                          <tr
+                            v-for="(_, criteriaIdx) in maxCriteriaRows"
+                            :key="'criteria-' + criteriaIdx"
+                            class="border-b border-gray-200"
+                          >
+                            <td
+                              class="border-r border-gray-300 bg-gray-50 px-2 py-1 font-medium text-gray-700"
+                            >
+                              <div class="flex items-center gap-1">
+                                <span v-if="criteriaIdx === 0">
+                                  {{
+                                    t(
+                                      'admin.achievements.tableBuilder.fields.criteria'
+                                    )
+                                  }}
+                                </span>
+                                <span
+                                  v-else
+                                  class="text-gray-400"
+                                  >AND</span
+                                >
+                                <button
+                                  v-if="criteriaIdx === maxCriteriaRows - 1"
+                                  type="button"
+                                  class="ml-auto text-[10px] text-blue-600 hover:text-blue-800"
+                                  @click="addCriteriaRow"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </td>
+                            <td
+                              v-for="field in tableBuilderFields"
+                              :key="field.id + '-criteria-' + criteriaIdx"
+                              class="border-r border-gray-200 p-0"
+                            >
+                              <input
+                                :value="field.criteria[criteriaIdx] ?? ''"
+                                type="text"
+                                class="w-full border-none bg-transparent px-1 py-1 text-[11px] focus:ring-0"
+                                :placeholder="
+                                  t(
+                                    'admin.achievements.tableBuilder.fields.criteriaPlaceholder'
+                                  )
+                                "
+                                @input="
+                                  updateFieldCriteria(
+                                    field,
+                                    criteriaIdx,
+                                    ($event.target as HTMLInputElement).value
+                                  )
+                                "
+                              />
+                            </td>
+                            <td></td>
+                          </tr>
+                          <!-- Or rows (multiple OR conditions) -->
+                          <tr
+                            v-for="(_, orIdx) in maxOrCriteriaRows"
+                            :key="'or-' + orIdx"
+                            class="border-b border-gray-200"
+                          >
+                            <td
+                              class="border-r border-gray-300 bg-gray-50 px-2 py-1 font-medium text-gray-700"
+                            >
+                              <div class="flex items-center gap-1">
+                                <span v-if="orIdx === 0">
+                                  {{
+                                    t(
+                                      'admin.achievements.tableBuilder.fields.or'
+                                    )
+                                  }}
+                                </span>
+                                <span
+                                  v-else
+                                  class="text-gray-400"
+                                  >OR</span
+                                >
+                                <button
+                                  v-if="orIdx === maxOrCriteriaRows - 1"
+                                  type="button"
+                                  class="ml-auto text-[10px] text-blue-600 hover:text-blue-800"
+                                  @click="addOrCriteriaRow"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </td>
+                            <td
+                              v-for="field in tableBuilderFields"
+                              :key="field.id + '-or-' + orIdx"
+                              class="border-r border-gray-200 p-0"
+                            >
+                              <input
+                                :value="field.orCriteria[orIdx] ?? ''"
+                                type="text"
+                                class="w-full border-none bg-transparent px-1 py-1 text-[11px] focus:ring-0"
+                                :placeholder="
+                                  t(
+                                    'admin.achievements.tableBuilder.fields.orPlaceholder'
+                                  )
+                                "
+                                @input="
+                                  updateFieldOrCriteria(
+                                    field,
+                                    orIdx,
+                                    ($event.target as HTMLInputElement).value
+                                  )
+                                "
+                              />
+                            </td>
+                            <td></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <!-- SQL Preview Bar -->
+                    <div
+                      class="border-t border-gray-400 bg-gradient-to-b from-[#f0f0f0] to-[#e0e0e0] p-2"
+                    >
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-bold text-gray-700">SQL</span>
+                        <button
+                          type="button"
+                          class="rounded border border-gray-400 bg-gradient-to-b from-white to-gray-100 px-3 py-1 text-xs font-medium shadow-sm hover:from-gray-50 hover:to-gray-200 disabled:opacity-50"
+                          :disabled="!hasTableBuilderPreview"
+                          @click="applyTableBuilderSqlToEditor"
+                        >
+                          {{
+                            t('admin.achievements.tableBuilder.preview.apply')
+                          }}
+                        </button>
+                      </div>
+                      <pre
+                        v-if="tableBuilderSqlPreview"
+                        class="mt-2 max-h-24 overflow-auto rounded border border-gray-300 bg-white p-2 font-mono text-[11px] text-gray-800"
+                      ><code>{{ tableBuilderSqlPreview }}</code></pre>
+                      <p
+                        v-else
+                        class="mt-2 text-xs text-gray-500"
+                      >
+                        {{ t('admin.achievements.tableBuilder.previewEmpty') }}
+                      </p>
+                      <div class="mt-1 text-xs">
+                        <p
+                          v-if="tableBuilderMessage"
+                          class="text-emerald-600"
+                        >
+                          {{ tableBuilderMessage }}
+                        </p>
+                        <p
+                          v-if="tableBuilderError"
+                          class="text-red-600"
+                        >
+                          {{ tableBuilderError }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1715,7 +3304,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
               <button
                 type="button"
                 class="rounded border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
-                v-wave
                 @click="generateSQL"
               >
                 {{ t('admin.achievements.actions.generate') }}
@@ -1723,7 +3311,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
               <button
                 type="button"
                 class="rounded border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
-                v-wave
                 @click="generateAndExportSQL"
               >
                 {{ t('admin.achievements.actions.export') }}
@@ -1731,7 +3318,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
               <button
                 type="button"
                 class="rounded border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
-                v-wave
                 @click="saveWorkspace"
               >
                 {{ t('admin.achievements.actions.save') }}
@@ -1739,7 +3325,6 @@ function finalizeEditorAfterSave(editor: EditorTab) {
               <button
                 type="button"
                 class="rounded border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
-                v-wave
                 @click="loadWorkspace"
               >
                 {{ t('admin.achievements.actions.load') }}

@@ -167,7 +167,7 @@ export const getPasswordResetRequest = async (email: string) => {
 };
 
 export const getResendVerifyEmail = async (userId: number) => {
-  await axios.get(`/auth/${userId}/reset-password`);
+  await axios.get(`/auth/${userId}/resend-verify-email`);
 };
 
 export const getRenewedJWT = async (oldJWT: string) => {

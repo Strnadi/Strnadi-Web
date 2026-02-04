@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import OAuth2Button from './OAuthButton.vue';
 import TranslatedText from './TranslatedText.vue';
 const env = import.meta.env;

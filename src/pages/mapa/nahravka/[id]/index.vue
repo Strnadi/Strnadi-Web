@@ -35,6 +35,9 @@ const selected = ref([]);
 const audio = ref<HTMLAudioElement | null>(null);
 
 const dontShowUnknownDialects = ref(true);
+const showOnlyRepresentants = ref(true);
+
+const showAllDialects = ref(false);
 
 const {
   data: recording,
@@ -98,10 +101,12 @@ const segments = computed<
           return true;
         }
 
-        return fr.detectedDialects?.some(
-          (dd) =>
-            dd.confirmedDialect || dd.predictedDialect || dd.userGuessDialect
-        );
+        if (showOnlyRepresentants.value && !fr.representantFlag) {
+          return false;
+        }
+
+        const dialectStrings = getDialectStrings(fr);
+        return dialectStrings.some((ds) => ds && ds !== 'Unfinished');
       })
       .map((fr) => ({
         id: fr.id * 1000 + i++,
@@ -237,7 +242,9 @@ const getDialectColorWithAlpha = (
       {{ recording.name }}
     </template>
     <template v-else>
-      {{ t('recordings.detail.fallback_prefix') }}{{ recordingId }}
+      <TranslatedText identifier="recordings.detail.fallback_prefix" />{{
+        recordingId
+      }}
     </template>
   </h1>
 
@@ -287,7 +294,8 @@ const getDialectColorWithAlpha = (
             :height="200"
             :readonly="true"
             :download-only-selections="true"
-            :no-controls="true"
+            :no-controls="false"
+            :simple-controls="true"
             :selected="segments"
           >
             <template #range-tooltip="{ range, close }">
@@ -327,6 +335,24 @@ const getDialectColorWithAlpha = (
             </span>
           </label>
         </div>
+        <div class="details-toggle-card">
+          <p class="details-toggle-text">Zobrazit jen reprezentanty</p>
+          <label class="toggle-switch">
+            <input
+              v-model="showOnlyRepresentants"
+              type="checkbox"
+              class="toggle-switch-input"
+            />
+            <span
+              class="toggle-switch-track"
+              :class="{
+                'toggle-switch-track--active': showOnlyRepresentants
+              }"
+            >
+              <span class="toggle-switch-thumb" />
+            </span>
+          </label>
+        </div>
         <div
           v-if="filteredRec?.length"
           class="space-y-3 sm:space-y-4 mt-4 sm:mt-6"
@@ -344,7 +370,16 @@ const getDialectColorWithAlpha = (
                   : a.representantFlag
                     ? -1
                     : 1
-              )"
+              ).slice(0, showAllDialects ? filteredRec.length : 3).filter(fr => {
+                if (dontShowUnknownDialects && showOnlyRepresentants) {
+                  return fr.representantFlag && getDialectStrings(fr).some(ds => ds && ds !== 'Unfinished');
+                } else if (dontShowUnknownDialects) {
+                  return getDialectStrings(fr).some(ds => ds && ds !== 'Unfinished');
+                } else if (showOnlyRepresentants) {
+                  return fr.representantFlag;
+                }
+                return true;
+              })"
               :key="fr.id"
               class="flex flex-col gap-1 rounded-lg border p-3 sm:p-4 shadow-sm transition touch-manipulation"
               :style="{
@@ -386,24 +421,34 @@ const getDialectColorWithAlpha = (
               </span>
             </li>
           </ul>
+          <button
+            v-if="filteredRec.length > 5 && !showAllDialects"
+            @click="showAllDialects = true"
+            class="px-4 py-2 text-sm sm:text-base w-full text-center button-secondary touch-manipulation"
+          >
+            <TranslatedText identifier="buttons.show_more" />
+          </button>
         </div>
       </div>
 
-      <div class="flex w-full h-[400px] rounded-lg">
+      <div class="flex flex-col w-full h-[400px] rounded-lg">
+        <h2>
+          <TranslatedText identifier="recordings.detail.map_heading" />
+        </h2>
         <Map
           :position="[
             recording.parts?.[0]?.gpsLatitudeStart ?? 0,
             recording.parts?.[0]?.gpsLongitudeStart ?? 0,
-            17
+            15
           ]"
           :markers="[
             {
               id: 'recording-location',
               icon: divIcon({
                 className: '',
-                iconSize: [24, 24],
+                iconSize: [16, 16],
                 iconAnchor: [19, 19],
-                html: `<div class='w-2 h-2 bg-red-500 rounded-full'></div>`
+                html: `<div class='w-full h-full bg-red-500 rounded-full'></div>`
               }),
               position: [
                 recording.parts?.[0]?.gpsLatitudeStart ?? 0,
@@ -435,12 +480,12 @@ const getDialectColorWithAlpha = (
         </ul>
       </div>
 
-      <prefetch-link
+      <RouterLink
         v-if="uploader"
         :to="`/uzivatel/${uploader.id}`"
       >
         <UserCard :user="uploader" />
-      </prefetch-link>
+      </RouterLink>
 
       <blockquote>
         <template v-if="recording.note">
@@ -452,7 +497,7 @@ const getDialectColorWithAlpha = (
       </blockquote>
 
       <div class="flex flex-col gap-2 sm:gap-3">
-        <prefetch-link
+        <RouterLink
           v-if="
             accountStore.user?.role === 'admin' ||
             accountStore.user?.id === recording.userId
@@ -461,10 +506,10 @@ const getDialectColorWithAlpha = (
           class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
         >
           <TranslatedText identifier="admin.recordings.edit_dialects" />
-        </prefetch-link>
+        </RouterLink>
 
         <div class="flex flex-col md:flex-row gap-2 w-full">
-          <prefetch-link
+          <RouterLink
             v-if="
               accountStore.user?.role == 'admin' ||
               accountStore.user?.id == recording?.userId
@@ -473,15 +518,15 @@ const getDialectColorWithAlpha = (
             class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation w-full"
           >
             <TranslatedText identifier="buttons.edit" />
-          </prefetch-link>
-          <prefetch-link
+          </RouterLink>
+          <RouterLink
             v-if="accountStore.user?.role == 'admin'"
             :to="`./${recordingId}/smazat`"
             class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation w-full"
           >
             <TranslatedText identifier="recordings.detail.delete_recording" />
-          </prefetch-link>
-          <prefetch-link
+          </RouterLink>
+          <RouterLink
             v-else-if="
               accountStore.user?.role == 'user' &&
               accountStore.user?.id == recording.userId
@@ -490,7 +535,7 @@ const getDialectColorWithAlpha = (
             class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation w-full"
           >
             <TranslatedText identifier="recordings.detail.request_delete" />
-          </prefetch-link>
+          </RouterLink>
         </div>
       </div>
     </div>

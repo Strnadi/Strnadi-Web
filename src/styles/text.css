@@ -23,7 +23,7 @@ h4 {
 
 p {
   @apply text-gray-500;
-  @apply text-justify;
+  /* @apply text-justify; */
 }
 
 /* span {

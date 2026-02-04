@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed } from 'vue';
 import { useRouteParams } from '@vueuse/router';
 import { useQuery } from '@tanstack/vue-query';
@@ -236,7 +236,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
                 v-for="recording in recordingsList"
                 :key="recording.id"
               >
-                <prefetch-link
+                <RouterLink
                   :to="`/mapa/nahravka/${recording.id}`"
                   class="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-yellow-400 hover:shadow-md"
                 >
@@ -280,7 +280,7 @@ const recordingsCount = computed(() => recordingsList.value.length);
                   >
                     {{ recording.note }}
                   </p>
-                </prefetch-link>
+                </RouterLink>
               </li>
             </ul>
             <p

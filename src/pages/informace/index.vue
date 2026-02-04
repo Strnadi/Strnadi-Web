@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { getArticleCategories } from '@/api/articles';
 
@@ -36,7 +36,6 @@ const { data: categories } = useQuery({
           :key="article.id"
         >
           <router-link
-            v-wave
             :to="`/informace/${category.name}/${kebabize(article.name)}`"
             class="block px-4 py-3 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 rounded-lg border border-gray-200 transition-colors min-h-[44px] flex items-center text-base sm:text-lg touch-manipulation"
           >

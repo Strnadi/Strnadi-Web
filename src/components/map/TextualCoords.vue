@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { getReverseGeocode } from '@/api/maps';
 import { useQuery } from '@tanstack/vue-query';
 import { computed } from 'vue';

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import TranslatedText from '@/components/TranslatedText.vue';
 import Close from '@/icons/interface/icon-close.svg';
 
 const router = useRouter();
@@ -18,7 +17,6 @@ const closePopup = () => {
     >
       <div
         :key="`${route.path}`"
-        v-auto-scrollbar
         class="relative"
         @click.stop
       >
@@ -52,7 +50,7 @@ aside > div {
   @apply /* grid grid-cols-[auto_1fr] */ overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
   @apply rounded-4xl;
   @apply p-8;
-  @apply bg-white/90;
+  @apply bg-white;
 }
 
 aside > div > div > button.small {

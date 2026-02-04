@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import type { Notification } from '@/types/notifications';
 const props = defineProps<Notification>();
 
@@ -18,7 +18,7 @@ const emit = defineEmits<{
     <img
       src=""
       alt=""
-    >
+    />
     <div class="flex flex-col">
       <h1
         v-if="props.title"

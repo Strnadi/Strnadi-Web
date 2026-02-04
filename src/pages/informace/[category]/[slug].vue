@@ -5,15 +5,16 @@ meta:
 </route>
 
 <script setup lang="ts">
-import VueMarkdown from 'vue-markdown-render';
 import { useQuery } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router';
-import { computed } from 'vue';
-import { changeImage } from '@/plugins/markdown-it/images';
-import { changeLink } from '@/plugins/markdown-it/links';
+import { computed, ref, watch } from 'vue';
 import { getArticleByCategory, getArticleFile } from '@/api/articles';
 import { kebabize } from '@/utils/strings';
 import { applicationStore } from '@/state/ApplicationStore';
+import { Head } from '@unhead/vue/components';
+
+import { MdPreview, MdCatalog } from 'md-editor-v3';
+import 'md-editor-v3/lib/preview.css';
 
 const env = import.meta.env;
 
@@ -41,26 +42,27 @@ const { data: markdown } = useQuery({
 
 const fileBase = computed(() => `${env.VITE_API_URL}/articles/${id.value}`);
 
-const plugins = computed(() => [
-  changeImage(fileBase.value),
-  changeLink('_blank', fileBase.value)
-]);
 
-const options = {
-  html: true,
-  linkify: true,
-  typographer: true,
-  quotes: '„“‚‘'
-};
+const scrollElement = ref<HTMLElement | null>(null);
 </script>
 
 <template>
   <!-- <div class="max-w-full pb-16"> -->
-  <vue-markdown
-    v-if="markdown"
-    :source="markdown"
-    :options="options"
-    :plugins="plugins"
-  />
+
+  <Head>
+    <base :href="fileBase + '/'" />
+  </Head>
+
+  <div class="flex flex-col max-w-full" ref="scrollElement">
+    <MdPreview :id="slug" :modelValue="markdown" class="wrap-normal" />
+    <!-- <MdCatalog :editorId="slug" :scroll-element="scrollElement" /> -->
+  </div>
+
   <!-- </div> -->
 </template>
+
+<style scoped>
+.md-editor {
+  font-family: 'Bricolage Grotesque', Arial, Helvetica, sans-serif;
+}
+</style>
