@@ -481,11 +481,15 @@ const getDialectColorWithAlpha = (
       </div>
 
       <RouterLink
-        v-if="uploader"
+        v-if="uploader && (accountStore.user?.role === 'admin' || uploader.id === recording.userId)"
         :to="`/uzivatel/${uploader.id}`"
       >
         <UserCard :user="uploader" />
       </RouterLink>
+      <UserCard
+        v-else-if="uploader"
+        :user="uploader"
+      />
 
       <blockquote>
         <template v-if="recording.note">

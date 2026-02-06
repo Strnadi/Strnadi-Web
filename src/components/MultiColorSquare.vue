@@ -7,6 +7,13 @@
       v-if="dot === 'true'"
       class="absolute m-auto top-0 left-0 right-0 bottom-0 w-2/5 h-2/5 bg-black rounded-full"
     />
+    <div
+      v-if="questionmark === 'true'"
+      class="absolute m-auto top-0 left-0 right-0 bottom-0 flex items-center justify-center font-bold text-black"
+      :style="{ fontSize: `calc(${size} * 0.8)`, lineHeight: size }"
+    >
+      ?
+    </div>
   </div>
 </template>
 

@@ -209,6 +209,7 @@ export const translations = {
         'Nahrávku jsem zkontroloval(a) a chci ji odeslat do databáze. Jsem si vědom(a) tím, že v ní zůstane i po smazání mého účtu a že smazána bude jen ve vyjimečných případech.',
       uploading: 'Odesílání vaší nahrávky do databáze...',
       uploaded: 'Nahrávka byla úspěšně odeslána.',
+      upload_another: 'Nahrát další',
       next: 'Další',
       back: 'Zpět',
       steps: {
@@ -226,6 +227,11 @@ export const translations = {
         background:
           'Nahrávání probíhá na pozadí. Můžete pokračovat v používání aplikace.',
         track_status: 'Sledujte průběh v horní liště.'
+      },
+      progress: {
+        uploading: 'Nahrávání',
+        queued: 'V pořadí',
+        error: 'Chyba nahrávání'
       },
       details: {
         heading: 'Detail nahrávky',

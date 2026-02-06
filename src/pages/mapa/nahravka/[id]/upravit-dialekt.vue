@@ -4,10 +4,12 @@ meta:
 </route>
 
 <script setup vapor lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, watch, onMounted, onUnmounted } from 'vue';
 import Spectrogram from '@/views/Spectrogram.vue';
 import { useRouteParams } from '@vueuse/router';
-import { useFetched } from '@/utils/network';
+import { useRoute } from 'vue-router';
+import { useDebounceFn } from '@vueuse/core';
+import { useFetched, useFetchedWithOptions } from '@/utils/network';
 import {
   deleteDetectedDialect,
   deleteFilteredPart,
@@ -20,12 +22,18 @@ import {
   type DetectedDialect,
   type DialectDefinition,
   type FilteredPartModel,
+  type RecordingModel,
+  type RecordingPartModel,
   updateDetectedDialect
 } from '@/api/recordings';
 import { type Numeric } from '@/types/basic';
 import TranslatedText from '@/components/TranslatedText.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import { accountStore } from '@/state/AccountStore';
+import {
+  uploadStore,
+  type DraftFilteredPart
+} from '@/state/UploadDraftStore';
 
 interface SpectrogramRange {
   id: number;
@@ -75,19 +83,167 @@ interface FilteredPartCreatePayload {
 
 const env = import.meta.env;
 const id = useRouteParams<Numeric>('id');
+const route = useRoute();
 
-const {
-  data: recording,
-  isLoading,
-  error
-} = useFetched(getRecording, id, false);
+const isDraftMode = computed(() => route.query?.draft === '1');
 
-const { data: filteredParts, refetch: refetchFilteredParts } = useFetched(
+const recordingQuery = useFetchedWithOptions(
+  getRecording,
+  { enabled: computed(() => !isDraftMode.value) },
+  id,
+  false
+);
+const filteredPartsQuery = useFetchedWithOptions(
   getFilteredRecording,
+  { enabled: computed(() => !isDraftMode.value) },
   id
 );
+const dialectDefinitionsQuery = useFetched(getDialects);
 
-const { data: dialectDefinitions } = useFetched(getDialects);
+const draftRecording = ref<RecordingModel | null>(null);
+const draftFilteredParts = ref<DraftFilteredPart[] | null>(null);
+const draftLoading = ref(false);
+const draftError = ref<Error | null>(null);
+const draftAudioUrls = ref<string[]>([]);
+
+const recording = computed(() =>
+  isDraftMode.value ? draftRecording.value : recordingQuery.data.value
+);
+
+const filteredParts = computed<FilteredPartModel[] | null>(() =>
+  isDraftMode.value
+    ? (draftFilteredParts.value as unknown as FilteredPartModel[] | null)
+    : filteredPartsQuery.data.value
+);
+
+const dialectDefinitions = computed(
+  () => dialectDefinitionsQuery.data.value ?? []
+);
+
+const isLoading = computed(() =>
+  isDraftMode.value
+    ? draftLoading.value
+    : recordingQuery.isLoading.value || filteredPartsQuery.isLoading.value
+);
+
+const error = computed(() =>
+  isDraftMode.value ? draftError.value : recordingQuery.error.value
+);
+
+const refetchFilteredParts = async () => {
+  if (isDraftMode.value) {
+    draftFilteredParts.value = [...uploadStore.draftFilteredParts];
+    return;
+  }
+  await filteredPartsQuery.refetch();
+};
+
+const getAudioDuration = (file: File): Promise<number> =>
+  new Promise((resolve, reject) => {
+    const audio = new Audio();
+    audio.preload = 'metadata';
+
+    audio.onloadedmetadata = () => {
+      URL.revokeObjectURL(audio.src);
+      resolve(audio.duration || 0);
+    };
+
+    audio.onerror = () => {
+      URL.revokeObjectURL(audio.src);
+      reject(new Error('Nepodařilo se načíst délku audia.'));
+    };
+
+    audio.src = URL.createObjectURL(file);
+  });
+
+const hydrateDraftData = async () => {
+  if (!isDraftMode.value) return;
+  draftLoading.value = true;
+  draftError.value = null;
+  try {
+    if (!uploadStore.parts?.length) {
+      throw new Error('Nahrávka ještě nebyla připravena pro úpravy.');
+    }
+
+    let cursor = new Date(uploadStore.dateTime ?? new Date()).getTime();
+    const parts = [] as RecordingPartModel[];
+    draftAudioUrls.value.forEach((url) => URL.revokeObjectURL(url));
+    const urls: string[] = [];
+
+    for (const [index, part] of (uploadStore.parts ?? []).entries()) {
+      const duration = await getAudioDuration(part.file);
+      const startDate = new Date(cursor).toISOString();
+      const endDate = new Date(cursor + duration * 1000).toISOString();
+
+      urls.push(URL.createObjectURL(part.file));
+
+      parts.push({
+        id: index + 1,
+        recordingId: 0,
+        startDate,
+        endDate,
+        gpsLatitudeStart: part.location?.lat ?? 0,
+        gpsLatitudeEnd: part.location?.lat ?? 0,
+        gpsLongitudeStart: part.location?.lng ?? 0,
+        gpsLongitudeEnd: part.location?.lng ?? 0,
+        square: null,
+        filePath: null,
+        dataBase64: null
+      });
+
+      cursor += duration * 1000;
+    }
+
+    draftAudioUrls.value = urls;
+
+    draftRecording.value = {
+      id: 0,
+      userId: accountStore.user?.id ?? 0,
+      name: uploadStore.title || 'Nahrávka',
+      createdAt: uploadStore.dateTime ?? new Date().toISOString(),
+      estimatedBirdsCount: uploadStore.birdCount,
+      byApp: false,
+      device: uploadStore.device,
+      note: uploadStore.note,
+      notePost: null,
+      parts
+    };
+
+    draftFilteredParts.value = [...uploadStore.draftFilteredParts];
+  } catch (err) {
+    draftError.value =
+      err instanceof Error
+        ? err
+        : new Error('Nepodařilo se připravit návrh nahrávky.');
+  } finally {
+    draftLoading.value = false;
+  }
+};
+
+onMounted(() => {
+  if (isDraftMode.value) {
+    hydrateDraftData();
+  }
+});
+
+watch(isDraftMode, (draft) => {
+  if (draft) {
+    hydrateDraftData();
+  }
+});
+
+watch(
+  () => uploadStore.parts,
+  () => {
+    if (isDraftMode.value) {
+      hydrateDraftData();
+    }
+  }
+);
+
+onUnmounted(() => {
+  draftAudioUrls.value.forEach((url) => URL.revokeObjectURL(url));
+});
 
 const currentTime = ref(0);
 const segments = ref<SpectrogramRange[] | null>(null);
@@ -118,7 +274,14 @@ const availableDialects = computed<DialectDefinition[]>(
 );
 
 const isAdmin = computed(() => accountStore.user?.role === 'admin');
-const canEditDialects = computed(() => isAdmin.value);
+const isOwner = computed(
+  () => recording.value?.userId === accountStore.user?.id
+);
+const canConfirmDialects = computed(() => isAdmin.value);
+const canGuessDialects = computed(() => Boolean(accountStore.user));
+const canEditDialects = computed(
+  () => isAdmin.value || isDraftMode.value || isOwner.value
+);
 
 function parseIsoDate(value?: string | null) {
   if (!value) return null;
@@ -132,6 +295,17 @@ const anchorTimestamp = computed(() => {
   const recordingStart = recording.value?.parts?.[0]?.startDate;
   const filteredStart = filteredParts.value?.[0]?.startDate;
   return parseIsoDate(recordingStart ?? filteredStart);
+});
+
+const audioUrls = computed(() => {
+  if (!recording.value?.parts) return [] as string[];
+  if (isDraftMode.value) {
+    return draftAudioUrls.value;
+  }
+  return recording.value.parts.map(
+    (p) =>
+      `${env.VITE_API_URL}/recordings/part/${recording.value?.id}/${p.id}/sound`
+  );
 });
 
 function selectionColorResolver() {
@@ -172,6 +346,9 @@ watch(
 watch(segments, (newRanges, oldRanges) => {
   if (isHydratingSegments.value) return;
   syncSegmentRanges(newRanges ?? [], oldRanges ?? []);
+  if (isDraftMode.value) {
+    autoSaveDraft();
+  }
 });
 
 watch(currentContextMenuRangeId, (rangeId) => {
@@ -207,6 +384,18 @@ function resolveDialectColor(code?: string | null) {
   return colors[code as keyof typeof colors] ?? DEFAULT_SEGMENT_COLOR;
 }
 
+const dialectIdLookup = computed<Record<string, number>>(() =>
+  availableDialects.value.reduce((acc, dialect) => {
+    acc[dialect.dialectCode] = dialect.id;
+    return acc;
+  }, {} as Record<string, number>)
+);
+
+function resolveDialectId(code?: string | null) {
+  if (!code) return null;
+  return dialectIdLookup.value[code] ?? null;
+}
+
 function representantFlag(part: FilteredPartModel) {
   return part.representantFlag ?? false;
 }
@@ -224,6 +413,34 @@ function inferDialectCode(part: FilteredPartModel) {
   }
   return null;
 }
+
+function findFilteredPartByTime(startDate: string, endDate: string) {
+  const parts = filteredParts.value ?? [];
+  const targetStart = convertIsoToRelative(startDate);
+  const targetEnd = convertIsoToRelative(endDate);
+  return (
+    parts.find((part) => {
+      const s = convertIsoToRelative(part.startDate);
+      const e = convertIsoToRelative(part.endDate);
+      return isApproximatelyEqual(s, targetStart) && isApproximatelyEqual(e, targetEnd);
+    }) ?? null
+  );
+}
+
+const autoConfirmDetectedDialect = async (
+  part: FilteredPartModel,
+  dialectId: number | null
+) => {
+  if (!canConfirmDialects.value || !dialectId) return;
+  const detection = part.detectedDialects?.[0];
+  if (!detection) return;
+  await updateDetectedDialect(accountStore.token!, {
+    id: detection.id,
+    userGuessDialectId: detection.userGuessDialectId ?? dialectId,
+    predictedDialectId: detection.predictedDialectId ?? null,
+    confirmedDialectId: dialectId
+  });
+};
 
 function convertIsoToRelative(iso: string) {
   const anchor = anchorTimestamp.value;
@@ -261,7 +478,10 @@ function formatAbsoluteFromSeconds(seconds: number) {
   });
 }
 
-function hydrateSegments(parts: FilteredPartModel[]) {
+function hydrateSegments(parts: FilteredPartModel[] | null | undefined) {
+  if (!Array.isArray(parts)) {
+    return;
+  }
   isHydratingSegments.value = true;
   segments.value = [];
   for (const key of Object.keys(segmentMetas)) {
@@ -292,7 +512,10 @@ function hydrateSegments(parts: FilteredPartModel[]) {
   isHydratingSegments.value = false;
 }
 
-function hydrateDetectionForms(parts: FilteredPartModel[]) {
+function hydrateDetectionForms(parts: FilteredPartModel[] | null | undefined) {
+  if (!Array.isArray(parts)) {
+    return;
+  }
   const nextForms: Record<number, DialectSelection> = {};
   const partIds = new Set<number>();
   parts.forEach((part) => {
@@ -424,6 +647,9 @@ function isApproximatelyEqual(a: number, b: number) {
 function toggleRepresentant(meta: SegmentMeta, value: boolean) {
   meta.representant = value;
   meta.dirty = true;
+  if (isDraftMode.value) {
+    autoSaveDraft();
+  }
 }
 
 function removeSegment(meta: SegmentMeta) {
@@ -458,6 +684,10 @@ function resetSegments() {
 }
 
 const saveSegmentChanges = async () => {
+  if (isDraftMode.value) {
+    await saveDraftSegmentChanges(false);
+    return;
+  }
   if (!recording.value) {
     segmentError.value = 'Chybí metadata nahrávky.';
     return;
@@ -500,16 +730,16 @@ const saveSegmentChanges = async () => {
       // if (parentId == null) {
       //   throw new Error('Chybí parentId úseku.');
       // }
-      const payload: FilteredPartPatchPayload = {
+      await patchFilteredPart(token, meta.filteredPart!.id, {
         recordingId: recording.value.id,
         parentId,
         startDate,
         endDate,
         state: meta.state,
-        representantFlag: meta.representant
-      };
-      await patchFilteredPart(token, meta.filteredPart!.id, payload);
+        representant: meta.representant
+      });
     }
+    const creationTargets: { startDate: string; endDate: string; dialectId: number | null }[] = [];
     for (const meta of creations) {
       if (!meta.dialectCode) {
         throw new Error('Nový úsek musí mít zvolený dialekt.');
@@ -526,8 +756,22 @@ const saveSegmentChanges = async () => {
         dialectCode: meta.dialectCode
       };
       await postFilteredPart(token, payload);
+      creationTargets.push({
+        startDate,
+        endDate,
+        dialectId: resolveDialectId(meta.dialectCode)
+      });
     }
     await refetchFilteredParts();
+    if (creationTargets.length && filteredParts.value) {
+      for (const target of creationTargets) {
+        const part = findFilteredPartByTime(target.startDate, target.endDate);
+        if (part && target.dialectId) {
+          await autoConfirmDetectedDialect(part, target.dialectId);
+        }
+      }
+      await refetchFilteredParts();
+    }
     segmentSuccess.value = 'Změny úseků byly uloženy.';
   } catch (err) {
     segmentError.value =
@@ -536,6 +780,121 @@ const saveSegmentChanges = async () => {
     isSavingSegments.value = false;
   }
 };
+
+async function saveDraftSegmentChanges(silent = false) {
+  if (anchorTimestamp.value === null) {
+    if (!silent) segmentError.value = 'Není k dispozici časový základ pro nahrávku.';
+    return;
+  }
+
+  const metas = Object.values(segmentMetas);
+  const creations = metas.filter((meta) => meta.isNew);
+  const updates = metas.filter(
+    (meta) => !meta.isNew && meta.dirty && !meta.markedForDeletion
+  );
+  const deletions = metas.filter(
+    (meta) => meta.markedForDeletion && !meta.isNew && meta.filteredPart
+  );
+
+  if (!creations.length && !updates.length && !deletions.length) {
+    if (!silent) {
+      segmentSuccess.value = 'Žádné změny k uložení.';
+      segmentError.value = null;
+    }
+    return;
+  }
+
+  if (!silent) {
+    segmentError.value = null;
+    segmentSuccess.value = null;
+    isSavingSegments.value = true;
+  }
+
+  try {
+    for (const meta of deletions) {
+      if (meta.filteredPart?.id) {
+        uploadStore.deleteDraftFilteredPart(meta.filteredPart.id);
+      }
+    }
+
+    for (const meta of updates) {
+      const startDate = convertRelativeToIso(meta.start);
+      const endDate = convertRelativeToIso(meta.end);
+      if (!startDate || !endDate) {
+        throw new Error('Nepodařilo se převést čas úseku.');
+      }
+      const partId = meta.filteredPart?.id ?? meta.key;
+      uploadStore.updateDraftFilteredPart(partId, {
+        startDate,
+        endDate,
+        representantFlag: meta.representant,
+        state: meta.state,
+        dialectCode: meta.dialectCode ?? null
+      });
+
+      const dialectId = resolveDialectId(meta.dialectCode);
+      const draftPart = uploadStore.draftFilteredParts.find(
+        (p) => p.id === partId
+      );
+      const firstDetection = draftPart?.detectedDialects?.[0];
+      if (dialectId && firstDetection) {
+        uploadStore.updateDraftDetection(firstDetection.id, {
+          userGuessDialectId: dialectId,
+          confirmedDialectId: canConfirmDialects.value ? dialectId : null
+        });
+      }
+      meta.dirty = false;
+      meta.originalStart = meta.start;
+      meta.originalEnd = meta.end;
+    }
+
+    for (const meta of creations) {
+      if (!meta.dialectCode) {
+        throw new Error('Nový úsek musí mít zvolený dialekt.');
+      }
+      const startDate = convertRelativeToIso(meta.start);
+      const endDate = convertRelativeToIso(meta.end);
+      if (!startDate || !endDate) {
+        throw new Error('Nepodařilo se převést čas úseku.');
+      }
+      const created = uploadStore.createDraftFilteredPart({
+        parentId: 0,
+        recordingId: 0,
+        startDate,
+        endDate,
+        state: meta.state,
+        representantFlag: meta.representant,
+        dialectCode: meta.dialectCode,
+        detectedDialects: []
+      });
+      const dialectId = resolveDialectId(meta.dialectCode);
+      if (dialectId) {
+        uploadStore.createDraftDetection(created.id, {
+          userGuessDialectId: dialectId,
+          predictedDialectId: null,
+          confirmedDialectId: canConfirmDialects.value ? dialectId : null
+        });
+      }
+      meta.filteredPart = created as unknown as FilteredPartModel;
+      meta.isNew = false;
+      meta.dirty = false;
+    }
+
+    draftFilteredParts.value = [...uploadStore.draftFilteredParts];
+    hydrateSegments((draftFilteredParts.value ?? []) as FilteredPartModel[]);
+    if (!silent) segmentSuccess.value = 'Změny úseků byly uloženy.';
+  } catch (err) {
+    segmentError.value =
+      err instanceof Error ? err.message : 'Nepodařilo se uložit změny úseků.';
+  } finally {
+    if (!silent) isSavingSegments.value = false;
+  }
+}
+
+const autoSaveDraft = useDebounceFn(async () => {
+  if (!isDraftMode.value) return;
+  await saveDraftSegmentChanges(true);
+}, 1000);
 
 const ensureDetectionForm = (detected: DetectedDialect): DialectSelection => {
   if (!detectionForms.value[detected.id]) {
@@ -554,14 +913,28 @@ const saveDetection = async (detected: DetectedDialect) => {
   detectionError.value = null;
   detectionMessage.value = null;
   try {
-    await updateDetectedDialect(accountStore.token!, {
-      id: detected.id,
-      userGuessDialectId: form.userGuessDialectId,
-      predictedDialectId: form.predictedDialectId,
-      confirmedDialectId: form.confirmedDialectId
-    });
-    detectionMessage.value = 'Záznam dialektu byl uložen.';
-    await refetchFilteredParts();
+    if (isDraftMode.value) {
+      uploadStore.updateDraftDetection(detected.id, {
+        userGuessDialectId: form.userGuessDialectId,
+        predictedDialectId: form.predictedDialectId,
+        confirmedDialectId: canConfirmDialects.value
+          ? form.confirmedDialectId
+          : detected.confirmedDialectId ?? null
+      });
+      detectionMessage.value = 'Záznam dialektu byl uložen.';
+      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
+    } else {
+      await updateDetectedDialect(accountStore.token!, {
+        id: detected.id,
+        userGuessDialectId: form.userGuessDialectId,
+        predictedDialectId: form.predictedDialectId,
+        confirmedDialectId: canConfirmDialects.value
+          ? form.confirmedDialectId
+          : detected.confirmedDialectId ?? null
+      });
+      detectionMessage.value = 'Záznam dialektu byl uložen.';
+      await refetchFilteredParts();
+    }
   } catch (err) {
     detectionError.value =
       err instanceof Error
@@ -577,9 +950,15 @@ const deleteDetection = async (detected: DetectedDialect) => {
   detectionError.value = null;
   detectionMessage.value = null;
   try {
-    await deleteDetectedDialect(accountStore.token!, detected.id);
-    detectionMessage.value = 'Záznam dialektu byl odstraněn.';
-    await refetchFilteredParts();
+    if (isDraftMode.value) {
+      uploadStore.deleteDraftDetection(detected.id);
+      detectionMessage.value = 'Záznam dialektu byl odstraněn.';
+      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
+    } else {
+      await deleteDetectedDialect(accountStore.token!, detected.id);
+      detectionMessage.value = 'Záznam dialektu byl odstraněn.';
+      await refetchFilteredParts();
+    }
   } catch (err) {
     detectionError.value =
       err instanceof Error
@@ -614,19 +993,37 @@ const createDetection = async (meta: SegmentMeta) => {
   detectionError.value = null;
   detectionMessage.value = null;
   try {
-    await postDetectedDialect(accountStore.token!, {
-      filteredPartId: meta.filteredPart.id,
-      userGuessDialectId: form.userGuessDialectId,
-      predictedDialectId: form.predictedDialectId,
-      confirmedDialectId: form.confirmedDialectId
-    });
+    if (isDraftMode.value) {
+      const created = uploadStore.createDraftDetection(meta.filteredPart.id, {
+        userGuessDialectId: form.userGuessDialectId,
+        predictedDialectId: form.predictedDialectId,
+        confirmedDialectId: canConfirmDialects.value
+          ? form.confirmedDialectId
+          : null
+      });
+      meta.filteredPart.detectedDialects ??= [];
+      meta.filteredPart.detectedDialects.push(
+        created as unknown as DetectedDialect
+      );
+      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
+      detectionMessage.value = 'Záznam dialektu byl přidán.';
+    } else {
+      await postDetectedDialect(accountStore.token!, {
+        filteredPartId: meta.filteredPart.id,
+        userGuessDialectId: form.userGuessDialectId,
+        predictedDialectId: form.predictedDialectId,
+        confirmedDialectId: canConfirmDialects.value
+          ? form.confirmedDialectId
+          : null
+      });
+      detectionMessage.value = 'Záznam dialektu byl přidán.';
+      await refetchFilteredParts();
+    }
     newDetectionForms[meta.key] = {
       userGuessDialectId: null,
       predictedDialectId: null,
       confirmedDialectId: null
     };
-    detectionMessage.value = 'Záznam dialektu byl přidán.';
-    await refetchFilteredParts();
   } catch (err) {
     detectionError.value =
       err instanceof Error
@@ -657,6 +1054,10 @@ const confirmExistingDetection = async (
   dialectId: number | null,
   close?: () => void
 ) => {
+  if (!canConfirmDialects.value) {
+    detectionError.value = 'Nemáte oprávnění potvrdit dialekt.';
+    return;
+  }
   if (!dialectId) {
     detectionError.value = 'Vyberte dialekt k potvrzení.';
     return;
@@ -666,15 +1067,26 @@ const confirmExistingDetection = async (
   detectionError.value = null;
   detectionMessage.value = null;
   try {
-    await updateDetectedDialect(accountStore.token!, {
-      id: detected.id,
-      userGuessDialectId: form.userGuessDialectId,
-      predictedDialectId: form.predictedDialectId,
-      confirmedDialectId: dialectId
-    });
-    detectionMessage.value = 'Dialekt byl potvrzen.';
-    if (close) close();
-    await refetchFilteredParts();
+    if (isDraftMode.value) {
+      uploadStore.updateDraftDetection(detected.id, {
+        userGuessDialectId: form.userGuessDialectId,
+        predictedDialectId: form.predictedDialectId,
+        confirmedDialectId: dialectId
+      });
+      detectionMessage.value = 'Dialekt byl potvrzen.';
+      if (close) close();
+      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
+    } else {
+      await updateDetectedDialect(accountStore.token!, {
+        id: detected.id,
+        userGuessDialectId: form.userGuessDialectId,
+        predictedDialectId: form.predictedDialectId,
+        confirmedDialectId: dialectId
+      });
+      detectionMessage.value = 'Dialekt byl potvrzen.';
+      if (close) close();
+      await refetchFilteredParts();
+    }
   } catch (err) {
     detectionError.value =
       err instanceof Error ? err.message : 'Nepodařilo se potvrdit dialekt.';
@@ -687,20 +1099,35 @@ const clearConfirmedDialect = async (
   detected: DetectedDialect,
   close?: () => void
 ) => {
+  if (!canConfirmDialects.value) {
+    detectionError.value = 'Nemáte oprávnění odebrat potvrzení.';
+    return;
+  }
   const form = ensureDetectionForm(detected);
   detectionSaving[detected.id] = true;
   detectionError.value = null;
   detectionMessage.value = null;
   try {
-    await updateDetectedDialect(accountStore.token!, {
-      id: detected.id,
-      userGuessDialectId: form.userGuessDialectId,
-      predictedDialectId: form.predictedDialectId,
-      confirmedDialectId: null
-    });
-    detectionMessage.value = 'Potvrzený dialekt byl odebrán.';
-    if (close) close();
-    await refetchFilteredParts();
+    if (isDraftMode.value) {
+      uploadStore.updateDraftDetection(detected.id, {
+        userGuessDialectId: form.userGuessDialectId,
+        predictedDialectId: form.predictedDialectId,
+        confirmedDialectId: null
+      });
+      detectionMessage.value = 'Potvrzený dialekt byl odebrán.';
+      if (close) close();
+      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
+    } else {
+      await updateDetectedDialect(accountStore.token!, {
+        id: detected.id,
+        userGuessDialectId: form.userGuessDialectId,
+        predictedDialectId: form.predictedDialectId,
+        confirmedDialectId: null
+      });
+      detectionMessage.value = 'Potvrzený dialekt byl odebrán.';
+      if (close) close();
+      await refetchFilteredParts();
+    }
   } catch (err) {
     detectionError.value =
       err instanceof Error
@@ -716,7 +1143,7 @@ const quickCreateFilteredPart = async (
   dialectId: number | null,
   close?: () => void
 ) => {
-  if (!recording.value) {
+  if (!recording.value && !isDraftMode.value) {
     segmentError.value = 'Chybí metadata nahrávky.';
     return;
   }
@@ -743,17 +1170,42 @@ const quickCreateFilteredPart = async (
   segmentError.value = null;
   segmentSuccess.value = null;
   try {
-    await postFilteredPart(accountStore.token!, {
-      recordingId: recording.value.id,
-      startDate,
-      endDate,
-      dialectCode: dialect.dialectCode
-    });
+    if (isDraftMode.value) {
+      const created = uploadStore.createDraftFilteredPart({
+        parentId: 0,
+        recordingId: 0,
+        startDate,
+        endDate,
+        state: 0,
+        representantFlag: false,
+        dialectCode: dialect.dialectCode,
+        detectedDialects: []
+      });
+      uploadStore.createDraftDetection(created.id, {
+        userGuessDialectId: dialect.id,
+        predictedDialectId: null,
+        confirmedDialectId: canConfirmDialects.value ? dialect.id : null
+      });
+      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
+      hydrateSegments((draftFilteredParts.value ?? []) as FilteredPartModel[]);
+    } else {
+      await postFilteredPart(accountStore.token!, {
+        recordingId: recording.value.id,
+        startDate,
+        endDate,
+        dialectCode: dialect.dialectCode
+      });
+      await refetchFilteredParts();
+      const part = findFilteredPartByTime(startDate, endDate);
+      if (part) {
+        await autoConfirmDetectedDialect(part, dialect.id);
+        await refetchFilteredParts();
+      }
+    }
     tooltipCreateDialectId.value = null;
     currentContextMenuRangeId.value = null;
     segmentSuccess.value = 'Úsek byl vytvořen.';
     if (close) close();
-    await refetchFilteredParts();
   } catch (err) {
     segmentError.value =
       err instanceof Error ? err.message : 'Nepodařilo se vytvořit úsek.';
@@ -779,17 +1231,26 @@ const quickAddDetectedDialect = async (
   detectionError.value = null;
   detectionMessage.value = null;
   try {
-    await postDetectedDialect(accountStore.token!, {
-      filteredPartId: meta.filteredPart.id,
-      userGuessDialectId: null,
-      predictedDialectId: null,
-      confirmedDialectId: dialectId
-    });
+    if (isDraftMode.value) {
+      uploadStore.createDraftDetection(meta.filteredPart.id, {
+        userGuessDialectId: dialectId,
+        predictedDialectId: null,
+        confirmedDialectId: canConfirmDialects.value ? dialectId : null
+      });
+      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
+    } else {
+      await postDetectedDialect(accountStore.token!, {
+        filteredPartId: meta.filteredPart.id,
+        userGuessDialectId: canConfirmDialects.value ? null : dialectId,
+        predictedDialectId: null,
+        confirmedDialectId: canConfirmDialects.value ? dialectId : null
+      });
+      await refetchFilteredParts();
+    }
     tooltipAddDetectionDialectId.value = null;
     currentContextMenuRangeId.value = null;
     detectionMessage.value = 'Záznam dialektu byl přidán.';
     if (close) close();
-    await refetchFilteredParts();
   } catch (err) {
     detectionError.value =
       err instanceof Error
@@ -797,6 +1258,55 @@ const quickAddDetectedDialect = async (
         : 'Nepodařilo se přidat záznam dialektu.';
   } finally {
     tooltipAddDetectionSaving.value = false;
+  }
+};
+
+const confirmAll = async () => {
+  if (!canConfirmDialects.value) {
+    detectionError.value = 'Nemáte oprávnění potvrdit dialekty.';
+    return;
+  }
+  detectionError.value = null;
+  detectionMessage.value = null;
+  const token = accountStore.token!;
+  try {
+    const metas = Object.values(segmentMetas).filter(
+      (meta) => !meta.markedForDeletion && meta.filteredPart
+    );
+    for (const meta of metas) {
+      const detected = meta.filteredPart!.detectedDialects ?? [];
+      for (const entry of detected) {
+        if (!entry.confirmedDialectId) {
+          const dialectId =
+            entry.predictedDialectId ?? entry.userGuessDialectId ?? null;
+          if (dialectId) {
+            if (isDraftMode.value) {
+              uploadStore.updateDraftDetection(entry.id, {
+                confirmedDialectId: dialectId
+              });
+            } else {
+              await updateDetectedDialect(token, {
+                id: entry.id,
+                userGuessDialectId: entry.userGuessDialectId,
+                predictedDialectId: entry.predictedDialectId,
+                confirmedDialectId: dialectId
+              });
+            }
+          }
+        }
+      }
+    }
+    detectionMessage.value = 'Všechny dialekty byly potvrzeny.';
+    if (isDraftMode.value) {
+      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
+    } else {
+      await refetchFilteredParts();
+    }
+  } catch (err) {
+    detectionError.value =
+      err instanceof Error
+        ? err.message
+        : 'Nepodařilo se potvrdit všechny dialekty.';
   }
 };
 </script>
@@ -833,16 +1343,18 @@ const quickAddDetectedDialect = async (
       <strong class="font-semibold mr-2">Načítání:</strong>
       <span><TranslatedText identifier="loading" /></span>
     </div>
+
+    <div
+      v-if="isSavingSegments"
+      class="p-3 rounded-md bg-blue-50 text-blue-700 border border-blue-200"
+      role="status"
+    >
+      <strong class="font-semibold mr-2">Ukládání</strong>
+    </div>
+
   </div>
 
-  <div
-    v-if="!isAdmin"
-    class="text-sm text-gray-600"
-  >
-    Tato stránka je dostupná pouze administrátorům.
-  </div>
-
-  <template>
+  <template v-if="!isLoading">
     <div
       class="flex flex-col gap-y-6"
     >
@@ -855,12 +1367,7 @@ const quickAddDetectedDialect = async (
         "
         v-model:selected="segments"
         v-model:current-time="currentTime"
-        :audio-urls="
-          recording.parts.map(
-            (p) =>
-              `${env.VITE_API_URL}/recordings/part/${recording?.id}/${p.id}/sound`
-          )
-        "
+        :audio-urls="audioUrls"
         :height="400"
         :max-frequency="10000"
         :min-frequency="3000"
@@ -873,7 +1380,7 @@ const quickAddDetectedDialect = async (
               findRangeById(rangeId) &&
               (currentContextMenuRangeId = rangeId) !== null
             "
-            class="min-w-[200px] space-y-2 p-2"
+            class="min-w-50 space-y-2 p-2"
           >
             <div class="text-xs text-gray-600">
               <div>
@@ -891,7 +1398,7 @@ const quickAddDetectedDialect = async (
                   })()
                 }}
               </div>
-              <div class="text-gray-500 mt-1">
+              <!-- <div class="text-gray-500 mt-1">
                 {{
                   (() => {
                     const r = findRangeById(rangeId);
@@ -905,7 +1412,7 @@ const quickAddDetectedDialect = async (
                     return `${formatAbsoluteFromSeconds(r.start)} → ${formatAbsoluteFromSeconds(r.end)}`;
                   })()
                 }}
-              </div>
+              </div> -->
             </div>
 
             <!-- Create filtered part if it doesn't exist -->
@@ -975,11 +1482,32 @@ const quickAddDetectedDialect = async (
                 :key="`detected-${detected.id}`"
                 class="border border-gray-200 rounded px-2 py-2 space-y-2 bg-gray-50"
               >
-                <div class="text-[11px] text-gray-500">
-                  ID #{{ detected.id }}
+                <div class="flex flex-row w-full justify-between">
+                  <div class="text-[11px] text-gray-500" v-if="isAdmin">
+                    ID #{{ detected.id }}
+                  </div>
+
+                  <label
+                    class="text-[11px] text-gray-700 inline-flex items-center gap-2"
+                    v-if="canConfirmDialects"
+                  >
+                    <input
+                      type="checkbox"
+                      class="rounded border-gray-300"
+                      :checked="findRangeById(rangeId)?.payload?.representant"
+                      :disabled="!canEditDialects"
+                      @change="
+                        toggleRepresentant(
+                          findRangeById(rangeId)?.payload,
+                          ($event.target as HTMLInputElement).checked
+                        )
+                      "
+                    />
+                    Reprezentant
+                  </label>
                 </div>
                 <div class="text-[11px] text-gray-500 flex flex-col gap-0.5">
-                  <span>
+                  <span v-if="isAdmin">
                     Model:
                     {{
                       detected.predictedDialect ??
@@ -1014,6 +1542,7 @@ const quickAddDetectedDialect = async (
 
                 <div
                   v-if="
+                    canConfirmDialects &&
                     !detected.confirmedDialectId &&
                     (detected.predictedDialectId || detected.userGuessDialectId)
                   "
@@ -1056,7 +1585,23 @@ const quickAddDetectedDialect = async (
 
                 <div class="flex flex-row gap-x-2">
                   <select
+                    v-if="canConfirmDialects"
                     v-model="detectionForms[detected.id]!.confirmedDialectId"
+                    class="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
+                    :disabled="detectionSaving[detected.id]"
+                  >
+                    <option :value="null">Vyberte dialekt</option>
+                    <option
+                      v-for="dialect in availableDialects"
+                      :key="dialect.id"
+                      :value="dialect.id"
+                    >
+                      {{ dialect.dialectCode }}
+                    </option>
+                  </select>
+                  <select
+                    v-else
+                    v-model="detectionForms[detected.id]!.userGuessDialectId"
                     class="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
                     :disabled="detectionSaving[detected.id]"
                   >
@@ -1072,7 +1617,9 @@ const quickAddDetectedDialect = async (
                   <div class="flex flex-row gap-1">
                     <button
                       class="button-primary px-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                      :disabled="detectionSaving[detected.id]"
+                      :disabled="
+                        detectionSaving[detected.id] || !canGuessDialects
+                      "
                       @click="saveDetection(detected)"
                     >
                       Uložit
@@ -1119,7 +1666,8 @@ const quickAddDetectedDialect = async (
                   :disabled="
                     !tooltipAddDetectionDialectId ||
                     tooltipAddDetectionSaving ||
-                    !findRangeById(rangeId)?.payload
+                    !findRangeById(rangeId)?.payload ||
+                    !canGuessDialects
                   "
                   @click="
                     (() => {
@@ -1193,6 +1741,9 @@ const quickAddDetectedDialect = async (
         </label>
 
         <div class="flex flex-wrap gap-2 ml-auto">
+          <button @click="confirmAll" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="isSavingSegments" v-if="canConfirmDialects">
+            Potvrdit všechny dialekty
+          </button>
           <button
             class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="isSavingSegments"
@@ -1201,6 +1752,7 @@ const quickAddDetectedDialect = async (
             Zrušit změny
           </button>
           <button
+            v-if="!isDraftMode"
             class="button-primary px-4 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="
               !canEditDialects || !pendingSegmentChanges || isSavingSegments
@@ -1211,267 +1763,6 @@ const quickAddDetectedDialect = async (
           </button>
         </div>
       </div>
-
-      <p
-        v-if="!canEditDialects"
-        class="text-sm text-gray-500"
-      >
-        Pro úpravy se prosím přihlaste.
-      </p>
-
-      <p
-        v-if="segmentError"
-        class="text-sm text-red-600"
-      >
-        {{ segmentError }}
-      </p>
-      <p
-        v-if="segmentSuccess"
-        class="text-sm text-emerald-600"
-      >
-        {{ segmentSuccess }}
-      </p>
-
-      <details>
-        <summary>Úseky</summary>
-        <section class="space-y-4">
-          <article
-            v-for="meta in activeSegmentMetas"
-            :key="meta.key"
-            class="border border-gray-200 rounded-lg p-4 space-y-4"
-          >
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p class="text-sm font-semibold">
-                  {{ formatRelativeTime(meta.start) }} –
-                  {{ formatRelativeTime(meta.end) }}
-                </p>
-                <p class="text-xs text-gray-500">
-                  {{ formatAbsoluteFromSeconds(meta.start) }} →
-                  {{ formatAbsoluteFromSeconds(meta.end) }}
-                </p>
-              </div>
-              <div class="flex flex-wrap gap-2 text-xs uppercase text-gray-500">
-                <span
-                  v-if="meta.isNew"
-                  class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full"
-                >
-                  Nový
-                </span>
-                <span
-                  v-if="meta.dirty && !meta.isNew"
-                  class="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full"
-                >
-                  Upravený
-                </span>
-                <span
-                  v-if="meta.representant"
-                  class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full"
-                >
-                  Reprezentant
-                </span>
-              </div>
-            </div>
-
-            <div class="grid gap-3 md:grid-cols-2">
-              <div class="text-sm text-gray-700 flex flex-col gap-1">
-                <span>Dialekt úseku</span>
-                <span
-                  class="border border-gray-300 rounded-md px-3 py-1 text-sm bg-gray-50 text-gray-600"
-                >
-                  {{ meta.dialectCode ?? 'Nezadáno' }}
-                </span>
-              </div>
-
-              <label
-                class="text-sm text-gray-700 inline-flex items-center gap-2"
-              >
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300"
-                  :checked="meta.representant"
-                  :disabled="!canEditDialects"
-                  @change="
-                    toggleRepresentant(
-                      meta,
-                      ($event.target as HTMLInputElement).checked
-                    )
-                  "
-                />
-                Reprezentant
-              </label>
-            </div>
-
-            <div class="flex flex-wrap justify-end">
-              <button
-                class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="!canEditDialects"
-                @click="removeSegment(meta)"
-              >
-                Smazat úsek
-              </button>
-            </div>
-
-            <div
-              v-if="meta.filteredPart"
-              class="space-y-3"
-            >
-              <h3 class="text-sm font-semibold">Detekované dialekty</h3>
-
-              <div
-                v-for="detected in meta.filteredPart.detectedDialects ?? []"
-                :key="detected.id"
-                class="border border-gray-200 rounded-md p-3 space-y-3"
-              >
-                <div class="text-xs text-gray-500">ID #{{ detected.id }}</div>
-
-                <div class="flex flex-row w-full items-center gap-2 text-sm">
-                  <label class="flex flex-col flex-1 gap-1">
-                    Model
-                    <span
-                      class="border border-gray-300 rounded px-2 py-1 bg-gray-50 text-gray-600 cursor-not-allowed select-none min-h-9 flex items-center"
-                    >
-                      {{
-                        (() => {
-                          const id =
-                            detectionForms[detected.id]?.predictedDialectId;
-                          if (id == null) return 'Nezadán';
-                          const dialect = availableDialects.find(
-                            (d) => d.id === id
-                          );
-                          return dialect ? dialect.dialectCode : id;
-                        })()
-                      }}
-                    </span>
-                  </label>
-                  <label
-                    v-if="accountStore.user?.role === 'user'"
-                    class="flex flex-col flex-1 gap-1"
-                  >
-                    Uživatel
-                    <select
-                      v-model="detectionForms[detected.id]!.userGuessDialectId"
-                      class="border border-gray-300 rounded px-2 py-1"
-                      :disabled="
-                        !canEditDialects || detectionSaving[detected.id]
-                      "
-                    >
-                      <option :value="null">Nezadán</option>
-                      <option
-                        v-for="dialect in availableDialects"
-                        :key="dialect.id"
-                        :value="dialect.id"
-                      >
-                        {{ dialect.dialectCode }}
-                      </option>
-                    </select>
-                  </label>
-                  <label
-                    v-if="accountStore.user?.role === 'admin'"
-                    class="flex flex-col flex-1 gap-1"
-                  >
-                    Potvrzený
-                    <select
-                      v-model="detectionForms[detected.id]!.confirmedDialectId"
-                      class="border border-gray-300 rounded px-2 py-1"
-                      :disabled="
-                        !canEditDialects || detectionSaving[detected.id]
-                      "
-                    >
-                      <option :value="null">Nezadán</option>
-                      <option
-                        v-for="dialect in availableDialects"
-                        :key="dialect.id"
-                        :value="dialect.id"
-                      >
-                        {{ dialect.dialectCode }}
-                      </option>
-                    </select>
-                  </label>
-                </div>
-
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    class="button-primary px-3 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    :disabled="!canEditDialects || detectionSaving[detected.id]"
-                    @click="saveDetection(detected)"
-                  >
-                    Uložit
-                  </button>
-                  <button
-                    class="danger px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    :disabled="!canEditDialects || detectionSaving[detected.id]"
-                    @click="deleteDetection(detected)"
-                  >
-                    Smazat
-                  </button>
-                </div>
-              </div>
-
-              <div
-                class="border border-dashed border-gray-300 rounded-md p-3 space-y-2"
-              >
-                <p class="text-xs text-gray-500">Přidat nový záznam</p>
-                <div class="flex flex-row w-full items-center gap-2 text-sm">
-                  <label
-                    v-if="accountStore.user?.role === 'user'"
-                    class="flex flex-col flex-1 gap-1"
-                  >
-                    Uživatel
-                    <select
-                      v-model="newDetectionForms[meta.key]!.userGuessDialectId"
-                      class="border border-gray-300 rounded px-2 py-1"
-                      :disabled="
-                        !canEditDialects || detectionCreateSaving[meta.key]
-                      "
-                    >
-                      <option :value="null">Nezadán</option>
-                      <option
-                        v-for="dialect in availableDialects"
-                        :key="dialect.id"
-                        :value="dialect.id"
-                      >
-                        {{ dialect.dialectCode }}
-                      </option>
-                    </select>
-                  </label>
-                  <label
-                    v-if="accountStore.user?.role === 'admin'"
-                    class="flex flex-col flex-1 gap-1"
-                  >
-                    Potvrzený
-                    <select
-                      v-model="newDetectionForms[meta.key]!.confirmedDialectId"
-                      class="border border-gray-300 rounded px-2 py-1"
-                      :disabled="
-                        !canEditDialects || detectionCreateSaving[meta.key]
-                      "
-                    >
-                      <option :value="null">Nezadán</option>
-                      <option
-                        v-for="dialect in availableDialects"
-                        :key="dialect.id"
-                        :value="dialect.id"
-                      >
-                        {{ dialect.dialectCode }}
-                      </option>
-                    </select>
-                  </label>
-                </div>
-                <button
-                  class="button-primary px-3 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  :disabled="
-                    !canEditDialects || detectionCreateSaving[meta.key]
-                  "
-                  @click="createDetection(meta)"
-                >
-                  Přidat záznam
-                </button>
-              </div>
-            </div>
-          </article>
-        </section>
-      </details>
 
       <section
         v-if="deletedSegmentMetas.length"
@@ -1496,19 +1787,6 @@ const quickAddDetectedDialect = async (
           </button>
         </div>
       </section>
-
-      <p
-        v-if="detectionError"
-        class="text-sm text-red-600"
-      >
-        {{ detectionError }}
-      </p>
-      <p
-        v-if="detectionMessage"
-        class="text-sm text-emerald-600"
-      >
-        {{ detectionMessage }}
-      </p>
     </div>
   </template>
 </template>

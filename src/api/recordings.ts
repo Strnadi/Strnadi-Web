@@ -117,7 +117,7 @@ export const postRecording = async (
   recording: RecordingUploadReq,
   recordingParts: RecordingPartUploadParams[],
   photos?: File[]
-): Promise<void> => {
+): Promise<number> => {
   const uploadedRecordingId = (
     await axios.post(
       `/recordings`,
@@ -151,6 +151,8 @@ export const postRecording = async (
       photosBase64: toBase64(await photo.arrayBuffer())
     });
   }
+
+  return uploadedRecordingId;
 };
 
 export const getRecording = async (
@@ -219,12 +221,13 @@ export const postFilteredPart = async (
     endDate: string;
     dialectCode: string;
   }
-): Promise<void> => authorizedPost(`/recordings/filtered`, token, filteredPart);
+): Promise<void> =>
+  authorizedPost(`/recordings/filtered`, token, filteredPart);
 
 export const patchFilteredPart = async (
   token: string,
   id: Numeric,
-  patchedFilteredPart: Omit<FilteredPartModel, 'id' | 'detectedDialects'>
+  patchedFilteredPart: Omit<FilteredPartModel, 'id' | 'detectedDialects' | 'representantFlag'> & { representant: boolean}
 ): Promise<void> =>
   authorizedPatch(`/recordings/filtered/${id}`, token, patchedFilteredPart);
 

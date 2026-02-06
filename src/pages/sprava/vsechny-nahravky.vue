@@ -15,7 +15,7 @@ import {
   getRecordings
 } from '@/api/recordings';
 import TextualCoords from '@/components/map/TextualCoords.vue';
-import type { RecordingModel } from '@/api/recordings';
+import type { RecordingModel, FilteredPartModel } from '@/api/recordings';
 import { getUserInfo } from '@/api/account';
 import { accountStore } from '@/state/AccountStore';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
@@ -28,6 +28,52 @@ function formatDuration(durationMs: number): string {
   const seconds = Math.floor((durationMs % 60000) / 1000);
   const millis = durationMs % 1000;
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')},${String(millis).padStart(3, '0')}`;
+}
+
+function getDialectMetadata(fr: FilteredPartModel) {
+  const confirmed: string[] = [];
+  const predicted: string[] = [];
+  const userGuess: string[] = [];
+
+  if (fr.detectedDialects) {
+    for (const d of fr.detectedDialects) {
+      if (d.confirmedDialect) confirmed.push(d.confirmedDialect);
+      if (d.predictedDialect) predicted.push(d.predictedDialect);
+      if (d.userGuessDialect) userGuess.push(d.userGuessDialect);
+    }
+  }
+
+  if (confirmed.length > 0) {
+    return {
+      colors: confirmed.map((c: string) => DialectColors.value?.[c] ?? '#000000'),
+      dot: 'false',
+      questionmark: 'false',
+      text: confirmed.join(', ')
+    };
+  }
+  if (predicted.length > 0) {
+    return {
+      colors: predicted.map((c: string) => DialectColors.value?.[c] ?? '#000000'),
+      dot: 'true',
+      questionmark: 'false',
+      text: `${predicted.join(', ')} (model)`
+    };
+  }
+  if (userGuess.length > 0) {
+    return {
+      colors: userGuess.map((c: string) => DialectColors.value?.[c] ?? '#000000'),
+      dot: 'false',
+      questionmark: 'true',
+      text: `${userGuess.join(', ')} (vlastní)`
+    };
+  }
+
+  return {
+    colors: [],
+    dot: 'false',
+    questionmark: 'false',
+    text: '?'
+  };
 }
 
 const zipFileName = `strnadi-${new Date().toUTCString()}.zip`;
@@ -353,14 +399,7 @@ async function downloadSelectedRecordings() {
               >
                 <MultiColorSquare
                   size="16px"
-                  :colors="
-                    fr.detectedDialects?.map(
-                      (d) =>
-                        DialectColors.value?.[
-                          d.confirmedDialect as keyof typeof DialectColors.value
-                        ] ?? ''
-                    ) ?? []
-                  "
+                  v-bind="getDialectMetadata(fr)"
                 />
                 <span class="text-sm">
                   {{
@@ -377,9 +416,15 @@ async function downloadSelectedRecordings() {
                     )
                   }}
                 </span>
-                <span class="text-sm">
-                  {{ fr.representantFlag ? 'Reprezentant' : 'Nereprezentant' }}
-                </span>
+                <div class="flex flex-row-reverse content-between">
+                  <span class="text-sm">
+                    {{ fr.representantFlag ? 'Reprezentant' : 'Nereprezentant' }}
+                  </span>
+
+                  <span class="text-sm">
+                    {{ getDialectMetadata(fr).text }}
+                  </span>
+                </div>
               </li>
             </ul>
           </div>

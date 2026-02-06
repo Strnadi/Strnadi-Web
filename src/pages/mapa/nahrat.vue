@@ -4,7 +4,7 @@ meta:
 </route>
 
 <script lang="ts">
-import { ref, watch, computed, onUnmounted, reactive } from 'vue';
+import { ref, watch, computed, onUnmounted } from 'vue';
 import { accountStore } from '@/state/AccountStore';
 import {
   MapEvents,
@@ -15,70 +15,9 @@ import { useStepper } from '@vueuse/core';
 import { type RecordingPartUploadParams } from '@/api/recordings';
 import { divIcon, type Icon } from 'leaflet';
 import { uploadQueueStore } from '@/state/UploadStore';
-import SegmentedProgress from '@/components/SegmentedProgress.vue';
+import { uploadStore, soundAccept } from '@/state/UploadDraftStore';
 
 import '@vuepic/vue-datepicker/dist/main.css';
-
-export const soundAccept = ['audio/*', 'application/ogg', 'application/vorbis'];
-
-interface LatLng {
-  lat: number;
-  lng: number;
-}
-
-interface RecordingPart {
-  file: File;
-  location: LatLng | null;
-}
-
-export const uploadStore = reactive({
-  parts: null as RecordingPart[] | null,
-  photos: null as File[] | null,
-  dialects: [] as string[],
-  note: '' as string | null,
-  title: '' as string,
-  device: '' as string | null,
-  birdCount: 1,
-  dateTime: new Date().toISOString(),
-  notificationsOptIn: false,
-  confirmUpload: false,
-
-  setRecordings(recordings: File[]) {
-    this.parts ??= [];
-    console.log(recordings);
-
-    this.parts.push(
-      ...(recordings.map((recording) => ({
-        file: recording,
-        location: null
-      })) as RecordingPart[])
-    );
-  },
-
-  removePart(recording: File) {
-    if (this.parts) {
-      this.parts = this.parts.filter((part) => part.file !== recording);
-    }
-  },
-
-  removePartByIndex(index: number) {
-    if (this.parts) {
-      this.parts.splice(index, 1);
-    }
-  },
-
-  reset() {
-    this.parts = null;
-    this.photos = null;
-    this.dialects = [];
-    this.note = null;
-    this.title = '';
-    this.device = null;
-    this.birdCount = 1;
-    this.dateTime = new Date().toISOString();
-    this.notificationsOptIn = false;
-  }
-});
 </script>
 
 <script setup vapor lang="ts">
@@ -88,19 +27,11 @@ import TextualCoords from '@/components/map/TextualCoords.vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import type { TranslationIdentifier } from '@/constants/Translations';
 import RecordingsMap from '@/views/map/RecordingsMap.vue';
-import { useCssVar, useMediaQuery } from '@vueuse/core';
-
 const error = ref<string | null>(null);
 const isSubmitting = ref(false);
 const uploadSuccess = ref(false);
 
 const photoAccept = 'image/*';
-
-// Check if we're on mobile
-const desktopBp = useCssVar('--breakpoint-desktop', document.documentElement);
-const isDesktop = useMediaQuery(
-  computed(() => `(min-width: ${desktopBp.value})`)
-);
 
 type StepIdentifier = 'file' | 'photos' | 'location' | 'info' | 'submit';
 
@@ -196,7 +127,10 @@ const stepper = useStepper<Record<StepIdentifier, Step>>({
 
   submit: {
     title: 'upload.steps.submit',
-    isValid: () => !isSubmitting.value && !uploadSuccess.value // Final step, always valid to view
+    isValid: () => true, // Final step, always valid to view
+    before: () => {
+      submit();
+    }
   }
 });
 
@@ -222,8 +156,9 @@ const removeMarkers = () => {
   }
 };
 
-const submit = () => {
+function submit() {
   if (isSubmitting.value) return;
+  if (uploadSuccess.value) return;
 
   isSubmitting.value = true;
   uploadSuccess.value = false;
@@ -258,7 +193,8 @@ const submit = () => {
     recording,
     recordingParts,
     uploadStore.photos ?? undefined,
-    accountStore.token!
+    accountStore.token!,
+    [...uploadStore.draftFilteredParts]
   );
 
   // Reset form and show success
@@ -268,13 +204,12 @@ const submit = () => {
   // Reset store and UI
   uploadStore.reset();
   removeMarkers();
-  stepper.goTo('file');
 
   // Redirect to map after a short delay
   // setTimeout(() => {
   //   router.push('/');
   // }, 2000);
-};
+}
 
 onUnmounted(removeMarkers);
 onUnmounted(() => {
@@ -283,11 +218,7 @@ onUnmounted(() => {
 
 function submitOrNext() {
   if (stepper.current.value.isValid()) {
-    if (stepper.next.value === 'submit') {
-      submit();
-    } else {
-      stepper.goToNext();
-    }
+    stepper.goToNext();
   }
 }
 
@@ -370,7 +301,7 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
 </script>
 
 <template>
-  <div class="w-fit">
+  <div class="w-full max-w-2xl">
     <template v-if="!accountStore.user">
       <h1 class="text-xl sm:text-2xl">
         <TranslatedText identifier="upload.title" />
@@ -508,22 +439,9 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
               </li>
             </ul>
 
-            <!-- Embedded Map for Mobile -->
-            <div
-              v-if="!isDesktop"
-              class="map-container"
-            >
-              <RecordingsMap />
-            </div>
-
-            <!-- Desktop instruction -->
-            <div
-              v-else
-              class="info-card bg-gray-50 border-gray-300"
-            >
-              <p class="text-xs sm:text-sm text-gray-700">
-                💡 Klikněte na mapu na pozadí pro výběr lokace
-              </p>
+            <!-- Embedded Map -->
+            <div class="map-container">
+              <RecordingsMap :selection-mode="true" />
             </div>
           </div>
         </template>
@@ -570,6 +488,21 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
                   class="details-input details-textarea"
                   placeholder=""
                 ></textarea>
+              </div>
+
+              <div class="details-field details-field--full">
+                <label
+                  for="recordingDevice"
+                  class="details-label"
+                >
+                  Nahrávací zařízení
+                </label>
+                <input
+                  id="recordingDevice"
+                  v-model="uploadStore.device"
+                  class="details-input"
+                  placeholder=""
+                />
               </div>
 
               <div class="details-field">
@@ -637,6 +570,12 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
                     </span>
                   </div>
                 </div>
+              </div>
+
+              <div class="details-field details-field--full">
+                <RouterLink to="/mapa/nahravka/-1/upravit-dialekt?draft=1" class="button-secondary">
+                  Navrhnout dialekty
+                </RouterLink>
               </div>
 
               <div class="details-field details-field--full">
@@ -757,7 +696,7 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
             class="flex flex-col gap-6 items-center justify-center py-12 px-4"
           >
             <template v-if="uploadSuccess">
-              <div class="text-7xl sm:text-8xl">✅</div>
+              <div class="text-2xl sm:text-4xl">✅</div>
               <div class="text-center">
                 <p class="text-xl sm:text-2xl font-bold text-green-600 mb-3">
                   <TranslatedText identifier="upload.success.queued" />
@@ -768,6 +707,19 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
                 <p class="text-sm sm:text-base text-gray-600">
                   <TranslatedText identifier="upload.success.track_status" />
                 </p>
+
+                <div class="mt-8">
+                  <button
+                    type="button"
+                    class="primary px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95"
+                    @click="
+                      uploadSuccess = false;
+                      stepper.goTo('file');
+                    "
+                  >
+                    <TranslatedText identifier="upload.upload_another" />
+                  </button>
+                </div>
               </div>
             </template>
             <template v-else>
@@ -789,16 +741,16 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
             class="flex items-center shrink-0"
           >
             <button
-              :disabled="!allStepsBeforeAreValid(i) && stepper.isBefore(id)"
+              :disabled="uploadSuccess || (!allStepsBeforeAreValid(i) && stepper.isBefore(id))"
               class="step-indicator touch-manipulation"
               :class="{
                 'step-active': stepper.isCurrent(id),
-                'step-completed': stepper.isAfter(id) && step.isValid(),
-                'step-incomplete': stepper.isAfter(id) && !step.isValid(),
+                'step-completed': stepper.isAfter(id) && (step.isValid() || uploadSuccess),
+                'step-incomplete': stepper.isAfter(id) && !step.isValid() && !uploadSuccess,
                 'step-pending':
-                  stepper.isBefore(id) && allStepsBeforeAreValid(i),
+                  !uploadSuccess && stepper.isBefore(id) && allStepsBeforeAreValid(i),
                 'step-disabled':
-                  !allStepsBeforeAreValid(i) && stepper.isBefore(id)
+                  uploadSuccess || (!allStepsBeforeAreValid(i) && stepper.isBefore(id))
               }"
               :title="step.title"
               @click="stepper.goTo(id)"
@@ -810,8 +762,8 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
               class="step-connector"
               :class="{
                 'step-connector-completed':
-                  stepper.isAfter(id) && step.isValid(),
-                'step-connector-active': stepper.isCurrent(id)
+                  (stepper.isAfter(id) && step.isValid()) || uploadSuccess,
+                'step-connector-active': stepper.isCurrent(id) && !uploadSuccess
               }"
             />
           </div>
