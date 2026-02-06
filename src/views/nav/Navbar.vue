@@ -112,9 +112,11 @@ const changeLanguage = (lang: keyof typeof translations) => {
               </RouterLink>
             </li>
 
-            <RouterLink to="/aplikace" class="button-primary py-3 px-4 max-sm:text-sm">
-              <TranslatedText identifier="buttons.app" />
-            </RouterLink>
+            <li>
+              <RouterLink to="/aplikace" class="button-primary py-2 px-4">
+                <TranslatedText identifier="buttons.app" />
+              </RouterLink>
+            </li>
           </ul>
         </div>
       </div>

@@ -80,6 +80,10 @@ import { divIcon, type Icon } from 'leaflet';
 
 import L from 'leaflet';
 
+const props = defineProps<{
+  selectionMode?: boolean;
+}>();
+
 type TimedFilteredPart = FilteredPartModel & {
   startMs: number;
   endMs: number;
@@ -433,8 +437,8 @@ const allMarkers = computed<Marker[]>(() => [
     v-model:bounds="viewBounds"
     v-model:zoom="zoom"
     :scale-bar="MapStore.scale"
-    :polygons="polygons"
-    :markers="allMarkers"
+    :polygons="!props.selectionMode ? polygons : []"
+    :markers="!props.selectionMode ? allMarkers : Object.values(MapStore.markers)"
     :allowed-clustering="allowedClustering"
     :mode="MapStore.aerial ? 'aerial' : 'outdoor'"
     :position="currentCenter"

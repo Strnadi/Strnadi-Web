@@ -3,6 +3,7 @@ import type { User } from '@/api/account';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import { computed } from 'vue';
 import ProfilePhoto from '@/components/ProfilePhoto.vue';
+import ProfileIcon from '@/icons/interface/icon-profile.svg';
 import { accountStore } from '@/state/AccountStore';
 
 const props = defineProps<{
@@ -62,8 +63,8 @@ const locationLabel = computed(() => {
     <div
       class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-lime-100"
     >
-      <!-- <ProfileIcon v-if="!user.profilePicture" class="h-12 w-12 text-lime-600" /> -->
-      <ProfilePhoto :user-id="props.user.id" />
+      <ProfileIcon class="h-12 w-12 text-gray-600" />
+      <!-- <ProfilePhoto :user-id="props.user.id" /> -->
     </div>
     <div class="flex-1 space-y-2">
       <div class="flex flex-wrap items-center gap-3">

@@ -2,8 +2,13 @@ import { reactive } from 'vue';
 import {
   type RecordingUploadReq,
   type RecordingPartUploadParams,
-  postRecording
+  postRecording,
+  postFilteredPart,
+  updateDetectedDialect,
+  postDetectedDialect,
+  getFilteredRecording
 } from '@/api/recordings';
+import type { DraftFilteredPart } from '@/state/UploadDraftStore';
 
 export interface UploadTask {
   id: string;
@@ -15,6 +20,7 @@ export interface UploadTask {
   progress: number; // 0-100
   currentStep: string;
   error?: string;
+  draftFilteredParts?: DraftFilteredPart[];
 }
 
 export const uploadQueueStore = reactive({
@@ -25,7 +31,8 @@ export const uploadQueueStore = reactive({
     recording: RecordingUploadReq,
     parts: RecordingPartUploadParams[],
     photos: File[] | undefined,
-    token: string
+    token: string,
+    draftFilteredParts?: DraftFilteredPart[]
   ): string {
     const taskId = `upload-${Date.now()}-${Math.random()}`;
 
@@ -35,6 +42,7 @@ export const uploadQueueStore = reactive({
       parts,
       photos,
       token,
+      draftFilteredParts,
       status: 'queued',
       progress: 0,
       currentStep: 'V pořadí'
@@ -136,7 +144,67 @@ export const uploadQueueStore = reactive({
       })
     );
 
-    await postRecording(task.token, task.recording, modifiedParts, task.photos);
+    const recordingId = await postRecording(
+      task.token,
+      task.recording,
+      modifiedParts,
+      task.photos
+    );
+
+    if (task.draftFilteredParts?.length) {
+      await this.uploadDraftDialects(task, recordingId);
+    }
+  },
+
+  async uploadDraftDialects(task: UploadTask, recordingId: number) {
+    for (const draft of task.draftFilteredParts ?? []) {
+      if (!draft.dialectCode) continue;
+      await postFilteredPart(task.token, {
+        recordingId,
+        startDate: draft.startDate,
+        endDate: draft.endDate,
+        dialectCode: draft.dialectCode
+      });
+    }
+
+    const serverParts = await getFilteredRecording(recordingId);
+
+    const findMatchingPart = (draft: DraftFilteredPart) => {
+      const targetStart = Date.parse(draft.startDate);
+      const targetEnd = Date.parse(draft.endDate);
+      return serverParts.find((part) => {
+        const startDiff = Math.abs(Date.parse(part.startDate) - targetStart);
+        const endDiff = Math.abs(Date.parse(part.endDate) - targetEnd);
+        return startDiff < 1000 && endDiff < 1000;
+      });
+    };
+
+    for (const draft of task.draftFilteredParts ?? []) {
+      const serverPart = findMatchingPart(draft);
+      if (!serverPart) continue;
+
+      const draftDetections = draft.detectedDialects ?? [];
+      const existingDetections = serverPart.detectedDialects ?? [];
+      const source = draftDetections[0];
+      const target = existingDetections[0];
+
+      if (source && target) {
+        await updateDetectedDialect(task.token, {
+          id: target.id,
+          userGuessDialectId: source.userGuessDialectId ?? target.userGuessDialectId ?? null,
+          predictedDialectId: source.predictedDialectId ?? target.predictedDialectId ?? null,
+          confirmedDialectId:
+            source.confirmedDialectId ?? target.confirmedDialectId ?? null
+        });
+      } else if (source) {
+        await postDetectedDialect(task.token, {
+          filteredPartId: serverPart.id,
+          userGuessDialectId: source.userGuessDialectId ?? null,
+          predictedDialectId: source.predictedDialectId ?? null,
+          confirmedDialectId: source.confirmedDialectId ?? null
+        });
+      }
+    }
   },
 
   removeTask(taskId: string) {
