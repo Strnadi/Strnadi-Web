@@ -127,7 +127,10 @@ const stepper = useStepper<Record<StepIdentifier, Step>>({
 
   submit: {
     title: 'upload.steps.submit',
-    isValid: () => !isSubmitting.value && !uploadSuccess.value // Final step, always valid to view
+    isValid: () => true, // Final step, always valid to view
+    before: () => {
+      submit();
+    }
   }
 });
 
@@ -153,8 +156,9 @@ const removeMarkers = () => {
   }
 };
 
-const submit = () => {
+function submit() {
   if (isSubmitting.value) return;
+  if (uploadSuccess.value) return;
 
   isSubmitting.value = true;
   uploadSuccess.value = false;
@@ -200,13 +204,12 @@ const submit = () => {
   // Reset store and UI
   uploadStore.reset();
   removeMarkers();
-  stepper.goTo('file');
 
   // Redirect to map after a short delay
   // setTimeout(() => {
   //   router.push('/');
   // }, 2000);
-};
+}
 
 onUnmounted(removeMarkers);
 onUnmounted(() => {
@@ -215,11 +218,7 @@ onUnmounted(() => {
 
 function submitOrNext() {
   if (stepper.current.value.isValid()) {
-    if (stepper.next.value === 'submit') {
-      submit();
-    } else {
-      stepper.goToNext();
-    }
+    stepper.goToNext();
   }
 }
 
@@ -697,7 +696,7 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
             class="flex flex-col gap-6 items-center justify-center py-12 px-4"
           >
             <template v-if="uploadSuccess">
-              <div class="text-7xl sm:text-8xl">✅</div>
+              <div class="text-2xl sm:text-4xl">✅</div>
               <div class="text-center">
                 <p class="text-xl sm:text-2xl font-bold text-green-600 mb-3">
                   <TranslatedText identifier="upload.success.queued" />
@@ -708,6 +707,19 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
                 <p class="text-sm sm:text-base text-gray-600">
                   <TranslatedText identifier="upload.success.track_status" />
                 </p>
+
+                <div class="mt-8">
+                  <button
+                    type="button"
+                    class="primary px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95"
+                    @click="
+                      uploadSuccess = false;
+                      stepper.goTo('file');
+                    "
+                  >
+                    <TranslatedText identifier="upload.upload_another" />
+                  </button>
+                </div>
               </div>
             </template>
             <template v-else>
@@ -729,16 +741,16 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
             class="flex items-center shrink-0"
           >
             <button
-              :disabled="!allStepsBeforeAreValid(i) && stepper.isBefore(id)"
+              :disabled="uploadSuccess || (!allStepsBeforeAreValid(i) && stepper.isBefore(id))"
               class="step-indicator touch-manipulation"
               :class="{
                 'step-active': stepper.isCurrent(id),
-                'step-completed': stepper.isAfter(id) && step.isValid(),
-                'step-incomplete': stepper.isAfter(id) && !step.isValid(),
+                'step-completed': stepper.isAfter(id) && (step.isValid() || uploadSuccess),
+                'step-incomplete': stepper.isAfter(id) && !step.isValid() && !uploadSuccess,
                 'step-pending':
-                  stepper.isBefore(id) && allStepsBeforeAreValid(i),
+                  !uploadSuccess && stepper.isBefore(id) && allStepsBeforeAreValid(i),
                 'step-disabled':
-                  !allStepsBeforeAreValid(i) && stepper.isBefore(id)
+                  uploadSuccess || (!allStepsBeforeAreValid(i) && stepper.isBefore(id))
               }"
               :title="step.title"
               @click="stepper.goTo(id)"
@@ -750,8 +762,8 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
               class="step-connector"
               :class="{
                 'step-connector-completed':
-                  stepper.isAfter(id) && step.isValid(),
-                'step-connector-active': stepper.isCurrent(id)
+                  (stepper.isAfter(id) && step.isValid()) || uploadSuccess,
+                'step-connector-active': stepper.isCurrent(id) && !uploadSuccess
               }"
             />
           </div>

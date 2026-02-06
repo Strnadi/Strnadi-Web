@@ -3,17 +3,18 @@ meta:
   layout: desktop/small-popup
 </route>
 
-<script setup vapor lang="ts">
+<script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRouteParams } from '@vueuse/router';
 import { deleteRecording, getRecording } from '@/api/recordings';
 import { accountStore } from '@/state/AccountStore';
 import type { Numeric } from '@/types/basic';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 
 const router = useRouter();
+const queryClient = useQueryClient();
 const recordingId = useRouteParams<Numeric>('id');
 
 const {
@@ -26,10 +27,11 @@ const {
 });
 
 const isDeleting = ref(false);
-async function confirmDelete() {
+const confirmDelete = () => {
   try {
     isDeleting.value = true;
-    await deleteRecording(accountStore.token!, recordingId.value);
+    deleteRecording(accountStore.token!, recordingId.value);
+    queryClient.invalidateQueries({ queryKey: ['recordings'] });
     // alert(t('recordings.messages.deleted'));
     router.push('/mapa');
   } catch (e) {
