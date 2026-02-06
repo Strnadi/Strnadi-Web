@@ -730,15 +730,14 @@ const saveSegmentChanges = async () => {
       // if (parentId == null) {
       //   throw new Error('Chybí parentId úseku.');
       // }
-      const payload: FilteredPartPatchPayload = {
+      await patchFilteredPart(token, meta.filteredPart!.id, {
         recordingId: recording.value.id,
         parentId,
         startDate,
         endDate,
         state: meta.state,
-        representantFlag: meta.representant
-      };
-      await patchFilteredPart(token, meta.filteredPart!.id, payload);
+        representant: meta.representant
+      });
     }
     const creationTargets: { startDate: string; endDate: string; dialectId: number | null }[] = [];
     for (const meta of creations) {

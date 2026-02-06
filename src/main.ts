@@ -23,6 +23,8 @@ import { VueQueryPlugin } from '@tanstack/vue-query';
 import { routes as generatedRoutes } from 'vue-router/auto-routes';
 import { setupLayouts } from 'virtual:meta-layouts';
 // import { useTimeoutFn, useEventListener } from '@vueuse/core';
+import { EditorView } from '@codemirror/view';
+import { config } from 'md-editor-v3';
 
 // // @ts-expect-error No types available.
 // import VueVirtualScroller from 'vue-virtual-scroller';
@@ -375,6 +377,18 @@ axios.interceptors.response.use(
 //     );
 //   }
 // };
+
+config({
+  codeMirrorExtensions(extensions) {
+    return [
+      ...extensions,
+      {
+        type: 'lineWrapping',
+        extension: EditorView.lineWrapping
+      }
+    ];
+  }
+})
 
 app.use(router);
 app.use(firebasePlugin);

@@ -54,7 +54,7 @@ const scrollElement = ref<HTMLElement | null>(null);
   </Head>
 
   <div class="flex flex-col max-w-full" ref="scrollElement">
-    <MdPreview :id="slug" :modelValue="markdown" class="wrap-normal" />
+    <MdPreview :id="slug" :modelValue="markdown" />
     <!-- <MdCatalog :editorId="slug" :scroll-element="scrollElement" /> -->
   </div>
 
@@ -62,7 +62,16 @@ const scrollElement = ref<HTMLElement | null>(null);
 </template>
 
 <style scoped>
-.md-editor {
+:deep(.md-preview),
+:deep(.md-preview *),
+:deep(.md-editor),
+:deep(.md-editor *),
+:deep(.md-editor-preview),
+:deep(.md-editor-preview *) {
   font-family: 'Bricolage Grotesque', Arial, Helvetica, sans-serif;
+  white-space: normal !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  text-align: justify;
 }
 </style>

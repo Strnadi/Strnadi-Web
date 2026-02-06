@@ -227,7 +227,7 @@ export const postFilteredPart = async (
 export const patchFilteredPart = async (
   token: string,
   id: Numeric,
-  patchedFilteredPart: Omit<FilteredPartModel, 'id' | 'detectedDialects'>
+  patchedFilteredPart: Omit<FilteredPartModel, 'id' | 'detectedDialects' | 'representantFlag'> & { representant: boolean}
 ): Promise<void> =>
   authorizedPatch(`/recordings/filtered/${id}`, token, patchedFilteredPart);
 
