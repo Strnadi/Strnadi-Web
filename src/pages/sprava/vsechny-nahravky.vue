@@ -83,7 +83,7 @@ const {
   isLoading,
   isError
 } = useQuery<RecordingModel[]>({
-  queryKey: ['all-recordings'],
+  queryKey: ['recordings'],
   queryFn: async () => getRecordings({ parts: true })
 });
 

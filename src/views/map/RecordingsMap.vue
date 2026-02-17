@@ -219,12 +219,12 @@ const allowedClustering = computed<[Marker, Marker][]>(() => {
 });
 
 const { data: recordings } = useQuery({
-  queryKey: ['all-recordings'],
+  queryKey: ['recordings'],
   queryFn: () => getRecordings({ parts: true })
 });
 
 const { data: filteredRecordings } = useQuery({
-  queryKey: ['filtered-parts'],
+  queryKey: ['filtered-recordings'],
   queryFn: () => getFilteredRecordings()
 });
 

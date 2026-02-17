@@ -14,7 +14,6 @@ import {
 import { createHead } from '@unhead/vue/client';
 import {
   createRouter,
-  createWebHistory,
   type RouteLocationNormalized,
   type RouteLocationRaw,
   type RouteRecordRaw
@@ -25,6 +24,7 @@ import { setupLayouts } from 'virtual:meta-layouts';
 // import { useTimeoutFn, useEventListener } from '@vueuse/core';
 import { EditorView } from '@codemirror/view';
 import { config } from 'md-editor-v3';
+import { createTreeHistory } from '@/plugins/router/tree-history';
 
 // // @ts-expect-error No types available.
 // import VueVirtualScroller from 'vue-virtual-scroller';
@@ -267,7 +267,7 @@ const head = createHead();
 app.use(head);
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createTreeHistory(),
   routes: routes,
 
   scrollBehavior(_to, _from, _savedPosition) {

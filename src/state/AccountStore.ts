@@ -52,6 +52,9 @@ persist(accountStore, {
         store.logout();
         store.login(newJWT);
       }
+    } else {
+      // No valid token found, ensure logged out state
+      store.logout();
     }
   }
 });

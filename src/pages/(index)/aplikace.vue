@@ -53,12 +53,6 @@ const location = window.location.href;
           :size="200"
           class="w-fit"
           background="transparent"
-          :image-settings="{
-            src: `${env.VITE_PUBLIC_URL}/WIP.png`,
-            width: 48,
-            height: 48,
-            excavate: true
-          }"
         />
 
         <span class="font-medium text-justify [text-align-last:center] text-sm">
