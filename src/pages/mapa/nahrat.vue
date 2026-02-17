@@ -81,8 +81,6 @@ const handleMapClick = (event: MapClickEvent) => {
       lng: event.event.latlng.lng
     };
   }
-  currentPartIndex.value =
-    (currentPartIndex.value + 1) % (uploadStore.parts?.length ?? 0);
 
   // Cancel further event processing.
   return false;
@@ -252,6 +250,25 @@ function allStepsBeforeAreValid(index: number): boolean {
 
 const currentPartIndex = ref(0);
 
+const selectPartForLocation = (index: number) => {
+  currentPartIndex.value = index;
+};
+
+watch(
+  () => uploadStore.parts?.length ?? 0,
+  (partsCount) => {
+    if (partsCount <= 0) {
+      currentPartIndex.value = 0;
+      return;
+    }
+
+    if (currentPartIndex.value >= partsCount) {
+      currentPartIndex.value = partsCount - 1;
+    }
+  },
+  { immediate: true }
+);
+
 const dateInputValue = computed({
   get() {
     if (!uploadStore.dateTime) return '';
@@ -397,12 +414,12 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
         <!-- Location Stage -->
         <template v-if="stepper.isCurrent('location')">
           <div class="flex flex-col gap-4">
-            <div class="info-card">
+            <!-- <div class="info-card">
               <div class="text-2xl mb-2">📍</div>
               <p class="text-sm sm:text-base">
                 <TranslatedText identifier="upload.map_instructions" />
               </p>
-            </div>
+            </div> -->
 
             <ul class="space-y-3">
               <li
@@ -436,12 +453,27 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
                     </template>
                   </p>
                 </div>
+                <button
+                  type="button"
+                  class="p-2"
+                  :class="{
+                    'primary': index == currentPartIndex,
+                    'secondary': index != currentPartIndex
+                  }"
+                  @click="selectPartForLocation(index)"
+                >
+                  {{ index == currentPartIndex ? 'Vybráno' : 'Vybrat' }}
+                </button>
               </li>
             </ul>
 
             <!-- Embedded Map -->
             <div class="map-container">
               <RecordingsMap :selection-mode="true" />
+            </div>
+
+            <div v-if="uploadStore.parts?.map((p) => p.location).some((l) => l === null)" class="text-sm sm:text-base text-red-500">
+              <TranslatedText identifier="upload.location_not_set" />
             </div>
           </div>
         </template>
@@ -902,6 +934,20 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
   @apply border-2 border-white shadow-md;
 }
 
+.location-select-button {
+  @apply shrink-0 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg;
+  @apply border-2 border-gray-300 text-gray-700 bg-white;
+  @apply transition-all duration-200;
+}
+
+.location-select-button:hover {
+  @apply border-blue-400 text-blue-700;
+}
+
+.location-select-button-active {
+  @apply border-blue-500 bg-blue-600 text-white;
+}
+
 .form-section {
   @apply w-full;
 }
@@ -939,8 +985,8 @@ const isInfoStepActive = computed(() => stepper.isCurrent('info'));
 .map-container {
   @apply flex w-full rounded-lg overflow-hidden border-2 border-gray-300 shadow-lg;
   @apply relative;
-  height: 400px;
-  min-height: 400px;
+  height: 200px;
+  min-height: 200px;
 }
 
 @media (max-height: 700px) {

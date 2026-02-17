@@ -186,8 +186,13 @@ export default defineConfig({
     cssTarget: 'es2022',
     rollupOptions: {
       output: {
-        advancedChunks: {
-          groups: [{ name: 'vendor', test: /node_modules/ }]
+        codeSplitting: {
+          groups: [
+            {
+              name: 'vendor',
+              test: /node_modules/,
+            },
+          ],
         }
       }
     },
