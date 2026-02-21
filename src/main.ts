@@ -14,6 +14,7 @@ import {
 import { createHead } from '@unhead/vue/client';
 import {
   createRouter,
+  createWebHistory,
   type RouteLocationNormalized,
   type RouteLocationRaw,
   type RouteRecordRaw
@@ -267,7 +268,8 @@ const head = createHead();
 app.use(head);
 
 const router = createRouter({
-  history: createTreeHistory(),
+  // history: createTreeHistory(),
+  history: createWebHistory(),
   routes: routes,
 
   scrollBehavior(_to, _from, _savedPosition) {
