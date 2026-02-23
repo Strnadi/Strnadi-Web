@@ -684,7 +684,9 @@ export const translations = {
       reset_password: {
         title: 'Zapomenuté heslo',
         success: 'E-mail úspěšně odeslán',
-        reset_title: 'Reset hesla'
+        reset_title: 'Reset hesla',
+        reset_success: 'Heslo bylo úspěšně změněno.',
+        reset_failure: 'Heslo se nepodařilo změnit. Zkuste to prosím znovu.'
       }
     },
 
@@ -1377,7 +1379,9 @@ export const translations = {
       reset_password: {
         title: 'Forgotten password',
         success: 'E-mail successfully sent',
-        reset_title: 'Reset password'
+        reset_title: 'Reset password',
+        reset_success: 'Your password has been successfully changed.',
+        reset_failure: 'We could not change your password. Please try again.'
       }
     },
 
@@ -2069,7 +2073,10 @@ export const translations = {
       reset_password: {
         title: 'Passwort vergessen',
         success: 'E-Mail erfolgreich gesendet',
-        reset_title: 'Passwort zurücksetzen'
+        reset_title: 'Passwort zurücksetzen',
+        reset_success: 'Ihr Passwort wurde erfolgreich geändert.',
+        reset_failure:
+          'Ihr Passwort konnte leider nicht geändert werden. Bitte versuchen Sie es erneut.'
       }
     },
 
