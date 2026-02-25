@@ -68,10 +68,10 @@ const searchText = ref('');
           <!-- TODO -->
           <button
             class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 w-16 h-16 text-xs text-justify"
-            @click="MapStore.grouping = !MapStore.grouping"
+            @click="MapStore.onlyDialects = !MapStore.onlyDialects"
             :class="{
-              'bg-gray-200': MapStore.grouping,
-              'bg-white': !MapStore.grouping
+              'bg-gray-200': MapStore.onlyDialects,
+              'bg-white': !MapStore.onlyDialects
             }"
           >
             Nedok. zpěv.
