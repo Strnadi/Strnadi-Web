@@ -34,6 +34,7 @@ export const MapStore = reactive<{
   aerial: boolean;
   filter: MapFilter;
   grouping: boolean;
+  onlyDialects: boolean;
   unmove(): void;
   move(newCenter: [number, number], newZoom?: number, override?: boolean): void;
 }>({
@@ -41,6 +42,7 @@ export const MapStore = reactive<{
   aerial: false,
   grouping: false,
   filter: 'new',
+  onlyDialects: false,
   markers: {},
 
   move(newCenter: [number, number], newZoom?: number, _override = false) {
@@ -354,6 +356,11 @@ const markers = computed<Marker[]>(() => {
 
     const { dialects, fromModel, fromUser } =
       collectDialectMeta(relevantFiltered);
+
+    if (MapStore.onlyDialects) {
+      if (dialects.every(d => d === 'None' || d === 'Unfinished')) continue;
+    }
+
     const colors = dialects.map((code) => dialectColors[code] ?? '#000000');
 
     const icon = divIcon({
