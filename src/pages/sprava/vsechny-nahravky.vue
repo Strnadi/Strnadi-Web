@@ -95,6 +95,26 @@ const { data: filteredRecordings } = useQuery({
 const selectedItems = ref<{ recordingId: number; partId: number }[]>([]);
 const isDownloading = ref(false);
 
+const filterOutConfirmedDialects = ref(false);
+
+function isRecordingConfirmed(recordingId: number): boolean {
+  const parts = filteredRecordings.value?.filter(
+    (fr) => fr.recordingId === recordingId
+  );
+  if (!parts?.length) return false;
+  return parts.some((fr) =>
+    fr.detectedDialects?.some(
+      (d) => d.confirmedDialect != null || d.confirmedDialectId != null
+    )
+  );
+}
+
+const filteredRecordingsList = computed(() => {
+  const list = recordings.value ?? [];
+  if (!filterOutConfirmedDialects.value) return list;
+  return list.filter((r) => !isRecordingConfirmed(r.id));
+});
+
 const hasSelectedItems = computed(() => selectedItems.value.length > 0);
 
 function togglePartSelection(recordingId: number, partId: number) {
@@ -276,6 +296,22 @@ async function downloadSelectedRecordings() {
       }}
     </p>
 
+    <fieldset class="flex flex-col gap-2 my-4 p-4 rounded-lg border border-gray-200 bg-gray-50">
+      <legend class="font-medium px-2">
+        <TranslatedText identifier="admin.recordings.filters_label" />
+      </legend>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input
+          v-model="filterOutConfirmedDialects"
+          type="checkbox"
+          class="form-checkbox h-4 w-4 text-blue-600"
+        />
+        <span>
+          <TranslatedText identifier="admin.recordings.filter_out_confirmed_dialects" />
+        </span>
+      </label>
+    </fieldset>
+
     <button
       class="primary p-2 my-4"
       :disabled="!hasSelectedItems || isDownloading"
@@ -290,9 +326,14 @@ async function downloadSelectedRecordings() {
       />
     </button>
 
+    <p v-if="filterOutConfirmedDialects" class="text-sm text-gray-600 mb-2">
+      <TranslatedText identifier="admin.recordings.filtered_count" />
+      {{ filteredRecordingsList.length }}
+    </p>
+
     <ul class="flex flex-col-reverse flex-wrap gap-x-3 gap-y-3">
       <li
-        v-for="recording in recordings"
+        v-for="recording in filteredRecordingsList"
         :key="recording.id"
         class="button-secondary flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-4"
       >
