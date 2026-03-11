@@ -58,6 +58,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       devOptions: {
         enabled: true
       },
@@ -80,24 +81,13 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,ico,png,svg,html}'], // include HTML
+        globPatterns: ['**/*.{js,css,ico,png,svg,html}'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
+        navigateFallback: 'index.html',
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         runtimeCaching: [
-          {
-            urlPattern: ({ request }) => request.destination === 'document',
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: `strnadi-html-cache-${BUILD_VERSION}`,
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 24 * 60 * 60 * 7 // 1 week
-              },
-              networkTimeoutSeconds: 0.5
-            }
-          },
           {
             urlPattern:
               /^https:\/\/(dev|new|old)?api.strnadi.cz\/recordings\/part\/(\d+)\/(\d+)\/sound$/,
@@ -105,7 +95,7 @@ export default defineConfig({
             options: {
               cacheName: `strnadi-api-cache-sounds`,
               expiration: {
-                maxEntries: 100000,
+                maxEntries: 1000,
                 maxAgeSeconds: 24 * 60 * 60 * 30 // 30 days
               }
             }
@@ -116,7 +106,7 @@ export default defineConfig({
             options: {
               cacheName: `strnadi-api-cache-maps`,
               expiration: {
-                maxEntries: 100000,
+                maxEntries: 1000,
                 maxAgeSeconds: 24 * 60 * 60 * 30 // 30 days
               }
             }
@@ -127,10 +117,10 @@ export default defineConfig({
             options: {
               cacheName: `strnadi-api-cache-${BUILD_VERSION}`,
               expiration: {
-                maxEntries: 100000,
+                maxEntries: 100,
                 maxAgeSeconds: 24 * 60 * 60 * 7 // 1 week
               },
-              networkTimeoutSeconds: 3
+              networkTimeoutSeconds: 5
             }
           }
         ]
