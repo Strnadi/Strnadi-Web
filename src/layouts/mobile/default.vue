@@ -282,7 +282,9 @@ watch(showCardShell, (isCardVisible) => {
 
 .mobile-card-enter-active,
 .mobile-card-leave-active {
-  @apply transition-all duration-400 cubic-bezier(0.32, 0.72, 0, 1);
+  @apply transition-all;
+  transition-duration: 400ms;
+  transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .mobile-card-enter-from,
