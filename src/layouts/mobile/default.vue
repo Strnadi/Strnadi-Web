@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onUnmounted } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import RecordingsMap from '@/views/map/RecordingsMap.vue';
 import MobileNav from '@/views/nav/MobileNav.vue';
