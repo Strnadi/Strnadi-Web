@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import RecordingsMap from '@/views/map/RecordingsMap.vue';
 import MobileNav from '@/views/nav/MobileNav.vue';
@@ -12,8 +12,11 @@ const dragOffset = ref(0);
 const isDragging = ref(false);
 const pendingDrag = ref(false);
 const dragStartY = ref(0);
+const lastY = ref(0);
+const lastTime = ref(0);
+const velocity = ref(0);
+const startedOnGrabber = ref(false);
 const activeInteractionId = ref<number | null>(null);
-const interactionSource = ref<'pointer' | 'touch' | null>(null);
 const cardScrollRef = ref<HTMLElement | null>(null);
 const cardRef = ref<HTMLElement | null>(null);
 
@@ -26,16 +29,22 @@ const shouldSkipDrag = (target: EventTarget | null) => {
   );
 };
 
+const isGrabber = (target: EventTarget | null) => {
+  if (!target) return false;
+  return (target as HTMLElement).classList.contains('mobile-shell__grabber');
+};
+
 const cardStyle = computed(() => ({
   transform: dragOffset.value ? `translateY(${dragOffset.value}px)` : undefined,
-  transition: isDragging.value ? 'none' : undefined
+  transition: isDragging.value
+    ? 'none'
+    : 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)'
 }));
 
 const releasePointerCapture = () => {
   const cardEl = cardRef.value;
   if (
     cardEl &&
-    interactionSource.value === 'pointer' &&
     activeInteractionId.value != null &&
     cardEl.hasPointerCapture(activeInteractionId.value)
   ) {
@@ -44,11 +53,11 @@ const releasePointerCapture = () => {
 };
 
 const resetDragState = () => {
-  dragOffset.value = 0;
   isDragging.value = false;
   pendingDrag.value = false;
+  startedOnGrabber.value = false;
   activeInteractionId.value = null;
-  interactionSource.value = null;
+  velocity.value = 0;
 };
 
 const closeCard = () => {
@@ -59,25 +68,35 @@ const closeCard = () => {
 
 const canDragFromScroll = () => (cardScrollRef.value?.scrollTop ?? 0) <= 0;
 
-const beginPendingDrag = (startY: number) => {
+const beginPendingDrag = (startY: number, target: EventTarget | null) => {
   pendingDrag.value = true;
   dragStartY.value = startY;
+  lastY.value = startY;
+  lastTime.value = performance.now();
   dragOffset.value = 0;
+  startedOnGrabber.value = isGrabber(target);
 };
 
 const maybeStartDrag = (currentY: number) => {
-  if (!pendingDrag.value) return false;
-  if (!canDragFromScroll()) {
+  if (!pendingDrag.value || activeInteractionId.value === null) return false;
+
+  const delta = currentY - dragStartY.value;
+
+  if (!startedOnGrabber.value && !canDragFromScroll()) {
     pendingDrag.value = false;
     return false;
   }
-  const delta = currentY - dragStartY.value;
+
   if (delta > 8) {
     isDragging.value = true;
     pendingDrag.value = false;
+    // Adjust dragStartY so the offset starts smoothly at 0
+    dragStartY.value = currentY;
+    cardRef.value?.setPointerCapture(activeInteractionId.value);
     return true;
   }
-  if (delta < -8) {
+
+  if (delta < -8 && !startedOnGrabber.value) {
     pendingDrag.value = false;
   }
   return false;
@@ -87,91 +106,57 @@ const onPointerDown = (event: PointerEvent) => {
   if (!showCardShell.value || event.button !== 0) return;
   if (shouldSkipDrag(event.target)) return;
 
-  interactionSource.value = 'pointer';
   activeInteractionId.value = event.pointerId;
-  cardRef.value?.setPointerCapture(event.pointerId);
-  beginPendingDrag(event.clientY);
+  beginPendingDrag(event.clientY, event.target);
 };
 
 const onPointerMove = (event: PointerEvent) => {
-  if (
-    interactionSource.value !== 'pointer' ||
-    activeInteractionId.value !== event.pointerId
-  )
-    return;
+  if (activeInteractionId.value !== event.pointerId) return;
+
+  const now = performance.now();
+  const dt = now - lastTime.value;
+  if (dt > 0) {
+    velocity.value = (event.clientY - lastY.value) / dt;
+  }
+  lastY.value = event.clientY;
+  lastTime.value = now;
+
   if (!isDragging.value && !maybeStartDrag(event.clientY)) {
     return;
   }
 
   if (isDragging.value) {
     dragOffset.value = Math.max(0, event.clientY - dragStartY.value);
-    event.preventDefault();
+    if (event.cancelable) {
+      event.preventDefault();
+    }
   }
 };
 
 const onPointerEnd = (event: PointerEvent) => {
-  if (
-    interactionSource.value !== 'pointer' ||
-    activeInteractionId.value !== event.pointerId
-  )
-    return;
+  if (activeInteractionId.value !== event.pointerId) return;
 
   releasePointerCapture();
 
-  if (isDragging.value && dragOffset.value > 140) {
-    closeCard();
-  }
+  if (isDragging.value) {
+    // Logic: close if dragged far enough OR if swiped down fast
+    const shouldClose = dragOffset.value > 140 || velocity.value > 0.5;
 
-  resetDragState();
-};
-
-const findTouch = (list: TouchList, id: number | null): Touch | undefined => {
-  if (id == null) return undefined;
-  for (let i = 0; i < list.length; i += 1) {
-    const t = list.item(i);
-    if (t && t.identifier === id) {
-      return t;
+    if (shouldClose) {
+      // Transition is enabled because isDragging is false
+      isDragging.value = false;
+      closeCard();
+    } else {
+      dragOffset.value = 0;
+      isDragging.value = false;
     }
   }
-  return undefined;
-};
-
-const onTouchStart = (event: TouchEvent) => {
-  if (!showCardShell.value || interactionSource.value) return;
-  if (shouldSkipDrag(event.target)) return;
-  const touch = event.changedTouches.item(0);
-  if (!touch) return;
-
-  interactionSource.value = 'touch';
-  activeInteractionId.value = touch.identifier;
-  beginPendingDrag(touch.clientY);
-};
-
-const onTouchMove = (event: TouchEvent) => {
-  if (interactionSource.value !== 'touch') return;
-  const touch = findTouch(event.touches, activeInteractionId.value);
-  if (!touch) return;
-
-  if (!isDragging.value && !maybeStartDrag(touch.clientY)) {
-    return;
-  }
-
-  if (isDragging.value) {
-    dragOffset.value = Math.max(0, touch.clientY - dragStartY.value);
-    event.preventDefault();
-  }
-};
-
-const onTouchEnd = (event: TouchEvent) => {
-  if (interactionSource.value !== 'touch') return;
-  const touch = findTouch(event.changedTouches, activeInteractionId.value);
-  if (!touch) return;
-
-  if (isDragging.value && dragOffset.value > 140) {
-    closeCard();
-  }
 
   resetDragState();
+};
+
+const onTransitionAfterLeave = () => {
+  dragOffset.value = 0;
 };
 
 watch(showCardShell, (isCardVisible) => {
@@ -198,41 +183,37 @@ watch(showCardShell, (isCardVisible) => {
       <router-view v-slot="{ Component, route: currentRoute }">
         <Transition
           name="mobile-card"
-          mode="default"
+          mode="out-in"
           appear
+          @after-leave="onTransitionAfterLeave"
         >
-          <template>
+          <div
+            v-if="showCardShell"
+            :key="`sheet-${currentRoute.fullPath}`"
+            class="mobile-shell__card"
+            ref="cardRef"
+            :style="cardStyle"
+            :data-dragging="isDragging"
+            @pointerdown="onPointerDown"
+            @pointermove="onPointerMove"
+            @pointerup="onPointerEnd"
+            @pointercancel="onPointerEnd"
+          >
+            <span class="mobile-shell__grabber" />
             <div
-              v-if="showCardShell"
-              :key="`sheet-${currentRoute.fullPath}`"
-              class="mobile-shell__card"
-              ref="cardRef"
-              :style="cardStyle"
-              @pointerdown="onPointerDown"
-              @pointermove="onPointerMove"
-              @pointerup="onPointerEnd"
-              @pointercancel="onPointerEnd"
-              @touchstart="onTouchStart"
-              @touchmove="onTouchMove"
-              @touchend="onTouchEnd"
-              @touchcancel="onTouchEnd"
-            >
-              <span class="mobile-shell__grabber" />
-              <div
-                ref="cardScrollRef"
-                class="mobile-shell__card-scroll"
-              >
-                <component :is="Component" />
-              </div>
-            </div>
-            <div
-              v-else
-              class="mobile-shell__map-page"
-              :key="`map-${currentRoute.fullPath}`"
+              ref="cardScrollRef"
+              class="mobile-shell__card-scroll"
             >
               <component :is="Component" />
             </div>
-          </template>
+          </div>
+          <div
+            v-else
+            class="mobile-shell__map-page"
+            :key="`map-${currentRoute.fullPath}`"
+          >
+            <component :is="Component" />
+          </div>
         </Transition>
       </router-view>
     </div>
@@ -244,8 +225,15 @@ watch(showCardShell, (isCardVisible) => {
 <style scoped>
 @reference "../../styles/main.css";
 
+:global(html),
+:global(body) {
+  overscroll-behavior-y: none;
+  overflow: hidden;
+}
+
 .mobile-shell {
-  @apply relative flex min-h-svh flex-col overflow-hidden bg-slate-200;
+  @apply relative flex h-svh flex-col overflow-hidden bg-slate-200;
+  overscroll-behavior-y: none;
 }
 
 .mobile-shell__map {
@@ -261,7 +249,7 @@ watch(showCardShell, (isCardVisible) => {
 }
 
 .mobile-shell__body {
-  @apply relative z-10 flex flex-1 flex-col;
+  @apply pointer-events-none relative z-10 flex flex-1 flex-col;
 }
 
 .mobile-shell__map-page {
@@ -269,7 +257,12 @@ watch(showCardShell, (isCardVisible) => {
 }
 
 .mobile-shell__card {
-  @apply relative mx-3 mt-auto flex w-auto max-h-[calc(100svh-4.5rem)] flex-col rounded-t-[36px] border border-white/30 bg-white/95 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-18px_35px_rgba(15,23,42,0.28)] transition-transform duration-200 ease-out touch-pan-y;
+  @apply pointer-events-auto relative mx-3 mt-auto flex w-auto max-h-[calc(100svh-4.5rem)] flex-col rounded-t-[36px] border border-white/30 bg-white/95 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-18px_35px_rgba(15,23,42,0.28)] touch-pan-y;
+  will-change: transform;
+}
+
+.mobile-shell__card[data-dragging='true'] {
+  touch-action: none;
 }
 
 .mobile-shell__card::before {
@@ -279,19 +272,21 @@ watch(showCardShell, (isCardVisible) => {
 
 .mobile-shell__grabber {
   @apply mx-auto mb-4 block h-1.5 w-12 rounded-full bg-slate-300;
+  touch-action: none;
 }
 
 .mobile-shell__card-scroll {
   @apply flex flex-1 flex-col overflow-y-auto px-4;
+  overscroll-behavior-y: contain;
 }
 
 .mobile-card-enter-active,
 .mobile-card-leave-active {
-  @apply transition-all duration-250 ease-out;
+  @apply transition-all duration-400 cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .mobile-card-enter-from,
 .mobile-card-leave-to {
-  @apply translate-y-4 opacity-0;
+  @apply translate-y-full opacity-0;
 }
 </style>

@@ -28,9 +28,8 @@ useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
 <template>
   <div
     v-if="!isDesktop"
-    class="relative flex flex-1"
+    class="relative flex flex-1 pointer-events-none"
   >
-    <RecordingsMap />
-    <MapControls />
+    <MapControls class="pointer-events-auto" />
   </div>
 </template>

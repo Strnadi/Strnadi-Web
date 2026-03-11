@@ -12,6 +12,7 @@ import { useRouter, onBeforeRouteLeave } from 'vue-router';
 import MaterialIcon from '@/components/MaterialIcon.vue';
 import ListDeselect from '@/components/ListDeselect.vue';
 import { MdEditor } from 'md-editor-v3';
+import Dropzone from '@/components/Dropzone.vue';
 import 'md-editor-v3/lib/style.css';
 import 'vue-select/dist/vue-select.css';
 import {
@@ -173,6 +174,11 @@ const buildMarkdownFile = (lang: string, rawContent: string) =>
     type: 'text/markdown',
     lastModified: Date.now()
   });
+
+const onAttachmentDrop = (acceptedFiles: File[]) => {
+  if (!acceptedFiles?.length) return;
+  files.value.push(...acceptedFiles);
+};
 
 const uploadLanguageFiles = async (articleId: number) => {
   const uploads = Object.entries(editorContents)
@@ -486,6 +492,31 @@ const primaryTitleIdentifier = computed(() =>
         </button>
       </li>
     </ul>
+
+    <div class="flex flex-col gap-y-2">
+      <h2 class="font-semibold">
+        <TranslatedText identifier="upload.select_or_drag_files" />
+      </h2>
+      <Dropzone
+        :multiple="true"
+        @drop="onAttachmentDrop"
+      >
+        <template #dragging>
+          <div class="text-center py-6">
+            <p class="text-sm sm:text-base font-medium">
+              <TranslatedText identifier="upload.drop_files_here" />
+            </p>
+          </div>
+        </template>
+
+        <div class="flex flex-col items-center gap-y-3 py-4">
+          <div class="text-3xl">📎</div>
+          <p class="text-xs sm:text-sm text-gray-600 text-center px-2">
+            <TranslatedText identifier="upload.select_or_drag_files" />
+          </p>
+        </div>
+      </Dropzone>
+    </div>
 
     <button
       class="primary p-2 w-full"
