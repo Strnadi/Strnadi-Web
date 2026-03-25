@@ -27,11 +27,18 @@ export interface MapProps {
    */
   clusterTest?: (a: Marker, b: Marker) => boolean;
   allowedClustering?: [Marker, Marker][];
+  /**
+   * When true, render markers via WebGL (leaflet.glify) instead of DOM-based
+   * MarkerClusterGroup. Dramatically improves performance for large datasets
+   * (1 000+ points). Falls back to DOM markers for individual non-data markers
+   * (e.g. the "selected-part-*" markers from the upload flow).
+   */
+  useGlify?: boolean;
 }
 </script>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed, onBeforeUnmount } from 'vue';
 import { useGeolocation } from '@vueuse/core';
 import { type Map as LeafletMap, type LeafletMouseEvent, Icon } from 'leaflet';
 
@@ -52,11 +59,197 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import type { MarkerClusterGroup, MarkerCluster } from 'leaflet';
 
+// Import glify — attaches L.glify to the leaflet namespace
+import 'leaflet.glify';
+
 const env = import.meta.env;
 let leafletMap: LeafletMap | null = null;
 
-// --- Clustering ---
-// Keep references so we can remove / update clusters when props change
+// ─── Glify state ──────────────────────────────────────────────────────────────
+//
+// We use THREE separate glify point layers to reproduce the DOM marker visuals:
+//
+//   Layer 1 – Base circles: every data marker as a coloured filled circle.
+//   Layer 2 – Dot overlay:  small BLACK circle on top of "fromModel" markers (●).
+//   Layer 3 – Ring overlay: small WHITE circle on top of "fromUser" markers,
+//             which punches a hole through the base colour ⇒ donut/ring (◎).
+//
+// Visual result:
+//   Confirmed dialect  → solid coloured circle         ●
+//   Predicted (model)  → coloured circle + black dot   ◉
+//   User guess         → coloured circle + white hole  ◎  (ring)
+
+let glifyBaseLayer: L.glify.PointsInstance | null = null;
+let glifyDotLayer: L.glify.PointsInstance | null = null;
+let glifyRingLayer: L.glify.PointsInstance | null = null;
+
+/** Convert a hex colour string (#rrggbb) to the 0-1 RGB object glify expects. */
+function hexToGlifyColor(hex: string): L.glify.GlifyColor {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return { r: 0, g: 0, b: 0 };
+  return {
+    r: parseInt(m[1]!, 16) / 255,
+    g: parseInt(m[2]!, 16) / 255,
+    b: parseInt(m[3]!, 16) / 255
+  };
+}
+
+const GLIFY_BLACK: L.glify.GlifyColor = { r: 0, g: 0, b: 0 };
+const GLIFY_WHITE: L.glify.GlifyColor = { r: 1, g: 1, b: 1 };
+
+/** Pre-computed colour cache so glify's per-frame colour callback is O(1). */
+let glifyColorCache: L.glify.GlifyColor[] = [];
+
+// /** Zoom-responsive base point size. */
+// function basePointSize(): number {
+//   const z = leafletMap?.getZoom() ?? 8;
+//   // Invert scaling: make points larger when zoomed *out* (smaller `z`),
+//   // and smaller when zoomed in (larger `z`).
+//   const maxZ = leafletMap?.getMaxZoom?.() ?? 19;
+//   const t = maxZ - z;
+//   // Keep a reasonable minimum so points remain clickable/visible.
+//   return Math.max(6, Math.min(20, 1.8 * t - 5));
+// }
+
+/** Remove all three glify layers. */
+function removeAllGlifyLayers() {
+  if (glifyBaseLayer) { glifyBaseLayer.remove(); glifyBaseLayer = null; }
+  if (glifyDotLayer)  { glifyDotLayer.remove();  glifyDotLayer = null; }
+  if (glifyRingLayer) { glifyRingLayer.remove(); glifyRingLayer = null; }
+}
+
+/**
+ * Rebuild the glify WebGL point layers from the current marker list.
+ *
+ * Because glify renders *all* points in a single WebGL draw call the cost of
+ * thousands of markers drops from "hundreds of DOM nodes" to "one canvas".
+ */
+function rebuildGlifyPoints() {
+  removeAllGlifyLayers();
+
+  if (!leafletMap || !props.useGlify || !props.markers?.length) return;
+
+  // Separate "data" markers (recordings) from "overlay" markers (e.g. selected-part-*)
+  // Overlay markers are rendered as normal Leaflet markers so they keep their
+  // custom icons. Data markers go through glify.
+  const dataMarkers: Marker[] = [];
+  const overlayMarkers: Marker[] = [];
+
+  for (const m of props.markers) {
+    if (m.data?.colors) {
+      dataMarkers.push(m);
+    } else {
+      overlayMarkers.push(m);
+    }
+  }
+
+  // Store overlay markers for the template to render via <l-marker>
+  overlayMarkersForTemplate.value = overlayMarkers;
+
+  if (!dataMarkers.length) return;
+
+  // ── Build parallel arrays ───────────────────────────────────────────────────
+  const allLatLngs: [number, number][] = new Array(dataMarkers.length);
+  glifyColorCache = new Array(dataMarkers.length);
+
+  // Subset arrays for the overlay layers
+  const dotLatLngs: [number, number][] = [];
+  const ringLatLngs: [number, number][] = [];
+
+  for (let i = 0; i < dataMarkers.length; i++) {
+    const m = dataMarkers[i]!;
+    const pos: [number, number] = [m.position[0], m.position[1]];
+    allLatLngs[i] = pos;
+
+    const colors = (m.data?.colors ?? []) as string[];
+    glifyColorCache[i] = hexToGlifyColor(colors[0] ?? '#000000');
+
+    // Classify: model prediction → dot, user guess → ring
+    if (m.data?.fromModel) {
+      dotLatLngs.push(pos);
+    } else if (m.data?.fromUser) {
+      ringLatLngs.push(pos);
+    }
+  }
+
+  // Store the data markers array so click handler can resolve the index
+  glifyDataMarkers = dataMarkers;
+
+  // Click handler shared by all layers.
+  // We use a coordinate->index lookup so it works even when the clicked point
+  // comes from a subset layer (dot/ring overlays).
+  const posKey = (p: [number, number]) => `${p[0]},${p[1]}`;
+  const posToIndex = new Map<string, number>();
+  for (let i = 0; i < allLatLngs.length; i++) {
+    const pos = allLatLngs[i]!;
+    posToIndex.set(posKey(pos), i);
+  }
+
+  const handleClick = (
+    e: L.LeafletMouseEvent,
+    feature: [number, number],
+    _xy: { x: number; y: number }
+  ) => {
+    const idx = posToIndex.get(posKey(feature));
+    const marker = idx !== undefined ? glifyDataMarkers[idx] : undefined;
+    if (marker) {
+      emit('click', { event: e, marker });
+    }
+  };
+
+  // ── Layer 1: base coloured circles ──────────────────────────────────────────
+  glifyBaseLayer = L.glify.points({
+    map: leafletMap,
+    data: allLatLngs,
+    size: () => 10,
+    color: (index: number) => glifyColorCache[index] ?? GLIFY_BLACK,
+    opacity: 0.88,
+    // Reduce hit radius: prevents clicks slightly away from a point
+    // incorrectly resolving to the nearest marker.
+    sensitivity: 1,
+    click: handleClick,
+    pane: 'overlayPane'
+  });
+
+  // ── Layer 2: black dot overlay (predicted / fromModel) ──────────────────────
+  if (dotLatLngs.length > 0) {
+    glifyDotLayer = L.glify.points({
+      map: leafletMap,
+      data: dotLatLngs,
+      // Inner dot is ~35% of the base size
+      size: () => Math.max(6, 10 * 0.35),
+      color: () => GLIFY_BLACK,
+      opacity: 0.95,
+      sensitivity: 1,
+      click: handleClick,
+      pane: 'overlayPane'
+    });
+  }
+
+  // ── Layer 3: white ring overlay (user guess / fromUser) ─────────────────────
+  // A white circle at ~55% of the base size "punches out" the centre,
+  // leaving a coloured ring around the outside — the ◎ donut effect.
+  if (ringLatLngs.length > 0) {
+    glifyRingLayer = L.glify.points({
+      map: leafletMap,
+      data: ringLatLngs,
+      size: () => Math.max(6, 10 * 0.55),
+      color: () => GLIFY_WHITE,
+      opacity: 1.0,
+      sensitivity: 1,
+      click: handleClick,
+      pane: 'overlayPane'
+    });
+  }
+}
+
+/** Data markers currently rendered by glify (kept for click resolution). */
+let glifyDataMarkers: Marker[] = [];
+
+/** Overlay markers that are NOT handled by glify and need normal Leaflet rendering. */
+const overlayMarkersForTemplate = ref<Marker[]>([]);
+
+// ─── Clustering state (used when useGlify === false) ──────────────────────────
 let clusterGroups: { group: MarkerClusterGroup; sample: Marker }[] = [];
 
 /** Create or update cluster groups according to current markers & clusterTest. */
@@ -191,7 +384,8 @@ const props = withDefaults(defineProps<MapProps>(), {
   mode: 'outdoor',
   zoomControl: false,
   polygons: () => [] as Polygon[],
-  markers: () => [] as Marker[]
+  markers: () => [] as Marker[],
+  useGlify: false
 });
 
 const zoom = ref<number>(props.position[2]);
@@ -211,12 +405,6 @@ watch(
   () => props.position,
   ([newLat, newLon, newZoom]) => {
     if (!leafletMap) return;
-
-    // leafletMap.flyTo([ newLat, newLon ], newZoom, {
-    //   animate: true,
-    //   duration: 0.5
-    // })
-
     center.value = [newLat, newLon];
     zoom.value = newZoom;
   }
@@ -238,26 +426,57 @@ function onMapReady(mapComp: any) {
   leafletMap = mapComp.mapObject ?? mapComp;
   updateBounds();
 
-  // Build the initial cluster groups
-  rebuildClusters();
+  if (props.useGlify) {
+    rebuildGlifyPoints();
+  } else {
+    rebuildClusters();
+  }
 }
 
 watch([zoom, center], updateBounds);
 
-// Rebuild clusters whenever markers or clusterTest changes or when map ready
+// ─── Reactivity: rebuild rendering when markers or mode changes ───────────────
 watch(
-  () => [props.markers, props.clusterTest, props.allowedClustering],
+  () => [props.markers, props.clusterTest, props.allowedClustering, props.useGlify],
   () => {
-    rebuildClusters();
+    if (props.useGlify) {
+      // Tear down any leftover cluster groups when switching to glify
+      if (clusterGroups.length) {
+        clusterGroups.forEach((cg) => leafletMap?.removeLayer(cg.group));
+        clusterGroups = [];
+      }
+      rebuildGlifyPoints();
+    } else {
+      // Tear down glify when switching to clusters
+      removeAllGlifyLayers();
+      overlayMarkersForTemplate.value = [];
+      rebuildClusters();
+    }
   },
   { deep: true }
 );
+
+// Redraw glify on zoom changes so point sizes update across all layers
+watch(zoom, () => {
+  if (props.useGlify) {
+    glifyBaseLayer?.render();
+    glifyDotLayer?.render();
+    glifyRingLayer?.render();
+  }
+});
+
+// ─── Cleanup ──────────────────────────────────────────────────────────────────
+onBeforeUnmount(() => {
+  removeAllGlifyLayers();
+  clusterGroups.forEach((cg) => {
+    if (leafletMap) leafletMap.removeLayer(cg.group);
+  });
+  clusterGroups = [];
+});
 </script>
 
 <template>
   <div class="flex flex-1 saturate-[1.2]">
-    <!-- The map will not read external variables for zoom and center -->
-    <!-- These reactive variable changes will be catched in the store translated into flyTo calls  -->
     <l-map
       v-model:center="center"
       class="flex-1"
@@ -269,10 +488,6 @@ watch(
       @update:zoom="updateZoom"
     >
       <!-- Tile Layers -->
-      <!--      <l-tile-layer-->
-      <!--        url="/map-loading.png"-->
-      <!--        :z-index="0"-->
-      <!--      />-->
       <l-tile-layer
         :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode !== 'aerial' ? '256@2x' : '256'}/{z}/{x}/{y}`"
         :max-zoom="19"
@@ -303,7 +518,21 @@ watch(
         @click="(event: LeafletMouseEvent) => emit('click', { event, polygon })"
       />
 
-      <!-- Individual markers are handled via MarkerClusterGroup programmatically -->
+      <!--
+        When NOT using glify, individual markers are handled via
+        MarkerClusterGroup programmatically (see rebuildClusters).
+
+        When using glify, only "overlay" markers (e.g. location pins
+        from the upload flow) are rendered as normal Leaflet markers.
+        Data markers are drawn by the WebGL layer.
+      -->
+      <l-marker
+        v-for="m in overlayMarkersForTemplate"
+        :key="m.id"
+        :lat-lng="m.position"
+        :icon="m.icon"
+        @click="(event: LeafletMouseEvent) => emit('click', { event, marker: m })"
+      />
 
       <!-- Current Location -->
       <l-marker

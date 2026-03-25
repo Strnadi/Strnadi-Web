@@ -279,12 +279,11 @@ const getDialectColorWithAlpha = (
         }}</span>
       </div>
 
-      <div>
+      <div v-if="recording && filteredRec && (recording?.parts?.some(p => p.filePath !== null) ?? false) && DialectColors">
         <div
           class="-mx-4 sm:mx-0 p-3 sm:p-4 transition touch-manipulation gap-2 bg-white"
         >
           <Spectrogram
-            v-if="recording && filteredRec && DialectColors"
             :audio-urls="
               recording.parts?.map(
                 (p) =>

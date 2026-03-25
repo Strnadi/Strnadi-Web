@@ -5,11 +5,6 @@ import { type LeafletMouseEvent } from 'leaflet';
 import type { Polygon, Marker } from '@/views/map/Map.vue';
 import { computedAsync, refDebounced } from '@vueuse/core';
 
-// let positionStack = ref([
-//   [ 49.9, 15.5, 8.25 ]
-// ]);
-// const currentCenter = computed<[number, number, number]>(() => positionStack.value[positionStack.value.length - 1] as [number, number, number]);
-
 const currentCenter = ref<[number, number, number]>([49.9, 15.5, 8.25]);
 
 export type MapFilter = 'all' | 'new' | 'old' | 'my' | 'others' | 'any-dialect';
@@ -35,6 +30,8 @@ export const MapStore = reactive<{
   filter: MapFilter;
   grouping: boolean;
   onlyDialects: boolean;
+  /** When true the Map component uses leaflet.glify for WebGL rendering. */
+  glify: boolean;
   unmove(): void;
   move(newCenter: [number, number], newZoom?: number, override?: boolean): void;
 }>({
@@ -43,15 +40,11 @@ export const MapStore = reactive<{
   grouping: false,
   filter: 'new',
   onlyDialects: false,
+  /** Default to glify — drastically faster for large datasets. */
+  glify: true,
   markers: {},
 
   move(newCenter: [number, number], newZoom?: number, _override = false) {
-    // if(!override) {
-    //   positionStack.value.push([...newCenter, newZoom]);
-    // } else {
-    //   positionStack.value[positionStack.value.length - 1] = [...newCenter, newZoom];
-    // }
-
     currentCenter.value = [...newCenter, newZoom ?? currentCenter.value[2]];
   },
 
@@ -188,13 +181,11 @@ function clusterTest(a: Marker, b: Marker): boolean {
   const colorsA = (a.data?.colors ?? []) as string[];
   const colorsB = (b.data?.colors ?? []) as string[];
   if (colorsA.length !== colorsB.length) return false;
-  // Compare ignoring order
   const setA = new Set(colorsA);
   const setB = new Set(colorsB);
   if (setA.size !== setB.size) return false;
   for (const c of setA) if (!setB.has(c)) return false;
 
-  // Set a threshold for the distance between the two markers
   const distance = L.latLng(a.position[0], a.position[1]).distanceTo(
     L.latLng(b.position[0], b.position[1])
   );
@@ -204,13 +195,14 @@ function clusterTest(a: Marker, b: Marker): boolean {
 }
 
 const allowedClustering = computed<[Marker, Marker][]>(() => {
-  if (!MapStore.grouping) return [];
+  // Clustering is not used in glify mode
+  if (MapStore.glify || !MapStore.grouping) return [];
 
   const allowedPairs: [Marker, Marker][] = [];
 
   for (const m1 of allMarkers.value) {
     for (const m2 of allMarkers.value) {
-      if (m1.id >= m2.id) continue; // avoid duplicates and self-comparison
+      if (m1.id >= m2.id) continue;
 
       if (clusterTest(m1, m2)) {
         allowedPairs.push([m1, m2]);
@@ -283,7 +275,6 @@ function makeGrid(stepLon: number, stepLat: number): Polygon[] {
       )
         continue;
       const id = `${stepLon}-${lon1.toFixed(4)}-${lat1.toFixed(4)}`;
-      // Leaflet polygons expect [lat, lng]
       const coordsLatLng: [number, number][] = [
         [lat1, lon1],
         [lat1, lon2],
@@ -308,7 +299,6 @@ const polygons = refDebounced(
   computed<Polygon[]>(() => [
     ...(zoom.value > 10 && zoom.value < 12 ? makeGrid(10 / 60, 6 / 60) : []),
     ...(zoom.value >= 12 && zoom.value < 14 ? makeGrid(5 / 60, 3 / 60) : []),
-    // ...(zoom.value >= 14 ? makeGrid(2.5 / 60, 1.5 / 60) : [])
   ]),
   75
 );
@@ -363,6 +353,10 @@ const markers = computed<Marker[]>(() => {
 
     const colors = dialects.map((code) => dialectColors[code] ?? '#000000');
 
+    // When glify is enabled the icon is never rendered (WebGL draws a circle
+    // using marker.data.colors[0]), but we still create a lightweight divIcon
+    // so the Marker interface is satisfied and the DOM cluster path works as
+    // a fallback when glify is toggled off at runtime.
     const icon = divIcon({
       className: '',
       iconSize: [iconSize, iconSize],
@@ -381,8 +375,8 @@ const markers = computed<Marker[]>(() => {
         recording: rec,
         part: lastPart,
         colors,
-        fromModel,    // <-- přidáno
-        fromUser      // <-- přidáno
+        fromModel,
+        fromUser
       }
     });
   }
@@ -420,11 +414,8 @@ const onClick = ({
       const y = Math.floor(560 - lat * 10);
       const x = Math.floor(lng * 6 - 34);
 
-      // a-d for the subsquares, a = top left
-      // const z = zoom.value >= 12 ? () : '';
       MapEvents.emit('click', { event, square: `${y}${x}` });
     } else {
-      // Handle cases where polygon.position might be too short, though makeGrid should prevent this.
       console.warn('Polygon clicked with unexpected structure:', polygon);
       return;
     }
@@ -450,6 +441,7 @@ const allMarkers = computed<Marker[]>(() => [
     :mode="MapStore.aerial ? 'aerial' : 'outdoor'"
     :position="currentCenter"
     :zoom-control="true"
+    :use-glify="allMarkers.length > 1000 && !props.selectionMode"
     @click="onClick"
   />
 </template>

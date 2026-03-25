@@ -65,7 +65,6 @@ const searchText = ref('');
             Sesk. bodů
           </button>
 
-          <!-- TODO -->
           <button
             class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 w-16 h-16 text-xs text-justify"
             @click="MapStore.onlyDialects = !MapStore.onlyDialects"
@@ -132,15 +131,8 @@ const searchText = ref('');
 
 <style scoped>
 .filter-select {
-  /*  appearance: none;
-  background-image: v-bind("`url(\"${FilterIcon}\")`");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 32px 32px;
-  width: 70px;*/
   height: 70px;
   padding: 10px;
-  /*text-indent: 9999px;*/
   cursor: pointer;
 }
 </style>
