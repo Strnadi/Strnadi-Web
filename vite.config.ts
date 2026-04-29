@@ -171,6 +171,10 @@ export default defineConfig({
     }
   ],
 
+  define: {
+    'global': 'globalThis',
+  },
+
   build: {
     target: 'ESNext',
     cssTarget: 'es2022',
