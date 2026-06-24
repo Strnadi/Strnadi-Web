@@ -256,7 +256,8 @@ export const translations = {
         articles: 'Správa informací',
         recordings: 'Správa nahrávek',
         awards: 'Odměny',
-        achievments: 'Úspěchy'
+        achievments: 'Úspěchy',
+        confirmation: 'Potvrzení dialektů'
       },
       users: {
         title: 'Seznam uživatelů'
@@ -544,6 +545,28 @@ export const translations = {
           no_part_selected: 'Nebyla vybrána žádná část nahrávky.',
           zip_failed: 'Došlo k chybě při vytváření ZIP souboru.'
         }
+      },
+      confirmation: {
+        title: 'Potvrzení dialektů',
+        remaining: 'Zbývá:',
+        recording: 'Nahrávka',
+        model_prediction: 'Model:',
+        user_guess: 'Uživatel:',
+        confirm_model: 'Potvrdit model',
+        confirm_user: 'Potvrdit uživatele',
+        select_dialect: 'Vyberte dialekt',
+        confirm: 'Potvrdit',
+        skip: 'Přeskočit',
+        back: 'Zpět',
+        restart: 'Znovu projít',
+        confirmed_success: 'Dialekt byl potvrzen.',
+        confirmed_error: 'Nepodařilo se potvrdit dialekt.',
+        all_confirmed: 'Všechna nářečí jsou potvrzena!',
+        review_complete: 'Prehled dokončen.',
+        open_editor: 'Otevřít v editoru dialektů',
+        all_labels: 'Všechny dialekty',
+        keyboard_hints: 'Klávesy: → potvrdit model, ↑ potvrdit uživatele, ← všechny dialekty, ↓ přeskočit, Backspace zpět',
+        swipe_hints: 'Swipe vpravo = potvrdit model, nahoru = potvrdit uživatele, vlevo = všechny dialekty'
       }
     },
 
@@ -953,7 +976,8 @@ export const translations = {
         articles: 'Article management',
         recordings: 'All recordings',
         awards: 'Awards',
-        achievments: 'Achievments'
+        achievments: 'Achievments',
+        confirmation: 'Confirm dialects'
       },
       notifications: {
         title: 'Notifications',
@@ -1240,6 +1264,28 @@ export const translations = {
           no_part_selected: 'No recording part was selected.',
           zip_failed: 'An error occurred while creating the ZIP file.'
         }
+      },
+      confirmation: {
+        title: 'Confirm dialects',
+        remaining: 'Remaining:',
+        recording: 'Recording',
+        model_prediction: 'Model:',
+        user_guess: 'User:',
+        confirm_model: 'Confirm model',
+        confirm_user: 'Confirm user',
+        select_dialect: 'Select dialect',
+        confirm: 'Confirm',
+        skip: 'Skip',
+        back: 'Back',
+        restart: 'Review again',
+        confirmed_success: 'Dialect confirmed.',
+        confirmed_error: 'Failed to confirm dialect.',
+        all_confirmed: 'All dialects are confirmed!',
+        review_complete: 'Review complete.',
+        open_editor: 'Open in dialect editor',
+        all_labels: 'All dialects',
+        keyboard_hints: 'Keys: → confirm model, ↑ confirm user, ← all dialects, ↓ skip, Backspace back',
+        swipe_hints: 'Swipe right = confirm model, up = confirm user, left = all dialects'
       }
     },
 
@@ -1638,7 +1684,8 @@ export const translations = {
         articles: 'Beitragsverwaltung',
         recordings: 'Alle Aufnahmen',
         awards: 'Preise',
-        achievments: 'Erfolge'
+        achievments: 'Erfolge',
+        confirmation: 'Dialekte bestätigen'
       },
       notifications: {
         title: 'Benachrichtigungen',
@@ -1937,6 +1984,28 @@ export const translations = {
           no_part_selected: 'Es wurde kein Aufnahmeteil ausgewählt.',
           zip_failed: 'Beim Erstellen der ZIP-Datei ist ein Fehler aufgetreten.'
         }
+      },
+      confirmation: {
+        title: 'Dialekte bestätigen',
+        remaining: 'Verbleibend:',
+        recording: 'Aufnahme',
+        model_prediction: 'Modell:',
+        user_guess: 'Benutzer:',
+        confirm_model: 'Modell bestätigen',
+        confirm_user: 'Benutzer bestätigen',
+        select_dialect: 'Dialekt auswählen',
+        confirm: 'Bestätigen',
+        skip: 'Überspringen',
+        back: 'Zurück',
+        restart: 'Erneut prüfen',
+        confirmed_success: 'Dialekt wurde bestätigt.',
+        confirmed_error: 'Dialekt konnte nicht bestätigt werden.',
+        all_confirmed: 'Alle Dialekte sind bestätigt!',
+        review_complete: 'Überprüfung abgeschlossen.',
+        open_editor: 'Im Dialekt-Editor öffnen',
+        all_labels: 'Alle Dialekte',
+        keyboard_hints: 'Tasten: → Modell bestätigen, ↑ Benutzer bestätigen, ← alle Dialekte, ↓ überspringen, Backspace zurück',
+        swipe_hints: 'Nach rechts wischen = Modell bestätigen, nach oben = Benutzer bestätigen, nach links = alle Dialekte'
       }
     },
 

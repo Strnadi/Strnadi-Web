@@ -32,3 +32,10 @@ dist-ssr
 stats.html
 
 typed-router.d.ts
+
+# ML model weight files (too large for git)
+public/models/perch_v2.tflite
+
+# LiteRT WASM files (copied from node_modules on install)
+public/wasm/litert/*.js
+public/wasm/litert/*.wasm

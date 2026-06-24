@@ -144,28 +144,19 @@ const displayName = computed(() => {
         </span>
       </RouterLink>
 
-      <!-- <RouterLink
+      <RouterLink
         to="/ucet/sprava/oznameni"
         class="link"
       >
-        <span class="font-medium">Notifications</span>
-        <span class="text-sm text-gray-600">Manage notifications</span>
-      </RouterLink> -->
-
-      <!-- <RouterLink
-        v-if="accountStore.user?.role === 'admin'"
-        to="/sprava"
-        class="link bg-blue-50 border-blue-200"
-      >
         <span class="font-medium">
-          <TranslatedText identifier="account.profile.administration" />
+          <TranslatedText identifier="account.profile.notifications" />
         </span>
         <span class="text-sm text-gray-600">
           <TranslatedText
-            identifier="account.profile.administration_description"
+            identifier="account.profile.notifications_description"
           />
         </span>
-      </RouterLink> -->
+      </RouterLink>
     </div>
 
     <!-- Account actions -->
