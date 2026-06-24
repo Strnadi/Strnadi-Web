@@ -3,7 +3,7 @@ import * as tf from '@tensorflow/tfjs';
 import {
   createEmbeddingExtractor,
   buildAndTrainHead,
-  buildCombinedModel,
+  saveHeadModel,
   oneHot,
   type EpochLog,
   type TrainConfig,
@@ -39,7 +39,6 @@ export interface DatasetMeta {
 
 let trainTensors: { xs: tf.Tensor2D; ys: tf.Tensor2D } | null = null;
 let valTensors: { xs: tf.Tensor2D; ys: tf.Tensor2D } | null = null;
-let perchModelRef: tf.LayersModel | null = null;
 let testSamples: ProcessedSample[] = [];
 
 let visUpdateCounter = 0;
@@ -67,6 +66,9 @@ export function useModelTraining() {
   );
 
   function reset() {
+    if (trainedModel.value) {
+      trainedModel.value.dispose();
+    }
     phase.value = 'idle';
     progressPct.value = 0;
     statusMessage.value = '';
@@ -122,12 +124,11 @@ export function useModelTraining() {
         classWeights: classWeights.value,
       });
 
-      statusMessage.value = 'Příprava modelu Perch v2…';
+      statusMessage.value = 'Příprava modelu Perch v2 (LiteRT)…';
       phase.value = 'extracting';
       progressPct.value = 0;
 
-      const { extractor, perchModel } = await createEmbeddingExtractor();
-      perchModelRef = perchModel;
+      const { extractor } = await createEmbeddingExtractor();
 
       const { xs: trainX, ys: trainY } = await extractEmbeddings(
         extractor,
@@ -319,18 +320,11 @@ export function useModelTraining() {
     phase.value = 'done';
   }
 
-  async function downloadModel(name = 'perch_v2_custom') {
-    if (!trainedModel.value || !perchModelRef) {
+  async function downloadModel(name = 'perch_v2_custom_head') {
+    if (!trainedModel.value) {
       throw new Error('No trained model available.');
     }
-
-    try {
-      const combined = await buildCombinedModel(perchModelRef, trainedModel.value);
-      await combined.save(`downloads://${name}`);
-    } catch (e) {
-      console.warn('Could not build combined model, saving head only:', e);
-      await trainedModel.value.save(`downloads://${name}_head_only`);
-    }
+    await saveHeadModel(trainedModel.value, name);
   }
 
   return {

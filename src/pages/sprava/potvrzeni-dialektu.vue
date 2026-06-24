@@ -167,7 +167,8 @@ async function confirmDialect(dialectId: number | null) {
       confirmedDialectId: dialectId
     });
     await queryClient.invalidateQueries({ queryKey: ['filtered-recordings'] });
-    advanceToNext();
+    resetCard();
+    selectedDialectId.value = null;
   } catch {
     confirmationMessage.value = t('admin.confirmation.confirmed_error');
   } finally {

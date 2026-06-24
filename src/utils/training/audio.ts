@@ -1,10 +1,25 @@
+let sharedAudioContext: AudioContext | null = null;
+
+async function getAudioContext(sampleRate: number): Promise<AudioContext> {
+  if (!sharedAudioContext || sharedAudioContext.state === 'closed') {
+    sharedAudioContext = new AudioContext({ sampleRate });
+  } else if (sharedAudioContext.sampleRate !== sampleRate) {
+    await sharedAudioContext.close();
+    sharedAudioContext = new AudioContext({ sampleRate });
+  }
+  if (sharedAudioContext.state === 'suspended') {
+    await sharedAudioContext.resume();
+  }
+  return sharedAudioContext;
+}
+
 export async function decodeAndResample(
   file: File | Blob,
   targetSampleRate = 32000,
   targetDuration = 5
 ): Promise<Float32Array> {
   const arrayBuffer = await file.arrayBuffer();
-  const audioContext = new AudioContext({ sampleRate: targetSampleRate });
+  const audioContext = await getAudioContext(targetSampleRate);
   const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
 
   const numChannels = audioBuffer.numberOfChannels;
@@ -18,8 +33,6 @@ export async function decodeAndResample(
     }
     mono[i] = sum / numChannels;
   }
-
-  await audioContext.close();
 
   const targetSamples = targetSampleRate * targetDuration;
   if (mono.length === targetSamples) return mono;

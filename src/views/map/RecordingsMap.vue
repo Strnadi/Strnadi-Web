@@ -60,7 +60,8 @@ import { useQuery } from '@tanstack/vue-query';
 import {
   getRecordings,
   getFilteredRecordings,
-  getDialectColors
+  getDialectColors,
+  type DetectedDialect
 } from '@/api/recordings';
 
 import { accountStore } from '@/state/AccountStore';
@@ -109,20 +110,22 @@ function overlapsRecording(
   );
 }
 
+function fltr(parts: TimedFilteredPart[], thing: keyof DetectedDialect) {
+  const hasRepresentants = parts.some((part) => part.representantFlag);
+
+  return parts.flatMap((part) =>
+    hasRepresentants ? part.representantFlag : true)
+      ? (part.detectedDialects ?? [])
+          .filter((dd) => dd[thing])
+          .map((dd) => dd[thing] as DetectedDialect[typeof thing])
+      : []
+  );
+}
+
 function collectDialectMeta(parts: TimedFilteredPart[]): DialectMetaFlags {
-  const confirmed: string[] = [];
-  const predicted: string[] = [];
-  const userGuess: string[] = [];
-
-  for (const part of parts) {
-    if (!part.representantFlag || !part.detectedDialects?.length) continue;
-
-    for (const dialect of part.detectedDialects) {
-      if (dialect.confirmedDialect) confirmed.push(dialect.confirmedDialect);
-      if (dialect.predictedDialect) predicted.push(dialect.predictedDialect);
-      if (dialect.userGuessDialect) userGuess.push(dialect.userGuessDialect);
-    }
-  }
+  const confirmed: string[] = fltr(parts, 'confirmedDialect');
+  const predicted: string[] = fltr(parts, 'predictedDialect');
+  const userGuess: string[] = fltr(parts, 'userGuessDialect');
 
   if (confirmed.length) {
     return { dialects: confirmed, fromModel: false, fromUser: false };
@@ -298,7 +301,7 @@ const zoom = ref<number>(0);
 const polygons = refDebounced(
   computed<Polygon[]>(() => [
     ...(zoom.value > 10 && zoom.value < 12 ? makeGrid(10 / 60, 6 / 60) : []),
-    ...(zoom.value >= 12 && zoom.value < 14 ? makeGrid(5 / 60, 3 / 60) : []),
+    ...(zoom.value >= 12 && zoom.value < 14 ? makeGrid(5 / 60, 3 / 60) : [])
   ]),
   75
 );
@@ -344,11 +347,14 @@ const markers = computed<Marker[]>(() => {
       );
     }
 
-    const { dialects, fromModel, fromUser } =
+    let { dialects, fromModel, fromUser } =
       collectDialectMeta(relevantFiltered);
 
+    let dedupedDialects = new Set(dialects);
+    dialects = [...dedupedDialects.values()];
+
     if (MapStore.onlyDialects) {
-      if (dialects.every(d => d === 'None' || d === 'Unfinished')) continue;
+      if (dialects.every((d) => d === 'None' || d === 'Unfinished')) continue;
     }
 
     const colors = dialects.map((code) => dialectColors[code] ?? '#000000');
@@ -436,7 +442,9 @@ const allMarkers = computed<Marker[]>(() => [
     v-model:zoom="zoom"
     :scale-bar="MapStore.scale"
     :polygons="!props.selectionMode ? polygons : []"
-    :markers="!props.selectionMode ? allMarkers : Object.values(MapStore.markers)"
+    :markers="
+      !props.selectionMode ? allMarkers : Object.values(MapStore.markers)
+    "
     :allowed-clustering="allowedClustering"
     :mode="MapStore.aerial ? 'aerial' : 'outdoor'"
     :position="currentCenter"

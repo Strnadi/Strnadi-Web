@@ -53,9 +53,20 @@ export function stratifiedSplit(
     const shuffled = shuffle(list);
     const labelIndex = classIndexMap.get(className)!;
     const total = shuffled.length;
-    const valCount = Math.max(1, Math.floor(total * valRatio));
-    const testCount = Math.max(1, Math.floor(total * testRatio));
-    const trainCount = Math.max(1, total - valCount - testCount);
+
+    let valCount: number;
+    let testCount: number;
+    let trainCount: number;
+
+    if (total < 3) {
+      trainCount = 1;
+      valCount = total >= 2 ? 1 : 0;
+      testCount = 0;
+    } else {
+      valCount = Math.max(1, Math.floor(total * valRatio));
+      testCount = Math.max(1, Math.floor(total * testRatio));
+      trainCount = Math.max(1, total - valCount - testCount);
+    }
 
     const trainSlice = shuffled.slice(0, trainCount);
     const valSlice = shuffled.slice(trainCount, trainCount + valCount);

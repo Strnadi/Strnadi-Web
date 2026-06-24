@@ -25,6 +25,8 @@
     "@sentry/vue": "^10.51.0",
     "@tanstack/vue-query": "^5.100.6",
     "@tensorflow/tfjs": "^4.22.0",
+    "@litertjs/core": "^2.4.0",
+    "@litertjs/tfjs-interop": "^6.0.0",
     "@tensorflow/tfjs-vis": "^1.5.1",
     "@unhead/vue": "^2.1.13",
     "@vavt/v3-extension": "^4.0.0",

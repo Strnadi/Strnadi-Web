@@ -1,46 +1,80 @@
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-backend-webgl';
+import { loadLiteRt, getGlobalLiteRtPromise, loadAndCompile, type CompiledModel } from '@litertjs/core';
+import { runWithTfjsTensors } from '@litertjs/tfjs-interop';
 
 export type EmbeddingExtractor = (audios: Float32Array[]) => Promise<tf.Tensor2D>;
 
-const PERCH_MODEL_URL = '/models/perch_v2_js/model.json';
+const PERCH_MODEL_URL = '/models/perch_v2.tflite';
+const LITERT_WASM_PATH = '/wasm/litert';
 
 /* ------------------------------------------------------------------ */
 /*  1. Model loading                                                   */
 /* ------------------------------------------------------------------ */
 
-let cachedPerchModel: tf.LayersModel | null = null;
+let litertLoadPromise: Promise<unknown> | null = null;
+let cachedPerchModel: CompiledModel | null = null;
 
-export async function loadPerchBackbone(): Promise<tf.LayersModel> {
+async function ensureLiteRt() {
+  if (getGlobalLiteRtPromise()) {
+    await getGlobalLiteRtPromise();
+    return;
+  }
+  if (!litertLoadPromise) {
+    litertLoadPromise = loadLiteRt(LITERT_WASM_PATH).catch((err) => {
+      litertLoadPromise = null;
+      throw err;
+    });
+  }
+  await litertLoadPromise;
+}
+
+export async function loadPerchBackbone(): Promise<CompiledModel> {
   if (cachedPerchModel) return cachedPerchModel;
   await tf.setBackend('webgl');
   await tf.ready();
-  const model = (await tf.loadLayersModel(PERCH_MODEL_URL)) as tf.LayersModel;
-  model.trainable = false;
+  await ensureLiteRt();
+  const model = await loadAndCompile(PERCH_MODEL_URL, { accelerator: 'wasm' });
   cachedPerchModel = model;
   return model;
 }
 
 export async function createEmbeddingExtractor(): Promise<{
   extractor: EmbeddingExtractor;
-  perchModel: tf.LayersModel;
+  perchModel: CompiledModel;
 }> {
   const perch = await loadPerchBackbone();
+  const outputDetails = perch.getOutputDetails();
+
+  let embeddingKey: string | number = 0;
+  for (let i = 0; i < outputDetails.length; i++) {
+    if (outputDetails[i]?.name?.toLowerCase().includes('embedding')) {
+      embeddingKey = i;
+      break;
+    }
+  }
+
   const extractor: EmbeddingExtractor = async (audios: Float32Array[]) => {
     const inputTensor = audiosToTensor(audios);
-    let output = perch.predict(inputTensor) as tf.Tensor | tf.NamedTensorMap;
-    let embedding: tf.Tensor;
-    if (output instanceof tf.Tensor) {
-      embedding = output;
-    } else if (output && typeof output === 'object' && 'embedding' in output) {
-      embedding = (output as Record<string, tf.Tensor>)['embedding'] as tf.Tensor;
-    } else {
-      const values = Object.values(output as Record<string, tf.Tensor>);
-      embedding = values[0] as tf.Tensor;
-    }
-    const result = embedding as tf.Tensor2D;
+    const results = await runWithTfjsTensors(perch, inputTensor);
     inputTensor.dispose();
-    return result;
+
+    let embedding: tf.Tensor;
+    if (Array.isArray(results)) {
+      embedding = results[embeddingKey as number]!;
+      for (let i = 0; i < results.length; i++) {
+        if (i !== (embeddingKey as number)) results[i]!.dispose();
+      }
+    } else {
+      const record = results as Record<string, tf.Tensor>;
+      const keys = Object.keys(record);
+      const useKey = typeof embeddingKey === 'number' ? keys[embeddingKey as number]! : embeddingKey;
+      embedding = record[useKey]!;
+      for (const key of keys) {
+        if (key !== useKey) record[key]!.dispose();
+      }
+    }
+    return embedding as tf.Tensor2D;
   };
   return { extractor, perchModel: perch };
 }
@@ -84,6 +118,16 @@ export interface EpochLog {
 
 export type ProgressCallback = (log: EpochLog) => void;
 
+function weightedCategoricalCrossentropy(classWeights: Float32Array) {
+  return (yTrue: tf.Tensor, yPred: tf.Tensor) => {
+    const weights = tf.tensor1d(classWeights);
+    const weightedYTrue = yTrue.mul(weights.expandDims(0));
+    const clipYPred = yPred.clipByValue(1e-7, 1 - 1e-7);
+    const loss = weightedYTrue.mul(clipYPred.log().neg()).sum(-1);
+    return loss.mean();
+  };
+}
+
 export async function buildAndTrainHead(
   embeddings: tf.Tensor2D,
   labels: tf.Tensor2D,
@@ -123,9 +167,14 @@ export async function buildAndTrainHead(
   model.add(tf.layers.dense({ units: numClasses, activation: 'softmax' }));
 
   const optimizer = tf.train.adam(cfg.learningRate);
+
+  const lossFn = cfg.classWeights
+    ? weightedCategoricalCrossentropy(weightsRecordToTensor(cfg.classWeights, numClasses))
+    : 'categoricalCrossentropy';
+
   model.compile({
     optimizer,
-    loss: 'categoricalCrossentropy',
+    loss: lossFn,
     metrics: ['accuracy'],
   });
 
@@ -136,8 +185,6 @@ export async function buildAndTrainHead(
   let lrWait = 0;
   let currentLr = cfg.learningRate;
 
-  // We implement manual epoch loop to support early stopping and LR reduction,
-  // since TF.js model.fit doesn't properly support stopping mid-fit.
   const totalEpochs = cfg.epochs;
   let stopped = false;
 
@@ -147,9 +194,7 @@ export async function buildAndTrainHead(
       batchSize: cfg.batchSize,
       validationData: [valEmbeddings, valLabels],
       initialEpoch: epochStart,
-      callbacks: cfg.classWeights
-        ? []
-        : [],
+      callbacks: [],
       verbose: 0,
     });
 
@@ -203,7 +248,6 @@ export async function buildAndTrainHead(
     }
   }
 
-  // Restore best weights
   if (Array.isArray(bestWeights) && bestWeights.length > 0) {
     const clone = [...bestWeights];
     model.setWeights(clone);
@@ -215,41 +259,24 @@ export async function buildAndTrainHead(
   return { headModel: model, history };
 }
 
-/* ------------------------------------------------------------------ */
-/*  3. Combined model (Perch + head) for download                     */
-/* ------------------------------------------------------------------ */
-
-export async function buildCombinedModel(
-  perchModel: tf.LayersModel,
-  headModel: tf.LayersModel,
-): Promise<tf.LayersModel> {
-  const audioInput = tf.input({ shape: [160000], dtype: 'float32', name: 'audio_input' });
-
-  // Run through Perch backbone (frozen) - use apply with SymbolicTensor input
-  const perchOutput = perchModel.apply(audioInput);
-
-  // Determine the embedding tensor from the output
-  let embedding: tf.SymbolicTensor;
-  if (Array.isArray(perchOutput)) {
-    embedding = perchOutput[0] as tf.SymbolicTensor;
-  } else if (perchOutput instanceof tf.SymbolicTensor) {
-    embedding = perchOutput;
-  } else {
-    // NamedTensorMap case - extract 'embedding' or first key
-    const map = perchOutput as unknown as Record<string, tf.SymbolicTensor>;
-    if ('embedding' in map) {
-      embedding = map['embedding'];
-    } else {
-      const firstKey = Object.keys(map)[0]!;
-      embedding = map[firstKey]!;
-    }
+function weightsRecordToTensor(weights: Record<number, number>, numClasses: number): Float32Array {
+  const arr = new Float32Array(numClasses);
+  for (let i = 0; i < numClasses; i++) {
+    arr[i] = weights[i] ?? 1;
   }
+  return arr;
+}
 
-  // Run through head model
-  const headOutput = headModel.apply(embedding) as tf.SymbolicTensor;
+/* ------------------------------------------------------------------ */
+/*  3. Head-only download                                              */
+/* ------------------------------------------------------------------ */
 
-  const combined = tf.model({ inputs: audioInput, outputs: headOutput, name: 'perch_v2_custom' });
-  return combined;
+export async function saveHeadModel(headModel: tf.LayersModel, name: string) {
+  await headModel.save(`downloads://${name}`);
+}
+
+export function getEmbeddingDim(): number {
+  return 1280;
 }
 
 /* ------------------------------------------------------------------ */

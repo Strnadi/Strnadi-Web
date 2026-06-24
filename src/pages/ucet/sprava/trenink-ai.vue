@@ -22,8 +22,8 @@ const config = ref({
   patience: 20,
 });
 
-async function handleDrop(files: File[]) {
-  const file = files[0];
+async function handleDrop(files: File | File[]) {
+  const file = Array.isArray(files) ? files[0] : files;
   if (!file || !file.name.endsWith('.zip')) return;
   zipFile.value = file;
   try {
@@ -43,7 +43,7 @@ async function startTraining() {
 
 async function downloadModel() {
   try {
-    await training.downloadModel('perch_v2_custom');
+    await training.downloadModel('perch_v2_custom_head');
   } catch (e: any) {
     console.error('Download failed:', e);
   }
@@ -92,8 +92,8 @@ function resetTraining() {
     </div>
 
     <p class="text-gray-600">
-      Nahrajte ZIP soubor s označenými audio nahrávkami pro trénink klasifikátoru založeného na modelu Perch v2.
-      Výsledný model bude obsahovat Perch backbone i vlastní klasifikační hlavu.
+      Nahrajte ZIP soubor s označenými audio nahrávkami pro trénink klasifikátoru založeného na modelu Perch v2 (LiteRT).
+      Stažený model obsahuje pouze trénovanou klasifikační hlavu; Perch backbone běží přes LiteRT.
       <span v-if="showVisControls" class="block mt-1 text-xs text-gray-400">
         Stiskněte klávesu ~ pro zobrazení pokročilé vizualizace (tfjs-vis).
       </span>
@@ -122,8 +122,8 @@ function resetTraining() {
         <span class="text-sm font-mono text-gray-600">{{ training.progressPct.value }}%</span>
       </div>
       <SegmentedProgress
-        :progress="training.progressPct.value / 100"
-        :total-segments="6"
+        :progress="training.progressPct.value"
+        :total-segments="100"
       />
     </div>
 
@@ -193,7 +193,7 @@ function resetTraining() {
       <div class="flex gap-2">
         <button
           class="flex-1 bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-          :disabled="!canTrain && !isTraining"
+          :disabled="!canTrain || isTraining || isEvaluating"
           @click="startTraining"
         >
           <span v-if="isTraining">Trénink probíhá ({{ training.currentEpoch.value }} / {{ training.totalEpochs.value }})…</span>
@@ -207,7 +207,7 @@ function resetTraining() {
           class="flex-1 bg-green-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-green-700"
           @click="downloadModel"
         >
-          Stáhnout model (Perch + klasifikátor)
+          Stáhnout klasifikační hlavu
         </button>
       </div>
     </section>

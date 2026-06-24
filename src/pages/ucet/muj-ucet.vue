@@ -157,33 +157,6 @@ const displayName = computed(() => {
           />
         </span>
       </RouterLink>
-
-      <RouterLink
-        to="/ucet/sprava/trenink-ai"
-        class="link"
-      >
-        <span class="font-medium">
-          Trénink AI modelu
-        </span>
-        <span class="text-sm text-gray-600">
-          Trénujte vlastní klasifikátor ptáků pomocí Perch v2
-        </span>
-      </RouterLink>
-
-      <RouterLink
-        v-if="accountStore.user?.role === 'admin'"
-        to="/sprava"
-        class="link bg-blue-50 border-blue-200"
-      >
-        <span class="font-medium">
-          <TranslatedText identifier="account.profile.administration" />
-        </span>
-        <span class="text-sm text-gray-600">
-          <TranslatedText
-            identifier="account.profile.administration_description"
-          />
-        </span>
-      </RouterLink>
     </div>
 
     <!-- Account actions -->
