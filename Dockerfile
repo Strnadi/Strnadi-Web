@@ -74,7 +74,7 @@ WORKDIR /usr/src/app
 
 COPY patches patches
 COPY package.json bun.lock .env ./
-RUN bun install --frozen-lockfile
+RUN bun install
 
 COPY src src
 COPY public public
