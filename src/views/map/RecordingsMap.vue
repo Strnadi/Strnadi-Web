@@ -114,7 +114,7 @@ function fltr(parts: TimedFilteredPart[], thing: keyof DetectedDialect) {
   const hasRepresentants = parts.some((part) => part.representantFlag);
 
   return parts.flatMap((part) =>
-    hasRepresentants ? part.representantFlag : true)
+    (hasRepresentants ? part.representantFlag : true)
       ? (part.detectedDialects ?? [])
           .filter((dd) => dd[thing])
           .map((dd) => dd[thing] as DetectedDialect[typeof thing])
