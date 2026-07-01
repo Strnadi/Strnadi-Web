@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 1,
   "workspaces": {
     "": {
       "name": "strnadi-vue",
@@ -2046,7 +2045,7 @@
 
     "vue-resize": ["vue-resize@2.0.0-alpha.1", "", { "peerDependencies": { "vue": "^3.0.0" } }, "sha512-7+iqOueLU7uc9NrMfrzbG8hwMqchfVfSzpVlCMeJQe4pyibqyoifDNbKTZvwxZKDvGkB+PdFeKvnGZMoEb8esg=="],
 
-    "vue-router": ["vue-router@https://pkg.pr.new/vue-router@2509", { "dependencies": { "@vue/devtools-api": "^6.6.4" }, "peerDependencies": { "vue": "^3.5.0" } }, "sha512-JPeEpC3xVEF8s3K2LC2MatKa9NOAR7Mi1ZqoBA4zmzoDNITXw3Cd1J+Z6RSRE97lU6PX3V/oykk4IdVLvklhdw=="],
+    "vue-router": ["vue-router@https://pkg.pr.new/vue-router@2509", { "dependencies": { "@vue/devtools-api": "^6.6.4" }, "peerDependencies": { "vue": "^3.5.0" } }],
 
     "vue-select": ["vue-select@4.0.0-beta.6", "", { "peerDependencies": { "vue": "3.x" } }, "sha512-K+zrNBSpwMPhAxYLTCl56gaMrWZGgayoWCLqe5rWwkB8aUbAUh7u6sXjIR7v4ckp2WKC7zEEUY27g6h1MRsIHw=="],
 
