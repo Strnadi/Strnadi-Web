@@ -83,7 +83,8 @@ export const translations = {
       delete_account: 'Smazat účet',
       add: 'Přidat',
       next: 'Další',
-      edit: 'Upravit'
+      edit: 'Upravit',
+      view: 'Zobrazit'
     },
 
     login: {
@@ -808,7 +809,8 @@ export const translations = {
       delete_account: 'Delete account',
       add: 'Add',
       next: 'Next',
-      edit: 'Edit'
+      edit: 'Edit',
+      view: 'View'
     },
 
     login: {
@@ -1529,7 +1531,8 @@ export const translations = {
       delete_account: 'Konto löschen',
       add: 'Hinzufügen',
       next: 'Weiter',
-      edit: 'Bearbeiten'
+      edit: 'Bearbeiten',
+      view: 'Ansehen'
     },
 
     login: {
