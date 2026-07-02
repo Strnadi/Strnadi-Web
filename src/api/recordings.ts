@@ -168,7 +168,7 @@ export const getRecording = async (
 export const patchRecording = async (
   token: string,
   id: Numeric,
-  patchedRec: Omit<RecordingUploadReq, 'createdAt'>
+  patchedRec: Omit<RecordingUploadReq, 'createdAt' | 'expectedPartsCount'>
 ): Promise<void> => authorizedPatch(`/recordings/${id}`, token, patchedRec);
 
 // Add deleteRecording and deleteRecordingPart API calls

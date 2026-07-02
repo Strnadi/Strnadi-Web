@@ -3,7 +3,7 @@ meta:
   layout: desktop/center
 </route>
 
-<script setup vapor lang="ts">
+<script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted, onUnmounted } from 'vue';
 import Spectrogram from '@/views/Spectrogram.vue';
 import { useRouteParams } from '@vueuse/router';
@@ -30,10 +30,7 @@ import { type Numeric } from '@/types/basic';
 import TranslatedText from '@/components/TranslatedText.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import { accountStore } from '@/state/AccountStore';
-import {
-  uploadStore,
-  type DraftFilteredPart
-} from '@/state/UploadDraftStore';
+import { uploadStore, type DraftFilteredPart } from '@/state/UploadDraftStore';
 
 interface SpectrogramRange {
   id: number;
@@ -259,9 +256,6 @@ const segmentSuccess = ref<string | null>(null);
 const selectedDialectCode = ref<string | null>(null);
 const isSavingSegments = ref(false);
 const isHydratingSegments = ref(false);
-const tooltipConfirmedDialectId = ref<number | null>(null);
-const tooltipSaving = ref(false);
-const currentContextMenuRangeId = ref<Numeric | number | null>(null);
 const tooltipCreateDialectId = ref<number | null>(null);
 const tooltipCreateSaving = ref(false);
 const tooltipAddDetectionDialectId = ref<number | null>(null);
@@ -351,13 +345,6 @@ watch(segments, (newRanges, oldRanges) => {
   }
 });
 
-watch(currentContextMenuRangeId, (rangeId) => {
-  if (rangeId != null) {
-    tooltipCreateDialectId.value = null;
-    tooltipAddDetectionDialectId.value = null;
-  }
-});
-
 const activeSegmentMetas = computed(() =>
   Object.values(segmentMetas).filter((meta) => !meta.markedForDeletion)
 );
@@ -385,10 +372,13 @@ function resolveDialectColor(code?: string | null) {
 }
 
 const dialectIdLookup = computed<Record<string, number>>(() =>
-  availableDialects.value.reduce((acc, dialect) => {
-    acc[dialect.dialectCode] = dialect.id;
-    return acc;
-  }, {} as Record<string, number>)
+  availableDialects.value.reduce(
+    (acc, dialect) => {
+      acc[dialect.dialectCode] = dialect.id;
+      return acc;
+    },
+    {} as Record<string, number>
+  )
 );
 
 function resolveDialectId(code?: string | null) {
@@ -422,7 +412,10 @@ function findFilteredPartByTime(startDate: string, endDate: string) {
     parts.find((part) => {
       const s = convertIsoToRelative(part.startDate);
       const e = convertIsoToRelative(part.endDate);
-      return isApproximatelyEqual(s, targetStart) && isApproximatelyEqual(e, targetEnd);
+      return (
+        isApproximatelyEqual(s, targetStart) &&
+        isApproximatelyEqual(e, targetEnd)
+      );
     }) ?? null
   );
 }
@@ -739,7 +732,11 @@ const saveSegmentChanges = async () => {
         representant: meta.representant
       });
     }
-    const creationTargets: { startDate: string; endDate: string; dialectId: number | null }[] = [];
+    const creationTargets: {
+      startDate: string;
+      endDate: string;
+      dialectId: number | null;
+    }[] = [];
     for (const meta of creations) {
       if (!meta.dialectCode) {
         throw new Error('Nový úsek musí mít zvolený dialekt.');
@@ -783,7 +780,8 @@ const saveSegmentChanges = async () => {
 
 async function saveDraftSegmentChanges(silent = false) {
   if (anchorTimestamp.value === null) {
-    if (!silent) segmentError.value = 'Není k dispozici časový základ pro nahrávku.';
+    if (!silent)
+      segmentError.value = 'Není k dispozici časový základ pro nahrávku.';
     return;
   }
 
@@ -919,7 +917,7 @@ const saveDetection = async (detected: DetectedDialect) => {
         predictedDialectId: form.predictedDialectId,
         confirmedDialectId: canConfirmDialects.value
           ? form.confirmedDialectId
-          : detected.confirmedDialectId ?? null
+          : (detected.confirmedDialectId ?? null)
       });
       detectionMessage.value = 'Záznam dialektu byl uložen.';
       draftFilteredParts.value = [...uploadStore.draftFilteredParts];
@@ -930,7 +928,7 @@ const saveDetection = async (detected: DetectedDialect) => {
         predictedDialectId: form.predictedDialectId,
         confirmedDialectId: canConfirmDialects.value
           ? form.confirmedDialectId
-          : detected.confirmedDialectId ?? null
+          : (detected.confirmedDialectId ?? null)
       });
       detectionMessage.value = 'Záznam dialektu byl uložen.';
       await refetchFilteredParts();
@@ -1042,12 +1040,79 @@ const findRangeById = (
   return segments.value.find((r) => r.id === numId) ?? null;
 };
 
+function getRangeTimeLabel(rangeId: Numeric | number | null) {
+  const range = findRangeById(rangeId);
+  if (
+    !range ||
+    typeof range.start !== 'number' ||
+    typeof range.end !== 'number'
+  ) {
+    return '--:-- – --:--';
+  }
+  return `${formatRelativeTime(range.start)} – ${formatRelativeTime(range.end)}`;
+}
+
+function getRangeMeta(rangeId: Numeric | number | null) {
+  return findRangeById(rangeId)?.payload ?? null;
+}
+
 const getDetectedDialectsForRange = (
   rangeId: Numeric | number | null
 ): DetectedDialect[] => {
   const range = findRangeById(rangeId);
   return range?.payload?.filteredPart?.detectedDialects ?? [];
 };
+
+function resetTooltipForms() {
+  tooltipCreateDialectId.value = null;
+  tooltipAddDetectionDialectId.value = null;
+}
+
+function closeDialectMenu(close?: () => void) {
+  resetTooltipForms();
+  close?.();
+}
+
+function toggleRangeRepresentant(
+  rangeId: Numeric | number | null,
+  value: boolean
+) {
+  const meta = getRangeMeta(rangeId);
+  if (meta) {
+    toggleRepresentant(meta, value);
+  }
+}
+
+function createFilteredPartFromRange(
+  rangeId: Numeric | number | null,
+  close?: () => void
+) {
+  const range = findRangeById(rangeId);
+  if (range) {
+    quickCreateFilteredPart(range, tooltipCreateDialectId.value, close);
+  }
+}
+
+function addDetectedDialectToRange(
+  rangeId: Numeric | number | null,
+  close?: () => void
+) {
+  const meta = getRangeMeta(rangeId);
+  if (meta) {
+    quickAddDetectedDialect(meta, tooltipAddDetectionDialectId.value, close);
+  }
+}
+
+function removeRangeFromContextMenu(
+  rangeId: Numeric | number | null,
+  close?: () => void
+) {
+  const meta = getRangeMeta(rangeId);
+  if (meta) {
+    removeSegment(meta);
+    closeDialectMenu(close);
+  }
+}
 
 const confirmExistingDetection = async (
   detected: DetectedDialect,
@@ -1203,7 +1268,6 @@ const quickCreateFilteredPart = async (
       }
     }
     tooltipCreateDialectId.value = null;
-    currentContextMenuRangeId.value = null;
     segmentSuccess.value = 'Úsek byl vytvořen.';
     if (close) close();
   } catch (err) {
@@ -1248,7 +1312,6 @@ const quickAddDetectedDialect = async (
       await refetchFilteredParts();
     }
     tooltipAddDetectionDialectId.value = null;
-    currentContextMenuRangeId.value = null;
     detectionMessage.value = 'Záznam dialektu byl přidán.';
     if (close) close();
   } catch (err) {
@@ -1351,13 +1414,10 @@ const confirmAll = async () => {
     >
       <strong class="font-semibold mr-2">Ukládání</strong>
     </div>
-
   </div>
 
   <template v-if="!isLoading">
-    <div
-      class="flex flex-col gap-y-6"
-    >
+    <div class="flex flex-col gap-y-6">
       <Spectrogram
         v-if="
           recording &&
@@ -1376,43 +1436,11 @@ const confirmAll = async () => {
       >
         <template #context-menu="{ range: rangeId, close }">
           <div
-            v-if="
-              findRangeById(rangeId) &&
-              (currentContextMenuRangeId = rangeId) !== null
-            "
-            class="min-w-50 space-y-2 p-2"
+            v-if="findRangeById(rangeId)"
+            class="w-[min(92vw,34rem)] max-h-[80vh] overflow-y-auto space-y-2 p-2"
           >
             <div class="text-xs text-gray-600">
-              <div>
-                {{
-                  (() => {
-                    const r = findRangeById(rangeId);
-                    if (
-                      !r ||
-                      typeof r.start !== 'number' ||
-                      typeof r.end !== 'number'
-                    ) {
-                      return '--:-- – --:--';
-                    }
-                    return `${formatRelativeTime(r.start)} – ${formatRelativeTime(r.end)}`;
-                  })()
-                }}
-              </div>
-              <!-- <div class="text-gray-500 mt-1">
-                {{
-                  (() => {
-                    const r = findRangeById(rangeId);
-                    if (
-                      !r ||
-                      typeof r.start !== 'number' ||
-                      typeof r.end !== 'number'
-                    ) {
-                      return '--:-- – --:--';
-                    }
-                    return `${formatAbsoluteFromSeconds(r.start)} → ${formatAbsoluteFromSeconds(r.end)}`;
-                  })()
-                }}
-              </div> -->
+              <div>{{ getRangeTimeLabel(rangeId) }}</div>
             </div>
 
             <!-- Create filtered part if it doesn't exist -->
@@ -1447,14 +1475,7 @@ const confirmAll = async () => {
                   tooltipCreateSaving ||
                   !findRangeById(rangeId)
                 "
-                @click="
-                  (() => {
-                    const r = findRangeById(rangeId);
-                    if (r) {
-                      quickCreateFilteredPart(r, tooltipCreateDialectId, close);
-                    }
-                  })()
-                "
+                @click="createFilteredPartFromRange(rangeId, close)"
               >
                 <span v-if="tooltipCreateSaving">Vytváření...</span>
                 <span v-else>Vytvořit úsek</span>
@@ -1483,7 +1504,10 @@ const confirmAll = async () => {
                 class="border border-gray-200 rounded px-2 py-2 space-y-2 bg-gray-50"
               >
                 <div class="flex flex-row w-full justify-between">
-                  <div class="text-[11px] text-gray-500" v-if="isAdmin">
+                  <div
+                    class="text-[11px] text-gray-500"
+                    v-if="isAdmin"
+                  >
                     ID #{{ detected.id }}
                   </div>
 
@@ -1494,11 +1518,11 @@ const confirmAll = async () => {
                     <input
                       type="checkbox"
                       class="rounded border-gray-300"
-                      :checked="findRangeById(rangeId)?.payload?.representant"
+                      :checked="getRangeMeta(rangeId)?.representant"
                       :disabled="!canEditDialects"
                       @change="
-                        toggleRepresentant(
-                          findRangeById(rangeId)?.payload,
+                        toggleRangeRepresentant(
+                          rangeId,
                           ($event.target as HTMLInputElement).checked
                         )
                       "
@@ -1666,21 +1690,10 @@ const confirmAll = async () => {
                   :disabled="
                     !tooltipAddDetectionDialectId ||
                     tooltipAddDetectionSaving ||
-                    !findRangeById(rangeId)?.payload ||
+                    !getRangeMeta(rangeId) ||
                     !canGuessDialects
                   "
-                  @click="
-                    (() => {
-                      const r = findRangeById(rangeId);
-                      if (r?.payload) {
-                        quickAddDetectedDialect(
-                          r.payload,
-                          tooltipAddDetectionDialectId,
-                          close
-                        );
-                      }
-                    })()
-                  "
+                  @click="addDetectedDialectToRange(rangeId, close)"
                 >
                   <span v-if="tooltipAddDetectionSaving">Přidávání...</span>
                   <span v-else>Přidat záznam</span>
@@ -1691,27 +1704,14 @@ const confirmAll = async () => {
             <button
               v-if="canEditDialects && findRangeById(rangeId)"
               class="w-full text-xs text-red-600 hover:text-red-700 font-semibold pt-2 border-t border-gray-200"
-              @click="
-                (() => {
-                  const r = findRangeById(rangeId);
-                  if (r?.payload) {
-                    removeSegment(r.payload);
-                    close();
-                  }
-                })()
-              "
+              @click="removeRangeFromContextMenu(rangeId, close)"
             >
               Smazat celý úsek
             </button>
 
             <button
               class="w-full text-xs text-gray-500 hover:text-gray-700 mt-2 pt-2 border-t border-gray-200"
-              @click="
-                tooltipCreateDialectId = null;
-                tooltipAddDetectionDialectId = null;
-                currentContextMenuRangeId = null;
-                close();
-              "
+              @click="closeDialectMenu(close)"
             >
               Zavřít
             </button>
@@ -1741,7 +1741,12 @@ const confirmAll = async () => {
         </label>
 
         <div class="flex flex-wrap gap-2 ml-auto">
-          <button @click="confirmAll" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="isSavingSegments" v-if="canConfirmDialects">
+          <button
+            @click="confirmAll"
+            class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="isSavingSegments"
+            v-if="canConfirmDialects"
+          >
             Potvrdit všechny dialekty
           </button>
           <button

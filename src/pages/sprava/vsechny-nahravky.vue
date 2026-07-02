@@ -4,23 +4,18 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import axios from 'axios';
 import JSZip from '@progress/jszip-esm';
 
-import {
-  getFilteredRecording,
-  getFilteredRecordings,
-  getRecordings
-} from '@/api/recordings';
-import TextualCoords from '@/components/map/TextualCoords.vue';
+import { getFilteredRecordings, getRecordings } from '@/api/recordings';
 import type { RecordingModel, FilteredPartModel } from '@/api/recordings';
-import { getUserInfo } from '@/api/account';
-import { accountStore } from '@/state/AccountStore';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
+
+const RECORDINGS_PAGE_SIZE = 50;
 
 // Helper to format a millisecond duration as "mm:ss,SSS"
 function formatDuration(durationMs: number): string {
@@ -45,7 +40,9 @@ function getDialectMetadata(fr: FilteredPartModel) {
 
   if (confirmed.length > 0) {
     return {
-      colors: confirmed.map((c: string) => DialectColors.value?.[c] ?? '#000000'),
+      colors: confirmed.map(
+        (c: string) => DialectColors.value?.[c] ?? '#000000'
+      ),
       dot: 'false',
       questionmark: 'false',
       text: confirmed.join(', ')
@@ -53,7 +50,9 @@ function getDialectMetadata(fr: FilteredPartModel) {
   }
   if (predicted.length > 0) {
     return {
-      colors: predicted.map((c: string) => DialectColors.value?.[c] ?? '#000000'),
+      colors: predicted.map(
+        (c: string) => DialectColors.value?.[c] ?? '#000000'
+      ),
       dot: 'true',
       questionmark: 'false',
       text: `${predicted.join(', ')} (model)`
@@ -61,7 +60,9 @@ function getDialectMetadata(fr: FilteredPartModel) {
   }
   if (userGuess.length > 0) {
     return {
-      colors: userGuess.map((c: string) => DialectColors.value?.[c] ?? '#000000'),
+      colors: userGuess.map(
+        (c: string) => DialectColors.value?.[c] ?? '#000000'
+      ),
       dot: 'false',
       questionmark: 'true',
       text: `${userGuess.join(', ')} (vlastní)`
@@ -96,17 +97,46 @@ const selectedItems = ref<{ recordingId: number; partId: number }[]>([]);
 const isDownloading = ref(false);
 
 const filterOutConfirmedDialects = ref(false);
+const visibleRecordingsLimit = ref(RECORDINGS_PAGE_SIZE);
+
+const totalPartsCount = computed(() =>
+  (recordings.value ?? []).reduce(
+    (acc, recording) => acc + (recording.parts?.length || 0),
+    0
+  )
+);
+
+const filteredPartsByRecordingId = computed(() => {
+  const grouped = new Map<number, FilteredPartModel[]>();
+
+  for (const filteredPart of filteredRecordings.value ?? []) {
+    const parts = grouped.get(filteredPart.recordingId) ?? [];
+    parts.push(filteredPart);
+    grouped.set(filteredPart.recordingId, parts);
+  }
+
+  return grouped;
+});
+
+const confirmedRecordingIds = computed(() => {
+  const ids = new Set<number>();
+
+  for (const filteredPart of filteredRecordings.value ?? []) {
+    if (
+      filteredPart.detectedDialects?.some(
+        (dialect) =>
+          dialect.confirmedDialect != null || dialect.confirmedDialectId != null
+      )
+    ) {
+      ids.add(filteredPart.recordingId);
+    }
+  }
+
+  return ids;
+});
 
 function isRecordingConfirmed(recordingId: number): boolean {
-  const parts = filteredRecordings.value?.filter(
-    (fr) => fr.recordingId === recordingId
-  );
-  if (!parts?.length) return false;
-  return parts.some((fr) =>
-    fr.detectedDialects?.some(
-      (d) => d.confirmedDialect != null || d.confirmedDialectId != null
-    )
-  );
+  return confirmedRecordingIds.value.has(recordingId);
 }
 
 const filteredRecordingsList = computed(() => {
@@ -114,6 +144,18 @@ const filteredRecordingsList = computed(() => {
   if (!filterOutConfirmedDialects.value) return list;
   return list.filter((r) => !isRecordingConfirmed(r.id));
 });
+
+const orderedRecordingsList = computed(() =>
+  filteredRecordingsList.value.slice().reverse()
+);
+
+const visibleRecordings = computed(() =>
+  orderedRecordingsList.value.slice(0, visibleRecordingsLimit.value)
+);
+
+const hasMoreRecordings = computed(
+  () => visibleRecordings.value.length < orderedRecordingsList.value.length
+);
 
 const hasSelectedItems = computed(() => selectedItems.value.length > 0);
 
@@ -134,6 +176,44 @@ function isPartSelected(recordingId: number, partId: number): boolean {
   );
 }
 
+function areAllRecordingPartsSelected(recording: RecordingModel): boolean {
+  const parts = recording.parts ?? [];
+
+  return (
+    parts.length > 0 &&
+    parts.every((part) => isPartSelected(recording.id, part.id))
+  );
+}
+
+function toggleRecordingSelection(recording: RecordingModel) {
+  const parts = recording.parts ?? [];
+  const shouldSelect = !areAllRecordingPartsSelected(recording);
+
+  for (const part of parts) {
+    const selected = isPartSelected(recording.id, part.id);
+
+    if (shouldSelect !== selected) {
+      togglePartSelection(recording.id, part.id);
+    }
+  }
+}
+
+function getRecordingFilteredParts(recordingId: number) {
+  return filteredPartsByRecordingId.value.get(recordingId) ?? [];
+}
+
+function formatCoords(lat: number, lng: number): string {
+  return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+}
+
+function showMoreRecordings() {
+  visibleRecordingsLimit.value += RECORDINGS_PAGE_SIZE;
+}
+
+watch(filteredRecordingsList, () => {
+  visibleRecordingsLimit.value = RECORDINGS_PAGE_SIZE;
+});
+
 async function downloadSelectedRecordings() {
   if (!hasSelectedItems.value) {
     alert(t('admin.recordings.alerts.no_part_selected'));
@@ -146,8 +226,9 @@ async function downloadSelectedRecordings() {
   // Group selected items by recordingId for efficient processing
   const groupedByRecording: Record<number, { partId: number }[]> = {};
   for (const item of selectedItems.value) {
-    groupedByRecording[item.recordingId] ??= [];
-    groupedByRecording[item.recordingId].push({ partId: item.partId });
+    const groupedItems = groupedByRecording[item.recordingId] ?? [];
+    groupedItems.push({ partId: item.partId });
+    groupedByRecording[item.recordingId] = groupedItems;
   }
 
   try {
@@ -288,15 +369,12 @@ async function downloadSelectedRecordings() {
     </p>
     <p>
       <TranslatedText identifier="admin.recordings.total_parts_label" />
-      {{
-        recordings.reduce(
-          (acc, recording) => acc + (recording.parts?.length || 0),
-          0
-        )
-      }}
+      {{ totalPartsCount }}
     </p>
 
-    <fieldset class="flex flex-col gap-2 my-4 p-4 rounded-lg border border-gray-200 bg-gray-50">
+    <fieldset
+      class="flex flex-col gap-2 my-4 p-4 rounded-lg border border-gray-200 bg-gray-50"
+    >
       <legend class="font-medium px-2">
         <TranslatedText identifier="admin.recordings.filters_label" />
       </legend>
@@ -307,7 +385,9 @@ async function downloadSelectedRecordings() {
           class="form-checkbox h-4 w-4 text-blue-600"
         />
         <span>
-          <TranslatedText identifier="admin.recordings.filter_out_confirmed_dialects" />
+          <TranslatedText
+            identifier="admin.recordings.filter_out_confirmed_dialects"
+          />
         </span>
       </label>
     </fieldset>
@@ -326,14 +406,15 @@ async function downloadSelectedRecordings() {
       />
     </button>
 
-    <p v-if="filterOutConfirmedDialects" class="text-sm text-gray-600 mb-2">
+    <p class="text-sm text-gray-600 mb-2">
       <TranslatedText identifier="admin.recordings.filtered_count" />
-      {{ filteredRecordingsList.length }}
+      {{ visibleRecordings.length }} /
+      {{ orderedRecordingsList.length }}
     </p>
 
-    <ul class="flex flex-col-reverse flex-wrap gap-x-3 gap-y-3">
+    <ul class="flex flex-col flex-wrap gap-x-3 gap-y-3">
       <li
-        v-for="recording in filteredRecordingsList"
+        v-for="recording in visibleRecordings"
         :key="recording.id"
         class="button-secondary flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-4"
       >
@@ -348,23 +429,8 @@ async function downloadSelectedRecordings() {
                 <input
                   type="checkbox"
                   class="form-checkbox h-5 w-5 text-blue-600"
-                  :checked="
-                    recordings
-                      .filter((r) => r.id === recording.id)
-                      .every(
-                        (r) =>
-                          r.parts &&
-                          r.parts.length > 0 &&
-                          r.parts?.every((p) => isPartSelected(r.id, p.id))
-                      )
-                  "
-                  @change="
-                    recordings
-                      .filter((r) => r.id === recording.id)
-                      .forEach((r) =>
-                        r.parts?.forEach((p) => togglePartSelection(r.id, p.id))
-                      )
-                  "
+                  :checked="areAllRecordingPartsSelected(recording)"
+                  @change="toggleRecordingSelection(recording)"
                 />
                 <h2 class="text-lg font-semibold mb-1">
                   {{
@@ -405,16 +471,17 @@ async function downloadSelectedRecordings() {
                 <span class="text-sm">
                   {{ t('admin.recordings.part_prefix') }}{{ part.id }}
                 </span>
-                <TextualCoords
+                <span
                   v-if="
                     part.gpsLatitudeStart !== undefined &&
                     part.gpsLongitudeStart !== undefined
                   "
-                  :lat="part.gpsLatitudeStart"
-                  :lng="part.gpsLongitudeStart"
-                  type="municipality_part"
                   class="text-xs text-gray-500"
-                />
+                >
+                  {{
+                    formatCoords(part.gpsLatitudeStart, part.gpsLongitudeStart)
+                  }}
+                </span>
                 <span
                   v-else
                   class="text-xs text-gray-400"
@@ -432,9 +499,7 @@ async function downloadSelectedRecordings() {
             <hr />
             <ul>
               <li
-                v-for="fr in filteredRecordings?.filter(
-                  (fr) => fr.recordingId === recording.id
-                )"
+                v-for="fr in getRecordingFilteredParts(recording.id)"
                 :key="fr.id"
                 class="flex flex-row gap-x-2 items-center py-1 border-t border-gray-200 first:border-t-0"
               >
@@ -459,7 +524,9 @@ async function downloadSelectedRecordings() {
                 </span>
                 <div class="flex flex-row-reverse content-between">
                   <span class="text-sm">
-                    {{ fr.representantFlag ? 'Reprezentant' : 'Nereprezentant' }}
+                    {{
+                      fr.representantFlag ? 'Reprezentant' : 'Nereprezentant'
+                    }}
                   </span>
 
                   <span class="text-sm">
@@ -472,5 +539,13 @@ async function downloadSelectedRecordings() {
         </RouterLink>
       </li>
     </ul>
+
+    <button
+      v-if="hasMoreRecordings"
+      class="button-secondary p-2 my-4"
+      @click="showMoreRecordings"
+    >
+      <TranslatedText identifier="buttons.show_more" />
+    </button>
   </template>
 </template>

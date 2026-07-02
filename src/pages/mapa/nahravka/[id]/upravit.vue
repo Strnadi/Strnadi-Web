@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup vapor lang="ts">
+<script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRouteParams } from '@vueuse/router';

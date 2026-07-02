@@ -4668,12 +4668,24 @@ function onRangeContextMenu(event: MouseEvent, rangeId: Numeric) {
   isContextMenuVisible.value = true;
 
   nextTick(() => {
-    document.addEventListener('click', closeContextMenuOnClickOutside, {
-      once: true
-    });
-    document.addEventListener('contextmenu', closeContextMenuOnClickOutside, {
-      once: true
-    });
+    const menu = contextMenuRef.value;
+    if (menu) {
+      const margin = 8;
+      const width = menu.offsetWidth;
+      const height = menu.offsetHeight;
+      contextMenuPosition.value = {
+        x: Math.max(
+          margin,
+          Math.min(event.clientX, window.innerWidth - width - margin)
+        ),
+        y: Math.max(
+          margin,
+          Math.min(event.clientY, window.innerHeight - height - margin)
+        )
+      };
+    }
+    document.addEventListener('click', closeContextMenuOnClickOutside);
+    document.addEventListener('contextmenu', closeContextMenuOnClickOutside);
   });
 }
 
