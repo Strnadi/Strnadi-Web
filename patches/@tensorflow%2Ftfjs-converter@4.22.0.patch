@@ -1,0 +1,13 @@
+diff --git a/dist/executor/hash_table.js b/dist/executor/hash_table.js
+index 97818f742ffb083328023ba03b4af38275f7750a..90a008f327f2bdede471c8fa1acc98d07570a34d 100755
+--- a/dist/executor/hash_table.js
++++ b/dist/executor/hash_table.js
+@@ -63,7 +63,7 @@ export class HashTable {
+      * @param keys Keys to store in the hashtable.
+      * @param values Values to store in the hashtable.
+      */
+-    async import(keys, values) {
++    async ["import"](keys, values) {
+         this.checkKeyAndValueTensor(keys, values);
+         // We only store the primitive values of the keys, this allows lookup
+         // to be O(1).

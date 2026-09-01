@@ -1,12 +1,17 @@
 import posthog from 'posthog-js';
 
-const posthogInstance = posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
-  api_host: 'https://eu.i.posthog.com'
-});
+const posthogKey = import.meta.env.VITE_POSTHOG_KEY;
+const posthogInstance = posthogKey
+  ? posthog.init(posthogKey, {
+      api_host: 'https://eu.i.posthog.com'
+    })
+  : null;
 
 export default {
   install(app: any) {
-    app.config.globalProperties.$posthog = posthogInstance;
+    if (posthogInstance) {
+      app.config.globalProperties.$posthog = posthogInstance;
+    }
   }
 };
 

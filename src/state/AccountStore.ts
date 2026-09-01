@@ -23,7 +23,7 @@ export const accountStore = reactive({
       this.token = jwt;
       this.token_object = decoded;
 
-      posthogInstance.identify(`${user.id}`, {
+      posthogInstance?.identify(`${user.id}`, {
         email: user.email,
         name: user.firstName,
         surname: user.lastName
@@ -36,7 +36,7 @@ export const accountStore = reactive({
     this.token = null;
     this.token_object = null;
 
-    posthogInstance.reset();
+    posthogInstance?.reset();
   }
 });
 

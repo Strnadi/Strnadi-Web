@@ -11,14 +11,14 @@ import { visualizer as Visualizer } from 'rollup-plugin-visualizer';
 import { purgePolyfills } from 'unplugin-purge-polyfills';
 import Vue from '@vitejs/plugin-vue';
 import TailwindCSS from '@tailwindcss/vite';
-import TSConfigPaths from 'vite-tsconfig-paths';
+// import TSConfigPaths from 'vite-tsconfig-paths';
 import Compression from 'vite-plugin-compression2';
 import vueDevTools from 'vite-plugin-vue-devtools';
 import VueRouter from 'unplugin-vue-router/vite';
 import MetaLayouts from 'vite-plugin-vue-meta-layouts';
 import Terminal from 'vite-plugin-terminal';
 import SVGLoader from 'vite-svg-loader';
-import DocsPlugin from './plugins/docs';
+import DocsPlugin from './plugins/docs.ts';
 import Inspect from 'vite-plugin-inspect';
 import { qrcode as QRCode } from 'vite-plugin-qrcode';
 import mkcert from 'vite-plugin-mkcert';
@@ -39,7 +39,7 @@ export default defineConfig({
     Inspect(),
     QRCode(),
     purgePolyfills.rollup({ logLevel: 'verbose' }),
-    TSConfigPaths({ loose: true }),
+    // TSConfigPaths({ loose: true }),
     TailwindCSS(),
     DocsPlugin(),
     VueRouter({ importMode: 'sync', routeBlockLang: 'yaml' }),
@@ -150,7 +150,7 @@ export default defineConfig({
         server.middlewares.use((req, res, next) => {
           if (req.originalUrl?.startsWith('/.well-known')) {
             res.setHeader('Content-Type', 'application/json');
-            const filePath = path.join(__dirname, `public${req.originalUrl}`);
+            const filePath = path.join(import.meta.dirname, `public${req.originalUrl}`);
             fs.createReadStream(filePath).pipe(res);
           } else {
             next();
@@ -161,7 +161,7 @@ export default defineConfig({
         server.middlewares.use((req, res, next) => {
           if (req.originalUrl?.startsWith('/.well-known')) {
             res.setHeader('Content-Type', 'application/json');
-            const filePath = path.join(__dirname, `public${req.originalUrl}`);
+            const filePath = path.join(import.meta.dirname, `public${req.originalUrl}`);
             fs.createReadStream(filePath).pipe(res);
           } else {
             next();
@@ -172,7 +172,7 @@ export default defineConfig({
   ],
 
   define: {
-    'global': 'globalThis',
+    global: 'globalThis'
   },
 
   build: {
@@ -184,9 +184,9 @@ export default defineConfig({
           groups: [
             {
               name: 'vendor',
-              test: /node_modules/,
-            },
-          ],
+              test: /node_modules/
+            }
+          ]
         }
       }
     },
@@ -204,7 +204,7 @@ export default defineConfig({
   // },
 
   resolve: {
-    // tsconfigPaths: true,
+    tsconfigPaths: true,
 
     alias: [
       {
@@ -219,7 +219,7 @@ export default defineConfig({
 
     headers: {
       'content-security-policy':
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'script-src-elem' blob:;"
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' blob:;"
       // "cross-origin-embedder-policy": "require-corp",
       // "cross-origin-opener-policy": "same-origin"
     }
