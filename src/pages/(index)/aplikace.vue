@@ -48,12 +48,7 @@ const location = window.location.href;
   <div class="flex flex-col items-center gap-y-4">
     <div class="flex flex-col items-center gap-y-4">
       <div class="flex flex-col items-center gap-x-4 w-3/4 gap-y-2">
-        <QrcodeSvg
-          :value="location"
-          :size="200"
-          class="w-fit"
-          background="transparent"
-        />
+        <QrcodeSvg :value="location" :size="200" class="w-fit" background="transparent" />
 
         <span class="font-medium text-justify [text-align-last:center] text-sm">
           <TranslatedText identifier="app.qr_code" />
@@ -63,7 +58,9 @@ const location = window.location.href;
       <table>
         <tbody>
           <tr>
-            <td><AndroidIcon /></td>
+            <td>
+              <AndroidIcon />
+            </td>
             <td>
               <span>
                 <TranslatedText identifier="app.google_play" />
@@ -71,7 +68,9 @@ const location = window.location.href;
             </td>
           </tr>
           <tr>
-            <td><AppleIcon /></td>
+            <td>
+              <AppleIcon />
+            </td>
             <td>
               <span>
                 <TranslatedText identifier="app.apple" />
@@ -81,25 +80,9 @@ const location = window.location.href;
         </tbody>
       </table>
 
-      <div class="flex flex-row gap-x-2">
-        <a href="https://www.instagram.com/p/DKzadiSK_OP">
-          <div class="flex flex-col items-center">
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/9/95/Instagram_logo_2022.svg"
-              width="40px"
-            />
-            <span>
-              <TranslatedText identifier="pages.application.how_to_download" />
-            </span>
-          </div>
-        </a>
-      </div>
-
       <hr />
 
-      <span
-        class="font-medium text-justify italic [text-align-last:center] text-sm text-red-600"
-      >
+      <span class="font-medium text-justify italic [text-align-last:center] text-sm text-red-600">
         <TranslatedText identifier="app.development" />
       </span>
     </div>

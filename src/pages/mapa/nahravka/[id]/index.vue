@@ -67,12 +67,6 @@ const {
   enabled // Use the computed enabled value
 });
 
-const canManageRecording = computed(
-  () =>
-    accountStore.user?.role === 'admin' ||
-    accountStore.user?.id === recording.value?.userId
-);
-
 const recordingCoordinates = computed(() => {
   const part = recording.value?.parts?.[0];
   if (!part) return null;
@@ -107,12 +101,12 @@ const segments = computed<
 
     return filteredRec.value
       .filter((fr) => {
-        if (!dontShowUnknownDialects.value) {
-          return true;
-        }
-
         if (showOnlyRepresentants.value && !fr.representantFlag) {
           return false;
+        }
+
+        if (!dontShowUnknownDialects.value) {
+          return true;
         }
 
         const dialectStrings = getDialectStrings(fr);
@@ -321,7 +315,8 @@ const displayedFilteredParts = computed(() =>
             "
             :height="200"
             :readonly="true"
-            :download-only-selections="canManageRecording"
+            :download-only-selections="true"
+            initial-viewport="fit-selection"
             :no-controls="false"
             :simple-controls="true"
             :selected="segments"

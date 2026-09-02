@@ -9,7 +9,7 @@ export interface Polygon {
 
 export interface Marker {
   id: number | string;
-  icon: Icon;
+  icon?: Icon;
   position: [number, number];
   data?: any;
 }
@@ -29,8 +29,8 @@ export interface MapProps {
   allowedClustering?: [Marker, Marker][];
   /**
    * When true, render markers via WebGL (leaflet.glify) instead of DOM-based
-   * MarkerClusterGroup. Dramatically improves performance for large datasets
-   * (1 000+ points). Falls back to DOM markers for individual non-data markers
+   * MarkerClusterGroup. Dramatically improves performance for map datasets.
+   * Falls back to DOM markers for individual non-data markers
    * (e.g. the "selected-part-*" markers from the upload flow).
    */
   useGlify?: boolean;
@@ -64,6 +64,9 @@ import 'leaflet.glify';
 
 const env = import.meta.env;
 let leafletMap: LeafletMap | null = null;
+const useRetinaTiles =
+  typeof window !== 'undefined' && window.devicePixelRatio > 1;
+const vectorTileSize = useRetinaTiles ? '256@2x' : '256';
 
 // ─── Glify state ──────────────────────────────────────────────────────────────
 //
@@ -113,9 +116,18 @@ let glifyColorCache: L.glify.GlifyColor[] = [];
 
 /** Remove all three glify layers. */
 function removeAllGlifyLayers() {
-  if (glifyBaseLayer) { glifyBaseLayer.remove(); glifyBaseLayer = null; }
-  if (glifyDotLayer)  { glifyDotLayer.remove();  glifyDotLayer = null; }
-  if (glifyRingLayer) { glifyRingLayer.remove(); glifyRingLayer = null; }
+  if (glifyBaseLayer) {
+    glifyBaseLayer.remove();
+    glifyBaseLayer = null;
+  }
+  if (glifyDotLayer) {
+    glifyDotLayer.remove();
+    glifyDotLayer = null;
+  }
+  if (glifyRingLayer) {
+    glifyRingLayer.remove();
+    glifyRingLayer = null;
+  }
 }
 
 /**
@@ -129,14 +141,14 @@ function rebuildGlifyPoints() {
 
   if (!leafletMap || !props.useGlify || !props.markers?.length) return;
 
-  // Separate "data" markers (recordings) from "overlay" markers (e.g. selected-part-*)
+  // Separate recording markers from custom overlay markers (e.g. selected-part-*).
   // Overlay markers are rendered as normal Leaflet markers so they keep their
   // custom icons. Data markers go through glify.
   const dataMarkers: Marker[] = [];
   const overlayMarkers: Marker[] = [];
 
   for (const m of props.markers) {
-    if (m.data?.colors && m.data.colors.length <= 1) {
+    if (m.data?.isRecording) {
       dataMarkers.push(m);
     } else {
       overlayMarkers.push(m);
@@ -266,20 +278,30 @@ const overlayMarkersForTemplate = ref<Marker[]>([]);
 
 // ─── Clustering state (used when useGlify === false) ──────────────────────────
 let clusterGroups: { group: MarkerClusterGroup; sample: Marker }[] = [];
+let plainMarkerLayer: L.LayerGroup | null = null;
+
+function removeMarkerLayers() {
+  clusterGroups.forEach((cluster) => leafletMap?.removeLayer(cluster.group));
+  clusterGroups = [];
+  if (plainMarkerLayer) {
+    leafletMap?.removeLayer(plainMarkerLayer);
+    plainMarkerLayer = null;
+  }
+}
 
 /** Create or update cluster groups according to current markers & clusterTest. */
 function rebuildClusters() {
   if (!leafletMap) return;
 
   // Remove previous groups from map
-  clusterGroups.forEach((cg) => leafletMap!.removeLayer(cg.group));
-  clusterGroups = [];
+  removeMarkerLayers();
 
   if (!props.markers || props.markers.length === 0) return;
 
   // Helper to create leaflet marker with reference
   const createLeafletMarker = (m: Marker) => {
-    const lm = L.marker(m.position as L.LatLngExpression, { icon: m.icon });
+    const options = m.icon ? { icon: m.icon } : undefined;
+    const lm = L.marker(m.position as L.LatLngExpression, options);
     // @ts-ignore custom data
     lm.__original = m;
     lm.on('click', (ev) => {
@@ -287,6 +309,15 @@ function rebuildClusters() {
     });
     return lm;
   };
+
+  // With grouping disabled, use one lightweight layer rather than one
+  // MarkerClusterGroup per marker.
+  if (!props.allowedClustering?.length && !props.clusterTest) {
+    plainMarkerLayer = L.layerGroup(
+      props.markers.map((marker) => createLeafletMarker(marker))
+    ).addTo(leafletMap);
+    return;
+  }
 
   props.markers.forEach((m) => {
     // find existing compatible group
@@ -467,18 +498,17 @@ const resetProjectView = () => {
   leafletMap?.fitBounds(PROJECT_BOUNDS, { padding: [20, 20] });
 };
 
-watch([zoom, center], updateBounds);
-
 // ─── Reactivity: rebuild rendering when markers or mode changes ───────────────
 watch(
-  () => [props.markers, props.clusterTest, props.allowedClustering, props.useGlify],
+  [
+    () => props.markers,
+    () => props.clusterTest,
+    () => props.allowedClustering,
+    () => props.useGlify
+  ],
   () => {
     if (props.useGlify) {
-      // Tear down any leftover cluster groups when switching to glify
-      if (clusterGroups.length) {
-        clusterGroups.forEach((cg) => leafletMap?.removeLayer(cg.group));
-        clusterGroups = [];
-      }
+      removeMarkerLayers();
       rebuildGlifyPoints();
     } else {
       // Tear down glify when switching to clusters
@@ -486,8 +516,7 @@ watch(
       overlayMarkersForTemplate.value = [];
       rebuildClusters();
     }
-  },
-  { deep: true }
+  }
 );
 
 // Redraw glify on zoom changes so point sizes update across all layers
@@ -502,10 +531,7 @@ watch(zoom, () => {
 // ─── Cleanup ──────────────────────────────────────────────────────────────────
 onBeforeUnmount(() => {
   removeAllGlifyLayers();
-  clusterGroups.forEach((cg) => {
-    if (leafletMap) leafletMap.removeLayer(cg.group);
-  });
-  clusterGroups = [];
+  removeMarkerLayers();
 });
 </script>
 
@@ -528,7 +554,7 @@ onBeforeUnmount(() => {
     >
       <!-- Tile Layers -->
       <l-tile-layer
-        :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode !== 'aerial' ? '256@2x' : '256'}/{z}/{x}/{y}`"
+        :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode !== 'aerial' ? vectorTileSize : '256'}/{z}/{x}/{y}`"
         :max-zoom="19"
         :min-zoom="5"
         :z-index="1"
@@ -548,7 +574,9 @@ onBeforeUnmount(() => {
         v-for="polygon in polygons"
         :key="polygon.id"
         :color="hoveredPolygon === polygon.id ? '#000000' : polygon.color"
-        :weight="hoveredPolygon === polygon.id ? polygon.weight * 2 : polygon.weight"
+        :weight="
+          hoveredPolygon === polygon.id ? polygon.weight * 2 : polygon.weight
+        "
         :lat-lngs="polygon.position"
         :fill-opacity="hoveredPolygon === polygon.id ? 0.05 : 0"
         :bubbling-mouse-events="false"
@@ -570,7 +598,9 @@ onBeforeUnmount(() => {
         :key="m.id"
         :lat-lng="m.position"
         :icon="m.icon"
-        @click="(event: LeafletMouseEvent) => emit('click', { event, marker: m })"
+        @click="
+          (event: LeafletMouseEvent) => emit('click', { event, marker: m })
+        "
       />
 
       <!-- Current Location -->

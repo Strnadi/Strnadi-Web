@@ -13,6 +13,10 @@ import { toggleVisor, isVisorOpen } from '@/services/tfjs/vis';
 
 const training = useModelTraining();
 const zipFile = ref<File | null>(null);
+const splitConfig = ref({
+  validationPct: 30,
+  testPct: 33
+});
 const config = ref({
   learningRate: 1e-4,
   epochs: 100,
@@ -22,12 +26,33 @@ const config = ref({
   patience: 20
 });
 
+const splitError = computed(() => {
+  const { validationPct, testPct } = splitConfig.value;
+  if (
+    !Number.isFinite(validationPct) ||
+    !Number.isFinite(testPct) ||
+    validationPct <= 0 ||
+    testPct < 0
+  ) {
+    return 'Validace musí být větší než 0 % a test nesmí být záporný.';
+  }
+  if (validationPct + testPct >= 100) {
+    return 'Součet validační a testovací části musí být menší než 100 %.';
+  }
+  return null;
+});
+
 async function handleDrop(files: File | File[]) {
   const file = Array.isArray(files) ? files[0] : files;
-  if (!file || !file.name.endsWith('.zip')) return;
+  if (!file || !file.name.toLowerCase().endsWith('.zip') || splitError.value) {
+    return;
+  }
   zipFile.value = file;
   try {
-    await training.loadDataset(file);
+    await training.loadDataset(file, {
+      validation: splitConfig.value.validationPct / 100,
+      test: splitConfig.value.testPct / 100
+    });
   } catch (e: any) {
     console.error('Dataset loading failed:', e);
   }
@@ -121,8 +146,58 @@ onBeforeUnmount(() => training.cancel());
     <!-- Dataset Upload -->
     <section
       v-if="!training.datasetInfo.value"
-      class="space-y-2"
+      class="space-y-4"
     >
+      <div class="space-y-2">
+        <h2 class="font-semibold">Rozdělení datasetu</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col">
+            <label
+              class="text-xs text-gray-500"
+              for="validation-split"
+            >
+              Validace (%)
+            </label>
+            <input
+              id="validation-split"
+              v-model.number="splitConfig.validationPct"
+              type="number"
+              min="1"
+              max="99"
+              step="1"
+              class="border rounded-md px-2 py-1 text-sm"
+              :disabled="isExtracting"
+            />
+          </div>
+          <div class="flex flex-col">
+            <label
+              class="text-xs text-gray-500"
+              for="test-split"
+            >
+              Test (%)
+            </label>
+            <input
+              id="test-split"
+              v-model.number="splitConfig.testPct"
+              type="number"
+              min="0"
+              max="98"
+              step="1"
+              class="border rounded-md px-2 py-1 text-sm"
+              :disabled="isExtracting"
+            />
+          </div>
+        </div>
+        <p class="text-xs text-gray-500">
+          Trénink: {{ 100 - splitConfig.validationPct - splitConfig.testPct }} %
+        </p>
+        <p
+          v-if="splitError"
+          class="text-sm text-red-600"
+        >
+          {{ splitError }}
+        </p>
+      </div>
       <Dropzone
         accept=".zip"
         @drop="handleDrop"

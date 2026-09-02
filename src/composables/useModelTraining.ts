@@ -37,6 +37,11 @@ export interface DatasetMeta {
   classNames: string[];
 }
 
+export interface DatasetSplitRatios {
+  validation: number;
+  test: number;
+}
+
 export function useModelTraining() {
   let trainTensors: { xs: tf.Tensor2D; ys: tf.Tensor2D } | null = null;
   let valTensors: { xs: tf.Tensor2D; ys: tf.Tensor2D } | null = null;
@@ -98,7 +103,10 @@ export function useModelTraining() {
     valTensors = null;
   }
 
-  async function loadDataset(zipFile: File) {
+  async function loadDataset(
+    zipFile: File,
+    splitRatios: DatasetSplitRatios = { validation: 0.3, test: 0.33 }
+  ) {
     if (isBusy.value || phase.value === 'evaluating') {
       throw new Error('Počkejte prosím na ukončení předchozí operace.');
     }
@@ -110,6 +118,8 @@ export function useModelTraining() {
 
     try {
       const split: DatasetSplit = await buildDatasetFromZip(zipFile, {
+        valRatio: splitRatios.validation,
+        testRatio: splitRatios.test,
         onProgress: (loaded, total) => {
           progressPct.value = Math.round((loaded / total) * 100);
           statusMessage.value = `Načítání souborů ${loaded} / ${total}`;

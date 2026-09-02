@@ -12,9 +12,10 @@ const isDesktop = useMediaQuery(
   computed(() => `(min-width: ${desktopBp.value})`)
 );
 
-useEventLast(MapEvents, 'click', ({ recording, recordingPart }) => {
-  if (recording && recordingPart) {
-    router.push(`/mapa/nahravka/${recording.id}`);
+useEventLast(MapEvents, 'click', ({ recording, recordingId }) => {
+  const id = recordingId ?? recording?.id;
+  if (id !== undefined) {
+    router.push(`/mapa/nahravka/${id}`);
   } else {
     router.push('/');
   }

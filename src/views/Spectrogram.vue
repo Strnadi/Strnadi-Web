@@ -734,6 +734,7 @@ interface Props {
   simpleControls?: boolean;
   downloadOnlySelections?: boolean; // NEW
   joinSelectionSegments?: boolean; // Whether to concatenate selected regions without gaps
+  initialViewport?: 'default' | 'fit-audio' | 'fit-selection';
   showTooltipOnHover?: boolean; // Whether to show tooltip on hover (readonly mode only)
 }
 
@@ -766,6 +767,7 @@ const props = withDefaults(defineProps<Props>(), {
   currentTime: 0,
   noControls: false,
   downloadOnlySelections: false,
+  initialViewport: 'default',
   showTooltipOnHover: true // Default to true
 });
 
@@ -965,7 +967,7 @@ function cloneRanges(source: Range[] | undefined | null): Range[] {
 
 watch(
   () => props.selected,
-  (newSelectedRanges) => {
+  async (newSelectedRanges) => {
     const snapshot = JSON.stringify(newSelectedRanges ?? []);
     if (snapshot === lastPropsSelectedSnapshot.value) {
       return;
@@ -974,6 +976,10 @@ watch(
     isSyncingSelectedFromParent.value = true;
     ranges.value = cloneRanges(newSelectedRanges ?? []);
     isSyncingSelectedFromParent.value = false;
+    if (isLoaded.value) {
+      await nextTick();
+      renderSpectrogram();
+    }
   },
   { deep: true, immediate: true }
 );
@@ -1026,6 +1032,78 @@ function getRangeEffectiveBounds(range: Range | null | undefined) {
     return normalized;
   }
   return { start: range.start, end: range.end };
+}
+
+function initializeViewport() {
+  const totalColumns = spectrogramData.value.length;
+  if (!totalColumns) {
+    zoomLevel.value = MIN_ZOOM_LEVEL;
+    offsetIndex.value = 0;
+    windowSize.value = 0;
+    return;
+  }
+
+  const fitEntireAudio =
+    props.initialViewport === 'fit-audio' ||
+    (props.initialViewport === 'fit-selection' && joinSelectionSegments.value);
+
+  if (fitEntireAudio) {
+    zoomLevel.value = MIN_ZOOM_LEVEL;
+    offsetIndex.value = 0;
+    windowSize.value = totalColumns;
+    return;
+  }
+
+  if (props.initialViewport === 'fit-selection' && ranges.value.length) {
+    const bounds = ranges.value
+      .map(getRangeEffectiveBounds)
+      .filter(
+        ({ start, end }) =>
+          Number.isFinite(start) && Number.isFinite(end) && end > start
+      );
+
+    if (bounds.length) {
+      const firstSecond = Math.min(...bounds.map(({ start }) => start));
+      const lastSecond = Math.max(...bounds.map(({ end }) => end));
+      const selectionDuration = lastSecond - firstSecond;
+      const paddingSeconds = Math.max(0.25, selectionDuration * 0.08);
+      const secondsPerColumn =
+        columnDuration.value || audioDuration.value / totalColumns;
+      const firstColumn = clamp(
+        Math.floor((firstSecond - paddingSeconds) / secondsPerColumn),
+        0,
+        totalColumns - 1
+      );
+      const lastColumn = clamp(
+        Math.ceil((lastSecond + paddingSeconds) / secondsPerColumn),
+        firstColumn + 1,
+        totalColumns
+      );
+      const minColumns = Math.max(1, MIN_COLS_AT_MAX_ZOOM_DISPLAY.value);
+      windowSize.value = Math.min(
+        totalColumns,
+        Math.max(minColumns, lastColumn - firstColumn)
+      );
+      zoomLevel.value = Math.max(
+        MIN_ZOOM_LEVEL,
+        totalColumns / windowSize.value
+      );
+      offsetIndex.value = clamp(
+        Math.floor((firstColumn + lastColumn - windowSize.value) / 2),
+        0,
+        Math.max(0, totalColumns - windowSize.value)
+      );
+      return;
+    }
+  }
+
+  offsetIndex.value = 0;
+  const minColumns = Math.max(1, MIN_COLS_AT_MAX_ZOOM_DISPLAY.value);
+  zoomLevel.value = Math.max(MIN_ZOOM_LEVEL, totalColumns / minColumns);
+  windowSize.value = Math.min(
+    totalColumns,
+    Math.max(minColumns, Math.floor(totalColumns / zoomLevel.value))
+  );
 }
 
 watch(
@@ -2215,22 +2293,7 @@ async function generateSpectrogramDataOffline(cacheKey: string) {
   setupTileCanvases(totalColumns, cacheHeightBins.value);
   // renderCoarsePreview(buf, totalColumns, cacheHeightBins.value, palette);
 
-  offsetIndex.value = 0;
-  const currentTotalColumns = spectrogramData.value.length || 1;
-  const minColsForView = Math.max(1, MIN_COLS_AT_MAX_ZOOM_DISPLAY.value);
-  zoomLevel.value = Math.max(
-    MIN_ZOOM_LEVEL,
-    currentTotalColumns / minColsForView
-  );
-  windowSize.value = Math.min(
-    currentTotalColumns,
-    Math.max(minColsForView, Math.floor(currentTotalColumns / zoomLevel.value))
-  );
-  offsetIndex.value = clamp(
-    offsetIndex.value,
-    0,
-    Math.max(0, spectrogramData.value.length - windowSize.value)
-  );
+  initializeViewport();
 
   if (!props.audioElementProp) {
     const actx = getAudioContext();

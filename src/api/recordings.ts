@@ -58,6 +58,30 @@ export interface FilteredPartModel {
   // representant?: boolean;
 }
 
+export interface RecordingMapBounds {
+  north: number;
+  south: number;
+  west: number;
+  east: number;
+}
+
+export interface RecordingMapPoint {
+  recordingId: number;
+  recordingPartId: number;
+  latitude: number;
+  longitude: number;
+  colors: string[];
+  fromModel: boolean;
+  fromUser: boolean;
+  confirmed: boolean;
+}
+
+export interface RecordingMapPointQuery extends RecordingMapBounds {
+  filter: 'all' | 'new' | 'old' | 'my' | 'others' | 'any-dialect';
+  onlyDialects: boolean;
+  userId?: number;
+}
+
 export interface DialectDefinition {
   id: number;
   dialectCode: string;
@@ -228,6 +252,18 @@ export const getFilteredRecordings = async (): Promise<FilteredPartModel[]> => {
   return response.data as FilteredPartModel[];
 };
 
+export const getRecordingMapPoints = async (
+  query: RecordingMapPointQuery,
+  signal?: AbortSignal
+): Promise<RecordingMapPoint[]> => {
+  const response = await axios.get('/recordings/map-points', {
+    params: query,
+    signal
+  });
+
+  return response.data as RecordingMapPoint[];
+};
+
 export const getFilteredRecording = async (
   id: Numeric
 ): Promise<FilteredPartModel[]> => {
@@ -243,13 +279,15 @@ export const postFilteredPart = async (
     endDate: string;
     dialectCode: string;
   }
-): Promise<void> =>
-  authorizedPost(`/recordings/filtered`, token, filteredPart);
+): Promise<void> => authorizedPost(`/recordings/filtered`, token, filteredPart);
 
 export const patchFilteredPart = async (
   token: string,
   id: Numeric,
-  patchedFilteredPart: Omit<FilteredPartModel, 'id' | 'detectedDialects' | 'representantFlag'> & { representant: boolean}
+  patchedFilteredPart: Omit<
+    FilteredPartModel,
+    'id' | 'detectedDialects' | 'representantFlag'
+  > & { representant: boolean }
 ): Promise<void> =>
   authorizedPatch(`/recordings/filtered/${id}`, token, patchedFilteredPart);
 

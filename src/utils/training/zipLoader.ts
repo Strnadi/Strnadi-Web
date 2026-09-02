@@ -8,6 +8,8 @@ export interface ZipParseOptions {
   targetSampleRate?: number;
   targetDuration?: number;
   audioExts?: string[];
+  valRatio?: number;
+  testRatio?: number;
   onProgress?: (loaded: number, total: number) => void;
 }
 
@@ -18,13 +20,13 @@ export interface ParsedZipDataset {
 
 export async function parseTrainingZip(
   zipFile: File,
-  options: ZipParseOptions = {},
+  options: ZipParseOptions = {}
 ): Promise<ParsedZipDataset> {
   const {
     targetSampleRate = 32000,
     targetDuration = 5,
     audioExts = ['.wav', '.mp3', '.flac', '.ogg', '.aiff'],
-    onProgress,
+    onProgress
   } = options;
 
   const zip = new JSZip();
@@ -100,12 +102,13 @@ export async function parseTrainingZip(
   return { samples, classNames };
 }
 
-export function buildDatasetFromZip(
-  zipFile: File,
-  options?: ZipParseOptions,
-) {
+export function buildDatasetFromZip(zipFile: File, options?: ZipParseOptions) {
   return parseTrainingZip(zipFile, options).then(({ samples, classNames }) => {
-    const split = stratifiedSplit(samples, 0.3, 0.33);
+    const split = stratifiedSplit(
+      samples,
+      options?.valRatio ?? 0.3,
+      options?.testRatio ?? 0.33
+    );
     split.classNames = classNames;
     return split;
   });

@@ -29,8 +29,20 @@ export function shuffle<T>(array: T[]): T[] {
 export function stratifiedSplit(
   samples: ProcessedSample[],
   valRatio: number,
-  testRatio: number,
+  testRatio: number
 ): DatasetSplit {
+  if (
+    !Number.isFinite(valRatio) ||
+    !Number.isFinite(testRatio) ||
+    valRatio <= 0 ||
+    testRatio < 0 ||
+    valRatio + testRatio >= 1
+  ) {
+    throw new Error(
+      'Validační poměr musí být větší než 0, testovací poměr nesmí být záporný a jejich součet musí být menší než 1.'
+    );
+  }
+
   const byClass = new Map<string, ProcessedSample[]>();
   for (const s of samples) {
     const list = byClass.get(s.className) || [];
@@ -64,8 +76,16 @@ export function stratifiedSplit(
       testCount = 0;
     } else {
       valCount = Math.max(1, Math.floor(total * valRatio));
-      testCount = Math.max(1, Math.floor(total * testRatio));
-      trainCount = Math.max(1, total - valCount - testCount);
+      testCount =
+        testRatio === 0 ? 0 : Math.max(1, Math.floor(total * testRatio));
+
+      // Rounding and per-class minimums must never consume the last training
+      // sample. Reduce the larger holdout first when necessary.
+      while (valCount + testCount > total - 1) {
+        if (testCount > valCount && testCount > 0) testCount--;
+        else valCount--;
+      }
+      trainCount = total - valCount - testCount;
     }
 
     const trainSlice = shuffled.slice(0, trainCount);
@@ -88,6 +108,6 @@ export function stratifiedSplit(
     val: shuffle(val),
     test: shuffle(test),
     classNames,
-    classWeights,
+    classWeights
   };
 }

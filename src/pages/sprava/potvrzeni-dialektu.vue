@@ -321,6 +321,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
             :readonly="true"
             :simple-controls="true"
             :download-only-selections="true"
+            initial-viewport="fit-selection"
             :max-frequency="10000"
             :min-frequency="3000"
             :margin="{ top: 8, right: 4, bottom: 20, left: 28 }"
