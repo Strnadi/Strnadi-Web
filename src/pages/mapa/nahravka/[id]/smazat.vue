@@ -27,20 +27,28 @@ const {
 });
 
 const isDeleting = ref(false);
-const confirmDelete = () => {
+const deleteError = ref<string | null>(null);
+const confirmDelete = async () => {
   try {
     isDeleting.value = true;
-    deleteRecording(accountStore.token!, recordingId.value);
-    queryClient.invalidateQueries({ queryKey: ['recordings'] });
-    // alert(t('recordings.messages.deleted'));
-    router.push('/mapa');
+    deleteError.value = null;
+    await deleteRecording(accountStore.token!, recordingId.value);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['recordings'] }),
+      queryClient.invalidateQueries({ queryKey: ['my-recordings'] }),
+      queryClient.removeQueries({
+        queryKey: ['recording', recordingId.value],
+        exact: true
+      })
+    ]);
+    await router.push('/mapa');
   } catch (e) {
-    console.error(e);
-    // alert(t('errors.recordings.delete_failed'));
+    deleteError.value =
+      e instanceof Error ? e.message : t('errors.recordings.delete_failed');
   } finally {
     isDeleting.value = false;
   }
-}
+};
 </script>
 
 <template>
@@ -56,6 +64,9 @@ const confirmDelete = () => {
     </p>
   </template>
   <template v-else>
+    <p v-if="deleteError" role="alert" class="mb-3 text-red-700">
+      {{ deleteError }}
+    </p>
     <p>
       <TranslatedText identifier="recordings.confirm.delete_prompt" />
       <strong class="ml-1">{{ recording.name || `#${recordingId}` }}</strong>

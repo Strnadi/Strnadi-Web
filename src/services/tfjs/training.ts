@@ -237,7 +237,8 @@ export async function buildAndTrainHead(
   valLabels: tf.Tensor2D,
   numClasses: number,
   config: TrainConfig,
-  onProgress?: ProgressCallback
+  onProgress?: ProgressCallback,
+  shouldStop?: () => boolean
 ): Promise<{ headModel: tf.LayersModel; history: EpochLog[] }> {
   validateTrainConfig(config);
 
@@ -299,6 +300,11 @@ export async function buildAndTrainHead(
     epochStart < totalEpochs && !stopped;
     epochStart += 1
   ) {
+    if (shouldStop?.()) {
+      bestWeights?.forEach((weight) => weight.dispose());
+      model.dispose();
+      throw new Error('Training cancelled');
+    }
     const fitResult = await model.fit(embeddings, labels, {
       epochs: epochStart + 1,
       batchSize: cfg.batchSize,
@@ -307,6 +313,11 @@ export async function buildAndTrainHead(
       callbacks: [],
       verbose: 0
     });
+    if (shouldStop?.()) {
+      bestWeights?.forEach((weight) => weight.dispose());
+      model.dispose();
+      throw new Error('Training cancelled');
+    }
 
     const historyObj = fitResult.history as Record<
       string,

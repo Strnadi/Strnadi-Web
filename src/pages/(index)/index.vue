@@ -12,13 +12,9 @@ const isDesktop = useMediaQuery(
   computed(() => `(min-width: ${desktopBp.value})`)
 );
 
-useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
+useEventLast(MapEvents, 'click', ({ recording, recordingPart }) => {
   if (recording && recordingPart) {
     router.push(`/mapa/nahravka/${recording.id}`);
-  } else if (square) {
-    // TODO: this gets cancelled for some reason
-    // Error: Navigation cancelled from "/" to "/mapa/ctverec/5658" with a new navigation.
-    console.log(router.push(`/mapa/ctverec/${square}`));
   } else {
     router.push('/');
   }

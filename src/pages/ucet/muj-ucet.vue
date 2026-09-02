@@ -50,7 +50,12 @@ const displayName = computed(() => {
         <div class="flex flex-col">
           <span class="text-xl font-medium">
             {{ displayName || accountStore.user?.nickname }}
-            <template v-if="accountStore.user?.nickname && displayName">
+            <template
+              v-if="
+                accountStore.user?.nickname &&
+                displayName !== accountStore.user.nickname
+              "
+            >
               ({{ accountStore.user?.nickname }})
             </template>
           </span>
@@ -118,45 +123,6 @@ const displayName = computed(() => {
         </span>
       </RouterLink>
 
-      <RouterLink
-        to="/ucet/sprava/uspechy"
-        class="link"
-      >
-        <span class="font-medium">
-          <TranslatedText identifier="account.profile.achievements" />
-        </span>
-        <span class="text-sm text-gray-600">
-          <TranslatedText
-            identifier="account.profile.achievements_description"
-          />
-        </span>
-      </RouterLink>
-
-      <RouterLink
-        to="/ucet/sprava/odmeny"
-        class="link"
-      >
-        <span class="font-medium">
-          <TranslatedText identifier="account.profile.rewards" />
-        </span>
-        <span class="text-sm text-gray-600">
-          <TranslatedText identifier="account.profile.rewards_description" />
-        </span>
-      </RouterLink>
-
-      <RouterLink
-        to="/ucet/sprava/oznameni"
-        class="link"
-      >
-        <span class="font-medium">
-          <TranslatedText identifier="account.profile.notifications" />
-        </span>
-        <span class="text-sm text-gray-600">
-          <TranslatedText
-            identifier="account.profile.notifications_description"
-          />
-        </span>
-      </RouterLink>
     </div>
 
     <!-- Account actions -->

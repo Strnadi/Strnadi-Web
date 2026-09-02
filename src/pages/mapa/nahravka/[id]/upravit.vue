@@ -7,13 +7,14 @@ meta:
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRouteParams } from '@vueuse/router';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { getRecording, patchRecording } from '@/api/recordings';
 import { accountStore } from '@/state/AccountStore';
 import type { Numeric } from '@/types/basic';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 
 const router = useRouter();
+const queryClient = useQueryClient();
 const recordingId = useRouteParams<Numeric>('id');
 
 const {
@@ -40,6 +41,7 @@ watch(
 );
 
 const saving = ref(false);
+const saveError = ref<string | null>(null);
 async function save() {
   if (!accountStore.token) {
     // alert(t('errors.auth.not_logged_in'));
@@ -47,6 +49,7 @@ async function save() {
   }
   try {
     saving.value = true;
+    saveError.value = null;
     await patchRecording(accountStore.token, recordingId.value, {
       byApp: recording.value?.byApp ?? false,
       device: recording.value?.device ?? '',
@@ -54,11 +57,15 @@ async function save() {
       name: name.value,
       note: note.value
     });
-    // alert(t('recordings.messages.updated'));
+    await queryClient.invalidateQueries({
+      queryKey: ['recording', recordingId.value],
+      exact: true
+    });
+    await queryClient.invalidateQueries({ queryKey: ['recordings'] });
     router.back();
   } catch (e) {
-    console.error(e);
-    // alert(t('errors.recordings.update_failed'));
+    saveError.value =
+      e instanceof Error ? e.message : t('errors.recordings.update_failed');
   } finally {
     saving.value = false;
   }
@@ -79,6 +86,9 @@ async function save() {
   </template>
   <template v-else>
     <div class="space-y-4 max-w-lg">
+      <p v-if="saveError" role="alert" class="text-red-700">
+        {{ saveError }}
+      </p>
       <div>
         <label
           for="name"

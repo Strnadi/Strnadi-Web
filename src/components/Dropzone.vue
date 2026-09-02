@@ -19,7 +19,7 @@ interface MultipleFileProps extends CommonProps {
 }
 
 const props = defineProps<SingleFileProps | MultipleFileProps>();
-const emit = defineEmits(['drop', 'update:modelValue']);
+const emit = defineEmits(['drop', 'invalid', 'update:modelValue']);
 
 const dropzoneFiles = computed({
   get: () => props.modelValue,
@@ -41,7 +41,7 @@ const dropZoneRef = ref<HTMLElement | null>(null);
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
   onDrop: (files: File[] | null) => {
-    const { valid } = validateFiles(
+    const { valid, invalid } = validateFiles(
       Array.isArray(props.accept)
         ? props.accept
         : props.accept
@@ -49,6 +49,7 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
           : ['*'],
       files || []
     );
+    if (invalid.length) emit('invalid', invalid);
     dropzoneFiles.value = valid;
   }
 });
@@ -68,7 +69,7 @@ const { open, onChange } = useFileDialog({
 
 onChange((files) => {
   if (files) {
-    const { valid } = validateFiles(
+    const { valid, invalid } = validateFiles(
       Array.isArray(props.accept)
         ? props.accept
         : props.accept
@@ -76,6 +77,7 @@ onChange((files) => {
           : ['*'],
       Array.from(files)
     );
+    if (invalid.length) emit('invalid', invalid);
     dropzoneFiles.value = valid;
   }
 });
@@ -88,7 +90,12 @@ onChange((files) => {
       !headless && 'dropzone',
       isOverDropZone && !headless && 'dropzone-active'
     ]"
+    :role="headless ? undefined : 'button'"
+    :tabindex="headless ? undefined : 0"
+    :aria-label="headless ? undefined : 'Vybrat soubory'"
     @click="() => !headless && open()"
+    @keydown.enter.prevent="() => !headless && open()"
+    @keydown.space.prevent="() => !headless && open()"
     @dragenter.stop
   >
     <div v-if="isOverDropZone">

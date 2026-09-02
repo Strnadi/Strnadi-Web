@@ -28,6 +28,11 @@ export interface RecordingModel {
   note: string | null;
   notePost: string | null;
   parts: RecordingPartModel[] | null;
+  photos?: Array<{
+    id: number;
+    url: string;
+    name?: string | null;
+  }> | null;
 }
 
 export interface DetectedDialect {
@@ -116,8 +121,11 @@ export const postRecording = async (
   token: string,
   recording: RecordingUploadReq,
   recordingParts: RecordingPartUploadParams[],
-  photos?: File[]
+  photos?: File[],
+  onProgress?: (completed: number, total: number, step: string) => void
 ): Promise<number> => {
+  const total = 1 + recordingParts.length + (photos?.length ?? 0);
+  let completed = 0;
   const uploadedRecordingId = (
     await axios.post(
       `/recordings`,
@@ -127,8 +135,9 @@ export const postRecording = async (
       }
     )
   ).data;
+  onProgress?.(++completed, total, 'Nahrávání údajů');
 
-  for (const part of recordingParts) {
+  for (const [index, part] of recordingParts.entries()) {
     const formData = new FormData();
     formData.append('startDate', part.startDate);
     formData.append('endDate', part.endDate);
@@ -142,14 +151,27 @@ export const postRecording = async (
     await axios.post(`/recordings/part-new`, formData, {
       headers: { Authorization: `Bearer ${token}` }
     });
+    onProgress?.(
+      ++completed,
+      total,
+      `Nahrávání zvuku ${index + 1}/${recordingParts.length}`
+    );
   }
 
-  for (const photo of photos ?? []) {
-    await postPhoto({
-      recordingId: uploadedRecordingId,
-      format: photo.type,
-      photosBase64: toBase64(await photo.arrayBuffer())
-    });
+  for (const [index, photo] of (photos ?? []).entries()) {
+    await postPhoto(
+      {
+        recordingId: uploadedRecordingId,
+        format: photo.type,
+        photosBase64: toBase64(await photo.arrayBuffer())
+      },
+      token
+    );
+    onProgress?.(
+      ++completed,
+      total,
+      `Nahrávání fotografie ${index + 1}/${photos?.length ?? 0}`
+    );
   }
 
   return uploadedRecordingId;

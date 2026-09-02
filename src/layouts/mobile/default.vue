@@ -66,6 +66,10 @@ const closeCard = () => {
   }
 };
 
+const onSheetKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') closeCard();
+};
+
 const canDragFromScroll = () => (cardScrollRef.value?.scrollTop ?? 0) <= 0;
 
 const beginPendingDrag = (startY: number, target: EventTarget | null) => {
@@ -198,8 +202,17 @@ watch(showCardShell, (isCardVisible) => {
             @pointermove="onPointerMove"
             @pointerup="onPointerEnd"
             @pointercancel="onPointerEnd"
+            @keydown="onSheetKeydown"
           >
             <span class="mobile-shell__grabber" />
+            <button
+              type="button"
+              class="absolute right-4 top-3 z-10 flex min-h-11 min-w-11 items-center justify-center rounded-full bg-slate-100 text-2xl"
+              aria-label="Zavřít"
+              @click="closeCard"
+            >
+              ×
+            </button>
             <div
               ref="cardScrollRef"
               class="mobile-shell__card-scroll"

@@ -10,7 +10,7 @@ import TranslatedText from '@/components/TranslatedText.vue';
 
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
-    <img src="/logo-no-text.svg" />
+    <img src="/logo-no-text.svg" alt="Strnadi" />
     <h1 class="text-center">
       <TranslatedText identifier="project_name" />
     </h1>

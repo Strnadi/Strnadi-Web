@@ -136,7 +136,7 @@ function rebuildGlifyPoints() {
   const overlayMarkers: Marker[] = [];
 
   for (const m of props.markers) {
-    if (m.data?.colors) {
+    if (m.data?.colors && m.data.colors.length <= 1) {
       dataMarkers.push(m);
     } else {
       overlayMarkers.push(m);
@@ -173,16 +173,17 @@ function rebuildGlifyPoints() {
   }
 
   // Store the data markers array so click handler can resolve the index
-  glifyDataMarkers = dataMarkers;
-
   // Click handler shared by all layers.
   // We use a coordinate->index lookup so it works even when the clicked point
   // comes from a subset layer (dot/ring overlays).
   const posKey = (p: [number, number]) => `${p[0]},${p[1]}`;
-  const posToIndex = new Map<string, number>();
+  const posToMarkers = new Map<string, Marker[]>();
   for (let i = 0; i < allLatLngs.length; i++) {
     const pos = allLatLngs[i]!;
-    posToIndex.set(posKey(pos), i);
+    const key = posKey(pos);
+    const atPosition = posToMarkers.get(key) ?? [];
+    atPosition.push(dataMarkers[i]!);
+    posToMarkers.set(key, atPosition);
   }
 
   const handleClick = (
@@ -190,10 +191,27 @@ function rebuildGlifyPoints() {
     feature: [number, number],
     _xy: { x: number; y: number }
   ) => {
-    const idx = posToIndex.get(posKey(feature));
-    const marker = idx !== undefined ? glifyDataMarkers[idx] : undefined;
-    if (marker) {
-      emit('click', { event: e, marker });
+    const candidates = posToMarkers.get(posKey(feature)) ?? [];
+    if (candidates.length === 1) {
+      emit('click', { event: e, marker: candidates[0]! });
+      return;
+    }
+    if (candidates.length > 1 && leafletMap) {
+      const chooser = document.createElement('div');
+      chooser.setAttribute('role', 'list');
+      candidates.forEach((marker) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = `Nahrávka ${marker.data?.recording?.id ?? marker.id}`;
+        button.style.display = 'block';
+        button.style.padding = '6px';
+        button.addEventListener('click', () => {
+          emit('click', { event: e, marker });
+          leafletMap?.closePopup();
+        });
+        chooser.appendChild(button);
+      });
+      L.popup().setLatLng(feature).setContent(chooser).openOn(leafletMap);
     }
   };
 
@@ -242,9 +260,6 @@ function rebuildGlifyPoints() {
     });
   }
 }
-
-/** Data markers currently rendered by glify (kept for click resolution). */
-let glifyDataMarkers: Marker[] = [];
 
 /** Overlay markers that are NOT handled by glify and need normal Leaflet rendering. */
 const overlayMarkersForTemplate = ref<Marker[]>([]);
@@ -369,13 +384,24 @@ function onClusterClick(e: any) {
 const hoveredPolygon = ref<(number | string) | null>(null);
 
 const { coords, isSupported: isGeolocationSupported } = useGeolocation();
+const hasValidLocation = computed(
+  () =>
+    isGeolocationSupported.value &&
+    Number.isFinite(coords.value.latitude) &&
+    Number.isFinite(coords.value.longitude) &&
+    coords.value.latitude >= -90 &&
+    coords.value.latitude <= 90 &&
+    coords.value.longitude >= -180 &&
+    coords.value.longitude <= 180 &&
+    !(coords.value.latitude === 0 && coords.value.longitude === 0)
+);
 const iconCurrent = new Icon({
   iconUrl: '/dialects/current-location.svg',
   iconSize: [24, 24],
   iconAnchor: [19, 19]
 });
 const iconCurrentHeading = new Icon({
-  iconUrl: '/dialects/current-location.svg',
+  iconUrl: '/dialects/current-location-heading.svg',
   iconSize: [24, 24],
   iconAnchor: [19, 19]
 });
@@ -390,6 +416,10 @@ const props = withDefaults(defineProps<MapProps>(), {
 
 const zoom = ref<number>(props.position[2]);
 const center = ref<[number, number]>([props.position[0], props.position[1]]);
+const PROJECT_BOUNDS: L.LatLngBoundsExpression = [
+  [47, 10],
+  [53, 21]
+];
 
 const emit = defineEmits<{
   click: [
@@ -432,6 +462,10 @@ function onMapReady(mapComp: any) {
     rebuildClusters();
   }
 }
+
+const resetProjectView = () => {
+  leafletMap?.fitBounds(PROJECT_BOUNDS, { padding: [20, 20] });
+};
 
 watch([zoom, center], updateBounds);
 
@@ -481,7 +515,12 @@ onBeforeUnmount(() => {
       v-model:center="center"
       class="flex-1"
       :zoom="zoom"
-      :options="{ zoomControl: false }"
+      :options="{
+        zoomControl: false,
+        maxBounds: PROJECT_BOUNDS,
+        maxBoundsViscosity: 0.75,
+        worldCopyJump: true
+      }"
       @ready="onMapReady"
       @moveend="updateBounds"
       @click="(event: LeafletMouseEvent) => emit('click', { event })"
@@ -493,7 +532,7 @@ onBeforeUnmount(() => {
         :max-zoom="19"
         :min-zoom="5"
         :z-index="1"
-        attribution="<a href='https://api.mapy.cz/copyright' target='_blank'>&copy; Seznam.cz a.s. a další</a>"
+        attribution="<a href='https://api.mapy.cz/copyright' target='_blank' rel='noopener noreferrer'>&copy; Seznam.cz a.s. a další</a>"
       />
       <l-tile-layer
         v-if="mode === 'aerial'"
@@ -501,7 +540,7 @@ onBeforeUnmount(() => {
         :max-zoom="19"
         :min-zoom="5"
         :z-index="2"
-        attribution="<a href='https://api.mapy.cz/copyright' target='_blank'>&copy; Seznam.cz a.s. a další</a>"
+        attribution="<a href='https://api.mapy.cz/copyright' target='_blank' rel='noopener noreferrer'>&copy; Seznam.cz a.s. a další</a>"
       />
 
       <!-- Polygons -->
@@ -536,7 +575,7 @@ onBeforeUnmount(() => {
 
       <!-- Current Location -->
       <l-marker
-        v-if="isGeolocationSupported"
+        v-if="hasValidLocation"
         :lat-lng="[coords.latitude, coords.longitude]"
         :rotation-angle="coords.heading || 0"
         :icon="coords.heading ? iconCurrentHeading : iconCurrent"
@@ -546,8 +585,9 @@ onBeforeUnmount(() => {
       <l-control position="bottomleft">
         <div class="z-[40]">
           <a
-            href="http://mapy.cz/"
+            href="https://mapy.cz/"
             target="_blank"
+            rel="noopener noreferrer"
           >
             <img
               src="https://api.mapy.cz/img/api/logo.svg"
@@ -555,6 +595,17 @@ onBeforeUnmount(() => {
             />
           </a>
         </div>
+      </l-control>
+
+      <l-control position="bottomleft">
+        <button
+          type="button"
+          class="rounded bg-white px-3 py-2 shadow"
+          aria-label="Vrátit mapu na území projektu"
+          @click.stop="resetProjectView"
+        >
+          Vrátit mapu
+        </button>
       </l-control>
 
       <!-- Controls -->

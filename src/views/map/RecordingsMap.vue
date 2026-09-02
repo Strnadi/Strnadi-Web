@@ -80,6 +80,8 @@ const props = defineProps<{
   selectionMode?: boolean;
 }>();
 
+const publicDataEnabled = computed(() => !props.selectionMode);
+
 type TimedFilteredPart = FilteredPartModel & {
   startMs: number;
   endMs: number;
@@ -92,6 +94,7 @@ interface DialectMetaFlags {
   dialects: string[];
   fromModel: boolean;
   fromUser: boolean;
+  confirmed: boolean;
 }
 
 function buildPartRanges(parts: RecordingPartModel[]): PartRange[] {
@@ -116,29 +119,63 @@ function fltr(parts: TimedFilteredPart[], thing: keyof DetectedDialect) {
   return parts.flatMap((part) =>
     (hasRepresentants ? part.representantFlag : true)
       ? (part.detectedDialects ?? [])
-          .filter((dd) => dd[thing])
-          .map((dd) => dd[thing] as DetectedDialect[typeof thing])
+        .filter((dd) => dd[thing])
+        .map((dd) => dd[thing] as DetectedDialect[typeof thing])
       : []
   );
 }
 
 function collectDialectMeta(parts: TimedFilteredPart[]): DialectMetaFlags {
-  const confirmed: string[] = fltr(parts, 'confirmedDialect');
+  // A confirmed classification always wins, even if a stale representative
+  // flag exists on a different segment.
+  const confirmed = parts.flatMap((part) =>
+    (part.detectedDialects ?? [])
+      .map((detection) => detection.confirmedDialect)
+      .filter((dialect): dialect is string => Boolean(dialect))
+  );
   const predicted: string[] = fltr(parts, 'predictedDialect');
   const userGuess: string[] = fltr(parts, 'userGuessDialect');
 
   if (confirmed.length) {
-    return { dialects: confirmed, fromModel: false, fromUser: false };
+    return {
+      dialects: confirmed,
+      fromModel: false,
+      fromUser: false,
+      confirmed: true
+    };
   }
   if (predicted.length) {
-    return { dialects: predicted, fromModel: true, fromUser: false };
+    return {
+      dialects: predicted,
+      fromModel: true,
+      fromUser: false,
+      confirmed: false
+    };
   }
   if (userGuess.length) {
-    return { dialects: userGuess, fromModel: false, fromUser: true };
+    return {
+      dialects: userGuess,
+      fromModel: false,
+      fromUser: true,
+      confirmed: false
+    };
   }
 
-  return { dialects: ['None'], fromModel: false, fromUser: false };
+  return {
+    dialects: ['None'],
+    fromModel: false,
+    fromUser: false,
+    confirmed: false
+  };
 }
+
+const nonDialectCodes = new Set(['none', 'nobird', 'no-bird', 'unfinished']);
+const hasMeaningfulDialect = (parts: TimedFilteredPart[]) => {
+  const { dialects } = collectDialectMeta(parts);
+  return dialects.some(
+    (dialect) => !nonDialectCodes.has(dialect.toLowerCase().replace(/\s+/g, ''))
+  );
+};
 
 function getIconDimensions() {
   const isMobile =
@@ -167,11 +204,7 @@ function matchesMapFilter(
     case 'new':
       return createdAtMs > oldCutoffMs;
     case 'any-dialect':
-      return (
-        filteredParts
-          .get(recording.id)
-          ?.some((fp) => fp.detectedDialects !== null) ?? false
-      );
+      return hasMeaningfulDialect(filteredParts.get(recording.id) ?? []);
     default:
       return true;
   }
@@ -203,26 +236,41 @@ const allowedClustering = computed<[Marker, Marker][]>(() => {
 
   const allowedPairs: [Marker, Marker][] = [];
 
-  for (const m1 of allMarkers.value) {
-    for (const m2 of allMarkers.value) {
-      if (m1.id >= m2.id) continue;
-
-      if (clusterTest(m1, m2)) {
-        allowedPairs.push([m1, m2]);
+  const buckets = new globalThis.Map<string, Marker[]>();
+  const cellSize = 0.75;
+  for (const marker of allMarkers.value) {
+    const latCell = Math.floor(marker.position[0] / cellSize);
+    const lngCell = Math.floor(marker.position[1] / cellSize);
+    for (let latOffset = -1; latOffset <= 1; latOffset++) {
+      for (let lngOffset = -1; lngOffset <= 1; lngOffset++) {
+        const nearby = buckets.get(
+          `${latCell + latOffset}:${lngCell + lngOffset}`
+        );
+        for (const candidate of nearby ?? []) {
+          if (clusterTest(candidate, marker)) {
+            allowedPairs.push([candidate, marker]);
+          }
+        }
       }
     }
+    const key = `${latCell}:${lngCell}`;
+    const bucket = buckets.get(key) ?? [];
+    bucket.push(marker);
+    buckets.set(key, bucket);
   }
   return allowedPairs;
 });
 
 const { data: recordings } = useQuery({
   queryKey: ['recordings'],
-  queryFn: () => getRecordings({ parts: true })
+  queryFn: () => getRecordings({ parts: true }),
+  enabled: publicDataEnabled
 });
 
 const { data: filteredRecordings } = useQuery({
   queryKey: ['filtered-recordings'],
-  queryFn: () => getFilteredRecordings()
+  queryFn: () => getFilteredRecordings(),
+  enabled: publicDataEnabled
 });
 
 const filteredPartsByRecordingId = computed<FilteredPartsMap>(() => {
@@ -347,14 +395,38 @@ const markers = computed<Marker[]>(() => {
       );
     }
 
-    let { dialects, fromModel, fromUser } =
+    let { dialects, fromModel, fromUser, confirmed } =
       collectDialectMeta(relevantFiltered);
+
+    if (
+      confirmed &&
+      dialects.some((dialect) =>
+        ['none', 'nobird', 'no-bird'].includes(
+          dialect.toLowerCase().replace(/\s+/g, '')
+        )
+      )
+    ) {
+      continue;
+    }
 
     let dedupedDialects = new Set(dialects);
     dialects = [...dedupedDialects.values()];
 
     if (MapStore.onlyDialects) {
-      if (dialects.every((d) => d === 'None' || d === 'Unfinished')) continue;
+      if (!hasMeaningfulDialect(relevantFiltered)) continue;
+    }
+
+    const latitude = lastPart.gpsLatitudeStart;
+    const longitude = lastPart.gpsLongitudeStart;
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      continue;
     }
 
     const colors = dialects.map((code) => dialectColors[code] ?? '#000000');
@@ -373,21 +445,21 @@ const markers = computed<Marker[]>(() => {
     result.push({
       id: `${rec.id}-${lastPart.id}`,
       icon: icon as Icon,
-      position: [lastPart.gpsLatitudeStart, lastPart.gpsLongitudeStart] as [
-        number,
-        number
-      ],
+      position: [latitude, longitude],
       data: {
         recording: rec,
         part: lastPart,
         colors,
         fromModel,
-        fromUser
+        fromUser,
+        confirmed
       }
     });
   }
 
-  return result;
+  return result.sort(
+    (a, b) => Number(a.data?.confirmed) - Number(b.data?.confirmed)
+  );
 });
 
 const onClick = ({
@@ -437,19 +509,9 @@ const allMarkers = computed<Marker[]>(() => [
 </script>
 
 <template>
-  <Map
-    v-model:bounds="viewBounds"
-    v-model:zoom="zoom"
-    :scale-bar="MapStore.scale"
-    :polygons="!props.selectionMode ? polygons : []"
-    :markers="
-      !props.selectionMode ? allMarkers : Object.values(MapStore.markers)
-    "
-    :allowed-clustering="allowedClustering"
-    :mode="MapStore.aerial ? 'aerial' : 'outdoor'"
-    :position="currentCenter"
-    :zoom-control="true"
-    :use-glify="allMarkers.length > 1000 && !props.selectionMode"
-    @click="onClick"
-  />
+  <Map v-model:bounds="viewBounds" v-model:zoom="zoom" :scale-bar="MapStore.scale"
+    :polygons="!props.selectionMode ? polygons : []" :markers="!props.selectionMode ? allMarkers : Object.values(MapStore.markers)
+      " :allowed-clustering="props.selectionMode ? [] : allowedClustering"
+    :mode="MapStore.aerial ? 'aerial' : 'outdoor'" :position="currentCenter" :zoom-control="true"
+    :use-glify="!props.selectionMode && allMarkers.length > 1000 && !MapStore.grouping" @click="onClick" />
 </template>

@@ -1,44 +1,21 @@
-import { initializeApp, type FirebaseApp } from 'firebase/app';
-import { getMessaging, getToken, type Messaging } from 'firebase/messaging';
+import { initializeApp } from 'firebase/app';
+import { getMessaging, getToken } from 'firebase/messaging';
 import { firebaseConfig, vapidKey } from '@/constants/FirebaseConfig';
 import { postDevice } from '@/api/device';
 import { accountStore } from '@/state/AccountStore';
+import { postDeleteDevice } from '@/api/device';
+import { watch } from 'vue';
 
-async function initializePushNotifications(
-  _app: FirebaseApp,
-  messaging: Messaging
-) {
-  while (Notification.permission === 'default') {
-    await Notification.requestPermission();
-  }
+let registerPushDevice: (() => Promise<void>) | null = null;
 
-  if (Notification.permission === 'granted' && accountStore.user) {
-    const registration = await navigator.serviceWorker.getRegistration('/');
-    try {
-      const token = await getToken(messaging, {
-        vapidKey,
-        serviceWorkerRegistration: registration
-      });
-      if (token) {
-        postDevice(
-          {
-            fcmToken: token,
-            userId: accountStore.user.id,
-            devicePlatform: 'web',
-            deviceModel: navigator.userAgent
-          },
-          accountStore.token!
-        );
-      } else {
-        console.log(
-          'No registration token available. Request permission to generate one.'
-        );
-      }
-    } catch (error) {
-      console.error('An error occurred while retrieving token. ', error);
-    }
-  }
-}
+export const requestPushNotifications = async () => {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+  const permission =
+    Notification.permission === 'default'
+      ? await Notification.requestPermission()
+      : Notification.permission;
+  if (permission === 'granted') await registerPushDevice?.();
+};
 
 export default {
   install(_vueApp: any) {
@@ -46,8 +23,50 @@ export default {
     if ('Notification' in window && 'serviceWorker' in navigator) {
       const app = initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
+      let currentFcmToken: string | null = null;
+      let boundUserId: number | null = null;
 
-      initializePushNotifications(app, messaging);
+      const syncDevice = async () => {
+        if (Notification.permission !== 'granted' || !accountStore.user) return;
+        const registration = await navigator.serviceWorker.getRegistration('/');
+        currentFcmToken = await getToken(messaging, {
+          vapidKey,
+          serviceWorkerRegistration: registration
+        });
+        if (!currentFcmToken) return;
+        await postDevice(
+          {
+            fcmToken: currentFcmToken,
+            userId: accountStore.user.id,
+            devicePlatform: 'web',
+            deviceModel: navigator.userAgent
+          },
+          accountStore.token!
+        );
+        boundUserId = accountStore.user.id;
+      };
+      registerPushDevice = syncDevice;
+
+      watch(
+        () => ({ userId: accountStore.user?.id ?? null, token: accountStore.token }),
+        async (next, previous) => {
+          try {
+            if (
+              currentFcmToken &&
+              boundUserId !== null &&
+              boundUserId !== next.userId &&
+              previous?.token
+            ) {
+              await postDeleteDevice(currentFcmToken, previous.token);
+              boundUserId = null;
+            }
+            if (next.userId && next.token) await syncDevice();
+          } catch {
+            // Push setup must never block login/logout or application startup.
+          }
+        },
+        { immediate: true }
+      );
     }
   }
 };

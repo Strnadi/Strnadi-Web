@@ -13,8 +13,10 @@ import { accountStore } from '@/state/AccountStore';
 import { getUsers, type User } from '@/api/account';
 import { fuzzyMatch } from '@/utils/fuzzy-match';
 import type { TranslationIdentifier } from '@/constants/Translations';
+import { useRoute } from 'vue-router';
 
 const MIN_SEARCH_LENGTH = 2;
+const route = useRoute();
 const SEARCH_RESULT_LIMIT = 8;
 
 const languages = ['cs', 'en', 'de'] as const;
@@ -127,6 +129,21 @@ const availableUsers = computed<User[]>(() => users.value ?? []);
 const recipientsCount = computed(() => selectedUserIds.value.size);
 const currentTabMeta = computed(() =>
   tabOptions.find((tab) => tab.id === activeTab.value)
+);
+
+let queryRecipientApplied = false;
+watch(
+  availableUsers,
+  (available) => {
+    if (queryRecipientApplied) return;
+    const requestedId = Number(route.query.userId);
+    if (!Number.isInteger(requestedId)) return;
+    if (available.some((user) => user.id === requestedId)) {
+      selectedUserIds.value = new Set([requestedId]);
+      queryRecipientApplied = true;
+    }
+  },
+  { immediate: true }
 );
 
 const normalizeField = (value?: string | null) =>
@@ -593,12 +610,18 @@ const sendErrorMessage = ref<string | null>(null);
 
 const hasAnyTitle = computed(() => languages.some((lang) => titles[lang]));
 const hasAnyBody = computed(() => languages.some((lang) => messages[lang]));
+const hasIncompleteLanguage = computed(() =>
+  languages.some(
+    (lang) => Boolean(titles[lang].trim()) !== Boolean(messages[lang].trim())
+  )
+);
 
 const canSend = computed(
   () =>
     recipientsCount.value > 0 &&
     hasAnyTitle.value &&
     hasAnyBody.value &&
+    !hasIncompleteLanguage.value &&
     !isSending.value
 );
 
@@ -1331,6 +1354,13 @@ const messageLabels: Record<Language, TranslationIdentifier> = {
       </div>
 
       <div class="mt-6 flex flex-col gap-3 border-t border-gray-100 pt-4">
+        <p
+          v-if="hasIncompleteLanguage"
+          role="alert"
+          class="text-sm text-red-600"
+        >
+          Každý vyplněný jazyk musí obsahovat nadpis i zprávu.
+        </p>
         <p class="text-sm text-gray-500">
           <TranslatedText
             identifier="admin.notifications.content.summary.recipients"
@@ -1370,6 +1400,8 @@ const messageLabels: Record<Language, TranslationIdentifier> = {
           </button>
           <p
             v-if="sendStatus === 'success'"
+            role="status"
+            aria-live="polite"
             class="text-sm text-green-600"
           >
             <TranslatedText
@@ -1378,6 +1410,7 @@ const messageLabels: Record<Language, TranslationIdentifier> = {
           </p>
           <p
             v-else-if="sendStatus === 'error'"
+            role="alert"
             class="text-sm text-red-500"
           >
             <TranslatedText

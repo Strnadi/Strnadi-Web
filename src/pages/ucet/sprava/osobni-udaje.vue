@@ -19,7 +19,7 @@ import TranslatedText, { t } from '@/components/TranslatedText.vue';
 const name = ref(accountStore.user?.firstName ?? '');
 const surname = ref(accountStore.user?.lastName ?? '');
 const nickname = ref(accountStore.user?.nickname ?? '');
-const zipcode = ref(accountStore.user?.postCode ?? 0);
+const zipcode = ref(accountStore.user?.postCode?.toString() ?? '');
 const town = ref(accountStore.user?.city ?? '');
 
 const form = ref<HTMLFormElement | null>(null);
@@ -42,12 +42,19 @@ const { mutate, isPending, error } = useMutation({
     accountStore.user!.firstName = name.value;
     accountStore.user!.lastName = surname.value;
     accountStore.user!.nickname = nickname.value;
-    accountStore.user!.postCode = zipcode.value;
+    accountStore.user!.postCode = zipcode.value
+      ? Number.parseInt(zipcode.value, 10)
+      : null;
     accountStore.user!.city = town.value;
   }
 });
 
-const { mutate: passwordChangeMutate } = useMutation({
+const {
+  mutate: passwordChangeMutate,
+  isPending: isPasswordPending,
+  isSuccess: isPasswordSuccess,
+  error: passwordError
+} = useMutation({
   mutationFn: ({
     token,
     userId,
@@ -56,7 +63,11 @@ const { mutate: passwordChangeMutate } = useMutation({
     token: string;
     userId: string | number;
     newPassword: string;
-  }) => patchPasswordChange(token, userId, newPassword)
+  }) => patchPasswordChange(token, userId, newPassword),
+  onSuccess: () => {
+    password.value = '';
+    passwordAgain.value = '';
+  }
 });
 
 const submitPasswordChange = () => {
@@ -74,7 +85,7 @@ const submit = () => {
       firstName: name.value,
       lastName: surname.value,
       nickname: nickname.value,
-      postCode: zipcode.value,
+      postCode: zipcode.value ? Number.parseInt(zipcode.value, 10) : null,
       city: town.value
     },
     token,
@@ -192,6 +203,12 @@ const submit = () => {
     <TranslatedText identifier="account.personal_data.password_section_title" />
   </h2>
   <div class="flex flex-col gap-y-2 w-full">
+    <p v-if="passwordError" role="alert" class="text-red-700">
+      {{ passwordError.message }}
+    </p>
+    <p v-else-if="isPasswordSuccess" role="status" class="text-green-700">
+      Heslo bylo změněno.
+    </p>
     <RevealablePasswordInput
       v-model="password"
       class="p-2"
@@ -206,7 +223,7 @@ const submit = () => {
     </RevealablePasswordInput>
     <button
       class="primary p-2 w-full"
-      :disabled="!passwordAgain || passwordAgain !== password"
+      :disabled="isPasswordPending || !passwordAgain || passwordAgain !== password"
       @click="submitPasswordChange"
     >
       <TranslatedText identifier="buttons.change_password" />

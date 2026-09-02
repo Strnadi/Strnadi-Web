@@ -25,6 +25,7 @@ import {
   postArticle,
   postArticleFile,
   patchAssignArticleCategory,
+  deleteArticleFromCategory,
   type Article
 } from '@/api/articles';
 import { accountStore } from '@/state/AccountStore';
@@ -66,12 +67,12 @@ const editorContentProxy = computed({
 });
 
 const { data: availableCategories } = useQuery({
-  queryKey: ['articleCategories'],
+  queryKey: ['article-categories'],
   queryFn: () => getArticleCategories()
 });
 
 const { data: articleQuery } = useQuery({
-  queryKey: ['articles', numericArticleId],
+  queryKey: ['articles', 'detail', numericArticleId],
   queryFn: () => getArticle(numericArticleId.value!),
   enabled: computed(
     () => isEditMode.value && typeof numericArticleId.value === 'number'
@@ -181,25 +182,21 @@ const onAttachmentDrop = (acceptedFiles: File[]) => {
 };
 
 const uploadLanguageFiles = async (articleId: number) => {
-  const uploads = Object.entries(editorContents)
-    .filter(([, content]) => content?.trim())
-    .map(([lang, content]) =>
-      postArticleFile(
-        accountStore.token!,
-        articleId,
-        buildMarkdownFile(lang, content)
-      )
+  for (const [lang, content] of Object.entries(editorContents)) {
+    if (!content?.trim()) continue;
+    await postArticleFile(
+      accountStore.token!,
+      articleId,
+      buildMarkdownFile(lang, content)
     );
-
-  await Promise.all(uploads);
+  }
 };
 
 const uploadAttachments = async (articleId: number) => {
   if (!files.value.length) return;
-  const uploads = files.value.map((file) =>
-    postArticleFile(accountStore.token!, articleId, file)
-  );
-  await Promise.all(uploads);
+  for (const file of files.value) {
+    await postArticleFile(accountStore.token!, articleId, file);
+  }
 };
 
 const submitCreate = async () => {
@@ -212,18 +209,15 @@ const submitCreate = async () => {
   await uploadLanguageFiles(numericId);
   await uploadAttachments(numericId);
 
-  await Promise.all(
-    (categories.value ?? []).map((category) =>
-      patchAssignArticleCategory(accountStore.token!, category, {
+  for (const category of categories.value ?? []) {
+    await patchAssignArticleCategory(accountStore.token!, category, {
         articleId: numericId,
         order: 0
-      })
-    )
-  );
+    });
+  }
 };
 
 const submitEdit = async (articleId: number) => {
-  const ops: Promise<unknown>[] = [];
   if (article.value) {
     const origCats = ((article.value as any)?.categories ?? []).map(
       (c: any) => c.name
@@ -233,17 +227,34 @@ const submitEdit = async (articleId: number) => {
       description.value !== article.value.description ||
       JSON.stringify(categories.value) !== JSON.stringify(origCats)
     ) {
-      ops.push(
-        patchArticle(accountStore.token!, articleId, {
-          name: name.value,
-          description: description.value
-        })
-      );
+      await patchArticle(accountStore.token!, articleId, {
+        name: name.value,
+        description: description.value
+      });
+    }
+
+    const nextCategories = new Set(categories.value);
+    for (const category of origCats) {
+      if (!nextCategories.has(category)) {
+        await deleteArticleFromCategory(
+          accountStore.token!,
+          category,
+          articleId
+        );
+      }
+    }
+    for (const category of categories.value) {
+      if (!origCats.includes(category)) {
+        await patchAssignArticleCategory(accountStore.token!, category, {
+          articleId,
+          order: 0
+        });
+      }
     }
   }
 
   for (const fn of deleteFiles.value) {
-    ops.push(deleteArticleFile(accountStore.token!, articleId, fn));
+    await deleteArticleFile(accountStore.token!, articleId, fn);
   }
 
   const originalLangFiles = new Set(Object.keys(originalContents));
@@ -259,26 +270,31 @@ const submitEdit = async (articleId: number) => {
     const file = buildMarkdownFile(lang, currentContent);
 
     if (!originalContent) {
-      ops.push(postArticleFile(accountStore.token!, articleId, file));
+      await postArticleFile(accountStore.token!, articleId, file);
     } else if (currentContent !== originalContent) {
-      ops.push(
-        patchArticleFile(accountStore.token!, articleId, `${lang}.md`, file)
+      await patchArticleFile(
+        accountStore.token!,
+        articleId,
+        `${lang}.md`,
+        file
       );
     }
   }
 
   for (const lang of originalLangFiles) {
     if (!currentLangFiles.has(lang)) {
-      ops.push(deleteArticleFile(accountStore.token!, articleId, `${lang}.md`));
+      await deleteArticleFile(accountStore.token!, articleId, `${lang}.md`);
     }
   }
 
-  ops.push(uploadAttachments(articleId));
-
-  await Promise.all(ops);
+  await uploadAttachments(articleId);
 };
 
-const { mutate: submitArticle, isPending: isSubmitting } = useMutation({
+const {
+  mutate: submitArticle,
+  isPending: isSubmitting,
+  error: submitError
+} = useMutation({
   mutationFn: async () => {
     if (isEditMode.value) {
       if (typeof numericArticleId.value !== 'number') {
@@ -346,6 +362,14 @@ const primaryTitleIdentifier = computed(() =>
     <h1>
       <TranslatedText :identifier="primaryTitleIdentifier" />
     </h1>
+
+    <p
+      v-if="submitError"
+      role="alert"
+      class="rounded bg-red-50 p-3 text-red-700"
+    >
+      {{ submitError.message }}
+    </p>
 
     <div class="flex flex-col gap-y-2">
       <input

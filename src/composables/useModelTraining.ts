@@ -42,6 +42,7 @@ export function useModelTraining() {
   let valTensors: { xs: tf.Tensor2D; ys: tf.Tensor2D } | null = null;
   let testSamples: ProcessedSample[] = [];
   let visUpdateCounter = 0;
+  let cancelRequested = false;
 
   const phase = ref<TrainingPhase>('idle');
   const progressPct = ref(0);
@@ -65,6 +66,11 @@ export function useModelTraining() {
   );
 
   function reset() {
+    if (isBusy.value || phase.value === 'evaluating') {
+      cancelRequested = true;
+      statusMessage.value = 'Ukončování operace…';
+      return;
+    }
     if (trainedModel.value) {
       trainedModel.value.dispose();
     }
@@ -93,7 +99,11 @@ export function useModelTraining() {
   }
 
   async function loadDataset(zipFile: File) {
+    if (isBusy.value || phase.value === 'evaluating') {
+      throw new Error('Počkejte prosím na ukončení předchozí operace.');
+    }
     reset();
+    cancelRequested = false;
     phase.value = 'loading-dataset';
     statusMessage.value = 'Načítání datasetu…';
     progressPct.value = 0;
@@ -105,6 +115,7 @@ export function useModelTraining() {
           statusMessage.value = `Načítání souborů ${loaded} / ${total}`;
         }
       });
+      if (cancelRequested) throw new Error('Operation cancelled');
 
       classNames.value = split.classNames;
       classWeights.value = split.classWeights;
@@ -133,6 +144,11 @@ export function useModelTraining() {
         split.train,
         split.classNames.length
       );
+      if (cancelRequested) {
+        trainX.dispose();
+        trainY.dispose();
+        throw new Error('Operation cancelled');
+      }
       const { xs: valX, ys: valY } = await extractEmbeddings(
         extractor,
         split.val,
@@ -147,7 +163,7 @@ export function useModelTraining() {
       progressPct.value = 100;
     } catch (e: unknown) {
       disposeTensors();
-      phase.value = 'error';
+      phase.value = cancelRequested ? 'idle' : 'error';
       error.value =
         e instanceof Error ? e.message : typeof e === 'string' ? e : String(e);
       throw e;
@@ -171,6 +187,7 @@ export function useModelTraining() {
 
     try {
       for (let i = 0; i < samples.length; i += batchSize) {
+        if (cancelRequested) throw new Error('Operation cancelled');
         const batch = samples.slice(i, i + batchSize);
         const audios = batch.map((s) => s.audio);
         const em = await extractor(audios);
@@ -203,6 +220,7 @@ export function useModelTraining() {
       throw new Error('Dataset not loaded.');
     }
     phase.value = 'training';
+    cancelRequested = false;
     totalEpochs.value = config.epochs ?? 100;
     epochHistory.value = [];
     statusMessage.value = 'Trénink probíhá…';
@@ -243,7 +261,8 @@ export function useModelTraining() {
           if (visUpdateCounter % 2 === 0 || log.epoch === 0) {
             await updateTrainingMetrics(epochHistory.value);
           }
-        }
+        },
+        () => cancelRequested
       );
 
       await updateTrainingMetrics(epochHistory.value);
@@ -259,7 +278,8 @@ export function useModelTraining() {
 
       await runEvaluation();
     } catch (e: unknown) {
-      phase.value = 'error';
+      disposeTensors();
+      phase.value = cancelRequested ? 'idle' : 'error';
       error.value =
         e instanceof Error ? e.message : typeof e === 'string' ? e : String(e);
       throw e;
@@ -280,6 +300,7 @@ export function useModelTraining() {
       let processed = 0;
 
       for (let i = 0; i < testSamples.length; i += batchSize) {
+        if (cancelRequested) throw new Error('Operation cancelled');
         const batch = testSamples.slice(i, i + batchSize);
         const audios = batch.map((s) => s.audio);
         const embeddings = await extractor(audios);
@@ -325,11 +346,15 @@ export function useModelTraining() {
       evaluationDone.value = true;
       statusMessage.value = 'Trénink a hodnocení dokončeno!';
     } catch (e: unknown) {
-      console.warn('Evaluation failed:', e);
+      if (!cancelRequested) console.warn('Evaluation failed:', e);
       evaluationDone.value = false;
     }
 
-    phase.value = 'done';
+    if (cancelRequested && trainedModel.value) {
+      trainedModel.value.dispose();
+      trainedModel.value = null;
+    }
+    phase.value = cancelRequested ? 'idle' : 'done';
   }
 
   async function downloadModel(name = 'perch_v2_custom_head') {
@@ -337,6 +362,13 @@ export function useModelTraining() {
       throw new Error('No trained model available.');
     }
     await saveHeadModel(trainedModel.value, name);
+  }
+
+  function cancel() {
+    cancelRequested = true;
+    if (!isBusy.value && phase.value !== 'evaluating') {
+      reset();
+    }
   }
 
   return {
@@ -354,6 +386,7 @@ export function useModelTraining() {
     evaluationDone,
     isBusy,
     reset,
+    cancel,
     loadDataset,
     startTraining,
     downloadModel,

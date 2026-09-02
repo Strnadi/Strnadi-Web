@@ -34,15 +34,14 @@ import { NetworkFirst, CacheFirst } from 'workbox-strategies';
 const BUILD_VERSION = new Date().toISOString().replace(/[-:T.Z]/g, '');
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
-    Inspect(),
-    QRCode(),
+    ...(mode === 'development' ? [Inspect(), QRCode()] : []),
     purgePolyfills.rollup({ logLevel: 'verbose' }),
     // TSConfigPaths({ loose: true }),
     TailwindCSS(),
     DocsPlugin(),
-    VueRouter({ importMode: 'sync', routeBlockLang: 'yaml' }),
+    VueRouter({ importMode: 'async', routeBlockLang: 'yaml' }),
     Vue({ include: [/\.vue$/, /\.md$/] }),
     SVGLoader({
       defaultImport: 'component'
@@ -51,7 +50,7 @@ export default defineConfig({
       output: ['terminal', 'console']
     }),
     MetaLayouts({
-      importMode: 'sync',
+      importMode: 'async',
       target: 'src/layouts',
       defaultLayout: 'default',
       skipTopLevelRouteLayout: false
@@ -60,7 +59,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       devOptions: {
-        enabled: true
+        enabled: process.env['PWA_DEV'] === 'true'
       },
       manifest: {
         name: 'Strnadi - web',
@@ -90,7 +89,7 @@ export default defineConfig({
         runtimeCaching: [
           {
             urlPattern:
-              /^https:\/\/(dev|new|old)?api.strnadi.cz\/recordings\/part\/(\d+)\/(\d+)\/sound$/,
+              /^https:\/\/(?:(?:dev|new|old|staging)\.)?api\.strnadi\.cz\/recordings\/part\/(\d+)\/(\d+)\/sound$/,
             handler: 'CacheFirst',
             options: {
               cacheName: `strnadi-api-cache-sounds`,
@@ -101,7 +100,8 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /^https:\/\/(dev|new|old)?api.strnadi.cz\/map\/.*$/,
+            urlPattern:
+              /^https:\/\/(?:(?:dev|new|old|staging)\.)?api\.strnadi\.cz\/map\/.*$/,
             handler: 'CacheFirst',
             options: {
               cacheName: `strnadi-api-cache-maps`,
@@ -127,18 +127,27 @@ export default defineConfig({
       }
     }),
     Compression({ algorithms: ['brotliCompress'] }),
-    SentryVitePlugin({
-      org: 'delta-strnadi',
-      project:
-        process.env['MODE'] === 'production'
-          ? 'strnadi-web'
-          : 'strnadi-web-staging',
-      telemetry: false
-    }),
+    ...(process.env['SENTRY_UPLOAD_SOURCEMAPS'] === 'true' &&
+    process.env['SENTRY_AUTH_TOKEN']
+      ? [
+          SentryVitePlugin({
+            org: 'delta-strnadi',
+            project:
+              mode === 'production'
+                ? 'strnadi-web'
+                : 'strnadi-web-staging',
+            telemetry: false
+          })
+        ]
+      : []),
     // mkcert(),
-    vueDevTools({
-      launchEditor: 'subl4'
-    }),
+    ...(mode === 'development'
+      ? [
+          vueDevTools({
+            launchEditor: 'subl4'
+          })
+        ]
+      : []),
     Visualizer({
       gzipSize: true,
       open: false,
@@ -178,20 +187,7 @@ export default defineConfig({
   build: {
     target: 'ESNext',
     cssTarget: 'es2022',
-    rollupOptions: {
-      output: {
-        codeSplitting: {
-          groups: [
-            {
-              name: 'vendor',
-              test: /node_modules/
-            }
-          ]
-        }
-      }
-    },
-
-    sourcemap: true,
+    sourcemap: mode !== 'production',
     reportCompressedSize: false
   },
 
@@ -224,4 +220,4 @@ export default defineConfig({
       // "cross-origin-opener-policy": "same-origin"
     }
   }
-});
+}));

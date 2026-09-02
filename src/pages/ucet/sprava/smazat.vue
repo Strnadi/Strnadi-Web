@@ -26,11 +26,14 @@ meta:
 
   <button
     class="primary p-2"
-    :disabled="!enabled"
+    :disabled="!enabled || isPending"
     @click="() => mutate()"
   >
     <TranslatedText identifier="buttons.delete_account" />
   </button>
+  <p v-if="error" role="alert" class="text-red-700">
+    {{ error.message }}
+  </p>
 </template>
 
 <script setup vapor lang="ts">
@@ -45,7 +48,7 @@ const enabled = ref(false);
 
 const router = useRouter();
 
-const { mutate } = useMutation({
+const { mutate, isPending, error } = useMutation({
   mutationKey: ['delete-account', accountStore.token],
   mutationFn: () => deleteAccount(accountStore.token!, accountStore.user!.id),
   onSuccess: () => {

@@ -39,6 +39,9 @@ const searchText = ref('');
           class="flex flex-col-reverse gap-x-2"
         >
           <button
+            type="button"
+            aria-label="Zobrazit měřítko"
+            :aria-pressed="MapStore.scale"
             class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
             @click="MapStore.scale = !MapStore.scale"
           >
@@ -47,6 +50,9 @@ const searchText = ref('');
           </button>
 
           <button
+            type="button"
+            aria-label="Přepnout leteckou mapu"
+            :aria-pressed="MapStore.aerial"
             class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
             @click="MapStore.aerial = !MapStore.aerial"
           >
@@ -55,6 +61,9 @@ const searchText = ref('');
           </button>
 
           <button
+            type="button"
+            aria-label="Seskupovat body"
+            :aria-pressed="MapStore.grouping"
             class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 w-16 h-16 text-xs text-justify"
             @click="MapStore.grouping = !MapStore.grouping"
             :class="{
@@ -66,6 +75,9 @@ const searchText = ref('');
           </button>
 
           <button
+            type="button"
+            aria-label="Zobrazit jen nahrávky s dialektem"
+            :aria-pressed="MapStore.onlyDialects"
             class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 w-16 h-16 text-xs text-justify"
             @click="MapStore.onlyDialects = !MapStore.onlyDialects"
             :class="{
@@ -78,6 +90,9 @@ const searchText = ref('');
         </div>
 
         <button
+          type="button"
+          aria-label="Nástroje mapy"
+          :aria-expanded="toolsShown"
           class="drop-shadow-lg rounded-2xl m-2 bg-white hover:bg-gray-100 p-4"
           @click="toolsShown = !toolsShown"
         >
@@ -89,6 +104,7 @@ const searchText = ref('');
       </div>
 
       <RouterLink
+        aria-label="Legenda mapy"
         class="drop-shadow-lg rounded-2xl m-2 hover:bg-gray-100 p-4 bg-white"
         to="/mapa/legenda"
       >

@@ -445,6 +445,16 @@
         </div>
         <span>{{ Math.round(loadingProgress * 100) }}%</span>
       </div>
+      <div
+        v-else-if="loadError && !isLoaded"
+        class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/90 p-4 text-center"
+        role="alert"
+      >
+        <p>{{ loadError }}</p>
+        <button type="button" class="button-secondary p-2" @click="loadAndProcessAudio">
+          Zkusit znovu
+        </button>
+      </div>
     </div>
 
     <!-- Context Menu for Ranges -->
@@ -822,6 +832,9 @@ const rangeTooltipRef = ref<HTMLElement | null>(null); // Ref for range tooltip
 
 const isLoaded = ref(false);
 const isLoading = ref(false);
+const loadError = ref<string | null>(null);
+let loadRequestId = 0;
+const activeAudioRequests = new Set<XMLHttpRequest>();
 const isPlaying = ref(false);
 const isPaused = ref(false);
 const totalAudioBytes = ref(0);
@@ -1619,6 +1632,21 @@ function handleResize() {
 
 // Process audio
 async function loadAndProcessAudio() {
+  const requestId = ++loadRequestId;
+  loadError.value = null;
+  try {
+    await loadAndProcessAudioImpl();
+  } catch (error) {
+    if (requestId !== loadRequestId) return;
+    loadError.value =
+      error instanceof Error ? error.message : 'Audio se nepodařilo načíst.';
+    isLoaded.value = false;
+  } finally {
+    if (requestId === loadRequestId) isLoading.value = false;
+  }
+}
+
+async function loadAndProcessAudioImpl() {
   isLoading.value = true;
   audioProgress.value = 0;
   spectroProgress.value = 0;
@@ -2110,7 +2138,7 @@ async function legacyFullDownload(
     }
   };
 
-  const downloadFile = (url: string, index: number) =>
+  const downloadFile = (url: string, index: number, rebuild = true) =>
     (async () => {
       const arrayBuffer = await fetchArrayBufferWithProgress(url);
       const buffer = await audioCtx.decodeAudioData(arrayBuffer);
@@ -2119,30 +2147,25 @@ async function legacyFullDownload(
         // fallback fraction by count if total size unknown
         audioProgress.value = loadedBuffers.size / urls.length;
       }
-      await processContiguousPrefix();
+      if (rebuild) await processContiguousPrefix();
     })().catch((err) => {
       console.error(`Failed to download audio file at index ${index}`, err);
       throw err;
     });
 
-  const initialIndexes: number[] = [];
-  // Initial viewport always starts at time 0, so ensure first file is prioritized.
-  if (urls.length > 0) initialIndexes.push(0);
+  if (urls[0]) await downloadFile(urls[0], 0);
 
-  const deferredIndexes = urls
-    .map((_, idx) => idx)
-    .filter((idx) => !initialIndexes.includes(idx));
-
-  const downloadPromises = urls.map((url, idx) => downloadFile(url, idx));
-
-  const initialPromises = initialIndexes.map((idx) => downloadPromises[idx]!);
-  await Promise.all(initialPromises);
-
-  const deferredPromises = deferredIndexes.map((idx) => downloadPromises[idx]!);
-  if (deferredPromises.length) {
-    // Background downloads; no need to await for initial render, but ensure errors surface.
-    void Promise.allSettled(deferredPromises);
-  }
+  let nextIndex = 1;
+  const worker = async () => {
+    while (nextIndex < urls.length) {
+      const index = nextIndex++;
+      await downloadFile(urls[index]!, index, false);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(3, Math.max(0, urls.length - 1)) }, worker)
+  );
+  await processContiguousPrefix();
 }
 
 async function generateSpectrogramDataOffline(cacheKey: string) {
@@ -3821,6 +3844,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  loadRequestId++;
+  activeAudioRequests.forEach((request) => request.abort());
+  activeAudioRequests.clear();
   // 1. Reset and clean up audio-specific resources and state
   resetAndCleanupAudioResources();
   cancelIdleTasks();
@@ -4846,6 +4872,9 @@ watch(
 );
 
 function resetAndCleanupAudioResources() {
+  loadRequestId++;
+  activeAudioRequests.forEach((request) => request.abort());
+  activeAudioRequests.clear();
   stopAudio(); // Stops current playback and disconnects audioSourceNode
   cancelSpectrogramGeneration?.();
   cancelSpectrogramGeneration = null;
@@ -4939,6 +4968,7 @@ async function fetchArrayBufferWithProgress(url: string): Promise<ArrayBuffer> {
 
   return await new Promise<ArrayBuffer>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    activeAudioRequests.add(xhr);
     xhr.open('GET', url, true);
     xhr.responseType = 'arraybuffer';
     let lastLoaded = 0;
@@ -4959,6 +4989,7 @@ async function fetchArrayBufferWithProgress(url: string): Promise<ArrayBuffer> {
     };
 
     xhr.onload = () => {
+      activeAudioRequests.delete(xhr);
       if (xhr.status >= 200 && xhr.status < 300) {
         if (registeredTotalForDownload === 0) {
           const headerTotal = parseInt(
@@ -4981,8 +5012,15 @@ async function fetchArrayBufferWithProgress(url: string): Promise<ArrayBuffer> {
     };
 
     xhr.onerror = () => {
+      activeAudioRequests.delete(xhr);
       rollbackTotalBytes(registeredTotalForDownload);
       reject(new Error('Network error while downloading audio resource'));
+    };
+
+    xhr.onabort = () => {
+      activeAudioRequests.delete(xhr);
+      rollbackTotalBytes(registeredTotalForDownload);
+      reject(new Error('Audio download was cancelled'));
     };
 
     xhr.send();

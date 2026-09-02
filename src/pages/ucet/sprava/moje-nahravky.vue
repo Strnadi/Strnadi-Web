@@ -15,13 +15,12 @@ const {
   isError,
   isLoading
 } = useQuery({
-  queryKey: ['my-recordings'],
+  queryKey: ['my-recordings', accountStore.user?.id],
   queryFn: () => getRecordings({ userId: accountStore.user!.id })
 });
 
 const recordingsLength = computed(() => recordings.value?.length || 0);
 
-console.log('Here');
 </script>
 
 <template>
@@ -32,7 +31,7 @@ console.log('Here');
     <template v-if="isLoading">
       <TranslatedText identifier="loading" />...
     </template>
-    <template v-if="isError">
+    <template v-else-if="isError">
       <TranslatedText identifier="errors.recordings.loading" />
     </template>
     <template v-else>

@@ -22,7 +22,14 @@ const calculateFillAmount = (segmentIndex: number) => {
 </script>
 
 <template>
-  <div class="segmented-progress-bar">
+  <div
+    class="segmented-progress-bar"
+    role="progressbar"
+    aria-label="Průběh"
+    aria-valuemin="0"
+    :aria-valuemax="totalSegments"
+    :aria-valuenow="Math.min(totalSegments, Math.max(0, progress))"
+  >
     <div
       v-for="segmentIndex in segments"
       :key="segmentIndex"

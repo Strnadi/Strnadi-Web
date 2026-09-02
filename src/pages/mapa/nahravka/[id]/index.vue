@@ -4,12 +4,11 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { onBeforeRouteUpdate } from 'vue-router';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useQuery } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router';
 import { getRecording, getFilteredRecording } from '@/api/recordings';
 import { getUserInfo } from '@/api/account';
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed } from 'vue';
 import { accountStore } from '@/state/AccountStore';
 import type { Numeric } from '@/types/basic';
 import Spectrogram from '@/views/Spectrogram.vue';
@@ -24,15 +23,13 @@ import { getDialectStrings } from '@/utils/dialects';
 import RecordingsMap from '@/views/map/RecordingsMap.vue';
 import Map from '@/views/map/Map.vue';
 import { divIcon } from 'leaflet';
+import TextualCoords from '@/components/map/TextualCoords.vue';
 
 // Vue doesn't re-render this component when route changes; it re-uses the old instance
 // So, in turn, we need to handle that ourselves and not declare this just as an constant.
 const recordingId = useRouteParams<Numeric>('id');
 
 const env = import.meta.env;
-
-const selected = ref([]);
-const audio = ref<HTMLAudioElement | null>(null);
 
 const dontShowUnknownDialects = ref(true);
 const showOnlyRepresentants = ref(true);
@@ -44,16 +41,17 @@ const {
   isError,
   isLoading
 } = useQuery({
-  queryKey: ['recordings', recordingId.value],
+  queryKey: ['recording', recordingId],
   queryFn: () => getRecording(recordingId.value, false)
 });
 
 const { data: filteredRec, isLoading: isFilteredRecLoading } = useQuery({
-  queryKey: ['filtered-recordings', recordingId.value],
+  queryKey: ['filtered-recordings', recordingId],
   queryFn: () => getFilteredRecording(recordingId.value)
 });
 
 const enabled = computed(() => !!recording.value?.userId);
+const uploaderId = computed(() => recording.value?.userId);
 
 // todo select location in the map
 
@@ -63,19 +61,31 @@ const {
   isLoading: isUploaderLoading,
   isError: isUploaderError
 } = useQuery({
-  queryKey: ['user', recording.value?.userId],
+  queryKey: ['user', uploaderId, computed(() => accountStore.user?.id ?? 'guest')],
   queryFn: () =>
     getUserInfo(recording.value?.userId!, accountStore.token ?? undefined),
   enabled // Use the computed enabled value
 });
 
-const queryClient = useQueryClient();
+const canManageRecording = computed(
+  () =>
+    accountStore.user?.role === 'admin' ||
+    accountStore.user?.id === recording.value?.userId
+);
 
-onBeforeRouteUpdate(async (to) => {
-  recordingId.value = to.params.id as string;
-  await queryClient.invalidateQueries({ queryKey: ['recordings'] });
-  await queryClient.invalidateQueries({ queryKey: ['filtered-recordings'] });
-  await queryClient.invalidateQueries({ queryKey: ['user'] });
+const recordingCoordinates = computed(() => {
+  const part = recording.value?.parts?.[0];
+  if (!part) return null;
+  const lat = part.gpsLatitudeStart;
+  const lng = part.gpsLongitudeStart;
+  return Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+    ? { lat, lng }
+    : null;
 });
 
 const segments = computed<
@@ -234,6 +244,25 @@ const getDialectColorWithAlpha = (
   const baseColor = getDialectBaseColor(filteredPart);
   return hexToRgba(baseColor, DIALECT_COLOR_ALPHA[usage]);
 };
+
+const matchingFilteredParts = computed(() =>
+  (filteredRec.value ?? [])
+    .filter((fr) => {
+      const hasKnownDialect = getDialectStrings(fr).some(
+        (dialect) => dialect && dialect !== 'Unfinished'
+      );
+      if (dontShowUnknownDialects.value && !hasKnownDialect) return false;
+      if (showOnlyRepresentants.value && !fr.representantFlag) return false;
+      return true;
+    })
+    .toSorted((a, b) => Number(Boolean(b.representantFlag)) - Number(Boolean(a.representantFlag)))
+);
+
+const displayedFilteredParts = computed(() =>
+  showAllDialects.value
+    ? matchingFilteredParts.value
+    : matchingFilteredParts.value.slice(0, 3)
+);
 </script>
 
 <template>
@@ -292,7 +321,7 @@ const getDialectColorWithAlpha = (
             "
             :height="200"
             :readonly="true"
-            :download-only-selections="true"
+            :download-only-selections="canManageRecording"
             :no-controls="false"
             :simple-controls="true"
             :selected="segments"
@@ -323,6 +352,7 @@ const getDialectColorWithAlpha = (
               v-model="dontShowUnknownDialects"
               type="checkbox"
               class="toggle-switch-input"
+              aria-label="Nezobrazovat nedokončená a neznámá nářečí"
             />
             <span
               class="toggle-switch-track"
@@ -341,6 +371,7 @@ const getDialectColorWithAlpha = (
               v-model="showOnlyRepresentants"
               type="checkbox"
               class="toggle-switch-input"
+              aria-label="Zobrazit jen reprezentanty"
             />
             <span
               class="toggle-switch-track"
@@ -363,22 +394,7 @@ const getDialectColorWithAlpha = (
           </h3>
           <ul class="space-y-2 sm:space-y-3">
             <li
-              v-for="fr in filteredRec.toSorted((a, b) =>
-                a.representantFlag === b.representantFlag
-                  ? 0
-                  : a.representantFlag
-                    ? -1
-                    : 1
-              ).slice(0, showAllDialects ? filteredRec.length : 3).filter(fr => {
-                if (dontShowUnknownDialects && showOnlyRepresentants) {
-                  return fr.representantFlag && getDialectStrings(fr).some(ds => ds && ds !== 'Unfinished');
-                } else if (dontShowUnknownDialects) {
-                  return getDialectStrings(fr).some(ds => ds && ds !== 'Unfinished');
-                } else if (showOnlyRepresentants) {
-                  return fr.representantFlag;
-                }
-                return true;
-              })"
+              v-for="fr in displayedFilteredParts"
               :key="fr.id"
               class="flex flex-col gap-1 rounded-lg border p-3 sm:p-4 shadow-sm transition touch-manipulation"
               :style="{
@@ -400,9 +416,7 @@ const getDialectColorWithAlpha = (
                   /> -->
                   <p class="font-semibold text-sm sm:text-base truncate">
                     {{
-                      fr.detectedDialects?.[0]?.confirmedDialect ??
-                      fr.detectedDialects?.[0]?.predictedDialect ??
-                      fr.detectedDialects?.[0]?.userGuessDialect ??
+                      getDialectStrings(fr).join(', ') ||
                       t('recordings.detail.unknown_dialect')
                     }}
                   </p>
@@ -421,7 +435,7 @@ const getDialectColorWithAlpha = (
             </li>
           </ul>
           <button
-            v-if="filteredRec.length > 5 && !showAllDialects"
+            v-if="matchingFilteredParts.length > 3 && !showAllDialects"
             @click="showAllDialects = true"
             class="px-4 py-2 text-sm sm:text-base w-full text-center button-secondary touch-manipulation"
           >
@@ -430,14 +444,14 @@ const getDialectColorWithAlpha = (
         </div>
       </div>
 
-      <div class="flex flex-col w-full h-[400px] rounded-lg">
+      <div v-if="recordingCoordinates" class="flex flex-col w-full h-[440px] rounded-lg">
         <h2>
           <TranslatedText identifier="recordings.detail.map_heading" />
         </h2>
         <Map
           :position="[
-            recording.parts?.[0]?.gpsLatitudeStart ?? 0,
-            recording.parts?.[0]?.gpsLongitudeStart ?? 0,
+            recordingCoordinates.lat,
+            recordingCoordinates.lng,
             15
           ]"
           :markers="[
@@ -446,17 +460,30 @@ const getDialectColorWithAlpha = (
               icon: divIcon({
                 className: '',
                 iconSize: [16, 16],
-                iconAnchor: [19, 19],
+                iconAnchor: [8, 8],
                 html: `<div class='w-full h-full bg-red-500 rounded-full'></div>`
               }),
               position: [
-                recording.parts?.[0]?.gpsLatitudeStart ?? 0,
-                recording.parts?.[0]?.gpsLongitudeStart ?? 0
+                recordingCoordinates.lat,
+                recordingCoordinates.lng
               ]
             }
           ]"
         />
+        <p class="mt-2 text-sm">
+          {{ recordingCoordinates.lat.toFixed(6) }},
+          {{ recordingCoordinates.lng.toFixed(6) }}
+          ·
+          <TextualCoords
+            :lat="recordingCoordinates.lat"
+            :lng="recordingCoordinates.lng"
+            type="municipality_part"
+          />
+        </p>
       </div>
+      <p v-else class="text-sm text-red-700" role="status">
+        Poloha nahrávky není k dispozici.
+      </p>
 
       <div
         class="flex flex-col w-full gap-y-4"
@@ -472,7 +499,7 @@ const getDialectColorWithAlpha = (
           >
             <img
               :src="photo.url"
-              :alt="photo.name"
+              :alt="photo.name || `Fotografie k nahrávce ${recording.id}`"
               class="w-24 h-24 object-cover rounded-lg"
             />
           </li>

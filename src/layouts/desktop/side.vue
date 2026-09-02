@@ -17,11 +17,11 @@ const closePopup = () => {
 <template>
   <router-view v-slot="{ Component }">
     <aside class="side relative">
-      <button class="small absolute top-5 left-5 z-10 rounded-2xl" @click="goBack">
+      <button class="small absolute top-5 left-5 z-10 rounded-2xl min-w-11 min-h-11 flex items-center justify-center" type="button" aria-label="Zpět" @click="goBack">
         <Back />
       </button>
 
-      <button class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl" @click="closePopup">
+      <button class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl min-w-11 min-h-11 flex items-center justify-center" type="button" aria-label="Zavřít" @click="closePopup">
         <Close />
       </button>
 

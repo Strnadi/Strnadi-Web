@@ -236,6 +236,7 @@ export const translations = {
       },
       details: {
         heading: 'Detail nahrávky',
+        photos_heading: 'Fotografie',
         name_label: 'Název nahrávky',
         name_placeholder: 'Nepojmenovaná nahrávka 1',
         date_label: 'Datum',
@@ -535,6 +536,7 @@ export const translations = {
         total_parts_label: 'Celkový počet částí:',
         filters_label: 'Filtrování',
         filter_out_confirmed_dialects: 'Skrýt potvrzená nářečí',
+        filter_out_unconfirmed: 'Skrýt nepotvrzené nahrávky',
         filtered_count: 'Zobrazeno nahrávek:',
         download_selected: 'Stáhnout vybrané',
         downloading: 'Stahování...',
@@ -583,6 +585,7 @@ export const translations = {
         by_app_suffix: 'přes aplikaci',
         no_note: 'Žádná poznámka.',
         parts_heading: 'Části nahrávky',
+        photos_heading: 'Fotografie',
         detected_dialects_heading: 'Detekovaná nářečí',
         edit_dialects_title: 'Upravit dialekty nahrávky',
         edit_recording_title: 'Upravit nahrávku',
@@ -936,6 +939,7 @@ export const translations = {
         'I have checked the recording and want to submit it to the<br> database. I am aware that it will remain there even after my<br> account is deleted and will only be removed in exceptional cases.',
       uploading: 'Uploading your recording to the database...',
       uploaded: 'The recording was successfully uploaded.',
+      upload_another: 'Upload another',
       next: 'Next',
       back: 'Back',
       steps: {
@@ -954,8 +958,14 @@ export const translations = {
           'Uploading runs in the background. You can continue using the app.',
         track_status: 'Track the progress in the top bar.'
       },
+      progress: {
+        uploading: 'Uploading',
+        queued: 'Queued',
+        error: 'Upload error'
+      },
       details: {
         heading: 'Recording details',
+        photos_heading: 'Photos',
         name_label: 'Recording name',
         name_placeholder: 'Untitled recording 1',
         date_label: 'Date',
@@ -1255,6 +1265,7 @@ export const translations = {
         total_parts_label: 'Total number of parts:',
         filters_label: 'Filters',
         filter_out_confirmed_dialects: 'Hide confirmed dialects',
+        filter_out_unconfirmed: 'Hide unconfirmed recordings',
         filtered_count: 'Recordings shown:',
         download_selected: 'Download selected',
         downloading: 'Downloading...',
@@ -1614,6 +1625,23 @@ export const translations = {
           title: 'Quadrat'
         }
       },
+      user_profile: {
+        title: 'Benutzerprofil',
+        admin: {
+          actions_section: 'Aktionen',
+          delete_account_button: 'Konto löschen'
+        },
+        details_section: 'Details',
+        contact_section: 'Kontakt',
+        location_label: 'Ort',
+        role_label: 'Rolle',
+        joined_label: 'Registriert',
+        recordings_section: 'Aufnahmen',
+        roles: {
+          user: 'Benutzer',
+          admin: 'Administrator'
+        }
+      },
       not_found: {
         description: 'Diese Seite wurde leider nicht gefunden.'
       }
@@ -1646,6 +1674,7 @@ export const translations = {
         'Ich habe die Aufnahme überprüft und möchte sie in die<br> Datenbank einreichen. Mir ist bewusst, dass sie dort auch nach der Löschung meines<br> Kontos verbleibt und nur in Ausnahmefällen entfernt wird.',
       uploading: 'Ihre Aufnahme wird in die Datenbank hochgeladen...',
       uploaded: 'Die Aufnahme wurde erfolgreich hochgeladen.',
+      upload_another: 'Weitere Aufnahme hochladen',
       next: 'Weiter',
       back: 'Zurück',
       steps: {
@@ -1664,6 +1693,11 @@ export const translations = {
           'Der Upload läuft im Hintergrund. Sie können die App weiter nutzen.',
         track_status: 'Verfolgen Sie den Fortschritt in der oberen Leiste.'
       },
+      progress: {
+        uploading: 'Wird hochgeladen',
+        queued: 'In der Warteschlange',
+        error: 'Upload-Fehler'
+      },
       details: {
         heading: 'Aufnahmedetails',
         name_label: 'Name der Aufnahme',
@@ -1673,6 +1707,8 @@ export const translations = {
         photos_heading: 'Fotografien',
         notifications_label:
           'Ich möchte Benachrichtigungen zu dieser Aufnahme erhalten',
+        confirm_upload_label:
+          'Ich habe die Aufnahme überprüft und möchte sie in die Datenbank einreichen. Mir ist bewusst, dass sie dort auch nach der Löschung meines Kontos verbleibt und nur in Ausnahmefällen entfernt wird.',
         comment_label: 'Kommentar',
         cta: 'Weiter zur Standortauswahl',
         slider_more: 'mehr'
@@ -1975,6 +2011,7 @@ export const translations = {
         total_recordings_label: 'Gesamtzahl der Aufnahmen:',
         total_parts_label: 'Gesamtzahl der Teile:',
         filters_label: 'Filter',
+        filter_out_confirmed_dialects: 'Bestätigte Dialekte ausblenden',
         filter_out_unconfirmed: 'Noch nicht bestätigte Aufnahmen ausblenden',
         filtered_count: 'Angezeigte Aufnahmen:',
         download_selected: 'Auswahl herunterladen',
@@ -2024,6 +2061,7 @@ export const translations = {
         by_app_suffix: 'über die App',
         no_note: 'Keine Notiz.',
         parts_heading: 'Aufnahmeteile',
+        photos_heading: 'Fotografien',
         detected_dialects_heading: 'Detektierte Dialekte',
         edit_dialects_title: 'Dialekte der Aufnahme bearbeiten',
         edit_recording_title: 'Aufnahme bearbeiten',

@@ -49,7 +49,7 @@ const formArticles = computed({
 });
 
 const { data: articles } = useQuery({
-  queryKey: ['articles'],
+  queryKey: ['articles', 'list'],
   queryFn: () => getArticles()
 });
 

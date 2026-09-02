@@ -10,8 +10,8 @@ import { getArticleCategories } from '@/api/articles';
 import { kebabize } from '@/utils/strings';
 import TranslatedText from '@/components/TranslatedText.vue';
 
-const { data: categories } = useQuery({
-  queryKey: ['articles'],
+const { data: categories, isLoading, error } = useQuery({
+  queryKey: ['article-categories'],
   queryFn: () => getArticleCategories()
 });
 </script>
@@ -21,7 +21,11 @@ const { data: categories } = useQuery({
     <TranslatedText identifier="pages.information.title" />
   </h1>
 
-  <div class="flex flex-col gap-6">
+  <p v-if="isLoading" role="status"><TranslatedText identifier="states.loading" /></p>
+  <p v-else-if="error" role="alert" class="text-red-700">{{ error.message }}</p>
+  <p v-else-if="!categories?.length"><TranslatedText identifier="empty" /></p>
+
+  <div v-else class="flex flex-col gap-6">
     <section
       v-for="category in categories"
       :key="category.name"

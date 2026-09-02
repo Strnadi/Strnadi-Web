@@ -292,22 +292,6 @@ const recordingsCount = computed(() => recordingsList.value.length);
           </template>
         </section>
 
-        <section class="space-y-4">
-          <h2 class="text-xl font-semibold">
-            <TranslatedText
-              identifier="pages.user_profile.admin.actions_section"
-            />
-          </h2>
-          <div class="flex flex-col md:flex-row w-full gap-3">
-            <button class="secondary p-2 w-full">Poslat oznámení</button>
-
-            <button class="secondary danger p-2 w-full">
-              <TranslatedText
-                identifier="pages.user_profile.admin.delete_account_button"
-              />
-            </button>
-          </div>
-        </section>
       </div>
     </template>
   </div>

@@ -21,7 +21,9 @@ const closePopup = () => {
         @click.stop
       >
         <button
-          class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl"
+          class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl min-w-11 min-h-11 flex items-center justify-center"
+          type="button"
+          aria-label="Zavřít"
           @click="closePopup"
         >
           <Close />

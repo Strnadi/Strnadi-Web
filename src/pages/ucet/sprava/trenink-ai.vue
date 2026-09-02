@@ -4,7 +4,7 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onBeforeUnmount } from 'vue';
 import Dropzone from '@/components/Dropzone.vue';
 import SegmentedProgress from '@/components/SegmentedProgress.vue';
 import TrainingChart from '@/components/TrainingChart.vue';
@@ -74,6 +74,8 @@ function resetTraining() {
   training.reset();
   zipFile.value = null;
 }
+
+onBeforeUnmount(() => training.cancel());
 </script>
 
 <template>
