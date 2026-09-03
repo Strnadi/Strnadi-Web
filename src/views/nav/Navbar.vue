@@ -43,7 +43,7 @@ const changeLanguage = (lang: keyof typeof translations) => {
     :z-radius="32"
     :refraction="1.2"
     :brightness="-0.2"
-    :contrast="1.12"
+    auto-contrast
     live-capture
   >
     <nav aria-label="Hlavní navigace">
@@ -192,6 +192,26 @@ nav {
   height: calc(100% - 0.5rem);
 }
 
+.nav-logo img {
+  transition: filter 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.navbar-glass[data-glass-appearance='dark'] .nav-logo img {
+  filter: drop-shadow(0 1px 1px rgb(255 255 255 / 0.7))
+    drop-shadow(0 0 8px rgb(255 255 255 / 0.42));
+}
+
+.nav-surface :deep(svg path[fill='#2D2B18']) {
+  fill: currentColor;
+}
+
+:deep([role='menu']),
+:deep(.button-primary),
+:deep(.button-secondary) {
+  color: #2d2b18;
+  text-shadow: none;
+}
+
 :deep(.dropdown-item:hover),
 :deep(button:hover) {
   background-color: rgba(255, 255, 255, 0.48);
@@ -200,6 +220,12 @@ nav {
 @media (prefers-reduced-transparency: reduce) {
   .navbar-glass {
     border-color: rgba(15, 23, 42, 0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-logo img {
+    transition: none;
   }
 }
 </style>

@@ -31,6 +31,7 @@ interface Props {
   shadowOffsetY?: number;
   bevelMode?: 0 | 1;
   liveCapture?: boolean;
+  autoContrast?: boolean;
   disabled?: boolean;
 }
 
@@ -55,6 +56,7 @@ const props = withDefaults(defineProps<Props>(), {
   shadowOffsetY: 1,
   bevelMode: 0,
   liveCapture: false,
+  autoContrast: false,
   disabled: false
 });
 
@@ -80,11 +82,26 @@ let previousRootPosition = '';
 let positionedRoot = false;
 let liveSceneCanvas: HTMLCanvasElement | null = null;
 let resourceLoadHandler: ((event: Event) => void) | null = null;
+let contrastPreference: MediaQueryList | null = null;
 const markerImages = new WeakMap<HTMLElement, HTMLCanvasElement>();
 const pendingMarkerCaptures = new WeakSet<HTMLElement>();
+let contrastSampleCanvas: HTMLCanvasElement | null = null;
+let lastContrastSample = 0;
+let hasContrastSample = false;
+let smoothedLuminance = 0.5;
+let smoothedComplexity = 0;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
+
+const adaptiveContrast = ref(clamp(props.contrast, 0.5, 2));
+const adaptiveBrightness = ref(1);
+const adaptiveOverlay = ref('transparent');
+const adaptiveForeground = ref('rgb(24 24 22 / 0.96)');
+const adaptiveTextShadow = ref(
+  '0 1px 1px rgb(255 255 255 / 0.42), 0 0 10px rgb(255 255 255 / 0.2)'
+);
+const adaptiveAppearance = ref<'light' | 'dark'>('light');
 
 const config = computed<GlassConfig>(() => ({
   blurAmount: clamp(props.blurAmount, 0, 1),
@@ -109,9 +126,198 @@ const config = computed<GlassConfig>(() => ({
 }));
 
 const configJson = computed(() => JSON.stringify(config.value));
-const glassStyle = computed(() => ({
-  '--liquid-glass-contrast': String(clamp(props.contrast, 0.5, 2))
-}));
+const glassStyle = computed<Record<string, string>>(() => {
+  const style: Record<string, string> = {
+    '--liquid-glass-contrast': String(
+      props.autoContrast
+        ? adaptiveContrast.value
+        : clamp(props.contrast, 0.5, 2)
+    )
+  };
+
+  if (props.autoContrast) {
+    style['--liquid-glass-adaptive-brightness'] = String(
+      adaptiveBrightness.value
+    );
+    style['--liquid-glass-adaptive-overlay'] = adaptiveOverlay.value;
+    style['--liquid-glass-foreground'] = adaptiveForeground.value;
+    style['--liquid-glass-text-shadow'] = adaptiveTextShadow.value;
+  }
+
+  return style;
+});
+
+function linearChannel(value: number) {
+  const channel = value / 255;
+  return channel <= 0.04045
+    ? channel / 12.92
+    : Math.pow((channel + 0.055) / 1.055, 2.4);
+}
+
+function pixelLuminance(red: number, green: number, blue: number) {
+  return (
+    0.2126 * linearChannel(red) +
+    0.7152 * linearChannel(green) +
+    0.0722 * linearChannel(blue)
+  );
+}
+
+function analyseBackdrop(
+  source: HTMLCanvasElement,
+  sourceX: number,
+  sourceY: number,
+  sourceWidth: number,
+  sourceHeight: number
+) {
+  if (!props.autoContrast || sourceWidth <= 0 || sourceHeight <= 0) return;
+
+  const now = performance.now();
+  if (now - lastContrastSample < 72) return;
+  lastContrastSample = now;
+
+  contrastSampleCanvas ??= document.createElement('canvas');
+  const sampleHeight = 12;
+  const sampleWidth = clamp(
+    Math.round((sourceWidth / sourceHeight) * sampleHeight),
+    32,
+    96
+  );
+  contrastSampleCanvas.width = sampleWidth;
+  contrastSampleCanvas.height = sampleHeight;
+
+  const context = contrastSampleCanvas.getContext('2d', {
+    willReadFrequently: true
+  });
+  if (!context) return;
+
+  try {
+    context.clearRect(0, 0, sampleWidth, sampleHeight);
+    context.drawImage(
+      source,
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+      0,
+      0,
+      sampleWidth,
+      sampleHeight
+    );
+
+    const pixels = context.getImageData(0, 0, sampleWidth, sampleHeight).data;
+    const luminances: number[] = [];
+    let luminanceTotal = 0;
+    let edgeTotal = 0;
+    let edgeCount = 0;
+
+    for (let pixel = 0; pixel < pixels.length; pixel += 4) {
+      // Transparent pixels are composited over the map's neutral loading color.
+      const alpha = pixels[pixel + 3] / 255;
+      const red = pixels[pixel] * alpha + 245 * (1 - alpha);
+      const green = pixels[pixel + 1] * alpha + 243 * (1 - alpha);
+      const blue = pixels[pixel + 2] * alpha + 235 * (1 - alpha);
+      const luminance = pixelLuminance(red, green, blue);
+      const index = pixel / 4;
+
+      luminances.push(luminance);
+      luminanceTotal += luminance;
+
+      if (index % sampleWidth !== 0) {
+        edgeTotal += Math.abs(luminance - luminances[index - 1]);
+        edgeCount += 1;
+      }
+      if (index >= sampleWidth) {
+        edgeTotal += Math.abs(luminance - luminances[index - sampleWidth]);
+        edgeCount += 1;
+      }
+    }
+
+    if (!luminances.length) return;
+
+    const mean = luminanceTotal / luminances.length;
+    const variance =
+      luminances.reduce(
+        (total, luminance) => total + Math.pow(luminance - mean, 2),
+        0
+      ) / luminances.length;
+    const ordered = [...luminances].sort((a, b) => a - b);
+    const percentile = (amount: number) =>
+      ordered[Math.round((ordered.length - 1) * amount)];
+    const spread = percentile(0.9) - percentile(0.1);
+    const detail = edgeCount ? edgeTotal / edgeCount : 0;
+    const complexity = clamp(
+      Math.sqrt(variance) * 1.35 + spread * 0.38 + detail * 0.8,
+      0,
+      1
+    );
+
+    const blend = hasContrastSample ? 0.28 : 1;
+    smoothedLuminance += (mean - smoothedLuminance) * blend;
+    smoothedComplexity += (complexity - smoothedComplexity) * blend;
+    hasContrastSample = true;
+
+    // Approximate the shader's brightness multiplication before deciding which
+    // monochrome appearance will have the stronger contrast.
+    const displayedLuminance = clamp(
+      mean * (1 + config.value.brightness),
+      0,
+      1
+    );
+
+    // Separate enter/exit thresholds prevent light/dark flicker while panning.
+    if (adaptiveAppearance.value === 'light' && displayedLuminance < 0.16) {
+      adaptiveAppearance.value = 'dark';
+    } else if (
+      adaptiveAppearance.value === 'dark' &&
+      displayedLuminance > 0.24
+    ) {
+      adaptiveAppearance.value = 'light';
+    }
+
+    const increasedContrast = window.matchMedia(
+      '(prefers-contrast: more)'
+    ).matches;
+    const strength = increasedContrast ? 1.35 : 1;
+    const contrast = clamp(
+      props.contrast + 0.035 + smoothedComplexity * 0.16 * strength,
+      0.65,
+      1.65
+    );
+
+    adaptiveContrast.value = Number(contrast.toFixed(3));
+
+    if (adaptiveAppearance.value === 'dark') {
+      const overlayAlpha = clamp(
+        (0.055 + smoothedComplexity * 0.105) * strength,
+        0.05,
+        increasedContrast ? 0.23 : 0.17
+      );
+      adaptiveBrightness.value = Number(
+        clamp(0.94 - smoothedComplexity * 0.08, 0.84, 0.94).toFixed(3)
+      );
+      adaptiveOverlay.value = `rgb(5 7 10 / ${overlayAlpha.toFixed(3)})`;
+      adaptiveForeground.value = 'rgb(255 255 255 / 0.97)';
+      adaptiveTextShadow.value =
+        '0 1px 2px rgb(0 0 0 / 0.62), 0 0 12px rgb(0 0 0 / 0.32)';
+    } else {
+      const overlayAlpha = clamp(
+        (0.025 + smoothedComplexity * 0.07) * strength,
+        0.02,
+        increasedContrast ? 0.15 : 0.1
+      );
+      adaptiveBrightness.value = Number(
+        clamp(1.025 + smoothedComplexity * 0.055, 1.025, 1.105).toFixed(3)
+      );
+      adaptiveOverlay.value = `rgb(255 255 252 / ${overlayAlpha.toFixed(3)})`;
+      adaptiveForeground.value = 'rgb(24 24 22 / 0.96)';
+      adaptiveTextShadow.value =
+        '0 1px 1px rgb(255 255 255 / 0.46), 0 0 10px rgb(255 255 255 / 0.22)';
+    }
+  } catch {
+    // A cross-origin resource may taint the capture after it was painted. The
+    // glass still renders; retain the last safe contrast sample in that case.
+  }
+}
 
 function isCanvasSafeImage(image: HTMLImageElement) {
   if (!image.complete || image.naturalWidth === 0) return false;
@@ -311,6 +517,13 @@ function paintLiveScene() {
 
   // Leaflet divIcon and cluster markers are HTML rather than media elements.
   // Draw their cached appearance last so they stay above the live map tiles.
+  analyseBackdrop(
+    liveSceneCanvas,
+    liveCapturePadding * dpr,
+    liveCapturePadding * dpr,
+    targetRect.width * dpr,
+    targetRect.height * dpr
+  );
   paintDomMarkers(context, sceneLeft, sceneTop, sceneRight, sceneBottom);
 }
 
@@ -444,6 +657,8 @@ async function initialise() {
 
     window.addEventListener('scroll', scheduleRefresh, { passive: true });
     window.addEventListener('resize', scheduleRefresh, { passive: true });
+    contrastPreference = window.matchMedia('(prefers-contrast: more)');
+    contrastPreference.addEventListener('change', scheduleRefresh);
     scheduleRefresh();
     status.value = 'ready';
     emit('ready', instance);
@@ -462,6 +677,18 @@ function refresh(changedElement?: HTMLElement) {
 watch(configJson, () => {
   if (glassInstance && target.value) glassInstance.markChanged(target.value);
 });
+
+watch(
+  () => [props.autoContrast, props.contrast],
+  () => {
+    if (props.autoContrast) {
+      lastContrastSample = 0;
+      scheduleRefresh();
+    } else {
+      adaptiveContrast.value = clamp(props.contrast, 0.5, 2);
+    }
+  }
+);
 
 onMounted(async () => {
   await nextTick();
@@ -484,11 +711,14 @@ onBeforeUnmount(() => {
   }
   window.removeEventListener('scroll', scheduleRefresh);
   window.removeEventListener('resize', scheduleRefresh);
+  contrastPreference?.removeEventListener('change', scheduleRefresh);
+  contrastPreference = null;
   cancelAnimationFrame(refreshFrame);
   glassInstance?.destroy();
   glassInstance = null;
   liveSceneCanvas?.remove();
   liveSceneCanvas = null;
+  contrastSampleCanvas = null;
 
   if (positionedRoot && captureRoot?.style.position === 'relative') {
     captureRoot.style.position = previousRootPosition;
@@ -505,6 +735,7 @@ defineExpose({ refresh });
     class="liquid-glass"
     :class="`liquid-glass--${status}`"
     :data-config="configJson"
+    :data-glass-appearance="autoContrast ? adaptiveAppearance : undefined"
     :style="glassStyle"
   >
     <div class="liquid-glass__content">
@@ -526,14 +757,50 @@ defineExpose({ refresh });
    at layer 0 makes the shader visible without letting it cover the controls. */
 .liquid-glass > :deep(canvas) {
   z-index: 0 !important;
-  filter: contrast(var(--liquid-glass-contrast, 1));
+  filter: brightness(var(--liquid-glass-adaptive-brightness, 1))
+    contrast(var(--liquid-glass-contrast, 1));
+  transition: filter 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .liquid-glass__content {
   position: relative;
   z-index: 1;
+  isolation: isolate;
   width: 100%;
   height: 100%;
+  border-radius: inherit;
+  color: var(--liquid-glass-foreground, inherit);
+  text-shadow: var(--liquid-glass-text-shadow, none);
   pointer-events: auto;
+  transition:
+    color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    text-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.liquid-glass__content::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--liquid-glass-adaptive-overlay, transparent);
+  pointer-events: none;
+  content: '';
+  transition: background 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.liquid-glass--fallback {
+  border: 1px solid rgb(255 255 255 / 0.55);
+  background: rgb(247 247 242 / 0.9);
+  box-shadow:
+    0 10px 30px rgb(15 23 42 / 0.13),
+    inset 0 1px 0 rgb(255 255 255 / 0.82);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-glass > :deep(canvas),
+  .liquid-glass__content,
+  .liquid-glass__content::before {
+    transition: none;
+  }
 }
 </style>
