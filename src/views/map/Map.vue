@@ -554,7 +554,9 @@ onBeforeUnmount(() => {
     >
       <!-- Tile Layers -->
       <l-tile-layer
+        key="canvas-safe-base-tiles"
         :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode !== 'aerial' ? vectorTileSize : '256'}/{z}/{x}/{y}`"
+        :options="{ crossOrigin: true }"
         :max-zoom="19"
         :min-zoom="5"
         :z-index="1"
@@ -562,7 +564,9 @@ onBeforeUnmount(() => {
       />
       <l-tile-layer
         v-if="mode === 'aerial'"
+        key="canvas-safe-name-tiles"
         :url="`${env.VITE_API_URL}/map/v1/maptiles/names-overlay/256/{z}/{x}/{y}`"
+        :options="{ crossOrigin: true }"
         :max-zoom="19"
         :min-zoom="5"
         :z-index="2"
@@ -622,6 +626,7 @@ onBeforeUnmount(() => {
             <img
               src="https://api.mapy.cz/img/api/logo.svg"
               alt="Mapy.cz Logo"
+              crossorigin="anonymous"
             />
           </a>
         </div>

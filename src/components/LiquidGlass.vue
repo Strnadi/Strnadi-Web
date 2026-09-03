@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import { LiquidGlass, type GlassConfig } from '@ybouane/liquidglass';
 import {
   computed,
   nextTick,
@@ -8,122 +9,349 @@ import {
   useId,
   watch
 } from 'vue';
-import liquidGL from 'liquid-gl';
 
-const props = defineProps({
-  snapshot: {
-    type: String,
-    default: 'body'
-  },
-  resolution: {
-    type: Number,
-    default: 1.5
-  },
-  refraction: {
-    type: Number,
-    default: 0.01
-  },
-  aberration: {
-    type: Number,
-    default: 0
-  },
-  frost: {
-    type: Number,
-    default: 0.9
-  },
-  bevelDepth: {
-    type: Number,
-    default: 0.08
-  },
-  bevelWidth: {
-    type: Number,
-    default: 0.15
-  },
-  magnify: {
-    type: Number,
-    default: 1
-  },
-  shadow: {
-    type: Boolean,
-    default: true
-  },
-  specular: {
-    type: Boolean,
-    default: true
-  },
-  tilt: {
-    type: Boolean,
-    default: false
-  },
-  tiltFactor: {
-    type: Number,
-    default: 4
-  },
-  tiltEase: {
-    type: Number,
-    default: 400
-  },
-  reveal: {
-    type: String,
-    default: 'fade',
-    validator: (value) => ['fade', 'none'].includes(value)
-  }
-});
-
-const emit = defineEmits(['ready', 'error']);
-
-const target = ref(null);
-const status = ref('pending');
-const id = `liquid-glass-${useId().replace(/:/g, '')}`;
-
-let glassInstance = null;
-let loadHandler = null;
-
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-
-const liveOptions = computed(() => ({
-  refraction: clamp(props.refraction, 0, 1),
-  aberration: clamp(props.aberration, 0, 1),
-  frost: Math.max(0, props.frost),
-  bevelDepth: clamp(props.bevelDepth, 0, 1),
-  bevelWidth: clamp(props.bevelWidth, 0, 1),
-  magnify: clamp(props.magnify, 0.001, 3),
-  shadow: props.shadow,
-  specular: props.specular,
-  tilt: props.tilt,
-  tiltFactor: clamp(props.tiltFactor, 0, 25),
-  tiltEase: Math.max(0, props.tiltEase)
-}));
-
-function markReady(instance) {
-  status.value = 'ready';
-  emit('ready', instance);
+interface Props {
+  root?: HTMLElement | null;
+  blurAmount?: number;
+  refraction?: number;
+  chromAberration?: number;
+  edgeHighlight?: number;
+  specular?: number;
+  fresnel?: number;
+  distortion?: number;
+  cornerRadius?: number;
+  zRadius?: number;
+  opacity?: number;
+  saturation?: number;
+  brightness?: number;
+  contrast?: number;
+  tintStrength?: number;
+  shadowOpacity?: number;
+  shadowSpread?: number;
+  shadowOffsetY?: number;
+  bevelMode?: 0 | 1;
+  liveCapture?: boolean;
+  disabled?: boolean;
 }
 
-function initialise() {
-  if (!target.value || status.value !== 'pending') return;
+const props = withDefaults(defineProps<Props>(), {
+  root: null,
+  blurAmount: 0,
+  refraction: 0.69,
+  chromAberration: 0.05,
+  edgeHighlight: 0.05,
+  specular: 0,
+  fresnel: 1,
+  distortion: 0,
+  cornerRadius: 65,
+  zRadius: 40,
+  opacity: 1,
+  saturation: 0,
+  brightness: 0,
+  contrast: 1,
+  tintStrength: 0,
+  shadowOpacity: 0.3,
+  shadowSpread: 10,
+  shadowOffsetY: 1,
+  bevelMode: 0,
+  liveCapture: false,
+  disabled: false
+});
 
-  if (window.matchMedia('(prefers-reduced-transparency: reduce)').matches) {
+const emit = defineEmits<{
+  ready: [instance: LiquidGlass];
+  error: [error: unknown];
+}>();
+
+const target = ref<HTMLElement | null>(null);
+const status = ref<'pending' | 'initialising' | 'ready' | 'fallback'>(
+  'pending'
+);
+const id = `liquid-glass-${useId().replace(/:/g, '')}`;
+const liveCapturePadding = 24;
+
+let glassInstance: LiquidGlass | null = null;
+let loadHandler: (() => void) | null = null;
+let rootObserver: MutationObserver | null = null;
+let refreshFrame = 0;
+let disposed = false;
+let captureRoot: HTMLElement | null = null;
+let previousRootPosition = '';
+let positionedRoot = false;
+let liveSceneCanvas: HTMLCanvasElement | null = null;
+let resourceLoadHandler: ((event: Event) => void) | null = null;
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
+
+const config = computed<GlassConfig>(() => ({
+  blurAmount: clamp(props.blurAmount, 0, 1),
+  refraction: clamp(props.refraction, 0, 2),
+  chromAberration: clamp(props.chromAberration, 0, 0.3),
+  edgeHighlight: Math.max(0, props.edgeHighlight),
+  specular: Math.max(0, props.specular),
+  fresnel: Math.max(0, props.fresnel),
+  distortion: Math.max(0, props.distortion),
+  cornerRadius: Math.max(0, props.cornerRadius),
+  zRadius: Math.max(1, props.zRadius),
+  opacity: clamp(props.opacity, 0, 1),
+  saturation: clamp(props.saturation, -1, 1),
+  brightness: clamp(props.brightness, -0.5, 0.5),
+  tintStrength: clamp(props.tintStrength, 0, 1),
+  shadowOpacity: clamp(props.shadowOpacity, 0, 1),
+  shadowSpread: Math.max(1, props.shadowSpread),
+  shadowOffsetY: props.shadowOffsetY,
+  floating: false,
+  button: false,
+  bevelMode: props.bevelMode
+}));
+
+const configJson = computed(() => JSON.stringify(config.value));
+const glassStyle = computed(() => ({
+  '--liquid-glass-contrast': String(clamp(props.contrast, 0.5, 2))
+}));
+
+function isCanvasSafeImage(image: HTMLImageElement) {
+  if (!image.complete || image.naturalWidth === 0) return false;
+
+  try {
+    const url = new URL(image.currentSrc || image.src, document.baseURI);
+    return (
+      url.origin === window.location.origin ||
+      url.protocol === 'data:' ||
+      url.protocol === 'blob:' ||
+      image.hasAttribute('crossorigin')
+    );
+  } catch {
+    return false;
+  }
+}
+
+function paintLiveScene() {
+  if (!captureRoot || !liveSceneCanvas || !target.value) return;
+
+  const rootRect = captureRoot.getBoundingClientRect();
+  const targetRect = target.value.getBoundingClientRect();
+  const sceneLeft = targetRect.left - liveCapturePadding;
+  const sceneTop = targetRect.top - liveCapturePadding;
+  const sceneRight = targetRect.right + liveCapturePadding;
+  const sceneBottom = targetRect.bottom + liveCapturePadding;
+  const sceneWidth = sceneRight - sceneLeft;
+  const sceneHeight = sceneBottom - sceneTop;
+  const dpr = window.devicePixelRatio || 1;
+  const width = Math.max(1, Math.round(sceneWidth * dpr));
+  const height = Math.max(1, Math.round(sceneHeight * dpr));
+
+  const left = `${sceneLeft - rootRect.left}px`;
+  const top = `${sceneTop - rootRect.top}px`;
+  const cssWidth = `${sceneWidth}px`;
+  const cssHeight = `${sceneHeight}px`;
+  if (liveSceneCanvas.style.left !== left) liveSceneCanvas.style.left = left;
+  if (liveSceneCanvas.style.top !== top) liveSceneCanvas.style.top = top;
+  if (liveSceneCanvas.style.width !== cssWidth) {
+    liveSceneCanvas.style.width = cssWidth;
+  }
+  if (liveSceneCanvas.style.height !== cssHeight) {
+    liveSceneCanvas.style.height = cssHeight;
+  }
+
+  if (liveSceneCanvas.width !== width) liveSceneCanvas.width = width;
+  if (liveSceneCanvas.height !== height) liveSceneCanvas.height = height;
+
+  const context = liveSceneCanvas.getContext('2d');
+  if (!context) return;
+
+  context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  context.clearRect(0, 0, sceneWidth, sceneHeight);
+
+  // Cover Leaflet's gray unloaded-tile surface with a neutral map color.
+  for (const map of captureRoot.querySelectorAll<HTMLElement>(
+    '.leaflet-container'
+  )) {
+    const rect = map.getBoundingClientRect();
+    context.fillStyle = '#f5f3eb';
+    context.fillRect(
+      rect.left - sceneLeft,
+      rect.top - sceneTop,
+      rect.width,
+      rect.height
+    );
+  }
+
+  const media = captureRoot.querySelectorAll<
+    HTMLImageElement | HTMLCanvasElement | HTMLVideoElement
+  >('img, canvas, video');
+
+  for (const element of media) {
+    if (element === liveSceneCanvas || target.value.contains(element)) continue;
+
+    const rect = element.getBoundingClientRect();
+    if (
+      rect.width <= 0 ||
+      rect.height <= 0 ||
+      rect.right <= sceneLeft ||
+      rect.bottom <= sceneTop ||
+      rect.left >= sceneRight ||
+      rect.top >= sceneBottom
+    ) {
+      continue;
+    }
+
+    const style = window.getComputedStyle(element);
+    if (style.display === 'none' || style.visibility === 'hidden') continue;
+
+    if (element instanceof HTMLImageElement && !isCanvasSafeImage(element)) {
+      continue;
+    }
+    if (
+      element instanceof HTMLCanvasElement &&
+      (element.width === 0 || element.height === 0)
+    ) {
+      continue;
+    }
+    if (
+      element instanceof HTMLVideoElement &&
+      (element.readyState < 2 ||
+        (!element.hasAttribute('crossorigin') &&
+          new URL(element.currentSrc, document.baseURI).origin !==
+            window.location.origin))
+    ) {
+      continue;
+    }
+
+    try {
+      context.globalAlpha = clamp(Number.parseFloat(style.opacity) || 1, 0, 1);
+      context.drawImage(
+        element,
+        rect.left - sceneLeft,
+        rect.top - sceneTop,
+        rect.width,
+        rect.height
+      );
+    } catch {
+      // Media can disappear between the DOM query and draw during tile swaps.
+    } finally {
+      context.globalAlpha = 1;
+    }
+  }
+}
+
+function setupLiveCapture(root: HTMLElement) {
+  if (!props.liveCapture || !target.value) return;
+
+  const canvas = document.createElement('canvas');
+  const targetZIndex = Number.parseInt(
+    window.getComputedStyle(target.value).zIndex,
+    10
+  );
+
+  canvas.dataset.liquidGlassLiveScene = '';
+  canvas.setAttribute('aria-hidden', 'true');
+  canvas.style.position = 'absolute';
+  canvas.style.opacity = '0';
+  canvas.style.pointerEvents = 'none';
+  canvas.style.zIndex = String(
+    Number.isNaN(targetZIndex) ? 0 : targetZIndex - 1
+  );
+
+  root.insertBefore(canvas, target.value);
+  liveSceneCanvas = canvas;
+  paintLiveScene();
+}
+
+function scheduleRefresh() {
+  if (refreshFrame) return;
+
+  refreshFrame = requestAnimationFrame(() => {
+    refreshFrame = 0;
+    paintLiveScene();
+    glassInstance?.markChanged(liveSceneCanvas ?? undefined);
+  });
+}
+
+async function initialise() {
+  if (!target.value || status.value !== 'pending' || disposed) return;
+
+  if (
+    props.disabled ||
+    window.matchMedia('(prefers-reduced-transparency: reduce)').matches
+  ) {
     status.value = 'fallback';
     return;
   }
 
+  const root = props.root ?? target.value.parentElement;
+  if (!root || target.value.parentElement !== root) {
+    const error = new Error(
+      'LiquidGlass must be a direct child of its capture root.'
+    );
+    status.value = 'fallback';
+    emit('error', error);
+    return;
+  }
+
+  // The renderer measures and captures everything relative to this element.
+  // Its reference implementation requires a positioned capture root.
+  captureRoot = root;
+  if (window.getComputedStyle(root).position === 'static') {
+    previousRootPosition = root.style.position;
+    root.style.position = 'relative';
+    positionedRoot = true;
+  }
+
+  setupLiveCapture(root);
+
   status.value = 'initialising';
 
   try {
-    glassInstance = liquidGL({
-      target: `#${id}`,
-      snapshot: props.snapshot,
-      resolution: clamp(props.resolution, 0.1, 3),
-      ...liveOptions.value,
-      reveal: props.reveal,
-      on: {
-        init: markReady
-      }
+    const instance = await LiquidGlass.init({
+      root,
+      glassElements: [target.value],
+      defaults: config.value
     });
 
-    // The CSS fallback returns the target node and has no init callback.
-    if (glassInstance instanceof Element) markReady(glassInstance);
+    if (disposed) {
+      instance.destroy();
+      return;
+    }
+
+    glassInstance = instance;
+
+    // Keep the refracted map live. Leaflet moves tiles with style mutations,
+    // which the renderer cannot infer from the glass element itself.
+    rootObserver = new MutationObserver((mutations) => {
+      if (
+        mutations.some(
+          (mutation) => target.value && !target.value.contains(mutation.target)
+        )
+      ) {
+        scheduleRefresh();
+      }
+    });
+    rootObserver.observe(root, {
+      attributes: true,
+      attributeFilter: ['class', 'src', 'style'],
+      childList: true,
+      subtree: true
+    });
+
+    resourceLoadHandler = (event) => {
+      if (
+        event.target instanceof HTMLElement &&
+        target.value?.contains(event.target)
+      ) {
+        return;
+      }
+      scheduleRefresh();
+    };
+    root.addEventListener('load', resourceLoadHandler, true);
+    root.addEventListener('error', resourceLoadHandler, true);
+
+    window.addEventListener('scroll', scheduleRefresh, { passive: true });
+    window.addEventListener('resize', scheduleRefresh, { passive: true });
+    scheduleRefresh();
+    status.value = 'ready';
+    emit('ready', instance);
   } catch (error) {
     status.value = 'fallback';
     emit('error', error);
@@ -131,50 +359,44 @@ function initialise() {
   }
 }
 
-function refresh() {
-  const renderer = glassInstance?.renderer;
-  glassInstance?.updateMetrics?.();
-  renderer?.captureSnapshot?.();
-  renderer?.render?.();
+function refresh(changedElement?: HTMLElement) {
+  paintLiveScene();
+  glassInstance?.markChanged(liveSceneCanvas ?? changedElement);
 }
 
-watch(liveOptions, (options) => {
-  if (!glassInstance?.options) return;
-
-  const tiltChanged = glassInstance.options.tilt !== options.tilt;
-  const shadowChanged = glassInstance.options.shadow !== options.shadow;
-  Object.assign(glassInstance.options, options);
-
-  if (tiltChanged) glassInstance.setTilt?.(options.tilt);
-  if (shadowChanged) glassInstance.setShadow?.(options.shadow);
-  refresh();
+watch(configJson, () => {
+  if (glassInstance && target.value) glassInstance.markChanged(target.value);
 });
 
 onMounted(async () => {
   await nextTick();
 
-  // Waiting for images and fonts prevents the initial snapshot from being stale.
   if (document.readyState === 'complete') {
-    initialise();
+    void initialise();
   } else {
-    loadHandler = initialise;
+    loadHandler = () => void initialise();
     window.addEventListener('load', loadHandler, { once: true });
   }
 });
 
 onBeforeUnmount(() => {
+  disposed = true;
   if (loadHandler) window.removeEventListener('load', loadHandler);
+  rootObserver?.disconnect();
+  if (resourceLoadHandler && captureRoot) {
+    captureRoot.removeEventListener('load', resourceLoadHandler, true);
+    captureRoot.removeEventListener('error', resourceLoadHandler, true);
+  }
+  window.removeEventListener('scroll', scheduleRefresh);
+  window.removeEventListener('resize', scheduleRefresh);
+  cancelAnimationFrame(refreshFrame);
+  glassInstance?.destroy();
+  glassInstance = null;
+  liveSceneCanvas?.remove();
+  liveSceneCanvas = null;
 
-  // liquid-gl currently has no public destroy method, so release its per-lens
-  // observers and helpers while leaving a shared renderer available to others.
-  const renderer = glassInstance?.renderer;
-  glassInstance?._sizeObs?.disconnect?.();
-  glassInstance?.setTilt?.(false);
-  glassInstance?.setShadow?.(false);
-
-  if (renderer?.lenses) {
-    const index = renderer.lenses.indexOf(glassInstance);
-    if (index !== -1) renderer.lenses.splice(index, 1);
+  if (positionedRoot && captureRoot?.style.position === 'relative') {
+    captureRoot.style.position = previousRootPosition;
   }
 });
 
@@ -187,6 +409,8 @@ defineExpose({ refresh });
     ref="target"
     class="liquid-glass"
     :class="`liquid-glass--${status}`"
+    :data-config="configJson"
+    :style="glassStyle"
   >
     <div class="liquid-glass__content">
       <slot />
@@ -198,9 +422,16 @@ defineExpose({ refresh });
 .liquid-glass {
   position: fixed;
   isolation: isolate;
-  background: rgba(255, 255, 255, 0.42);
-  -webkit-backdrop-filter: blur(18px) saturate(145%);
-  backdrop-filter: blur(18px) saturate(145%);
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* The library injects this canvas with an inline negative z-index. Keeping it
+   at layer 0 makes the shader visible without letting it cover the controls. */
+.liquid-glass > :deep(canvas) {
+  z-index: 0 !important;
+  filter: contrast(var(--liquid-glass-contrast, 1));
 }
 
 .liquid-glass__content {
@@ -209,19 +440,5 @@ defineExpose({ refresh });
   width: 100%;
   height: 100%;
   pointer-events: auto;
-}
-
-@supports not ((backdrop-filter: blur(1px))) {
-  .liquid-glass {
-    background: rgba(255, 255, 255, 0.88);
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .liquid-glass {
-    background: rgb(255, 255, 255);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
 }
 </style>

@@ -38,7 +38,6 @@
         "leaflet": "^1.9.4",
         "leaflet.glify": "^3.3.1",
         "leaflet.markercluster": "^1.5.3",
-        "liquid-gl": "^2.0.1",
         "material-file-icons": "^2.4.0",
         "md-editor-v3": "^6.5.0",
         "posthog-js": "^1.422.5",
@@ -1556,8 +1555,6 @@
     "lightningcss-win32-x64-msvc": ["lightningcss-win32-x64-msvc@1.33.0", "", { "os": "win32", "cpu": "x64" }, "sha512-OlEICDx/Xl0FqSp4bry8zFnCvGpig3Gl4gCquvYwHuqJKEC1+n9NgDniFvqHGmMv1ZkqDJrDqKKSykTDX+ehuA=="],
 
     "linkify-it": ["linkify-it@5.0.0", "", { "dependencies": { "uc.micro": "^2.0.0" } }, "sha512-5aHCbzQRADcdP+ATqnDuhhJ/MRIqDkZX5pyjFHRRysS8vZ5AbqGEoFIb6pYHPZ+L/OC2Lc+xT8uHVVR5CAK/wQ=="],
-
-    "liquid-gl": ["liquid-gl@2.0.1", "", {}, "sha512-4HTE7uwAeTlT3VZe6gUSHrGpfIb8SivqQAG9TAel9HJp776rqHbEpgviFoaGsgf1KAsrIkQ/uyOuVxqixOWMZg=="],
 
     "local-pkg": ["local-pkg@1.1.2", "", { "dependencies": { "mlly": "^1.7.4", "pkg-types": "^2.3.0", "quansync": "^0.2.11" } }, "sha512-arhlxbFRmoQHl33a0Zkle/YWlmNwoyt6QNZEIJcqNbdrsix5Lvc4HyyI3EnwxTYlZYc32EbYrQ8SzEZ7dqgg9A=="],
 

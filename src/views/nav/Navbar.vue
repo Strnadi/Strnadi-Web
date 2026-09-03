@@ -35,14 +35,16 @@ const changeLanguage = (lang: keyof typeof translations) => {
 
 <template>
   <LiquidGlass
+    key="map-cors-glass-v1"
     class="navbar-glass"
-    :resolution="1.25"
-    :refraction="0.028"
-    :aberration="0.009"
-    :frost="1.8"
-    :bevel-depth="0.11"
-    :bevel-width="0.2"
-    :magnify="1.012"
+    :blur-amount="0.3"
+    :chrom-aberration="0.2"
+    :corner-radius="32"
+    :z-radius="32"
+    :refraction="1.2"
+    :brightness="-0.2"
+    :contrast="1.12"
+    live-capture
   >
     <nav aria-label="Hlavní navigace">
       <div class="nav-surface">
@@ -177,13 +179,7 @@ nav {
 }
 
 .navbar-glass {
-  @apply top-2 left-2 right-2 desktop:top-5 desktop:left-5 desktop:right-5 z-[9] h-16 rounded-4xl;
-  background: rgba(255, 255, 255, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  box-shadow:
-    0 14px 38px rgba(15, 23, 42, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.22);
+  @apply top-2 left-2 right-2 desktop:top-5 desktop:left-5 desktop:right-5 z-[9] h-24 rounded-[32px];
 }
 
 .nav-surface {
@@ -191,48 +187,9 @@ nav {
   isolation: isolate;
 }
 
-.nav-surface::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background: linear-gradient(
-    115deg,
-    rgba(255, 255, 255, 0.2),
-    rgba(253, 252, 220, 0.08) 46%,
-    rgba(255, 255, 255, 0.12)
-  );
-  pointer-events: none;
-}
-
-.nav-surface::after {
-  content: '';
-  position: absolute;
-  inset: 1px 1.25rem auto;
-  height: 1px;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.9),
-    transparent
-  );
-  pointer-events: none;
-}
-
 .nav-logo {
-  @apply relative ml-1 flex shrink-0 flex-row items-center rounded-4xl px-4 font-semibold;
+  @apply relative ml-1 flex shrink-0 flex-row items-center px-4 font-semibold;
   height: calc(100% - 0.5rem);
-  background: linear-gradient(
-    135deg,
-    rgba(253, 252, 220, 0.8),
-    rgba(255, 255, 255, 0.5)
-  );
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.82),
-    0 4px 14px rgba(15, 23, 42, 0.08);
 }
 
 :deep(.dropdown-item:hover),
