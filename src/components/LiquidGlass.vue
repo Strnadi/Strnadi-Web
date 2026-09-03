@@ -80,6 +80,8 @@ let previousRootPosition = '';
 let positionedRoot = false;
 let liveSceneCanvas: HTMLCanvasElement | null = null;
 let resourceLoadHandler: ((event: Event) => void) | null = null;
+const markerImages = new WeakMap<HTMLElement, HTMLCanvasElement>();
+const pendingMarkerCaptures = new WeakSet<HTMLElement>();
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
@@ -124,6 +126,78 @@ function isCanvasSafeImage(image: HTMLImageElement) {
     );
   } catch {
     return false;
+  }
+}
+
+function markerOwner(node: Node) {
+  const element = node instanceof Element ? node : node.parentElement;
+  return element?.closest<HTMLElement>(
+    '.leaflet-marker-icon, .leaflet-marker-shadow'
+  );
+}
+
+function paintDomMarkers(
+  context: CanvasRenderingContext2D,
+  sceneLeft: number,
+  sceneTop: number,
+  sceneRight: number,
+  sceneBottom: number
+) {
+  if (!captureRoot || !glassInstance) return;
+
+  const markers = captureRoot.querySelectorAll<HTMLElement>(
+    '.leaflet-marker-icon:not(img), .leaflet-marker-shadow:not(img)'
+  );
+
+  for (const marker of markers) {
+    if (target.value?.contains(marker)) continue;
+
+    const rect = marker.getBoundingClientRect();
+    if (
+      rect.width <= 0 ||
+      rect.height <= 0 ||
+      rect.right <= sceneLeft ||
+      rect.bottom <= sceneTop ||
+      rect.left >= sceneRight ||
+      rect.top >= sceneBottom
+    ) {
+      continue;
+    }
+
+    const style = window.getComputedStyle(marker);
+    if (
+      style.display === 'none' ||
+      style.visibility === 'hidden' ||
+      Number.parseFloat(style.opacity) === 0
+    ) {
+      continue;
+    }
+
+    const image = markerImages.get(marker);
+    if (image) {
+      context.globalAlpha = clamp(Number.parseFloat(style.opacity) || 1, 0, 1);
+      context.drawImage(
+        image,
+        rect.left - sceneLeft,
+        rect.top - sceneTop,
+        rect.width,
+        rect.height
+      );
+      context.globalAlpha = 1;
+      continue;
+    }
+
+    if (pendingMarkerCaptures.has(marker)) continue;
+    pendingMarkerCaptures.add(marker);
+    void glassInstance.capture
+      .captureToCanvas(marker, rect.width, rect.height)
+      .then((captured) => {
+        if (captured && marker.isConnected) markerImages.set(marker, captured);
+      })
+      .finally(() => {
+        pendingMarkerCaptures.delete(marker);
+        if (!disposed) scheduleRefresh();
+      });
   }
 }
 
@@ -234,6 +308,10 @@ function paintLiveScene() {
       context.globalAlpha = 1;
     }
   }
+
+  // Leaflet divIcon and cluster markers are HTML rather than media elements.
+  // Draw their cached appearance last so they stay above the live map tiles.
+  paintDomMarkers(context, sceneLeft, sceneTop, sceneRight, sceneBottom);
 }
 
 function setupLiveCapture(root: HTMLElement) {
@@ -320,6 +398,16 @@ async function initialise() {
     // Keep the refracted map live. Leaflet moves tiles with style mutations,
     // which the renderer cannot infer from the glass element itself.
     rootObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (
+          mutation.type === 'childList' ||
+          (mutation.type === 'attributes' && mutation.attributeName !== 'style')
+        ) {
+          const marker = markerOwner(mutation.target);
+          if (marker) markerImages.delete(marker);
+        }
+      }
+
       if (
         mutations.some(
           (mutation) => target.value && !target.value.contains(mutation.target)
@@ -330,7 +418,14 @@ async function initialise() {
     });
     rootObserver.observe(root, {
       attributes: true,
-      attributeFilter: ['class', 'src', 'style'],
+      attributeFilter: [
+        'class',
+        'src',
+        'style',
+        'colors',
+        'dot',
+        'questionmark'
+      ],
       childList: true,
       subtree: true
     });
