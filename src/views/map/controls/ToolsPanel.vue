@@ -57,6 +57,11 @@ const toggleDesktopSearch = async () => {
   }
 };
 
+const selectLocation = (location: [number, number]) => {
+  MapStore.move(location, 12);
+  if (desktopSearchOpen.value) desktopSearchOpen.value = false;
+};
+
 const onDocumentPointerDown = (event: PointerEvent) => {
   if (
     (toolsShown.value || desktopSearchOpen.value) &&
@@ -69,7 +74,9 @@ const onDocumentPointerDown = (event: PointerEvent) => {
 };
 
 const onDocumentKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Escape' && toolsShown.value) closeTools();
+  if (event.key !== 'Escape') return;
+  if (toolsShown.value) closeTools();
+  desktopSearchOpen.value = false;
 };
 
 onMounted(() => {
@@ -84,38 +91,45 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="rootRef" class="map-tools" :data-mode="mode">
-    <div class="map-tools__quick" :data-expanded="mode === 'mobile' || desktopSearchOpen">
-      <button
-        v-if="mode === 'desktop'"
-        type="button"
-        class="map-tools__search-toggle"
-        :aria-label="t('mobile.map_tools.search')"
-        :aria-expanded="desktopSearchOpen"
-        :title="t('mobile.map_tools.search')"
-        @click="toggleDesktopSearch"
-      >
-        <svg aria-hidden="true" viewBox="0 0 24 24">
-          <path d="m20 20-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
-      </button>
-      <button v-if="hasValidLocation && (mode === 'mobile' || desktopSearchOpen)" type="button" class="map-tools__quick-button"
-        :aria-label="t('mobile.map_tools.my_location')" :title="t('mobile.map_tools.my_location')"
-        @click="MapStore.move([coords.latitude, coords.longitude], 14)">
-        <LocationArrowIcon />
-      </button>
+  <div ref="rootRef" class="map-tools" :data-mode="mode" :data-location="hasValidLocation">
+    <div class="map-tools__bar">
+      <div class="map-tools__quick" :data-expanded="mode === 'mobile' || desktopSearchOpen">
+        <button
+          v-if="mode === 'desktop'"
+          type="button"
+          class="map-tools__search-toggle"
+          :aria-label="t('mobile.map_tools.search')"
+          :aria-expanded="desktopSearchOpen"
+          :title="t('mobile.map_tools.search')"
+          @click="toggleDesktopSearch"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="m20 20-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" />
+          </svg>
+        </button>
+        <button v-if="hasValidLocation" type="button" class="map-tools__quick-button"
+          :aria-label="t('mobile.map_tools.my_location')" :title="t('mobile.map_tools.my_location')"
+          @click="MapStore.move([coords.latitude, coords.longitude], 14)">
+          <LocationArrowIcon />
+        </button>
 
-      <LocationSearch v-model:text="searchText" :placeholder="t('mobile.map_tools.search')" class="map-tools__search"
-        @update:location="(location) => MapStore.move(location, 12)" />
+        <LocationSearch
+          v-if="mode === 'mobile' || desktopSearchOpen"
+          v-model:text="searchText"
+          :placeholder="t('mobile.map_tools.search')"
+          class="map-tools__search"
+          @update:location="selectLocation"
+        />
+      </div>
+
+      <button type="button" class="map-tools__trigger" :class="{ 'map-tools__trigger--active': activeToolCount > 0 }"
+        :aria-label="t('mobile.map_tools.open')" :aria-expanded="toolsShown" aria-controls="map-tools-panel"
+        :title="t('mobile.map_tools.open')" @click="toggleTools">
+        <OptionsIcon />
+        <span>{{ t('mobile.map_tools.label') }}</span>
+        <span v-if="activeToolCount" class="map-tools__count">{{ activeToolCount }}</span>
+      </button>
     </div>
-
-    <button type="button" class="map-tools__trigger" :class="{ 'map-tools__trigger--active': activeToolCount > 0 }"
-      :aria-label="t('mobile.map_tools.open')" :aria-expanded="toolsShown" aria-controls="map-tools-panel"
-      :title="t('mobile.map_tools.open')" @click="toggleTools">
-      <OptionsIcon />
-      <span>{{ t('mobile.map_tools.label') }}</span>
-      <span v-if="activeToolCount" class="map-tools__count">{{ activeToolCount }}</span>
-    </button>
 
     <Transition name="map-tools-panel">
       <section v-if="toolsShown" id="map-tools-panel" ref="panelRef" class="map-tools__panel" role="dialog"
@@ -177,6 +191,10 @@ onUnmounted(() => {
   @apply pointer-events-none absolute inset-0 z-[1000];
 }
 
+.map-tools__bar {
+  display: contents;
+}
+
 .map-tools__quick {
   @apply pointer-events-auto absolute left-2 right-2 top-2 flex items-center gap-2;
 }
@@ -196,7 +214,11 @@ onUnmounted(() => {
 }
 
 .map-tools__search-toggle {
+  width: 3rem;
+  height: 3rem;
   min-width: 3rem;
+  padding: 0;
+  border-radius: 999px;
 }
 
 .map-tools__quick-button svg,
@@ -206,6 +228,13 @@ onUnmounted(() => {
   flex: none;
   width: 1.35rem;
   height: 1.35rem;
+}
+
+.map-tools__search-toggle svg path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
 }
 
 .map-tools__search {
@@ -291,43 +320,50 @@ onUnmounted(() => {
 }
 
 .map-tools[data-mode='desktop'] .map-tools__quick {
-  top: auto;
-  bottom: 1rem;
-  left: auto;
-  right: 7.5rem;
+  position: static;
   width: 3rem;
+  flex: 0 1 auto;
   flex-direction: row-reverse;
+  overflow: hidden;
   transition: width 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+.map-tools[data-mode='desktop'][data-location='true'] .map-tools__quick {
+  width: 6.65rem;
+}
+
 .map-tools[data-mode='desktop'] .map-tools__quick[data-expanded='true'] {
-  width: min(34rem, calc(100% - 10rem));
+  width: min(34rem, calc(100vw - 18rem));
+  overflow: visible;
 }
 
 .map-tools[data-mode='desktop'] .map-tools__search {
-  width: 0;
-  flex: 0 1 0%;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(0.5rem);
+  width: auto;
+  flex: 1 1 auto;
+  overflow: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
   transition:
     opacity 160ms ease,
     transform 240ms ease,
     flex-basis 240ms ease;
 }
 
-.map-tools[data-mode='desktop'] .map-tools__quick[data-expanded='true'] .map-tools__search {
-  flex-basis: 100%;
-  overflow: visible;
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(0);
+.map-tools[data-mode='desktop'] .map-tools__bar {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  max-width: calc(100% - 2rem);
+  align-items: center;
+  gap: 0.65rem;
+  pointer-events: none;
 }
 
 .map-tools[data-mode='desktop'] .map-tools__trigger {
-  bottom: 1rem;
-  right: 1rem;
+  position: static;
+  flex: 0 0 auto;
 }
 
 .map-tools[data-mode='desktop'] .map-tools__panel {
