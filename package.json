@@ -10,6 +10,7 @@
     "postinstall": "node scripts/copy-litert-wasm.mjs",
     "format": "prettier --write src",
     "check": "vue-tsc --noEmit -p tsconfig.app.json",
+    "test": "vitest run",
     "lint": "eslint"
   },
   "dependencies": {

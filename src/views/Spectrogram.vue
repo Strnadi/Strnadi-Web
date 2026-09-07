@@ -28,6 +28,7 @@
         :class="overlayCursorClass"
         @mousedown="onRangeSelectStart"
         @touchstart="onRangeSelectTouchStart"
+        @contextmenu.self="onEmptySpectrogramContextMenu"
       >
         <!-- Hover line shows the nextRangeColor -->
         <div
@@ -64,6 +65,7 @@
               top: `${margin.top}px`,
               height: `${containerHeight - margin.top - margin.bottom}px`
             }"
+            @mousedown.stop
             @contextmenu.prevent="onRangeContextMenu($event, r.id)"
             @click.stop="handleRangeFillClick(r.id, $event)"
             @mouseenter="handleRangeFillHover(r.id, $event)"
@@ -613,6 +615,11 @@ import {
 } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
 import type { Numeric } from '@/types/basic';
+import type {
+  SpectrogramRange,
+  SpectrogramRangeCreated,
+  SpectrogramRangeInputSource
+} from '@/types/spectrogram';
 import TranslatedText from '@/components/TranslatedText.vue';
 import {
   parseWavHeader,
@@ -625,14 +632,7 @@ import {
   setSpectrogramCache
 } from '@/utils/spectrogram-cache';
 
-interface Range {
-  id: Numeric;
-  start: number;
-  end: number;
-  color?: string;
-  colors?: string[];
-  payload?: unknown;
-}
+type Range = SpectrogramRange;
 
 const DEFAULT_RANGE_COLOR = '#111827';
 
@@ -736,6 +736,7 @@ interface Props {
   joinSelectionSegments?: boolean; // Whether to concatenate selected regions without gaps
   initialViewport?: 'default' | 'fit-audio' | 'fit-selection';
   showTooltipOnHover?: boolean; // Whether to show tooltip on hover (readonly mode only)
+  secondaryButtonSelection?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -769,6 +770,7 @@ const props = withDefaults(defineProps<Props>(), {
   downloadOnlySelections: false,
   initialViewport: 'default',
   showTooltipOnHover: true // Default to true
+  ,secondaryButtonSelection: false
 });
 
 const joinSelectionSegments = computed(() => {
@@ -786,6 +788,7 @@ const useFastSelectionDownloadPath = computed(() => {
 const emit = defineEmits<{
   'update:selected': [range: Range[]];
   'update:currentTime': [currentTime: number];
+  'range-created': [event: SpectrogramRangeCreated];
 }>();
 
 // Helper function to set alpha on any color format
@@ -1116,12 +1119,54 @@ watch(
 
 // Selection
 const isSelecting = ref(false);
+const selectionInputSource = ref<SpectrogramRangeInputSource>('primary');
 const selectStartXPx = ref(0);
 const selectCurrentXPx = ref(0);
 let mousedownX = 0;
 let mousedownTime = 0;
 const CLICK_THRESHOLD_MS = 250;
 const CLICK_THRESHOLD_PX = 5;
+
+function createRangeFromCurrentSelection(
+  inputSource: SpectrogramRangeInputSource,
+  anchor: { x: number; y: number }
+) {
+  const x0 = Math.min(selectStartXPx.value, selectCurrentXPx.value);
+  const x1 = Math.max(selectStartXPx.value, selectCurrentXPx.value);
+  if (x1 - x0 < CLICK_THRESHOLD_PX) return false;
+
+  const dispW = containerWidth.value - margin.value.left - margin.value.right;
+  if (dispW <= 0 || !canvasRef.value || !spectrogramData.value.length)
+    return false;
+
+  const f0 = clamp((x0 - margin.value.left) / dispW, 0, 1);
+  const f1 = clamp((x1 - margin.value.left) / dispW, 0, 1);
+  const sIdx = Math.floor(offsetIndex.value);
+  const win = Math.floor(windowSize.value);
+  const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
+  if (sIdx >= eIdx || sIdx < 0 || sIdx >= spectrogramData.value.length)
+    return false;
+
+  const startElement = spectrogramData.value[sIdx];
+  const endElement =
+    spectrogramData.value[Math.min(eIdx - 1, spectrogramData.value.length - 1)];
+  if (!startElement || !endElement) return false;
+
+  const duration = endElement.time - startElement.time;
+  if (duration <= 0) return false;
+
+  const range: Range = {
+    id: Date.now() + Math.random(),
+    start: clamp(startElement.time + f0 * duration, 0, audioDuration.value),
+    end: clamp(startElement.time + f1 * duration, 0, audioDuration.value),
+    color:
+      inputSource === 'secondary' ? DEFAULT_RANGE_COLOR : nextRangeColor.value
+  };
+  ranges.value.push(range);
+  emit('range-created', { range, inputSource, anchor });
+  updateNextRangeColor(ranges.value);
+  return true;
+}
 
 // Handle‐drag
 const draggingRangeId = ref<Numeric | null>(null); // Changed from number
@@ -3123,6 +3168,7 @@ function onRangeSelectTouchStart(e: TouchEvent) {
       containerWidth.value - margin.value.right
     );
     selectCurrentXPx.value = selectStartXPx.value;
+    selectionInputSource.value = 'touch';
     isSelecting.value = true;
     document.addEventListener('touchmove', onRangeSelectTouchMoveHandler, {
       passive: false
@@ -3165,41 +3211,12 @@ function onRangeSelectTouchEndHandler(_e: TouchEvent) {
     timeDiff < CLICK_THRESHOLD_MS && distDiff < CLICK_THRESHOLD_PX;
 
   if (wasSelectionProcessActive && !props.readonly) {
-    const x0 = Math.min(selectStartXPx.value, selectCurrentXPx.value);
-    const x1 = Math.max(selectStartXPx.value, selectCurrentXPx.value);
-
-    if (x1 - x0 >= CLICK_THRESHOLD_PX) {
-      const dispW =
-        containerWidth.value - margin.value.left - margin.value.right;
-      if (dispW > 0 && canvasRef.value && spectrogramData.value.length > 0) {
-        const f0 = clamp((x0 - margin.value.left) / dispW, 0, 1);
-        const f1 = clamp((x1 - margin.value.left) / dispW, 0, 1);
-        const sIdx = Math.floor(offsetIndex.value);
-        const win = Math.floor(windowSize.value);
-        const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
-        if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
-          const startElement = spectrogramData.value[sIdx];
-          const endElement =
-            spectrogramData.value[
-              Math.min(eIdx - 1, spectrogramData.value.length - 1)
-            ];
-          if (startElement && endElement) {
-            const vs = startElement.time;
-            const ve = endElement.time;
-            const dur = ve - vs;
-            if (dur > 0) {
-              const usedColor = nextRangeColor.value;
-              ranges.value.push({
-                id: Date.now() + Math.random(),
-                start: vs + f0 * dur,
-                end: vs + f1 * dur,
-                color: usedColor
-              });
-              updateNextRangeColor(ranges.value);
-            }
-          }
-        }
-      }
+    if (
+      createRangeFromCurrentSelection('touch', {
+        x: touch.clientX,
+        y: touch.clientY
+      })
+    ) {
       return;
     }
   }
@@ -3280,13 +3297,15 @@ function onRangeSelectStart(e: MouseEvent) {
     return; // Middle click handled
   }
 
-  // Existing logic for left-click (e.button === 0)
-  if (e.button !== 0) return; // Ensure only left click proceeds from here for selection/space-pan
+  const isSecondarySelection = e.button === 2 && props.secondaryButtonSelection;
+  if (e.button !== 0 && !isSecondarySelection) return;
+  if (isSecondarySelection) e.preventDefault();
 
   // Set mousedown time and position for potential click detection in onRangeSelectEndHandler
   // This needs to be done before any early returns for left-clicks that should lead to onRangeSelectEndHandler.
   mousedownX = e.clientX;
   mousedownTime = Date.now();
+  selectionInputSource.value = isSecondarySelection ? 'secondary' : 'primary';
 
   const tgt = e.target as HTMLElement;
   if (
@@ -3365,43 +3384,12 @@ function onRangeSelectEndHandler(e: MouseEvent) {
 
   // Handle range creation if a selection process was active, not readonly, and it's a drag.
   if (wasSelectionProcessActive && !props.readonly) {
-    const x0 = Math.min(selectStartXPx.value, selectCurrentXPx.value);
-    const x1 = Math.max(selectStartXPx.value, selectCurrentXPx.value);
-
-    if (x1 - x0 >= CLICK_THRESHOLD_PX) {
-      // If it was a drag, not a simple click
-      const dispW =
-        containerWidth.value - margin.value.left - margin.value.right;
-      if (dispW > 0 && canvasRef.value && spectrogramData.value.length > 0) {
-        const f0 = clamp((x0 - margin.value.left) / dispW, 0, 1);
-        const f1 = clamp((x1 - margin.value.left) / dispW, 0, 1);
-        const sIdx = Math.floor(offsetIndex.value);
-        const win = Math.floor(windowSize.value);
-        const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
-        if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
-          const startElement = spectrogramData.value[sIdx];
-          const endElement =
-            spectrogramData.value[
-              Math.min(eIdx - 1, spectrogramData.value.length - 1)
-            ];
-          if (startElement && endElement) {
-            const vs = startElement.time;
-            const ve = endElement.time;
-            const dur = ve - vs;
-            if (dur > 0) {
-              const usedColor = nextRangeColor.value;
-              ranges.value.push({
-                id: Date.now() + Math.random(),
-                start: vs + f0 * dur,
-                end: vs + f1 * dur,
-                color: usedColor
-              });
-              // now generate a fresh color for the *next* range
-              updateNextRangeColor(ranges.value);
-            }
-          }
-        }
-      }
+    if (
+      createRangeFromCurrentSelection(selectionInputSource.value, {
+        x: e.clientX,
+        y: e.clientY
+      })
+    ) {
       return; // Range created, so don't fall through to click-to-seek
     }
   }
@@ -3411,6 +3399,7 @@ function onRangeSelectEndHandler(e: MouseEvent) {
   // or in non-readonly mode if the "selection" was too small (i.e., a click).
   if (
     isClick &&
+    selectionInputSource.value !== 'secondary' &&
     !isSpacePanningActive.value && // Ensure not part of a space pan
     !isSpacebarPressed.value && // Redundant if isSpacePanningActive is true, but safe
     canvasRef.value
@@ -3444,6 +3433,10 @@ function onRangeSelectEndHandler(e: MouseEvent) {
       }
     }
   }
+}
+
+function onEmptySpectrogramContextMenu(event: MouseEvent) {
+  if (props.secondaryButtonSelection) event.preventDefault();
 }
 
 // HANDLE DRAG

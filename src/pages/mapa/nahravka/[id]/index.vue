@@ -4,43 +4,31 @@ meta:
 </route>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router';
-import { getRecording, getFilteredRecording } from '@/api/recordings';
-import { getUserInfo } from '@/api/account';
-import { ref, computed } from 'vue';
-import { accountStore } from '@/state/AccountStore';
-import type { Numeric } from '@/types/basic';
-import Spectrogram from '@/views/Spectrogram.vue';
-import ToggleShow from '@/components/ToggleShow.vue';
-import { MapStore } from '@/views/map/RecordingsMap.vue';
-import MultiColorSquare from '@/components/MultiColorSquare.vue';
-import { DialectColors } from '@/views/map/RecordingsMap.vue';
-import TranslatedText, { t } from '@/components/TranslatedText.vue';
-import type { FilteredPartModel } from '@/api/recordings';
-import UserCard from '@/views/UserCard.vue';
-import { getDialectStrings } from '@/utils/dialects';
-import RecordingsMap from '@/views/map/RecordingsMap.vue';
-import Map from '@/views/map/Map.vue';
 import { divIcon } from 'leaflet';
+import { getRecording, getFilteredRecording } from '@/api/recordings';
+import type { FilteredPartModel } from '@/api/recordings';
+import { getUserInfo } from '@/api/account';
+import type { Numeric } from '@/types/basic';
+import { accountStore } from '@/state/AccountStore';
+import Spectrogram from '@/views/Spectrogram.vue';
+import { DialectColors } from '@/views/map/RecordingsMap.vue';
+import Map from '@/views/map/Map.vue';
 import TextualCoords from '@/components/map/TextualCoords.vue';
+import ProfilePhoto from '@/components/ProfilePhoto.vue';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
+import { getDialectStrings } from '@/utils/dialects';
 
-// Vue doesn't re-render this component when route changes; it re-uses the old instance
-// So, in turn, we need to handle that ourselves and not declare this just as an constant.
 const recordingId = useRouteParams<Numeric>('id');
-
 const env = import.meta.env;
 
 const dontShowUnknownDialects = ref(true);
 const showOnlyRepresentants = ref(true);
-
 const showAllDialects = ref(false);
 
-const {
-  data: recording,
-  isError,
-  isLoading
-} = useQuery({
+const { data: recording, isError, isLoading } = useQuery({
   queryKey: ['recording', recordingId],
   queryFn: () => getRecording(recordingId.value, false)
 });
@@ -50,113 +38,31 @@ const { data: filteredRec, isLoading: isFilteredRecLoading } = useQuery({
   queryFn: () => getFilteredRecording(recordingId.value)
 });
 
-const enabled = computed(() => !!recording.value?.userId);
 const uploaderId = computed(() => recording.value?.userId);
-
-// todo select location in the map
-
-// Dependent query - only runs when we have an uploaderEmail from the recording
-const {
-  data: uploader,
-  isLoading: isUploaderLoading,
-  isError: isUploaderError
-} = useQuery({
+const { data: uploader } = useQuery({
   queryKey: ['user', uploaderId, computed(() => accountStore.user?.id ?? 'guest')],
-  queryFn: () =>
-    getUserInfo(recording.value?.userId!, accountStore.token ?? undefined),
-  enabled // Use the computed enabled value
+  queryFn: () => getUserInfo(recording.value!.userId, accountStore.token ?? undefined),
+  enabled: computed(() => !!recording.value?.userId)
 });
+
+const hasAudio = computed(() =>
+  recording.value?.parts?.some((part) => part.filePath !== null)
+);
+
+const canManage = computed(() =>
+  accountStore.user?.role === 'admin' || accountStore.user?.id === recording.value?.userId
+);
 
 const recordingCoordinates = computed(() => {
   const part = recording.value?.parts?.[0];
   if (!part) return null;
   const lat = part.gpsLatitudeStart;
   const lng = part.gpsLongitudeStart;
-  return Number.isFinite(lat) &&
-    Number.isFinite(lng) &&
-    lat >= -90 &&
-    lat <= 90 &&
-    lng >= -180 &&
-    lng <= 180
+  return Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
     ? { lat, lng }
     : null;
 });
 
-const segments = computed<
-  {
-    id: number;
-    start: number;
-    end: number;
-    color?: string;
-    colors?: string[];
-    payload?: FilteredPartModel;
-  }[]
->(() => {
-  if (filteredRec.value && DialectColors.value) {
-    const firstPart = recording.value?.parts?.[0];
-
-    if (!firstPart) return [];
-
-    let i = 0;
-
-    return filteredRec.value
-      .filter((fr) => {
-        if (showOnlyRepresentants.value && !fr.representantFlag) {
-          return false;
-        }
-
-        if (!dontShowUnknownDialects.value) {
-          return true;
-        }
-
-        const dialectStrings = getDialectStrings(fr);
-        return dialectStrings.some((ds) => ds && ds !== 'Unfinished');
-      })
-      .map((fr) => ({
-        id: fr.id * 1000 + i++,
-        start: Number(
-          (new Date(fr.startDate).getTime() -
-            new Date(firstPart.startDate).getTime()) /
-            1000
-        ),
-        end: Number(
-          (new Date(fr.endDate).getTime() -
-            new Date(firstPart.startDate).getTime()) /
-            1000
-        ),
-        // --- color mapping fix ---
-        // Collect dialect codes in priority (confirmed > predicted > guess)
-        colors: getDialectStrings(fr)
-          .map(
-            (code) =>
-              DialectColors.value?.[code as keyof typeof DialectColors.value]
-          )
-          .filter(Boolean) as string[],
-        payload: fr
-      }));
-  }
-
-  return [];
-});
-
-// onMounted(() => {
-//   MapStore.move([ recordingPart.gpsLatitudeStart, recordingPart.gpsLongitudeStart ], 17);
-// })
-
-// onUnmounted(MapStore.unmove);
-
-// watch(recording, (currentValue) => {
-//   if(currentValue) {
-//     MapStore.move([
-//       currentValue.parts?.[0].gpsLatitudeStart,
-//       currentValue.parts?.[0].gpsLongitudeStart
-//     ], 17);
-//   }
-// }, { immediate: true });
-
-// todo move when selecting diff recordings (onBeforeRouteUpdate)
-
-// Helper to get mm:ss from absolute date based on first part start
 const firstPartStart = computed(() => {
   const start = recording.value?.parts?.[0]?.startDate;
   return start ? new Date(start).getTime() : null;
@@ -164,427 +70,324 @@ const firstPartStart = computed(() => {
 
 const formatRelTime = (dateStr: string) => {
   if (!firstPartStart.value) return '0:00';
-  const diffSec = Math.max(
-    0,
-    (new Date(dateStr).getTime() - firstPartStart.value) / 1000
-  );
-  const min = Math.floor(diffSec / 60).toString();
-  const sec = Math.floor(diffSec % 60)
-    .toString()
-    .padStart(2, '0');
-  return `${min}:${sec}`;
+  const diffSec = Math.max(0, (new Date(dateStr).getTime() - firstPartStart.value) / 1000);
+  return `${Math.floor(diffSec / 60)}:${Math.floor(diffSec % 60).toString().padStart(2, '0')}`;
 };
 
-const fallbackDialectColor = '#e2e8f0';
-
-const DIALECT_COLOR_ALPHA = {
-  background: 0.15,
-  border: 0.45,
-  star: 1
-} as const;
-
-type DialectColorUsage = keyof typeof DIALECT_COLOR_ALPHA;
-
-const getDialectBaseColor = (filteredPart: FilteredPartModel) => {
-  const firstDialect = getDialectStrings(filteredPart)[0];
-  if (!firstDialect || !DialectColors.value) {
-    return fallbackDialectColor;
-  }
-
-  return (
-    DialectColors.value[firstDialect as keyof typeof DialectColors.value] ??
-    fallbackDialectColor
-  );
-};
-
-const hexToRgba = (hexColor: string, alpha: number) => {
-  const normalized = hexColor.trim();
-  if (!normalized.startsWith('#')) {
-    return hexColor;
-  }
-
-  let value = normalized.slice(1);
-  if (value.length === 3 || value.length === 4) {
-    value = value
-      .split('')
-      .map((char) => char + char)
-      .join('');
-  }
-
-  if (value.length !== 6 && value.length !== 8) {
-    return hexColor;
-  }
-
-  const rgb = value.slice(0, 6);
-  const baseAlphaHex = value.length === 8 ? value.slice(6) : 'ff';
-
-  const r = parseInt(rgb.slice(0, 2), 16);
-  const g = parseInt(rgb.slice(2, 4), 16);
-  const b = parseInt(rgb.slice(4, 6), 16);
-  const baseAlpha = parseInt(baseAlphaHex, 16) / 255;
-
-  const finalAlpha = Math.min(
-    1,
-    Math.max(0, Math.round(baseAlpha * alpha * 1000) / 1000)
-  );
-
-  return `rgba(${r}, ${g}, ${b}, ${finalAlpha})`;
-};
-
-const getDialectColorWithAlpha = (
-  filteredPart: FilteredPartModel,
-  usage: DialectColorUsage
-) => {
-  const baseColor = getDialectBaseColor(filteredPart);
-  return hexToRgba(baseColor, DIALECT_COLOR_ALPHA[usage]);
-};
+const segments = computed(() => {
+  const firstPart = recording.value?.parts?.[0];
+  if (!filteredRec.value || !DialectColors.value || !firstPart) return [];
+  let index = 0;
+  return filteredRec.value
+    .filter((part) => {
+      if (showOnlyRepresentants.value && !part.representantFlag) return false;
+      if (!dontShowUnknownDialects.value) return true;
+      return getDialectStrings(part).some((dialect) => dialect && dialect !== 'Unfinished');
+    })
+    .map((part) => ({
+      id: part.id * 1000 + index++,
+      start: (new Date(part.startDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000,
+      end: (new Date(part.endDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000,
+      colors: getDialectStrings(part)
+        .map((code) => DialectColors.value?.[code as keyof typeof DialectColors.value])
+        .filter(Boolean) as string[],
+      payload: part
+    }));
+});
 
 const matchingFilteredParts = computed(() =>
   (filteredRec.value ?? [])
-    .filter((fr) => {
-      const hasKnownDialect = getDialectStrings(fr).some(
-        (dialect) => dialect && dialect !== 'Unfinished'
-      );
-      if (dontShowUnknownDialects.value && !hasKnownDialect) return false;
-      if (showOnlyRepresentants.value && !fr.representantFlag) return false;
+    .filter((part) => {
+      const known = getDialectStrings(part).some((dialect) => dialect && dialect !== 'Unfinished');
+      if (dontShowUnknownDialects.value && !known) return false;
+      if (showOnlyRepresentants.value && !part.representantFlag) return false;
       return true;
     })
     .toSorted((a, b) => Number(Boolean(b.representantFlag)) - Number(Boolean(a.representantFlag)))
 );
 
 const displayedFilteredParts = computed(() =>
-  showAllDialects.value
-    ? matchingFilteredParts.value
-    : matchingFilteredParts.value.slice(0, 3)
+  showAllDialects.value ? matchingFilteredParts.value : matchingFilteredParts.value.slice(0, 3)
+);
+
+const fallbackDialectColor = '#ded5bd';
+const getDialectColor = (part: FilteredPartModel) => {
+  const code = getDialectStrings(part)[0];
+  return code && DialectColors.value
+    ? DialectColors.value[code as keyof typeof DialectColors.value] ?? fallbackDialectColor
+    : fallbackDialectColor;
+};
+
+const uploaderName = computed(() => {
+  if (!uploader.value) return '';
+  return uploader.value.nickname
+    ? `@${uploader.value.nickname}`
+    : [uploader.value.firstName, uploader.value.lastName].filter(Boolean).join(' ') || `${t('labels.user')} #${uploader.value.id}`;
+});
+
+const uploaderInitials = computed(() => {
+  if (!uploader.value) return '?';
+  const source = uploader.value.nickname || `${uploader.value.firstName} ${uploader.value.lastName}`;
+  return source.trim().split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || '?';
+});
+
+const uploaderLocation = computed(() =>
+  uploader.value ? [uploader.value.postCode, uploader.value.city].filter(Boolean).join(' ') : ''
 );
 </script>
 
 <template>
-  <h1 class="text-xl sm:text-2xl font-semibold break-words">
-    <template v-if="recording?.name">
-      {{ recording.name }}
-    </template>
-    <template v-else>
-      <TranslatedText identifier="recordings.detail.fallback_prefix" />{{
-        recordingId
-      }}
-    </template>
-  </h1>
-
-  <template v-if="isError">
-    <span class="text-lg sm:text-xl text-red-600">
-      <TranslatedText identifier="common.error_prefix" />
-      <span class="ml-1">
-        <TranslatedText identifier="errors.recordings.loading_single" />
-      </span>
-    </span>
-  </template>
-  <template v-if="isLoading">
-    <span class="text-gray-500">
-      <TranslatedText identifier="states.loading" />
-    </span>
-  </template>
-  <template v-else-if="recording">
-    <div class="flex flex-col w-full gap-y-4">
-      <div
-        class="flex flex-col sm:flex-row justify-around w-full text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-0 sm:divide-x divide-gray-300"
-      >
-        <span
-          v-if="recording.device"
-          class="text-center sm:px-2"
-        >
-          {{ recording.device }}
-        </span>
-        <span class="text-center sm:px-2">{{
-          new Date(
-            recording.parts?.[0]?.startDate ?? recording.createdAt!
-          ).toLocaleString()
-        }}</span>
-      </div>
-
-      <div v-if="recording && filteredRec && (recording?.parts?.some(p => p.filePath !== null) ?? false) && DialectColors">
-        <div
-          class="-mx-4 sm:mx-0 p-3 sm:p-4 transition touch-manipulation gap-2 bg-white"
-        >
-          <Spectrogram
-            :audio-urls="
-              recording.parts?.map(
-                (p) =>
-                  `${env.VITE_API_URL}/recordings/part/${recording.id}/${p.id}/sound`
-              ) ?? []
-            "
-            :height="200"
-            :readonly="true"
-            :download-only-selections="true"
-            initial-viewport="fit-selection"
-            :no-controls="false"
-            :simple-controls="true"
-            :selected="segments"
-          >
-            <template #range-tooltip="{ range, close }">
-              <div>
-                <h4 class="font-bold">
-                  {{
-                    getDialectStrings(range.payload as FilteredPartModel).join(
-                      ', '
-                    )
-                  }}
-                </h4>
-                <p>
-                  {{ formatRelTime(range.payload?.startDate) }} -
-                  {{ formatRelTime(range.payload?.endDate) }}
-                </p>
-              </div>
-            </template>
-          </Spectrogram>
-        </div>
-        <div class="details-toggle-card">
-          <p class="details-toggle-text">
-            Nezobrazovat nedokončená a neznámá nářečí
-          </p>
-          <label class="toggle-switch">
-            <input
-              v-model="dontShowUnknownDialects"
-              type="checkbox"
-              class="toggle-switch-input"
-              aria-label="Nezobrazovat nedokončená a neznámá nářečí"
-            />
-            <span
-              class="toggle-switch-track"
-              :class="{
-                'toggle-switch-track--active': dontShowUnknownDialects
-              }"
-            >
-              <span class="toggle-switch-thumb" />
-            </span>
-          </label>
-        </div>
-        <div class="details-toggle-card">
-          <p class="details-toggle-text">Zobrazit jen reprezentanty</p>
-          <label class="toggle-switch">
-            <input
-              v-model="showOnlyRepresentants"
-              type="checkbox"
-              class="toggle-switch-input"
-              aria-label="Zobrazit jen reprezentanty"
-            />
-            <span
-              class="toggle-switch-track"
-              :class="{
-                'toggle-switch-track--active': showOnlyRepresentants
-              }"
-            >
-              <span class="toggle-switch-thumb" />
-            </span>
-          </label>
-        </div>
-        <div
-          v-if="filteredRec?.length"
-          class="space-y-3 sm:space-y-4 mt-4 sm:mt-6"
-        >
-          <h3 class="text-base sm:text-lg font-medium mb-2">
-            <TranslatedText
-              identifier="recordings.detail.detected_dialects_heading"
-            />
-          </h3>
-          <ul class="space-y-2 sm:space-y-3">
-            <li
-              v-for="fr in displayedFilteredParts"
-              :key="fr.id"
-              class="flex flex-col gap-1 rounded-lg border p-3 sm:p-4 shadow-sm transition touch-manipulation"
-              :style="{
-                backgroundColor: getDialectColorWithAlpha(fr, 'background'),
-                borderColor: getDialectColorWithAlpha(fr, 'border')
-              }"
-            >
-              <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2 min-w-0">
-                  <!-- <MultiColorSquare
-                    size="14px"
-                    v-if="DialectColors?.['value']"
-                    :colors="(
-                      fr.detectedDialects?.map(dd => {
-                        const code = dd.confirmedDialect ?? dd.predictedDialect ?? dd.userGuessDialect;
-                        return code && DialectColors.value[code as keyof typeof DialectColors.value] ?? null;
-                      }).filter(Boolean) as string[]
-                    ) ?? []"
-                  /> -->
-                  <p class="font-semibold text-sm sm:text-base truncate">
-                    {{
-                      getDialectStrings(fr).join(', ') ||
-                      t('recordings.detail.unknown_dialect')
-                    }}
-                  </p>
-                </div>
-                <span
-                  v-if="fr.representantFlag"
-                  class="text-lg sm:text-xl flex-shrink-0"
-                  :style="{ color: getDialectColorWithAlpha(fr, 'star') }"
-                  >★</span
-                >
-              </div>
-              <span class="text-xs sm:text-sm text-gray-600">
-                {{ formatRelTime(fr.startDate) }} -
-                {{ formatRelTime(fr.endDate) }}
-              </span>
-            </li>
-          </ul>
-          <button
-            v-if="matchingFilteredParts.length > 3 && !showAllDialects"
-            @click="showAllDialects = true"
-            class="px-4 py-2 text-sm sm:text-base w-full text-center button-secondary touch-manipulation"
-          >
-            <TranslatedText identifier="buttons.show_more" />
-          </button>
-        </div>
-      </div>
-
-      <div v-if="recordingCoordinates" class="flex flex-col w-full h-[440px] rounded-lg">
-        <h2>
-          <TranslatedText identifier="recordings.detail.map_heading" />
-        </h2>
-        <Map
-          :position="[
-            recordingCoordinates.lat,
-            recordingCoordinates.lng,
-            15
-          ]"
-          :markers="[
-            {
-              id: 'recording-location',
-              icon: divIcon({
-                className: '',
-                iconSize: [16, 16],
-                iconAnchor: [8, 8],
-                html: `<div class='w-full h-full bg-red-500 rounded-full'></div>`
-              }),
-              position: [
-                recordingCoordinates.lat,
-                recordingCoordinates.lng
-              ]
-            }
-          ]"
-        />
-        <p class="mt-2 text-sm">
-          {{ recordingCoordinates.lat.toFixed(6) }},
-          {{ recordingCoordinates.lng.toFixed(6) }}
-          ·
-          <TextualCoords
-            :lat="recordingCoordinates.lat"
-            :lng="recordingCoordinates.lng"
-            type="municipality_part"
-          />
-        </p>
-      </div>
-      <p v-else class="text-sm text-red-700" role="status">
-        Poloha nahrávky není k dispozici.
-      </p>
-
-      <div
-        class="flex flex-col w-full gap-y-4"
-        v-if="recording.photos?.length"
-      >
-        <h3 class="text-base sm:text-lg font-medium mb-2">
-          <TranslatedText identifier="recordings.detail.photos_heading" />
-        </h3>
-        <ul class="flex flex-row gap-x-2 overflow-x-auto">
-          <li
-            v-for="photo in recording.photos"
-            :key="photo.id"
-          >
-            <img
-              :src="photo.url"
-              :alt="photo.name || `Fotografie k nahrávce ${recording.id}`"
-              class="w-24 h-24 object-cover rounded-lg"
-            />
-          </li>
-        </ul>
-      </div>
-
-      <RouterLink
-        v-if="uploader && (accountStore.user?.role === 'admin' || uploader.id === recording.userId)"
-        :to="`/uzivatel/${uploader.id}`"
-      >
-        <UserCard :user="uploader" />
-      </RouterLink>
-      <UserCard
-        v-else-if="uploader"
-        :user="uploader"
-      />
-
-      <blockquote>
-        <template v-if="recording.note">
-          {{ recording.note }}
-        </template>
-        <template v-else>
-          <TranslatedText identifier="recordings.detail.no_note" />
-        </template>
-      </blockquote>
-
-      <div class="flex flex-col gap-2 sm:gap-3">
-        <RouterLink
-          v-if="
-            accountStore.user?.role === 'admin' ||
-            accountStore.user?.id === recording.userId
-          "
-          :to="`./${recordingId}/upravit-dialekt`"
-          class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation"
-        >
-          <TranslatedText identifier="admin.recordings.edit_dialects" />
-        </RouterLink>
-
-        <div class="flex flex-col md:flex-row gap-2 w-full">
-          <RouterLink
-            v-if="
-              accountStore.user?.role == 'admin' ||
-              accountStore.user?.id == recording?.userId
-            "
-            :to="`./${recordingId}/upravit`"
-            class="button-secondary py-3 px-4 text-sm sm:text-base text-center touch-manipulation w-full"
-          >
-            <TranslatedText identifier="buttons.edit" />
-          </RouterLink>
-          <RouterLink
-            v-if="accountStore.user?.role == 'admin'"
-            :to="`./${recordingId}/smazat`"
-            class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation w-full"
-          >
-            <TranslatedText identifier="recordings.detail.delete_recording" />
-          </RouterLink>
-          <RouterLink
-            v-else-if="
-              accountStore.user?.role == 'user' &&
-              accountStore.user?.id == recording.userId
-            "
-            :to="`./${recordingId}/smazat`"
-            class="button-danger py-3 px-4 text-sm sm:text-base text-center touch-manipulation w-full"
-          >
-            <TranslatedText identifier="recordings.detail.request_delete" />
-          </RouterLink>
-        </div>
-      </div>
+  <main class="recording-detail">
+    <div v-if="isError" class="recording-state recording-state--error" role="alert">
+      <TranslatedText identifier="errors.recordings.loading_single" />
     </div>
-  </template>
-  <template v-else>
-    <!-- Fallback if recording is null after loading -->
-    <span class="text-gray-500">
-      <TranslatedText identifier="recordings.detail.not_found" />
-    </span>
-  </template>
+    <div v-else-if="isLoading" class="recording-state" role="status">
+      <TranslatedText identifier="states.loading" />
+    </div>
+
+    <template v-else-if="recording">
+      <header class="recording-hero">
+        <p class="recording-hero__eyebrow">
+          <TranslatedText identifier="recordings.detail.recording_label" /> · #{{ recording.id }}
+        </p>
+        <h1>{{ recording.name || `${t('recordings.detail.fallback_prefix')}${recordingId}` }}</h1>
+        <div class="recording-hero__meta">
+          <span>{{ new Date(recording.parts?.[0]?.startDate ?? recording.createdAt).toLocaleString() }}</span>
+          <span v-if="recording.estimatedBirdsCount">
+            {{ recording.estimatedBirdsCount }} <TranslatedText identifier="recordings.detail.birds_short" />
+          </span>
+        </div>
+      </header>
+
+      <section v-if="hasAudio" class="recording-player" aria-labelledby="recording-audio-title">
+        <h2 id="recording-audio-title" class="sr-only">
+          <TranslatedText identifier="recordings.detail.audio_heading" />
+        </h2>
+        <Spectrogram
+          :audio-urls="recording.parts?.map((part) => `${env.VITE_API_URL}/recordings/part/${recording.id}/${part.id}/sound`) ?? []"
+          :height="200"
+          :readonly="true"
+          :download-only-selections="true"
+          initial-viewport="fit-selection"
+          :simple-controls="true"
+          :selected="segments"
+        >
+          <template #range-tooltip="{ range }">
+            <div class="recording-tooltip">
+              <strong>{{ getDialectStrings(range.payload as FilteredPartModel).join(', ') }}</strong>
+              <span>{{ formatRelTime(range.payload?.startDate) }}–{{ formatRelTime(range.payload?.endDate) }}</span>
+            </div>
+          </template>
+        </Spectrogram>
+      </section>
+
+      <div class="recording-layout">
+        <div class="recording-layout__main">
+          <section class="recording-section recording-dialects">
+            <div class="recording-section__heading">
+              <div>
+                <p class="recording-section__kicker"><TranslatedText identifier="recordings.detail.analysis_label" /></p>
+                <h2><TranslatedText identifier="recordings.detail.detected_dialects_heading" /></h2>
+              </div>
+              <span class="recording-count">{{ matchingFilteredParts.length }}</span>
+            </div>
+
+            <div v-if="isFilteredRecLoading" class="recording-empty"><TranslatedText identifier="states.loading" /></div>
+            <ul v-else-if="displayedFilteredParts.length" class="dialect-list">
+              <li v-for="part in displayedFilteredParts" :key="part.id" class="dialect-row">
+                <span class="dialect-row__swatch" :style="{ backgroundColor: getDialectColor(part) }" />
+                <div class="dialect-row__content">
+                  <strong>{{ getDialectStrings(part).join(', ') || t('recordings.detail.unknown_dialect') }}</strong>
+                  <span>{{ formatRelTime(part.startDate) }}–{{ formatRelTime(part.endDate) }}</span>
+                </div>
+                <span v-if="part.representantFlag" class="dialect-row__featured" :title="t('recordings.detail.representative')">★</span>
+              </li>
+            </ul>
+            <p v-else class="recording-empty"><TranslatedText identifier="recordings.detail.no_dialects" /></p>
+
+            <button
+              v-if="matchingFilteredParts.length > 3"
+              type="button"
+              class="recording-text-button"
+              @click="showAllDialects = !showAllDialects"
+            >
+              <TranslatedText :identifier="showAllDialects ? 'buttons.show_less' : 'buttons.show_more'" />
+            </button>
+
+            <details class="recording-disclosure">
+              <summary>
+                <span><TranslatedText identifier="recordings.detail.display_options" /></span>
+                <span class="recording-disclosure__chevron" aria-hidden="true">⌄</span>
+              </summary>
+              <div class="recording-disclosure__body">
+                <label class="recording-toggle">
+                  <span><TranslatedText identifier="recordings.detail.hide_unknown" /></span>
+                  <input v-model="dontShowUnknownDialects" type="checkbox" />
+                </label>
+                <label class="recording-toggle">
+                  <span><TranslatedText identifier="recordings.detail.only_representatives" /></span>
+                  <input v-model="showOnlyRepresentants" type="checkbox" />
+                </label>
+              </div>
+            </details>
+          </section>
+
+          <section v-if="recording.note || uploader" class="recording-section recording-about">
+            <h2><TranslatedText identifier="recordings.detail.about_heading" /></h2>
+            <p v-if="recording.note" class="recording-note">{{ recording.note }}</p>
+            <p v-else class="recording-note recording-note--empty"><TranslatedText identifier="recordings.detail.no_note" /></p>
+
+            <component
+              :is="canManage && uploader ? 'RouterLink' : 'div'"
+              v-if="uploader"
+              v-bind="canManage ? { to: `/uzivatel/${uploader.id}` } : {}"
+              class="recording-uploader"
+            >
+              <ProfilePhoto :user-id="uploader.id" :fallback-text="uploaderInitials" />
+              <span class="recording-uploader__text">
+                <small><TranslatedText identifier="recordings.detail.uploaded_by" /></small>
+                <strong>{{ uploaderName }}</strong>
+                <span v-if="uploaderLocation">{{ uploaderLocation }}</span>
+              </span>
+              <span v-if="canManage" class="recording-uploader__arrow" aria-hidden="true">›</span>
+            </component>
+          </section>
+
+          <section v-if="recordingCoordinates" class="recording-section recording-map">
+            <div class="recording-section__heading">
+              <div>
+                <p class="recording-section__kicker"><TranslatedText identifier="recordings.detail.location_label" /></p>
+                <h2><TextualCoords :lat="recordingCoordinates.lat" :lng="recordingCoordinates.lng" type="municipality_part" /></h2>
+              </div>
+            </div>
+            <Map
+              class="recording-map__canvas"
+              :position="[recordingCoordinates.lat, recordingCoordinates.lng, 15]"
+              :markers="[{ id: 'recording-location', icon: divIcon({ className: 'recording-location-marker', iconSize: [20, 20], iconAnchor: [10, 10], html: '<span></span>' }), position: [recordingCoordinates.lat, recordingCoordinates.lng] }]"
+            />
+            <p class="recording-coordinates">{{ recordingCoordinates.lat.toFixed(5) }}, {{ recordingCoordinates.lng.toFixed(5) }}</p>
+          </section>
+          <p v-else class="recording-state"><TranslatedText identifier="recordings.detail.location_unavailable" /></p>
+
+          <section v-if="recording.photos?.length" class="recording-section recording-photos">
+            <div class="recording-section__heading">
+              <h2><TranslatedText identifier="recordings.detail.photos_heading" /></h2>
+              <span class="recording-count">{{ recording.photos.length }}</span>
+            </div>
+            <ul>
+              <li v-for="photo in recording.photos" :key="photo.id">
+                <a :href="photo.url" target="_blank" rel="noopener">
+                  <img :src="photo.url" :alt="photo.name || t('recordings.detail.photo_alt')" loading="lazy" />
+                </a>
+              </li>
+            </ul>
+          </section>
+        </div>
+
+        <aside class="recording-layout__aside">
+          <details class="recording-section recording-disclosure recording-technical">
+            <summary>
+              <span><TranslatedText identifier="recordings.detail.technical_details" /></span>
+              <span class="recording-disclosure__chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <dl>
+              <div><dt>ID</dt><dd>{{ recording.id }}</dd></div>
+              <div v-if="recording.device"><dt><TranslatedText identifier="recordings.detail.device_label" /></dt><dd>{{ recording.device }}</dd></div>
+              <div><dt><TranslatedText identifier="recordings.detail.source_label" /></dt><dd><TranslatedText :identifier="recording.byApp ? 'recordings.detail.source_app' : 'recordings.detail.source_web'" /></dd></div>
+              <div><dt><TranslatedText identifier="recordings.detail.parts_heading" /></dt><dd>{{ recording.parts?.length ?? 0 }}</dd></div>
+            </dl>
+          </details>
+
+          <section v-if="canManage" class="recording-section recording-actions">
+            <h2><TranslatedText identifier="recordings.detail.manage_heading" /></h2>
+            <RouterLink :to="`/mapa/nahravka/${recordingId}/upravit-dialekt`" class="button-secondary">
+              <TranslatedText identifier="admin.recordings.edit_dialects" />
+            </RouterLink>
+            <RouterLink :to="`/mapa/nahravka/${recordingId}/upravit`" class="button-secondary">
+              <TranslatedText identifier="buttons.edit" />
+            </RouterLink>
+            <div class="recording-actions__danger">
+              <RouterLink :to="`/mapa/nahravka/${recordingId}/smazat`" class="button-danger">
+                <TranslatedText :identifier="accountStore.user?.role === 'admin' ? 'recordings.detail.delete_recording' : 'recordings.detail.request_delete'" />
+              </RouterLink>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </template>
+
+    <div v-else class="recording-state"><TranslatedText identifier="recordings.detail.not_found" /></div>
+  </main>
 </template>
 
 <style scoped>
-@reference '../../../../styles/main.css';
+.recording-detail { width: 100%; color: var(--mobile-ink); }
+.recording-hero { margin-bottom: 1.25rem; }
+.recording-hero__eyebrow, .recording-section__kicker { margin: 0 0 0.3rem; color: #886a00; font-size: 0.76rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
+.recording-hero h1 { margin: 0; font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 820; letter-spacing: -0.045em; line-height: 1.04; }
+.recording-hero__meta { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; margin-top: 0.65rem; color: var(--mobile-muted); font-size: 0.88rem; }
+.recording-player { overflow: hidden; margin-bottom: 1rem; border: 1px solid var(--mobile-border); border-radius: var(--mobile-radius); background: #fff; box-shadow: var(--mobile-shadow); }
+.recording-tooltip { display: flex; flex-direction: column; gap: 0.2rem; }
+.recording-layout { display: grid; gap: 1rem; }
+.recording-layout__main, .recording-layout__aside { display: flex; min-width: 0; flex-direction: column; gap: 1rem; }
+.recording-section { padding: 1rem; border: 1px solid var(--mobile-border); border-radius: var(--mobile-radius); background: var(--mobile-surface); }
+.recording-section h2 { margin: 0; font-size: 1.1rem; font-weight: 780; }
+.recording-section__heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.9rem; }
+.recording-count { display: grid; min-width: 2rem; height: 2rem; padding: 0 0.5rem; place-items: center; border-radius: 999px; background: var(--mobile-yellow); font-size: 0.8rem; font-weight: 800; }
+.dialect-list { display: flex; margin: 0; padding: 0; flex-direction: column; list-style: none; }
+.dialect-row { display: flex; min-height: 3.6rem; align-items: center; gap: 0.75rem; padding: 0.65rem 0; }
+.dialect-row + .dialect-row { border-top: 1px solid var(--mobile-border); }
+.dialect-row__swatch { width: 1rem; height: 2rem; flex: 0 0 auto; border: 1px solid var(--mobile-ink); border-radius: 0.35rem; }
+.dialect-row__content { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+.dialect-row__content strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dialect-row__content span { color: var(--mobile-muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.dialect-row__featured { color: #b48900; font-size: 1.2rem; }
+.recording-empty { margin: 0; padding: 0.75rem 0; color: var(--mobile-muted); font-size: 0.9rem; }
+.recording-text-button { width: 100%; min-height: 2.75rem; margin-top: 0.35rem; border: 0; border-radius: 0.75rem; background: var(--mobile-cream); color: var(--mobile-ink); font-weight: 750; }
+.recording-disclosure { padding: 0; overflow: clip; }
+.recording-dialects .recording-disclosure { margin-top: 0.75rem; border: 1px solid var(--mobile-border); border-radius: 0.85rem; }
+.recording-disclosure summary { display: flex; min-height: 3.25rem; cursor: pointer; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.75rem 1rem; font-weight: 750; list-style: none; }
+.recording-disclosure summary::-webkit-details-marker { display: none; }
+.recording-disclosure__chevron { font-size: 1.25rem; transition: transform 160ms ease; }
+.recording-disclosure[open] .recording-disclosure__chevron { transform: rotate(180deg); }
+.recording-disclosure__body { padding: 0 0.8rem 0.8rem; }
+.recording-toggle { display: flex; min-height: 3.25rem; align-items: center; justify-content: space-between; gap: 1rem; font-size: 0.88rem; }
+.recording-toggle + .recording-toggle { border-top: 1px solid var(--mobile-border); }
+.recording-toggle input { width: 2.75rem; min-height: 1.6rem; accent-color: var(--mobile-yellow-strong); }
+.recording-note { margin: 0.8rem 0 1rem; line-height: 1.55; }
+.recording-note--empty { color: var(--mobile-muted); }
+.recording-uploader { display: flex; min-height: 4rem; align-items: center; gap: 0.75rem; padding-top: 0.85rem; border-top: 1px solid var(--mobile-border); color: inherit; text-decoration: none; }
+.recording-uploader :deep(img), .recording-uploader :deep(.profile-photo-fallback) { width: 3rem; height: 3rem; flex: 0 0 auto; object-fit: cover; border-radius: 999px; }
+.recording-uploader__text { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+.recording-uploader__text small, .recording-uploader__text > span { color: var(--mobile-muted); font-size: 0.76rem; }
+.recording-uploader__text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recording-uploader__arrow { font-size: 1.8rem; }
+.recording-map__canvas { width: 100%; height: clamp(14rem, 52vw, 25rem); overflow: hidden; border-radius: 1rem; }
+.recording-coordinates { margin: 0.5rem 0 0; color: var(--mobile-muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.recording-photos ul { display: grid; margin: 0; padding: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; list-style: none; }
+.recording-photos img { display: block; width: 100%; aspect-ratio: 1; border-radius: 1rem; object-fit: cover; }
+.recording-technical dl { margin: 0; padding: 0 1rem 1rem; }
+.recording-technical dl > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; padding: 0.6rem 0; border-top: 1px solid var(--mobile-border); }
+.recording-technical dt { color: var(--mobile-muted); }
+.recording-technical dd { margin: 0; font-weight: 700; text-align: right; }
+.recording-actions { display: flex; flex-direction: column; gap: 0.6rem; }
+.recording-actions h2 { margin-bottom: 0.25rem; }
+.recording-actions a { display: grid; min-height: 2.75rem; place-items: center; padding: 0.65rem 1rem; text-align: center; }
+.recording-actions__danger { margin-top: 0.35rem; padding-top: 0.9rem; border-top: 1px solid #e8b5aa; }
+.recording-actions__danger a { width: 100%; }
+.recording-state { padding: 1rem; border: 1px solid var(--mobile-border); border-radius: var(--mobile-radius); background: var(--mobile-surface); color: var(--mobile-muted); }
+.recording-state--error { border-color: #e8b5aa; background: #fff6f1; color: var(--mobile-danger); }
+:deep(.recording-location-marker) { border: 2px solid #fff; border-radius: 999px; background: #e9483f; box-shadow: 0 2px 9px rgba(0, 0, 0, 0.28); }
+:deep(.recording-location-marker span) { display: block; width: 100%; height: 100%; }
 
-.details-toggle-card {
-  @apply flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-2xl p-4 shadow-sm;
-}
-
-.details-toggle-text {
-  @apply text-sm sm:text-base font-medium text-gray-800;
-  @apply flex-1 min-w-0;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  word-break: break-word;
+@media (max-width: 59.999rem) {
+  .recording-hero { margin-bottom: 1rem; }
+  .recording-hero h1 { font-size: 2rem; }
+  .recording-player { margin-inline: -1rem; border-right: 0; border-left: 0; border-radius: 0; box-shadow: none; }
+  .recording-section { padding: 0.9rem; border-radius: 1rem; box-shadow: none; }
+  .recording-map { padding: 0; overflow: hidden; }
+  .recording-map .recording-section__heading { padding: 0.9rem 0.9rem 0; }
+  .recording-map__canvas { height: clamp(14rem, 62vw, 20rem); border-radius: 0; }
+  .recording-coordinates { padding: 0 0.9rem 0.7rem; }
 }
 </style>

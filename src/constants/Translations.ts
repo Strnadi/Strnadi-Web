@@ -54,6 +54,7 @@ export const translations = {
 
     buttons: {
       show_more: 'Zobrazit více',
+      show_less: 'Zobrazit méně',
       enter: 'Vstoupit',
       app: 'Stáhnout aplikaci',
       contacts: 'Kontakty',
@@ -145,6 +146,41 @@ export const translations = {
       login: 'Přihlásit'
     },
 
+    mobile: {
+      shell: { back: 'Zpět', close: 'Zavřít' },
+      navigation: { label: 'Hlavní navigace' },
+      map_tools: {
+        label: 'Nástroje',
+        open: 'Otevřít nástroje mapy',
+        panel_label: 'Nástroje mapy',
+        search: 'Hledat místo…',
+        my_location: 'Přejít na moji polohu',
+        recordings: 'Zobrazené nahrávky',
+        scale: 'Měřítko',
+        aerial: 'Letecká mapa',
+        grouping: 'Seskupovat body',
+        dialect_only: 'Jen nahrávky s dialektem',
+        hide_unfinished: 'Skrýt nedokončené nahrávky ostatních',
+        legend: 'Otevřít legendu mapy',
+        reset: 'Vrátit mapu na území projektu',
+        on: 'Zapnuto',
+        off: 'Vypnuto',
+        filters: {
+          all: 'Všechny nahrávky',
+          new: 'Jen nové nahrávky',
+          old: 'Jen staré nahrávky',
+          my: 'Jen moje nahrávky',
+          others: 'Jen nahrávky ostatních',
+          dialect: 'Jen nahrávky s dialektem'
+        }
+      },
+      dialect_palette: {
+        title: 'Vyberte dialekt úseku',
+        hint: 'Šipkami vyberte, Enter potvrdí, Escape zruší.',
+        unnamed: 'Bez názvu'
+      }
+    },
+
     pages: {
       application: {
         title: 'Stažení aplikace',
@@ -154,7 +190,9 @@ export const translations = {
         contacts_heading: 'Kontakty'
       },
       information: {
-        title: 'Informace'
+        title: 'Informace',
+        description: 'Přehled článků, návodů a informací o projektu.',
+        articles_count: 'článků'
       },
       map: {
         legend: {
@@ -580,6 +618,28 @@ export const translations = {
       },
       detail: {
         map_heading: 'Mapa',
+        audio_heading: 'Zvuk a spektrogram',
+        note_heading: 'Poznámka',
+        recording_label: 'Nahrávka',
+        birds_short: 'strnadů',
+        analysis_label: 'Analýza záznamu',
+        about_heading: 'O nahrávce',
+        uploaded_by: 'Nahrál(a)',
+        location_label: 'Místo nahrávky',
+        display_options: 'Možnosti zobrazení',
+        hide_unknown: 'Skrýt nedokončená a neznámá nářečí',
+        only_representatives: 'Pouze reprezentativní úseky',
+        representative: 'Reprezentativní úsek',
+        no_dialects: 'V této nahrávce nejsou zobrazena žádná nářečí.',
+        unknown_dialect: 'Neznámé nářečí',
+        photo_alt: 'Fotografie místa nahrávky',
+        technical_details: 'Technické podrobnosti',
+        device_label: 'Zařízení',
+        source_label: 'Zdroj',
+        source_app: 'Mobilní aplikace',
+        source_web: 'Web',
+        manage_heading: 'Správa nahrávky',
+        location_unavailable: 'Poloha nahrávky není k dispozici.',
         editing_prefix: 'Upravování:',
         fallback_prefix: 'Nahrávka #',
         by_app_suffix: 'přes aplikaci',
@@ -783,6 +843,7 @@ export const translations = {
 
     buttons: {
       show_more: 'Show more',
+      show_less: 'Show less',
       enter: 'Enter',
       app: 'Download the app',
       contacts: 'Contacts',
@@ -874,6 +935,41 @@ export const translations = {
       login: 'Login'
     },
 
+    mobile: {
+      shell: { back: 'Back', close: 'Close' },
+      navigation: { label: 'Main navigation' },
+      map_tools: {
+        label: 'Tools',
+        open: 'Open map tools',
+        panel_label: 'Map tools',
+        search: 'Search for a place…',
+        my_location: 'Go to my location',
+        recordings: 'Visible recordings',
+        scale: 'Scale',
+        aerial: 'Aerial map',
+        grouping: 'Group markers',
+        dialect_only: 'Recordings with dialect only',
+        hide_unfinished: 'Hide other users’ unfinished recordings',
+        legend: 'Open map legend',
+        reset: 'Reset map to the project area',
+        on: 'On',
+        off: 'Off',
+        filters: {
+          all: 'All recordings',
+          new: 'New recordings only',
+          old: 'Old recordings only',
+          my: 'My recordings only',
+          others: 'Other users’ recordings only',
+          dialect: 'Recordings with dialect only'
+        }
+      },
+      dialect_palette: {
+        title: 'Choose a segment dialect',
+        hint: 'Use arrow keys, Enter to choose, Escape to cancel.',
+        unnamed: 'Unnamed'
+      }
+    },
+
     pages: {
       application: {
         title: 'Download the app',
@@ -883,7 +979,9 @@ export const translations = {
         contacts_heading: 'Contacts'
       },
       information: {
-        title: 'Information'
+        title: 'Information',
+        description: 'Articles, guides and information about the project.',
+        articles_count: 'articles'
       },
       map: {
         legend: {
@@ -1309,6 +1407,28 @@ export const translations = {
       },
       detail: {
         map_heading: 'Map',
+        audio_heading: 'Audio and spectrogram',
+        note_heading: 'Note',
+        recording_label: 'Recording',
+        birds_short: 'yellowhammers',
+        analysis_label: 'Recording analysis',
+        about_heading: 'About this recording',
+        uploaded_by: 'Uploaded by',
+        location_label: 'Recording location',
+        display_options: 'Display options',
+        hide_unknown: 'Hide unfinished and unknown dialects',
+        only_representatives: 'Representative segments only',
+        representative: 'Representative segment',
+        no_dialects: 'No dialects are shown for this recording.',
+        unknown_dialect: 'Unknown dialect',
+        photo_alt: 'Photo of the recording location',
+        technical_details: 'Technical details',
+        device_label: 'Device',
+        source_label: 'Source',
+        source_app: 'Mobile app',
+        source_web: 'Web',
+        manage_heading: 'Manage recording',
+        location_unavailable: 'The recording location is not available.',
         editing_prefix: 'Editing:',
         fallback_prefix: 'Recording #',
         by_app_suffix: 'via the app',
@@ -1513,6 +1633,7 @@ export const translations = {
 
     buttons: {
       show_more: 'Mehr anzeigen',
+      show_less: 'Weniger anzeigen',
       enter: 'Eintreten',
       app: 'App herunterladen',
       contacts: 'Kontakte',
@@ -1606,6 +1727,41 @@ export const translations = {
       login: 'Anmelden'
     },
 
+    mobile: {
+      shell: { back: 'Zurück', close: 'Schließen' },
+      navigation: { label: 'Hauptnavigation' },
+      map_tools: {
+        label: 'Werkzeuge',
+        open: 'Kartenwerkzeuge öffnen',
+        panel_label: 'Kartenwerkzeuge',
+        search: 'Ort suchen…',
+        my_location: 'Zu meinem Standort',
+        recordings: 'Sichtbare Aufnahmen',
+        scale: 'Maßstab',
+        aerial: 'Luftbildkarte',
+        grouping: 'Marker gruppieren',
+        dialect_only: 'Nur Aufnahmen mit Dialekt',
+        hide_unfinished: 'Unfertige Aufnahmen anderer ausblenden',
+        legend: 'Kartenlegende öffnen',
+        reset: 'Karte auf das Projektgebiet zurücksetzen',
+        on: 'An',
+        off: 'Aus',
+        filters: {
+          all: 'Alle Aufnahmen',
+          new: 'Nur neue Aufnahmen',
+          old: 'Nur alte Aufnahmen',
+          my: 'Nur meine Aufnahmen',
+          others: 'Nur Aufnahmen anderer',
+          dialect: 'Nur Aufnahmen mit Dialekt'
+        }
+      },
+      dialect_palette: {
+        title: 'Dialekt für den Abschnitt wählen',
+        hint: 'Mit Pfeiltasten wählen, Enter bestätigt, Escape bricht ab.',
+        unnamed: 'Ohne Namen'
+      }
+    },
+
     pages: {
       application: {
         title: 'App herunterladen',
@@ -1615,7 +1771,9 @@ export const translations = {
         contacts_heading: 'Kontakte'
       },
       information: {
-        title: 'Informationen'
+        title: 'Informationen',
+        description: 'Artikel, Anleitungen und Informationen zum Projekt.',
+        articles_count: 'Artikel'
       },
       map: {
         legend: {
@@ -2056,6 +2214,28 @@ export const translations = {
       },
       detail: {
         map_heading: 'Karte',
+        audio_heading: 'Audio und Spektrogramm',
+        note_heading: 'Notiz',
+        recording_label: 'Aufnahme',
+        birds_short: 'Goldammern',
+        analysis_label: 'Aufnahmeanalyse',
+        about_heading: 'Über diese Aufnahme',
+        uploaded_by: 'Hochgeladen von',
+        location_label: 'Aufnahmeort',
+        display_options: 'Anzeigeoptionen',
+        hide_unknown: 'Unfertige und unbekannte Dialekte ausblenden',
+        only_representatives: 'Nur repräsentative Abschnitte',
+        representative: 'Repräsentativer Abschnitt',
+        no_dialects: 'Für diese Aufnahme werden keine Dialekte angezeigt.',
+        unknown_dialect: 'Unbekannter Dialekt',
+        photo_alt: 'Foto vom Aufnahmeort',
+        technical_details: 'Technische Details',
+        device_label: 'Gerät',
+        source_label: 'Quelle',
+        source_app: 'Mobile App',
+        source_web: 'Web',
+        manage_heading: 'Aufnahme verwalten',
+        location_unavailable: 'Der Aufnahmeort ist nicht verfügbar.',
         editing_prefix: 'Bearbeitung:',
         fallback_prefix: 'Aufnahme #',
         by_app_suffix: 'über die App',

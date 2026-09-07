@@ -1,6 +1,7 @@
 <route lang="yaml">
 meta:
   layout: desktop/small-popup
+  mobilePresentation: workspace
 </route>
 
 <script lang="ts">

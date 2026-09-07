@@ -1,6 +1,7 @@
 <route lang="yaml">
 meta:
   layout: desktop/center
+  mobilePresentation: workspace
 </route>
 
 <script lang="ts">

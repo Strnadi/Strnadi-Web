@@ -52,7 +52,7 @@ export async function loadPerchBackbone(): Promise<CompiledModel> {
 
   const modelBytes = new Uint8Array(await response.arrayBuffer());
   concretizeTfliteIoShapes(modelBytes);
-  const model = await loadAndCompile(modelBytes, { accelerator: 'wasm' });
+  const model = await loadAndCompile(modelBytes, { accelerator: 'webgpu' });
 
   const inputDetails = model.getInputDetails();
   if (

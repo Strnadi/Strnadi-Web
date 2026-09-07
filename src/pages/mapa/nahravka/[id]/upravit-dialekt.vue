@@ -1,10 +1,19 @@
 <route lang="yaml">
 meta:
   layout: desktop/center
+  mobilePresentation: workspace
 </route>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch, onMounted, onUnmounted } from 'vue';
+import {
+  computed,
+  nextTick,
+  reactive,
+  ref,
+  watch,
+  onMounted,
+  onUnmounted
+} from 'vue';
 import Spectrogram from '@/views/Spectrogram.vue';
 import { useRouteParams } from '@vueuse/router';
 import { useRoute } from 'vue-router';
@@ -27,19 +36,14 @@ import {
   updateDetectedDialect
 } from '@/api/recordings';
 import { type Numeric } from '@/types/basic';
-import TranslatedText from '@/components/TranslatedText.vue';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import { accountStore } from '@/state/AccountStore';
 import { uploadStore, type DraftFilteredPart } from '@/state/UploadDraftStore';
-
-interface SpectrogramRange {
-  id: number;
-  start: number;
-  end: number;
-  color?: string;
-  colors?: string[];
-  payload?: SegmentMeta;
-}
+import type {
+  SpectrogramRange as SharedSpectrogramRange,
+  SpectrogramRangeCreated
+} from '@/types/spectrogram';
 
 interface SegmentMeta {
   key: number;
@@ -55,6 +59,8 @@ interface SegmentMeta {
   originalStart: number;
   originalEnd: number;
 }
+
+type SpectrogramRange = SharedSpectrogramRange<SegmentMeta, number>;
 
 interface DialectSelection {
   userGuessDialectId: number | null;
@@ -260,6 +266,11 @@ const tooltipCreateDialectId = ref<number | null>(null);
 const tooltipCreateSaving = ref(false);
 const tooltipAddDetectionDialectId = ref<number | null>(null);
 const tooltipAddDetectionSaving = ref(false);
+const pendingSecondaryRangeIds = new Set<number>();
+const paletteRangeId = ref<number | null>(null);
+const paletteRef = ref<HTMLElement | null>(null);
+const palettePosition = ref({ x: 8, y: 8 });
+const paletteActiveIndex = ref(0);
 
 const DEFAULT_SEGMENT_COLOR = '#4B5563';
 
@@ -582,10 +593,13 @@ function syncSegmentRanges(
 }
 
 function createMetaForNewRange(range: SpectrogramRange): SegmentMeta {
+  const isPendingSecondary = pendingSecondaryRangeIds.has(range.id);
   const fallback =
-    selectedDialectCode.value ??
-    availableDialects.value[0]?.dialectCode ??
-    null;
+    isPendingSecondary
+      ? null
+      : (selectedDialectCode.value ??
+        availableDialects.value[0]?.dialectCode ??
+        null);
   return {
     key: range.id,
     filteredPart: undefined,
@@ -601,6 +615,122 @@ function createMetaForNewRange(range: SpectrogramRange): SegmentMeta {
     originalEnd: range.end
   };
 }
+
+async function positionDialectPalette(anchor: { x: number; y: number }) {
+  await nextTick();
+  const palette = paletteRef.value;
+  if (!palette) return;
+  const margin = 8;
+  palettePosition.value = {
+    x: Math.max(
+      margin,
+      Math.min(anchor.x, window.innerWidth - palette.offsetWidth - margin)
+    ),
+    y: Math.max(
+      margin,
+      Math.min(anchor.y, window.innerHeight - palette.offsetHeight - margin)
+    )
+  };
+  palette.querySelector<HTMLButtonElement>('[role="option"]')?.focus();
+}
+
+function onRangeCreated(event: SpectrogramRangeCreated) {
+  if (event.inputSource !== 'secondary' || typeof event.range.id !== 'number')
+    return;
+  const range = event.range as SpectrogramRange;
+  pendingSecondaryRangeIds.add(range.id);
+  const meta = createMetaForNewRange(range);
+  segmentMetas[range.id] = meta;
+  range.payload = meta;
+  range.color = DEFAULT_SEGMENT_COLOR;
+  range.colors = [DEFAULT_SEGMENT_COLOR];
+  paletteRangeId.value = range.id;
+  paletteActiveIndex.value = 0;
+  palettePosition.value = { x: event.anchor.x, y: event.anchor.y };
+  void positionDialectPalette(event.anchor);
+}
+
+function dismissDialectPalette() {
+  const rangeId = paletteRangeId.value;
+  if (rangeId === null) return;
+  pendingSecondaryRangeIds.delete(rangeId);
+  if (segments.value) {
+    segments.value = segments.value.filter((range) => range.id !== rangeId);
+  }
+  delete segmentMetas[rangeId];
+  paletteRangeId.value = null;
+}
+
+function choosePaletteDialect(index: number) {
+  const rangeId = paletteRangeId.value;
+  const dialect = availableDialects.value[index];
+  if (rangeId === null || !dialect) return;
+  const meta = segmentMetas[rangeId];
+  if (!meta) return;
+  meta.dialectCode = dialect.dialectCode;
+  meta.dirty = true;
+  pendingSecondaryRangeIds.delete(rangeId);
+  if (segments.value) {
+    const range = segments.value.find((item) => item.id === rangeId);
+    if (range) {
+      range.color = resolveDialectColor(dialect.dialectCode);
+      range.colors = [resolveDialectColor(dialect.dialectCode)];
+      range.payload = meta;
+    }
+    segments.value = [...segments.value];
+  }
+  paletteRangeId.value = null;
+  if (isDraftMode.value) autoSaveDraft();
+}
+
+function onPaletteKeydown(event: KeyboardEvent) {
+  const lastIndex = availableDialects.value.length - 1;
+  if (lastIndex < 0) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    dismissDialectPalette();
+    return;
+  }
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    choosePaletteDialect(paletteActiveIndex.value);
+    return;
+  }
+  if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+    event.preventDefault();
+    paletteActiveIndex.value = (paletteActiveIndex.value + 1) % (lastIndex + 1);
+  } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+    event.preventDefault();
+    paletteActiveIndex.value =
+      (paletteActiveIndex.value - 1 + lastIndex + 1) % (lastIndex + 1);
+  } else if (event.key === 'Home') {
+    event.preventDefault();
+    paletteActiveIndex.value = 0;
+  } else if (event.key === 'End') {
+    event.preventDefault();
+    paletteActiveIndex.value = lastIndex;
+  } else {
+    return;
+  }
+  nextTick(() => {
+    paletteRef.value
+      ?.querySelectorAll<HTMLButtonElement>('[role="option"]')
+      [paletteActiveIndex.value]?.focus();
+  });
+}
+
+const onPaletteOutsidePointerDown = (event: PointerEvent) => {
+  if (
+    paletteRangeId.value !== null &&
+    paletteRef.value &&
+    !paletteRef.value.contains(event.target as Node)
+  ) dismissDialectPalette();
+};
+
+onMounted(() => document.addEventListener('pointerdown', onPaletteOutsidePointerDown));
+onUnmounted(() =>
+  document.removeEventListener('pointerdown', onPaletteOutsidePointerDown)
+);
 
 function applyRangeMeta(range: SpectrogramRange) {
   let meta = segmentMetas[range.id];
@@ -1203,15 +1333,11 @@ const clearConfirmedDialect = async (
   }
 };
 
-const quickCreateFilteredPart = async (
+const quickCreateFilteredPart = (
   range: SpectrogramRange,
   dialectId: number | null,
   close?: () => void
 ) => {
-  if (!recording.value && !isDraftMode.value) {
-    segmentError.value = 'Chybí metadata nahrávky.';
-    return;
-  }
   if (!Number.isFinite(range.start) || !Number.isFinite(range.end)) {
     segmentError.value = 'Úsek nemá platný čas.';
     return;
@@ -1225,57 +1351,22 @@ const quickCreateFilteredPart = async (
     segmentError.value = 'Vybraný dialekt nebyl nalezen.';
     return;
   }
-  const startDate = convertRelativeToIso(range.start);
-  const endDate = convertRelativeToIso(range.end);
-  if (!startDate || !endDate) {
-    segmentError.value = 'Nepodařilo se převést čas úseku.';
-    return;
-  }
-  tooltipCreateSaving.value = true;
   segmentError.value = null;
   segmentSuccess.value = null;
-  try {
-    if (isDraftMode.value) {
-      const created = uploadStore.createDraftFilteredPart({
-        parentId: 0,
-        recordingId: 0,
-        startDate,
-        endDate,
-        state: 0,
-        representantFlag: false,
-        dialectCode: dialect.dialectCode,
-        detectedDialects: []
-      });
-      uploadStore.createDraftDetection(created.id, {
-        userGuessDialectId: dialect.id,
-        predictedDialectId: null,
-        confirmedDialectId: canConfirmDialects.value ? dialect.id : null
-      });
-      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
-      hydrateSegments((draftFilteredParts.value ?? []) as FilteredPartModel[]);
-    } else {
-      await postFilteredPart(accountStore.token!, {
-        recordingId: recording.value.id,
-        startDate,
-        endDate,
-        dialectCode: dialect.dialectCode
-      });
-      await refetchFilteredParts();
-      const part = findFilteredPartByTime(startDate, endDate);
-      if (part) {
-        await autoConfirmDetectedDialect(part, dialect.id);
-        await refetchFilteredParts();
-      }
-    }
-    tooltipCreateDialectId.value = null;
-    segmentSuccess.value = 'Úsek byl vytvořen.';
-    if (close) close();
-  } catch (err) {
-    segmentError.value =
-      err instanceof Error ? err.message : 'Nepodařilo se vytvořit úsek.';
-  } finally {
-    tooltipCreateSaving.value = false;
+  const meta = segmentMetas[range.id] ?? createMetaForNewRange(range);
+  meta.dialectCode = dialect.dialectCode;
+  meta.dirty = true;
+  segmentMetas[range.id] = meta;
+  range.payload = meta;
+  range.color = resolveDialectColor(dialect.dialectCode);
+  range.colors = [resolveDialectColor(dialect.dialectCode)];
+  if (segments.value) {
+    segments.value = [...segments.value];
   }
+  tooltipCreateDialectId.value = null;
+  segmentSuccess.value = 'Úsek je připraven k uložení.';
+  close?.();
+  if (isDraftMode.value) autoSaveDraft();
 };
 
 const quickAddDetectedDialect = async (
@@ -1433,6 +1524,8 @@ const confirmAll = async () => {
         :min-frequency="3000"
         :selection-color-resolver="selectionColorResolver"
         :readonly="!canEditDialects"
+        :secondary-button-selection="canEditDialects"
+        @range-created="onRangeCreated"
       >
         <template #context-menu="{ range: rangeId, close }">
           <div
@@ -1740,7 +1833,7 @@ const confirmAll = async () => {
           </select>
         </label>
 
-        <div class="flex flex-wrap gap-2 ml-auto">
+        <div class="mobile-workspace-actions flex flex-wrap gap-2 ml-auto">
           <button
             @click="confirmAll"
             class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1794,4 +1887,80 @@ const confirmAll = async () => {
       </section>
     </div>
   </template>
+
+  <Teleport v-if="paletteRangeId !== null" to="body">
+    <section
+      ref="paletteRef"
+      class="dialect-palette"
+      :style="{ left: `${palettePosition.x}px`, top: `${palettePosition.y}px` }"
+      role="listbox"
+      :aria-label="t('mobile.dialect_palette.title')"
+      @keydown="onPaletteKeydown"
+      @contextmenu.prevent
+    >
+      <header>
+        <strong>{{ t('mobile.dialect_palette.title') }}</strong>
+        <small>{{ t('mobile.dialect_palette.hint') }}</small>
+      </header>
+      <div class="dialect-palette__options">
+        <button
+          v-for="(dialect, index) in availableDialects"
+          :key="dialect.id"
+          type="button"
+          role="option"
+          :aria-selected="paletteActiveIndex === index"
+          :tabindex="paletteActiveIndex === index ? 0 : -1"
+          @focus="paletteActiveIndex = index"
+          @click="choosePaletteDialect(index)"
+        >
+          <span
+            class="dialect-palette__swatch"
+            :style="{ background: resolveDialectColor(dialect.dialectCode) }"
+          />
+          <span>{{ dialect.dialectCode }}</span>
+        </button>
+      </div>
+    </section>
+  </Teleport>
 </template>
+
+<style scoped>
+@reference '../../../../styles/main.css';
+
+.dialect-palette {
+  @apply fixed z-[10000] flex w-[min(22rem,calc(100vw-1rem))] max-h-[min(28rem,calc(100dvh-1rem))] flex-col overflow-hidden p-3;
+  border: 1px solid var(--mobile-border);
+  border-radius: var(--mobile-radius);
+  background: var(--mobile-surface);
+  color: var(--mobile-ink);
+  box-shadow: var(--mobile-shadow-raised);
+}
+
+.dialect-palette header {
+  @apply flex flex-col gap-1 px-1 pb-2;
+}
+
+.dialect-palette header small {
+  color: var(--mobile-muted);
+}
+
+.dialect-palette__options {
+  @apply grid min-h-0 gap-1 overflow-y-auto;
+}
+
+.dialect-palette__options button {
+  @apply flex min-h-11 items-center gap-3 rounded-xl px-3 text-left;
+  border: 1px solid transparent;
+  background: var(--mobile-cream);
+}
+
+.dialect-palette__options button[aria-selected='true'] {
+  border-color: var(--mobile-ink);
+  background: var(--mobile-yellow);
+}
+
+.dialect-palette__swatch {
+  @apply h-6 w-6 shrink-0 rounded-md;
+  border: 1px solid var(--mobile-ink);
+}
+</style>

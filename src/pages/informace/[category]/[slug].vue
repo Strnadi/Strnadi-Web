@@ -90,4 +90,13 @@ const scrollElement = ref<HTMLElement | null>(null);
   word-break: normal !important;
   text-align: justify;
 }
+
+:deep(.md-editor-preview h1),
+:deep(.md-editor-preview h2),
+:deep(.md-editor-preview h3),
+:deep(.md-editor-preview h4),
+:deep(.md-editor-preview h5),
+:deep(.md-editor-preview h6) {
+  margin: 0;
+}
 </style>

@@ -29,6 +29,7 @@ import {
   accountInitialization,
   accountStore
 } from '@/state/AccountStore';
+import type { MobilePresentation } from '@/router-meta';
 
 // // @ts-expect-error No types available.
 // import VueVirtualScroller from 'vue-virtual-scroller';
@@ -152,9 +153,48 @@ const annotateAccess = (
     const guestOnly =
       fullPath === '/ucet/prihlaseni' || fullPath === '/ucet/registrace';
 
+    const workspaceRoutes = [
+      '/mapa/nahrat',
+      '/ucet/registrace',
+      '/ucet/sprava/osobni-udaje',
+      '/ucet/sprava/moje-nahravky',
+      '/sprava/oznameni',
+      '/sprava/potvrzeni-dialektu',
+      '/sprava/vsechny-nahravky',
+      '/sprava/uzivatele'
+    ];
+    const dialogRoutes = [
+      '/aplikace',
+      '/vitejte',
+      '/ucet/vitejte',
+      '/ucet/prihlaseni',
+      '/ucet/zapomenute-heslo',
+      '/ucet/obnova-hesla',
+      '/ucet/email-overen',
+      '/ucet/email-neoveren',
+      '/ucet/sprava/smazat'
+    ];
+    const isEditorWorkspace =
+      fullPath.includes('/upravit-dialekt') ||
+      fullPath.includes('/informace/prispevky/novy') ||
+      fullPath.includes('/informace/kategorie/nova') ||
+      /\/informace\/(prispevky|kategorie)\/[^/]+\/upravit$/.test(fullPath);
+    const mobilePresentation: MobilePresentation =
+      workspaceRoutes.includes(fullPath) || isEditorWorkspace
+        ? 'workspace'
+        : dialogRoutes.includes(fullPath) || fullPath.endsWith('/smazat')
+          ? 'dialog'
+          : 'sheet';
+
     const processedRoute = {
       ...route,
-      meta: { ...route.meta, authenticated, admin, guestOnly }
+      meta: {
+        ...route.meta,
+        authenticated,
+        admin,
+        guestOnly,
+        mobilePresentation
+      }
     } as RouteRecordRaw;
     if (route.children) {
       processedRoute.children = annotateAccess(route.children, fullPath);

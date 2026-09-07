@@ -1,6 +1,7 @@
 <route lang="yaml">
 meta:
   layout: desktop/side
+  mobilePresentation: workspace
 </route>
 
 <script setup lang="ts">
@@ -22,15 +23,7 @@ import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import Spectrogram from '@/views/Spectrogram.vue';
-
-interface SpectrogramRange {
-  id: Numeric;
-  start: number;
-  end: number;
-  color?: string;
-  colors?: string[];
-  payload?: unknown;
-}
+import type { SpectrogramRange } from '@/types/spectrogram';
 
 const queryClient = useQueryClient();
 
@@ -342,7 +335,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
           </div>
         </div>
 
-        <div class="flex flex-col gap-2">
+        <div class="mobile-workspace-actions flex flex-col gap-2">
           <div class="flex flex-wrap gap-2">
             <button
               v-if="topPrediction"

@@ -5,8 +5,6 @@ import { type LeafletMouseEvent } from 'leaflet';
 import type { Polygon, Marker } from '@/views/map/Map.vue';
 import { computedAsync, refDebounced } from '@vueuse/core';
 
-const currentCenter = ref<[number, number, number]>([49.9, 15.5, 8.25]);
-
 export type MapFilter = 'all' | 'new' | 'old' | 'my' | 'others' | 'any-dialect';
 export interface MapClickEvent {
   event: LeafletMouseEvent;
@@ -32,6 +30,8 @@ export const MapStore = reactive<{
   filter: MapFilter;
   grouping: boolean;
   onlyDialects: boolean;
+  hideOthersUnfinished: boolean;
+  center: [latitude: number, longitude: number, zoom: number];
   /** When true the Map component uses leaflet.glify for WebGL rendering. */
   glify: boolean;
   unmove(): void;
@@ -42,12 +42,14 @@ export const MapStore = reactive<{
   grouping: false,
   filter: 'new',
   onlyDialects: false,
+  hideOthersUnfinished: true,
+  center: [49.9, 15.5, 8.25],
   /** Default to glify — drastically faster for large datasets. */
   glify: false,
   markers: {},
 
   move(newCenter: [number, number], newZoom?: number, _override = false) {
-    currentCenter.value = [...newCenter, newZoom ?? currentCenter.value[2]];
+    this.center = [newCenter[0], newCenter[1], newZoom ?? this.center[2]];
   },
 
   unmove() {
@@ -195,12 +197,35 @@ function collectDialectMeta(parts: TimedFilteredPart[]): DialectMetaFlags {
   };
 }
 const nonDialectCodes = new Set(['none', 'nobird', 'no-bird', 'unfinished']);
+const nonRealDialectCodes = new Set([...nonDialectCodes, 'unknown']);
+const normalizeDialect = (dialect: string) =>
+  dialect.toLowerCase().replace(/\s+/g, '');
+
 const hasMeaningfulDialect = (parts: TimedFilteredPart[]) => {
   const { dialects } = collectDialectMeta(parts);
   return dialects.some(
-    (dialect) => !nonDialectCodes.has(dialect.toLowerCase().replace(/\s+/g, ''))
+    (dialect) => !nonDialectCodes.has(normalizeDialect(dialect))
   );
 };
+
+function isUnfinishedWithoutRealDialect(parts: TimedFilteredPart[]) {
+  const dialects = parts.flatMap((part) =>
+    (part.detectedDialects ?? []).flatMap((detection) =>
+      [
+        detection.confirmedDialect,
+        detection.predictedDialect,
+        detection.userGuessDialect
+      ].filter((dialect): dialect is string => Boolean(dialect))
+    )
+  );
+
+  return (
+    dialects.some((dialect) => normalizeDialect(dialect) === 'unfinished') &&
+    !dialects.some(
+      (dialect) => !nonRealDialectCodes.has(normalizeDialect(dialect))
+    )
+  );
+}
 
 function getIconDimensions() {
   const isMobile =
@@ -312,6 +337,7 @@ const mapPointQueryKey = computed(() => [
   requestedMapBounds.value,
   MapStore.filter,
   MapStore.onlyDialects,
+  MapStore.hideOthersUnfinished,
   accountStore.user?.id
 ]);
 
@@ -454,10 +480,10 @@ function markerIcon(
 
   const { iconSize, iconAnchor } = getIconDimensions();
   return divIcon({
-    className: '',
+    className: 'recording-map-marker',
     iconSize: [iconSize, iconSize],
     iconAnchor: [iconAnchor, iconAnchor],
-    html: `<multi-color-square size="100%" dot="${fromModel}" questionmark="${fromUser}" colors='${JSON.stringify(colors)}'></multi-color-square>`
+    html: `<multi-color-square style="display:block;width:${iconSize}px;height:${iconSize}px;aspect-ratio:1/1" size="${iconSize}px" dot="${fromModel}" questionmark="${fromUser}" colors='${JSON.stringify(colors)}'></multi-color-square>`
   }) as Icon;
 }
 
@@ -520,8 +546,16 @@ const markers = computed<Marker[]>(() => {
       );
     }
 
-    let { dialects, fromModel, fromUser, confirmed } =
-      collectDialectMeta(relevantFiltered);
+    const dialectMeta = collectDialectMeta(relevantFiltered);
+    let { dialects, fromModel, fromUser, confirmed } = dialectMeta;
+
+    if (
+      MapStore.hideOthersUnfinished &&
+      rec.userId !== userId &&
+      isUnfinishedWithoutRealDialect(relevantFiltered)
+    ) {
+      continue;
+    }
 
     if (
       confirmed &&
@@ -631,6 +665,6 @@ const allMarkers = computed<Marker[]>(() => [
   <Map v-model:bounds="viewBounds" v-model:zoom="zoom" :scale-bar="MapStore.scale"
     :polygons="!props.selectionMode ? polygons : []" :markers="!props.selectionMode ? allMarkers : Object.values(MapStore.markers)
       " :allowed-clustering="!props.selectionMode && MapStore.grouping ? allowedClustering : undefined
-        " :mode="MapStore.aerial ? 'aerial' : 'outdoor'" :position="currentCenter" :zoom-control="true"
-    :use-glify="!props.selectionMode && MapStore.glify && !MapStore.grouping" @click="onClick" />
+        " :mode="MapStore.aerial ? 'aerial' : 'outdoor'" :zoom-control="true"
+    :use-glify="!props.selectionMode && MapStore.glify && !MapStore.grouping" :position="MapStore.center" @click="onClick" />
 </template>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import Close from '@/icons/interface/icon-close.svg';
-import Back from '@/icons/interface/icon-back.svg';
 import { useRouter } from 'vue-router';
+import { t } from '@/components/TranslatedText.vue';
 
 const router = useRouter();
 
@@ -17,15 +16,15 @@ const closePopup = () => {
 <template>
   <router-view v-slot="{ Component }">
     <aside class="side relative">
-      <button class="small absolute top-5 left-5 z-10 rounded-2xl min-w-11 min-h-11 flex items-center justify-center" type="button" aria-label="Zpět" @click="goBack">
-        <Back />
+      <button class="side-control side-control--back" type="button" :aria-label="t('mobile.shell.back')" @click="goBack">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6" /></svg>
       </button>
 
-      <button class="small absolute top-5 right-5 z-10 bg-yellow-300 rounded-2xl min-w-11 min-h-11 flex items-center justify-center" type="button" aria-label="Zavřít" @click="closePopup">
-        <Close />
+      <button class="side-control side-control--close" type="button" :aria-label="t('mobile.shell.close')" @click="closePopup">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" /></svg>
       </button>
 
-      <div class="relative">
+      <div class="side-content relative">
         <component :is="Component" />
       </div>
       <div class="bottom-fade" />
@@ -50,14 +49,17 @@ aside.side {
   @apply z-[7];
   @apply rounded-lg;
   @apply backdrop-blur-3xl;
+  border: 1px solid var(--mobile-border);
+  background: var(--mobile-surface);
 }
 
-aside>div {
+.side-content {
   @apply
   /*grid grid-cols-[auto_1fr] */
   flex flex-col overflow-y-auto max-h-[90vh] desktop:max-h-[80vh] items-center;
   @apply rounded-4xl;
   @apply p-8;
+  padding-top: 6rem;
   @apply pb-20;
   /* @apply wrap-normal text-balance; */
   @apply pr-[24px];
@@ -66,11 +68,45 @@ aside>div {
   @apply relative;
 }
 
-aside>div>button.small {
+.side-control {
+  position: absolute;
+  top: 1.25rem;
+  z-index: 10;
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  min-width: 3rem;
+  min-height: 3rem;
+  place-items: center;
+  border: 1px solid var(--mobile-border);
+  border-radius: 999px;
+  background: var(--mobile-cream);
+  color: var(--mobile-ink);
+}
+
+.side-control--back { left: 1.25rem; }
+.side-control--close {
+  right: 1.25rem;
+  border-color: var(--mobile-yellow-strong);
+  background: var(--mobile-yellow);
+}
+
+.side-control svg {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+}
+
+.side-content>button.small {
   @apply py-1 mr-4 self-start flex flex-row items-center border-none bg-transparent;
 }
 
-aside>div>button.big {
+.side-content>button.big {
   @apply py-1 -ml-3 mr-4 self-start flex flex-row items-center border-none bg-transparent;
 }
 

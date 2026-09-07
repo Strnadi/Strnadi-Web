@@ -1,6 +1,7 @@
 <route lang="yaml">
 meta:
   layout: desktop/center
+  mobilePresentation: workspace
 </route>
 
 <script setup vapor lang="ts">
@@ -71,7 +72,11 @@ const createColumnFilterState = (): ColumnFilterState => ({
 const toHTMLElement = (el: unknown): HTMLElement | null =>
   el instanceof HTMLElement ? el : null;
 
-const activeTab = ref<TabId>('table');
+const activeTab = ref<TabId>(
+  typeof window !== 'undefined' && window.matchMedia('(max-width: 59.999rem)').matches
+    ? 'search'
+    : 'table'
+);
 
 const titles = reactive<Record<Language, string>>({ cs: '', en: '', de: '' });
 const messages = reactive<Record<Language, string>>({ cs: '', en: '', de: '' });

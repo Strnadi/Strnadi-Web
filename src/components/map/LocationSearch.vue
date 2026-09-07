@@ -169,8 +169,10 @@ const selectSuggestion = (suggestion: AutocompleteSuggestion) => {
   if (!suggestion.position) {
     return;
   }
-  text.value = suggestion.name;
+  // Emit the coordinates first. Updating the controlled text can synchronously
+  // re-render the parent and previously left Leaflet one update behind.
   location.value = [suggestion.position.lat, suggestion.position.lon];
+  text.value = suggestion.name;
   isOpen.value = false;
   highlightedIndex.value = -1;
 };
@@ -333,6 +335,24 @@ onClickOutside(containerRef, () => {
 .location-search {
   position: relative;
   width: 100%;
+}
+
+.location-search input {
+  display: block;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.7rem 1rem;
+  border: 2px solid var(--mobile-border, #ded5bd);
+  border-radius: 1rem;
+  background: var(--mobile-surface, #fffdf6);
+  color: var(--mobile-ink, #252319);
+  box-shadow: none;
+}
+
+.location-search input:focus {
+  border-color: var(--mobile-ink, #252319);
+  outline: none;
+  box-shadow: var(--mobile-focus, 0 0 0 3px rgba(255, 214, 65, 0.48));
 }
 
 .location-search__dropdown {

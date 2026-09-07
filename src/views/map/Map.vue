@@ -53,6 +53,7 @@ import {
 } from '@vue-leaflet/vue-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { t } from '@/components/TranslatedText.vue';
 
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -468,7 +469,12 @@ watch(
     if (!leafletMap) return;
     center.value = [newLat, newLon];
     zoom.value = newZoom;
-  }
+    // Leaflet must receive center and zoom atomically. Updating the two v-models
+    // separately could apply the zoom while retaining the previous center until
+    // another reactive update (most visible after choosing a search result).
+    leafletMap.setView([newLat, newLon], newZoom, { animate: true });
+  },
+  { deep: true, flush: 'post' }
 );
 
 function updateBounds() {
@@ -485,6 +491,12 @@ function updateZoom(newZoom: number) {
 
 function onMapReady(mapComp: any) {
   leafletMap = mapComp.mapObject ?? mapComp;
+  const [latitude, longitude, requestedZoom] = props.position;
+  center.value = [latitude, longitude];
+  zoom.value = requestedZoom;
+  leafletMap?.setView([latitude, longitude], requestedZoom, {
+    animate: false
+  });
   updateBounds();
 
   if (props.useGlify) {
@@ -536,7 +548,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="flex flex-1 saturate-[1.2]">
+  <div class="strnadi-map flex min-h-0 flex-1 saturate-[1.2]">
     <l-map
       v-model:center="center"
       class="flex-1"
@@ -631,10 +643,10 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="rounded bg-white px-3 py-2 shadow"
-          aria-label="Vrátit mapu na území projektu"
+          :aria-label="t('mobile.map_tools.reset')"
           @click.stop="resetProjectView"
         >
-          Vrátit mapu
+          {{ t('mobile.map_tools.reset') }}
         </button>
       </l-control>
 
@@ -651,3 +663,41 @@ onBeforeUnmount(() => {
     </l-map>
   </div>
 </template>
+
+<style scoped>
+.strnadi-map :deep(.leaflet-bottom) {
+  bottom: 0.35rem;
+}
+
+.strnadi-map :deep(.leaflet-control-zoom),
+.strnadi-map :deep(.leaflet-control > button) {
+  overflow: hidden;
+  border: 1px solid var(--mobile-border);
+  border-radius: 0.85rem;
+  background: var(--mobile-surface);
+  box-shadow: var(--mobile-shadow);
+}
+
+.strnadi-map :deep(.leaflet-control-zoom a) {
+  display: flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-color: var(--mobile-border);
+  background: var(--mobile-surface);
+  color: var(--mobile-ink);
+}
+
+.strnadi-map :deep(.leaflet-control-attribution) {
+  max-width: min(75vw, 30rem);
+  background: color-mix(in srgb, var(--mobile-surface) 92%, transparent);
+}
+
+.strnadi-map :deep(.recording-map-marker),
+.strnadi-map :deep(.recording-map-marker multi-color-square),
+.strnadi-map :deep(.recording-map-marker multi-color-square > div) {
+  aspect-ratio: 1 / 1 !important;
+  line-height: 0;
+}
+</style>
