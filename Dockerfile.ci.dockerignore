@@ -1,0 +1,17 @@
+.env*
+**/.env*
+.git
+.gitignore
+node_modules
+**/node_modules
+dist
+**/dist
+dev-dist
+
+.DS_Store
+.idea
+.vscode
+*.log
+*.zip
+stats.html
+typed-router.d.ts

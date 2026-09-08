@@ -93,15 +93,21 @@ RUN bun run check \
 
 FROM test AS build
 
-ARG ENVIRONMENT=production
-ENV ENVIRONMENT=${ENVIRONMENT}
+ARG VITE_MODE=production
+ENV NODE_ENV=production
 
 RUN --mount=type=secret,id=web_build_env,target=/usr/src/app/.env.local,required=true \
-    case "$ENVIRONMENT" in \
+    --mount=type=secret,id=sentry_auth_token,target=/run/secrets/sentry_auth_token \
+    case "$VITE_MODE" in \
         development|staging|production) ;; \
-        *) echo "Unsupported environment: $ENVIRONMENT" >&2; exit 2 ;; \
+        *) echo "Unsupported Vite mode: $VITE_MODE" >&2; exit 2 ;; \
     esac \
-    && bun run build --mode "$ENVIRONMENT"
+    && if [ -s /run/secrets/sentry_auth_token ]; then \
+        export SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token)"; \
+        export SENTRY_UPLOAD_SOURCEMAPS=true; \
+    fi \
+    && bun run build --mode "$VITE_MODE" \
+    && find dist -type f -name '*.map' -delete
 
 FROM nginx-runtime AS final
 

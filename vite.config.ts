@@ -32,6 +32,9 @@ import { NetworkFirst, CacheFirst } from 'workbox-strategies';
 // Add a unique build identifier that changes on every deployment. This will be appended
 // to runtime cache names so they become versioned and won‘t clash with older builds.
 const BUILD_VERSION = new Date().toISOString().replace(/[-:T.Z]/g, '');
+const uploadSourcemaps =
+  process.env['SENTRY_UPLOAD_SOURCEMAPS'] === 'true' &&
+  Boolean(process.env['SENTRY_AUTH_TOKEN']);
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -127,8 +130,7 @@ export default defineConfig(({ mode }) => ({
       }
     }),
     Compression({ algorithms: ['brotliCompress'] }),
-    ...(process.env['SENTRY_UPLOAD_SOURCEMAPS'] === 'true' &&
-    process.env['SENTRY_AUTH_TOKEN']
+    ...(uploadSourcemaps
       ? [
           SentryVitePlugin({
             org: 'delta-strnadi',
@@ -187,7 +189,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: 'ESNext',
     cssTarget: 'es2022',
-    sourcemap: mode === 'development',
+    sourcemap: uploadSourcemaps ? 'hidden' : mode === 'development',
     reportCompressedSize: false
   },
 
