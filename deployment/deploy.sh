@@ -10,7 +10,7 @@ git pull --rebase
 git submodule update --remote --init --merge --recursive
 
 # Port is the first and only argument to this script
-ENVIRONMENT=$1
+export ENVIRONMENT=$1
 
 docker compose -f docker-compose.yml build --no-cache
 docker compose -f docker-compose.yml down
