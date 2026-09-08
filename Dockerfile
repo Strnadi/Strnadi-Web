@@ -82,19 +82,23 @@ COPY public public
 COPY plugins plugins
 COPY index.html tsconfig*.json vite.config.ts ./
 
-ARG ENVIRONMENT="production"
+ARG ENVIRONMENT=production
 ARG VITE_API_URL
 ARG VITE_GOOGLE_CLIENT_ID
 ARG VITE_APPLE_CLIENT_ID
 ARG VITE_POSTHOG_KEY
 ARG VITE_PUBLIC_URL
-ENV NODE_ENV=${ENVIRONMENT}
+ENV ENVIRONMENT=${ENVIRONMENT}
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
 ENV VITE_APPLE_CLIENT_ID=${VITE_APPLE_CLIENT_ID}
 ENV VITE_POSTHOG_KEY=${VITE_POSTHOG_KEY}
 ENV VITE_PUBLIC_URL=${VITE_PUBLIC_URL}
-RUN bun run build --mode $NODE_ENV
+RUN case "$ENVIRONMENT" in \
+        development|staging|production) ;; \
+        *) echo "Unsupported environment: $ENVIRONMENT" >&2; exit 2 ;; \
+    esac \
+    && bun run build --mode "$ENVIRONMENT"
 
 FROM nginx-strnadi-custom
 COPY ./nginx.conf /etc/nginx/nginx.conf

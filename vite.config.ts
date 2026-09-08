@@ -187,12 +187,8 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: 'ESNext',
     cssTarget: 'es2022',
-    sourcemap: mode !== 'production',
+    sourcemap: mode === 'development',
     reportCompressedSize: false
-  },
-
-  dev: {
-    sourcemap: true
   },
 
   // experimental: {

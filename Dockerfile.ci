@@ -93,15 +93,15 @@ RUN bun run check \
 
 FROM test AS build
 
-ARG VITE_MODE=production
-ENV NODE_ENV=production
+ARG ENVIRONMENT=production
+ENV ENVIRONMENT=${ENVIRONMENT}
 
 RUN --mount=type=secret,id=web_build_env,target=/usr/src/app/.env.local,required=true \
-    case "$VITE_MODE" in \
+    case "$ENVIRONMENT" in \
         development|staging|production) ;; \
-        *) echo "Unsupported VITE_MODE: $VITE_MODE" >&2; exit 2 ;; \
+        *) echo "Unsupported environment: $ENVIRONMENT" >&2; exit 2 ;; \
     esac \
-    && bun run build --mode "$VITE_MODE"
+    && bun run build --mode "$ENVIRONMENT"
 
 FROM nginx-runtime AS final
 
