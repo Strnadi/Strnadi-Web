@@ -61,16 +61,8 @@ export const MapStore = reactive<{
 <script setup vapor lang="ts">
 import { ref, computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import {
-  getRecordings,
-  getFilteredRecordings,
-  getRecordingMapPoints,
-  getDialectColors,
-  type RecordingMapBounds,
-  type RecordingMapPoint,
-  type DetectedDialect
-} from '@/api/recordings';
-import { ApiError } from '@/classes/api-error';
+import { getRecordings, getFilteredRecordings, getDialectColors } from '@/api/recordings';
+
 
 import { accountStore } from '@/state/AccountStore';
 
@@ -122,14 +114,14 @@ function overlapsRecording(
   );
 }
 
-function fltr(parts: TimedFilteredPart[], thing: keyof DetectedDialect) {
+function fltr(parts: TimedFilteredPart[], thing: 'predictedDialect' | 'userGuessDialect') {
   const hasRepresentants = parts.some((part) => part.representantFlag);
 
   return parts.flatMap((part) =>
     (hasRepresentants ? part.representantFlag : true)
       ? (part.detectedDialects ?? [])
-        .filter((dd) => dd[thing])
-        .map((dd) => dd[thing] as DetectedDialect[typeof thing])
+        .map((dd) => dd[thing])
+        .filter((dialect): dialect is string => typeof dialect === 'string' && dialect.length > 0)
       : []
   );
 }
@@ -300,32 +292,6 @@ const fixed = { minLon: 12, maxLon: 19.5, minLat: 48.5, maxLat: 51.5 };
 const viewBounds = ref<
   [north: number, south: number, west: number, east: number] | null
 >(null);
-const debouncedViewBounds = refDebounced(viewBounds, 250);
-
-const requestedMapBounds = computed<RecordingMapBounds | null>(() => {
-  const bounds = debouncedViewBounds.value;
-  if (!bounds) return null;
-
-  const [north, south, west, east] = bounds;
-  const latitudePadding = (north - south) * 0.2;
-  const longitudePadding = (east - west) * 0.2;
-
-  return {
-    north: Math.min(fixed.maxLat, north + latitudePadding),
-    south: Math.max(fixed.minLat, south - latitudePadding),
-    west: Math.max(fixed.minLon, west - longitudePadding),
-    east: Math.min(fixed.maxLon, east + longitudePadding)
-  };
-});
-
-const mapPointQueryKey = computed(() => [
-  'recording-map-points',
-  requestedMapBounds.value,
-  MapStore.filter,
-  MapStore.onlyDialects,
-  MapStore.hideOthersUnfinished,
-  accountStore.user?.id
-]);
 
 // const { data: mapPoints } = useQuery({
 //   queryKey: mapPointQueryKey,
@@ -471,24 +437,6 @@ function markerIcon(
     iconAnchor: [iconAnchor, iconAnchor],
     html: `<multi-color-square style="display:block;width:${iconSize}px;height:${iconSize}px;aspect-ratio:1/1" size="${iconSize}px" dot="${fromModel}" questionmark="${fromUser}" colors='${JSON.stringify(colors)}'></multi-color-square>`
   }) as Icon;
-}
-
-function mapPointToMarker(point: RecordingMapPoint): Marker {
-  const colors = point.colors.length ? point.colors : ['#000000'];
-  return {
-    id: `${point.recordingId}-${point.recordingPartId}`,
-    icon: markerIcon(colors, point.fromModel, point.fromUser),
-    position: [point.latitude, point.longitude],
-    data: {
-      isRecording: true,
-      recordingId: point.recordingId,
-      recordingPartId: point.recordingPartId,
-      colors,
-      fromModel: point.fromModel,
-      fromUser: point.fromUser,
-      confirmed: point.confirmed
-    }
-  };
 }
 
 const markers = computed<Marker[]>(() => {

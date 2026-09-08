@@ -428,8 +428,6 @@ const timeInputValue = computed({
     uploadStore.dateTime = new Date(current).toISOString();
   }
 });
-
-const isInfoStepActive = computed(() => stepper.isCurrent('info'));
 </script>
 
 <template>

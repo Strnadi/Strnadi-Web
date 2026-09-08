@@ -3,7 +3,6 @@ import {
   computed,
   nextTick,
   ref,
-  type InputHTMLAttributes,
   useId,
   watch
 } from 'vue';
@@ -11,7 +10,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { onClickOutside, useDebounceFn, useWindowSize } from '@vueuse/core';
 import { getGeocodeAutocomplete } from '@/api/maps';
 
-interface LocationSearchProps extends /* @vue-ignore */ InputHTMLAttributes {
+interface LocationSearchProps {
   text?: string;
   location?: [number, number];
   searchThreshold?: number;

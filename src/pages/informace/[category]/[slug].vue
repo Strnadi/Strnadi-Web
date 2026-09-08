@@ -7,7 +7,7 @@ meta:
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { getArticleByCategory, getArticleFile } from '@/api/articles';
 import { kebabize } from '@/utils/strings';
 import { applicationStore } from '@/state/ApplicationStore';
@@ -56,15 +56,12 @@ const resolvedMarkdown = computed(() =>
       `${prefix}${fileBase.value}/${path}${suffix}`
   )
 );
-
-
-const scrollElement = ref<HTMLElement | null>(null);
 </script>
 
 <template>
   <!-- <div class="max-w-full pb-16"> -->
 
-  <div class="flex flex-col max-w-full" ref="scrollElement">
+  <div class="flex flex-col max-w-full">
     <p v-if="articlesLoading || markdownLoading" role="status">Načítání…</p>
     <p v-else-if="articlesError || markdownError" role="alert" class="text-red-700">
       Obsah se nepodařilo načíst.

@@ -108,13 +108,21 @@ import 'blockly/javascript';
 import type { Block, WorkspaceSvg } from 'blockly/core';
 import * as En from 'blockly/msg/en';
 import * as Cz from 'blockly/msg/cs';
+import * as De from 'blockly/msg/de';
 import ListIcon from '@/icons/interface/icon-list.svg';
 import type { translations } from '@/constants/Translations';
 import { applicationStore } from '@/state/ApplicationStore';
 
+function localeMessages(messages: object): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(messages).filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+  );
+}
+
 const locales: Record<keyof typeof translations, Record<string, string>> = {
-  'en-US': En,
-  'cs-CZ': Cz
+  'en-US': localeMessages(En),
+  'cs-CZ': localeMessages(Cz),
+  'de-DE': localeMessages(De)
 };
 
 Blockly.setLocale(locales[applicationStore.language]);

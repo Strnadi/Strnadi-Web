@@ -4,7 +4,7 @@ meta:
 </route>
 
 <script setup vapor lang="ts">
-import { accountStore } from '@/state/AccountStore';
+
 import { applicationStore } from '@/state/ApplicationStore';
 import { translations } from '@/constants/Translations';
 import { requestPushNotifications } from '@/plugins/vue/firebase';

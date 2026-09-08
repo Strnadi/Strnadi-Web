@@ -314,7 +314,9 @@ async function downloadSelectedRecordings() {
             }
           );
           const extension = extensionForContentType(
-            soundResponse.headers['content-type']
+            typeof soundResponse.headers['content-type'] === 'string'
+              ? soundResponse.headers['content-type']
+              : undefined
           );
           partFolder.file(`sound.${extension}`, soundResponse.data, {
             binary: true

@@ -2,7 +2,7 @@
 import type { User } from '@/api/account';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import { computed } from 'vue';
-import ProfilePhoto from '@/components/ProfilePhoto.vue';
+
 import ProfileIcon from '@/icons/interface/icon-profile.svg';
 import { accountStore } from '@/state/AccountStore';
 
@@ -27,32 +27,6 @@ const profileName = computed(() => {
   }
 
   return `${t('labels.user')} #${current.id}`;
-});
-
-const signupDate = computed(() =>
-  props.user ? new Date(props.user.creationDate).toLocaleString() : ''
-);
-
-const locationLabel = computed(() => {
-  if (!props.user) {
-    return null;
-  }
-
-  const parts: string[] = [];
-
-  if (props.user.postCode) {
-    parts.push(String(props.user.postCode));
-  }
-
-  if (props.user.city) {
-    parts.push(props.user.city);
-  }
-
-  if (!parts.length) {
-    return null;
-  }
-
-  return parts.join(' ');
 });
 </script>
 

@@ -141,7 +141,7 @@ watch(
   availableUsers,
   (available) => {
     if (queryRecipientApplied) return;
-    const requestedId = Number(route.query.userId);
+    const requestedId = Number(route.query['userId']);
     if (!Number.isInteger(requestedId)) return;
     if (available.some((user) => user.id === requestedId)) {
       selectedUserIds.value = new Set([requestedId]);

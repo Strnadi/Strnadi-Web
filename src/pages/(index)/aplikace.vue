@@ -11,8 +11,6 @@ import AppleIcon from '@/icons/apple.svg';
 import AndroidIcon from '@/icons/android.svg';
 import TranslatedText from '@/components/TranslatedText.vue';
 
-const env = import.meta.env;
-
 const isApple = (): boolean => {
   const userAgent =
     navigator.userAgent || navigator.vendor || (window as any).opera;

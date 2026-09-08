@@ -673,7 +673,6 @@ const TILE_COLS = CANVAS_COL_LIMIT / 4;
 const ANALYSER_FFT_SIZE = 1024;
 const PROGRESSIVE_FRAME_BATCH = 512;
 const IDLE_TASK_TIMEOUT_MS = 50;
-const PREVIEW_FILL_VALUE = 64;
 let activeSpectrogramJobId = 0;
 const activeIdleCallbacks = new Set<number>();
 const cacheTileContexts: CanvasRenderingContext2D[] = [];
@@ -1527,38 +1526,6 @@ function paintColumnsToTiles(
     }
     ctx.putImageData(imageData, localX, 0);
     processed += drawCount;
-  }
-}
-
-function renderCoarsePreview(
-  buffer: AudioBuffer,
-  totalColumns: number,
-  rows: number,
-  palette: Uint8ClampedArray
-) {
-  const channelData = buffer.getChannelData(0);
-  if (!channelData.length) return;
-  const stride = Math.max(1, Math.floor(channelData.length / totalColumns));
-  let produced = 0;
-  const batchSize = 256;
-  while (produced < totalColumns) {
-    const len = Math.min(batchSize, totalColumns - produced);
-    const batch: Uint8Array[] = [];
-    for (let i = 0; i < len; i++) {
-      const absoluteCol = produced + i;
-      const sampleIndex = clamp(
-        absoluteCol * stride,
-        0,
-        channelData.length - 1
-      );
-      const sample = channelData[sampleIndex] ?? 0;
-      const intensity = clamp(Math.round(Math.abs(sample) * 255), 0, 255);
-      const column = new Uint8Array(rows);
-      column.fill(intensity || PREVIEW_FILL_VALUE);
-      batch.push(column);
-    }
-    paintColumnsToTiles(produced, batch, palette);
-    produced += len;
   }
 }
 
@@ -4292,19 +4259,6 @@ const normalizedZoom = computed(() => {
   );
 });
 
-const zoomThumbLeftPx = computed(() => {
-  if (!zoomTrackDOMWidth.value) return 0;
-  const scrollableTrackWidth = zoomTrackDOMWidth.value - Z_THUMB_W;
-  if (scrollableTrackWidth <= 0) return 0;
-  return normalizedZoom.value * scrollableTrackWidth;
-});
-
-const zoomThumbStyle = computed(() => ({
-  left: `${zoomThumbLeftPx.value}px`,
-  cursor: isDraggingZoomThumb.value ? 'grabbing' : 'grab',
-  width: `${Z_THUMB_W}px`
-}));
-
 const zoomThumbTopPx = computed(() => {
   if (!zoomTrackDOMHeight.value) return 0;
   const scrollableTrackHeight = zoomTrackDOMHeight.value - Z_THUMB_W;
@@ -4769,18 +4723,6 @@ function onRangeContextMenu(event: MouseEvent, rangeId: Numeric) {
     document.addEventListener('click', closeContextMenuOnClickOutside);
     document.addEventListener('contextmenu', closeContextMenuOnClickOutside);
   });
-}
-
-function deleteRangeFromContextMenu() {
-  if (contextMenuRangeId.value === null) return;
-  const index = ranges.value.findIndex(
-    (r) => r.id === contextMenuRangeId.value
-  );
-  if (index !== -1) {
-    ranges.value.splice(index, 1);
-    // The watcher on `ranges` will automatically emit 'update:selected'
-  }
-  closeContextMenu(); // Close menu after action
 }
 
 function handleEscapeKey(event: KeyboardEvent) {

@@ -1,5 +1,5 @@
 <script setup vapor lang="ts">
-import RecordingsMap, { MapEvents } from '@/views/map/RecordingsMap.vue';
+import { MapEvents } from '@/views/map/RecordingsMap.vue';
 import MapControls from '@/views/map/controls/Mobile.vue';
 import { useEventLast } from '@/utils/events';
 import { useCssVar, useMediaQuery } from '@vueuse/core';

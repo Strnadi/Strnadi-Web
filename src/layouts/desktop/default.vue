@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { applicationStore } from '@/state/ApplicationStore';
-import Map, { MapEvents } from '@/views/map/RecordingsMap.vue';
+import Map from '@/views/map/RecordingsMap.vue';
 import MapControls from '@/views/map/controls/Desktop.vue';
 import Navbar from '@/views/nav/Navbar.vue';
 import Notification from '@/views/Notification.vue';
-import { useEventLast } from '@/utils/events';
+
 
 import { useRouter } from 'vue-router';
 

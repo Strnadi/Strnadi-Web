@@ -18,7 +18,7 @@
 </template>
 
 <script setup vapor lang="ts">
-import { computed, defineProps } from 'vue';
+import { computed } from 'vue';
 
 const props = defineProps<{
   colors: string[] | string;

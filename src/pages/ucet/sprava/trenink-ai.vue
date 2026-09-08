@@ -9,7 +9,7 @@ import Dropzone from '@/components/Dropzone.vue';
 import SegmentedProgress from '@/components/SegmentedProgress.vue';
 import TrainingChart from '@/components/TrainingChart.vue';
 import { useModelTraining } from '@/composables/useModelTraining';
-import { toggleVisor, isVisorOpen } from '@/services/tfjs/vis';
+import { toggleVisor } from '@/services/tfjs/vis';
 
 const training = useModelTraining();
 const zipFile = ref<File | null>(null);

@@ -93,7 +93,7 @@ function draw() {
     let started = false;
     for (let i = 0; i < values.length; i++) {
       const v = values[i];
-      if (!Number.isFinite(v)) continue;
+      if (v === undefined || !Number.isFinite(v)) continue;
       const x = xFor(i);
       const y = yFn(v);
       if (!started) {

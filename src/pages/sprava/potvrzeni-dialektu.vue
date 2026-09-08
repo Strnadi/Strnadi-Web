@@ -7,17 +7,8 @@ meta:
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import {
-  getFilteredRecordings,
-  getDialects,
-  getRecording,
-  updateDetectedDialect,
-  type FilteredPartModel,
-  type DetectedDialect,
-  type DialectDefinition,
-  type RecordingModel
-} from '@/api/recordings';
-import type { Numeric } from '@/types/basic';
+import { getFilteredRecordings, getDialects, getRecording, updateDetectedDialect, type FilteredPartModel, type DetectedDialect, type RecordingModel } from '@/api/recordings';
+
 import { accountStore } from '@/state/AccountStore';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
@@ -59,6 +50,7 @@ const unconfirmed = computed<UnconfirmedEntry[]>(() => {
 const currentIndex = ref(0);
 const currentEntry = computed(() => unconfirmed.value[currentIndex.value] ?? null);
 const totalCount = computed(() => unconfirmed.value.length);
+const progressText = computed(() => `${Math.min(currentIndex.value + 1, totalCount.value)} / ${totalCount.value}`);
 const remaining = computed(() => Math.max(0, totalCount.value - currentIndex.value));
 const isFinished = computed(() => totalCount.value > 0 && currentIndex.value >= totalCount.value);
 
@@ -105,7 +97,7 @@ function getAudioUrls(): string[] {
 
 function buildSegmentRange(): SpectrogramRange[] {
   if (!currentEntry.value || !recording.value?.parts?.length) return [];
-  const anchor = parseIsoDate(recording.value.parts[0].startDate);
+  const anchor = parseIsoDate(recording.value.parts[0]?.startDate);
   if (anchor === null) return [];
   const fp = currentEntry.value.filteredPart;
   return [{ id: fp.id, start: convertIsoToRelative(fp.startDate, anchor), end: convertIsoToRelative(fp.endDate, anchor), colors: computeRangeColors(fp) }];
@@ -242,9 +234,9 @@ function handleSwipe(dx: number, dy: number, vx: number, vy: number): boolean {
   return false;
 }
 
-function onTouchStart(e: TouchEvent) { if (!isMobile || isAnimating.value) return; const c = e.changedTouches[0]; touchStartX = c.clientX; touchStartY = c.clientY; lastTouchX = c.clientX; lastTouchY = c.clientY; lastTouchTime = performance.now(); resetCard(); }
-function onTouchMove(e: TouchEvent) { if (!isMobile || isAnimating.value) return; const c = e.changedTouches[0]; lastTouchX = c.clientX; lastTouchY = c.clientY; lastTouchTime = performance.now(); updateCardPreview(c.clientX - touchStartX, c.clientY - touchStartY); }
-function onTouchEnd(e: TouchEvent) { if (!isMobile || isAnimating.value) return; const c = e.changedTouches[0]; const now = performance.now(); const dx = c.clientX - touchStartX, dy = c.clientY - touchStartY, dt = now - lastTouchTime; const vx = dt > 0 ? (c.clientX - lastTouchX) / dt : 0, vy = dt > 0 ? (c.clientY - lastTouchY) / dt : 0; if (!handleSwipe(dx, dy, vx, vy)) resetCard(); }
+function onTouchStart(e: TouchEvent) { if (!isMobile || isAnimating.value) return; const c = e.changedTouches[0]; if (!c) return; touchStartX = c.clientX; touchStartY = c.clientY; lastTouchX = c.clientX; lastTouchY = c.clientY; lastTouchTime = performance.now(); resetCard(); }
+function onTouchMove(e: TouchEvent) { if (!isMobile || isAnimating.value) return; const c = e.changedTouches[0]; if (!c) return; lastTouchX = c.clientX; lastTouchY = c.clientY; lastTouchTime = performance.now(); updateCardPreview(c.clientX - touchStartX, c.clientY - touchStartY); }
+function onTouchEnd(e: TouchEvent) { if (!isMobile || isAnimating.value) return; const c = e.changedTouches[0]; if (!c) return; const now = performance.now(); const dx = c.clientX - touchStartX, dy = c.clientY - touchStartY, dt = now - lastTouchTime; const vx = dt > 0 ? (c.clientX - lastTouchX) / dt : 0, vy = dt > 0 ? (c.clientY - lastTouchY) / dt : 0; if (!handleSwipe(dx, dy, vx, vy)) resetCard(); }
 
 function onKeydown(e: KeyboardEvent) {
   if (isAnimating.value || !currentEntry.value) return;

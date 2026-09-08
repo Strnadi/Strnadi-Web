@@ -22,8 +22,6 @@ const nickname = ref(accountStore.user?.nickname ?? '');
 const zipcode = ref(accountStore.user?.postCode?.toString() ?? '');
 const town = ref(accountStore.user?.city ?? '');
 
-const form = ref<HTMLFormElement | null>(null);
-
 const password = ref('');
 const passwordAgain = ref('');
 
@@ -118,7 +116,6 @@ const submit = () => {
     <TranslatedText identifier="account.personal_data.title" />
   </h2>
   <form
-    ref="form"
     class="flex flex-col gap-y-2"
     @submit.prevent="submit"
   >

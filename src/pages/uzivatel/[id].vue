@@ -46,46 +46,6 @@ const {
     })
 });
 
-const profileName = computed(() => {
-  const current = user.value;
-  if (!current) {
-    return t('labels.user');
-  }
-
-  const first = current.firstName?.trim();
-  const last = current.lastName?.trim();
-
-  if (first || last) {
-    return [first, last].filter(Boolean).join(' ');
-  }
-
-  if (current.nickname) {
-    return `@${current.nickname}`;
-  }
-
-  return `${t('labels.user')} #${current.id}`;
-});
-
-const nicknameTagVisible = computed(
-  () => Boolean(user.value?.nickname) && !profileName.value.startsWith('@')
-);
-
-const signupDate = computed(() =>
-  user.value ? new Date(user.value.creationDate).toLocaleString() : ''
-);
-
-const roleLabel = computed(() => {
-  if (!user.value) {
-    return '';
-  }
-
-  return t(
-    user.value.role === 'admin'
-      ? 'pages.user_profile.roles.admin'
-      : 'pages.user_profile.roles.user'
-  );
-});
-
 const emailStatusLabel = computed(() => {
   if (!user.value) {
     return '';

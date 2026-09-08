@@ -136,7 +136,6 @@ const {
   mutate: registerMutate,
   isPending: isRegPending,
   isError: isRegError,
-  data: regData,
   error: regError
 } = useMutation({
   mutationFn: (data: SignUpRequest) =>
@@ -149,13 +148,11 @@ const {
   }
 });
 
-const stepper = useStepper<
-  Record<string, { title: TranslationIdentifier; isValid: () => boolean }>
->({
+const registrationSteps = {
   email: {
     title: 'auth.register.steps.email',
     isValid: () =>
-      emailElement.value &&
+      !!emailElement.value &&
       !!registerStore.email &&
       registerStore.dataAgreement &&
       !registerStore.userExists &&
@@ -180,8 +177,8 @@ const stepper = useStepper<
     isValid: () => {
       const { password, passwordConfirm } = registerStore;
       return (
-        password &&
-        passwordConfirm &&
+        !!password &&
+        !!passwordConfirm &&
         password === passwordConfirm &&
         password.length >= 8 &&
         /[A-Z]/.test(password) &&
@@ -204,7 +201,8 @@ const stepper = useStepper<
     title: 'auth.register.steps.done',
     isValid: () => true
   }
-});
+} satisfies Record<string, { title: TranslationIdentifier; isValid: () => boolean }>;
+const stepper = useStepper(registrationSteps);
 
 const googleSignup = (idToken: string) => {
   googleSignupMutate({ idToken });

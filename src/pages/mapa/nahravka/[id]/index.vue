@@ -164,7 +164,7 @@ const uploaderLocation = computed(() =>
           <TranslatedText identifier="recordings.detail.audio_heading" />
         </h2>
         <Spectrogram
-          :audio-urls="recording.parts?.map((part) => `${env.VITE_API_URL}/recordings/part/${recording.id}/${part.id}/sound`) ?? []"
+          :audio-urls="recording.parts?.map((part) => `${env.VITE_API_URL}/recordings/part/${recordingId}/${part.id}/sound`) ?? []"
           :height="200"
           :readonly="true"
           :download-only-selections="true"
@@ -175,7 +175,7 @@ const uploaderLocation = computed(() =>
           <template #range-tooltip="{ range }">
             <div class="recording-tooltip">
               <strong>{{ getDialectStrings(range.payload as FilteredPartModel).join(', ') }}</strong>
-              <span>{{ formatRelTime(range.payload?.startDate) }}–{{ formatRelTime(range.payload?.endDate) }}</span>
+              <span>{{ formatRelTime((range.payload as FilteredPartModel).startDate) }}–{{ formatRelTime((range.payload as FilteredPartModel).endDate) }}</span>
             </div>
           </template>
         </Spectrogram>

@@ -51,7 +51,7 @@ RUN mkdir -p /modules /tmp/packages \
                 $(cat "/modules/$module/source"); \
             normalized_module=$(echo "$module" | tr '[:upper:]' '[:lower:]' | tr -d '[/_.[:space:]-]'); \
             BUILT_MODULES="$BUILT_MODULES $normalized_module"; \
-        elif make -C /pkg-oss/alpine list | grep -Eq "^$module[[:space:]]+[0-9]+"; then \
+        elif make -C /pkg-oss/alpine list | grep -E "^$module[[:space:]]+[0-9]+" > /dev/null; then \
             cd /pkg-oss/alpine; \
             make "abuild-module-$module" BASE_VERSION="$NGINX_VERSION" NGINX_VERSION="$NGINX_VERSION"; \
             apk add --no-cache $(. "./abuild-module-$module/APKBUILD"; echo "$makedepends"); \

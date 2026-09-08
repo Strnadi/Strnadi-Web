@@ -40,6 +40,7 @@ import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import { accountStore } from '@/state/AccountStore';
 import { uploadStore, type DraftFilteredPart } from '@/state/UploadDraftStore';
+import { draftPartToModel } from '@/utils/draft-part-to-model';
 import type {
   SpectrogramRange as SharedSpectrogramRange,
   SpectrogramRangeCreated
@@ -68,15 +69,6 @@ interface DialectSelection {
   confirmedDialectId: number | null;
 }
 
-interface FilteredPartPatchPayload {
-  recordingId: number;
-  parentId: number | null;
-  startDate: string;
-  endDate: string;
-  state: number;
-  representantFlag?: boolean;
-}
-
 interface FilteredPartCreatePayload {
   recordingId: number;
   startDate: string;
@@ -88,7 +80,7 @@ const env = import.meta.env;
 const id = useRouteParams<Numeric>('id');
 const route = useRoute();
 
-const isDraftMode = computed(() => route.query?.draft === '1');
+const isDraftMode = computed(() => route.query?.['draft'] === '1');
 
 const recordingQuery = useFetchedWithOptions(
   getRecording,
@@ -113,10 +105,11 @@ const recording = computed(() =>
   isDraftMode.value ? draftRecording.value : recordingQuery.data.value
 );
 
+
 const filteredParts = computed<FilteredPartModel[] | null>(() =>
   isDraftMode.value
-    ? (draftFilteredParts.value as unknown as FilteredPartModel[] | null)
-    : filteredPartsQuery.data.value
+    ? (draftFilteredParts.value?.map(draftPartToModel) ?? null)
+    : filteredPartsQuery.data.value ?? null
 );
 
 const dialectDefinitions = computed(
@@ -254,7 +247,6 @@ const segmentMetas = reactive<Record<number, SegmentMeta>>({});
 const detectionForms = ref<Record<number, DialectSelection>>({});
 const newDetectionForms = reactive<Record<number, DialectSelection>>({});
 const detectionSaving = reactive<Record<number, boolean>>({});
-const detectionCreateSaving = reactive<Record<number, boolean>>({});
 const detectionMessage = ref<string | null>(null);
 const detectionError = ref<string | null>(null);
 const segmentError = ref<string | null>(null);
@@ -355,10 +347,6 @@ watch(segments, (newRanges, oldRanges) => {
     autoSaveDraft();
   }
 });
-
-const activeSegmentMetas = computed(() =>
-  Object.values(segmentMetas).filter((meta) => !meta.markedForDeletion)
-);
 
 const deletedSegmentMetas = computed(() =>
   Object.values(segmentMetas).filter(
@@ -468,18 +456,6 @@ function formatRelativeTime(seconds: number) {
     .toString()
     .padStart(2, '0');
   return `${sign}${minutes}:${secs}`;
-}
-
-function formatAbsoluteFromSeconds(seconds: number) {
-  const anchor = anchorTimestamp.value;
-  if (anchor === null || !Number.isFinite(seconds)) return '--:--';
-  const date = new Date(anchor + seconds * 1000);
-  if (isNaN(date.getTime())) return '--:--';
-  return date.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
 }
 
 function hydrateSegments(parts: FilteredPartModel[] | null | undefined) {
@@ -850,9 +826,9 @@ const saveSegmentChanges = async () => {
         throw new Error('Nepodařilo se převést čas úseku.');
       }
       const parentId = meta.filteredPart?.parentId;
-      // if (parentId == null) {
-      //   throw new Error('Chybí parentId úseku.');
-      // }
+      if (parentId == null) {
+        throw new Error('Chybí parentId úseku.');
+      }
       await patchFilteredPart(token, meta.filteredPart!.id, {
         recordingId: recording.value.id,
         parentId,
@@ -1003,13 +979,13 @@ async function saveDraftSegmentChanges(silent = false) {
           confirmedDialectId: canConfirmDialects.value ? dialectId : null
         });
       }
-      meta.filteredPart = created as unknown as FilteredPartModel;
+      meta.filteredPart = draftPartToModel(created);
       meta.isNew = false;
       meta.dirty = false;
     }
 
     draftFilteredParts.value = [...uploadStore.draftFilteredParts];
-    hydrateSegments((draftFilteredParts.value ?? []) as FilteredPartModel[]);
+    hydrateSegments((draftFilteredParts.value ?? []).map(draftPartToModel));
     if (!silent) segmentSuccess.value = 'Změny úseků byly uloženy.';
   } catch (err) {
     segmentError.value =
@@ -1094,71 +1070,6 @@ const deleteDetection = async (detected: DetectedDialect) => {
         : 'Nepodařilo se odstranit záznam dialektu.';
   } finally {
     detectionSaving[detected.id] = false;
-  }
-};
-
-const createDetection = async (meta: SegmentMeta) => {
-  if (!meta.filteredPart) {
-    detectionError.value = 'Nejprve uložte úsek.';
-    return;
-  }
-  const form =
-    newDetectionForms[meta.key] ??
-    (newDetectionForms[meta.key] = {
-      userGuessDialectId: null,
-      predictedDialectId: null,
-      confirmedDialectId: null
-    });
-  const hasValue =
-    form.userGuessDialectId ??
-    form.predictedDialectId ??
-    form.confirmedDialectId;
-  if (!hasValue) {
-    detectionError.value = 'Vyberte alespoň jednu hodnotu dialektu.';
-    return;
-  }
-  detectionCreateSaving[meta.key] = true;
-  detectionError.value = null;
-  detectionMessage.value = null;
-  try {
-    if (isDraftMode.value) {
-      const created = uploadStore.createDraftDetection(meta.filteredPart.id, {
-        userGuessDialectId: form.userGuessDialectId,
-        predictedDialectId: form.predictedDialectId,
-        confirmedDialectId: canConfirmDialects.value
-          ? form.confirmedDialectId
-          : null
-      });
-      meta.filteredPart.detectedDialects ??= [];
-      meta.filteredPart.detectedDialects.push(
-        created as unknown as DetectedDialect
-      );
-      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
-      detectionMessage.value = 'Záznam dialektu byl přidán.';
-    } else {
-      await postDetectedDialect(accountStore.token!, {
-        filteredPartId: meta.filteredPart.id,
-        userGuessDialectId: form.userGuessDialectId,
-        predictedDialectId: form.predictedDialectId,
-        confirmedDialectId: canConfirmDialects.value
-          ? form.confirmedDialectId
-          : null
-      });
-      detectionMessage.value = 'Záznam dialektu byl přidán.';
-      await refetchFilteredParts();
-    }
-    newDetectionForms[meta.key] = {
-      userGuessDialectId: null,
-      predictedDialectId: null,
-      confirmedDialectId: null
-    };
-  } catch (err) {
-    detectionError.value =
-      err instanceof Error
-        ? err.message
-        : 'Nepodařilo se přidat záznam dialektu.';
-  } finally {
-    detectionCreateSaving[meta.key] = false;
   }
 };
 
@@ -1285,49 +1196,6 @@ const confirmExistingDetection = async (
   } catch (err) {
     detectionError.value =
       err instanceof Error ? err.message : 'Nepodařilo se potvrdit dialekt.';
-  } finally {
-    detectionSaving[detected.id] = false;
-  }
-};
-
-const clearConfirmedDialect = async (
-  detected: DetectedDialect,
-  close?: () => void
-) => {
-  if (!canConfirmDialects.value) {
-    detectionError.value = 'Nemáte oprávnění odebrat potvrzení.';
-    return;
-  }
-  const form = ensureDetectionForm(detected);
-  detectionSaving[detected.id] = true;
-  detectionError.value = null;
-  detectionMessage.value = null;
-  try {
-    if (isDraftMode.value) {
-      uploadStore.updateDraftDetection(detected.id, {
-        userGuessDialectId: form.userGuessDialectId,
-        predictedDialectId: form.predictedDialectId,
-        confirmedDialectId: null
-      });
-      detectionMessage.value = 'Potvrzený dialekt byl odebrán.';
-      if (close) close();
-      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
-    } else {
-      await updateDetectedDialect(accountStore.token!, {
-        id: detected.id,
-        userGuessDialectId: form.userGuessDialectId,
-        predictedDialectId: form.predictedDialectId,
-        confirmedDialectId: null
-      });
-      detectionMessage.value = 'Potvrzený dialekt byl odebrán.';
-      if (close) close();
-      await refetchFilteredParts();
-    }
-  } catch (err) {
-    detectionError.value =
-      err instanceof Error
-        ? err.message
-        : 'Nepodařilo se odebrat potvrzení dialektu.';
   } finally {
     detectionSaving[detected.id] = false;
   }

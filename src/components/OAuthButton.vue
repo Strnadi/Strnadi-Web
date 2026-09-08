@@ -27,8 +27,6 @@ import {
   validateOAuthResponse
 } from '@/utils/oauth';
 
-const env = import.meta.env;
-
 const router = useRouter();
 const route = useRoute();
 

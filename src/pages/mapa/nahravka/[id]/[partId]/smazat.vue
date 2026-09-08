@@ -11,8 +11,10 @@ import { useRouter } from 'vue-router';
 import { deleteRecordingPart } from '@/api/recordings';
 import { accountStore } from '@/state/AccountStore';
 
-const recordingId = useRouteParams<string>('id');
-const partId = useRouteParams<string>('partId');
+import type { Numeric } from '@/types/basic';
+
+const recordingId = useRouteParams<Numeric>('id');
+const partId = useRouteParams<Numeric>('partId');
 const router = useRouter();
 const queryClient = useQueryClient();
 const isDeleting = ref(false);

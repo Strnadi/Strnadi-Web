@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, useId, useSlots } from 'vue';
-import type { InputHTMLAttributes } from 'vue';
 
 const slots = useSlots();
 
@@ -9,7 +8,8 @@ defineOptions({
   inheritAttrs: false
 });
 
-interface RevealablePasswordInputProps extends /* @vue-ignore */ InputHTMLAttributes {
+interface RevealablePasswordInputProps {
+  id?: string;
   modelValue?: string;
   label?: string;
 }

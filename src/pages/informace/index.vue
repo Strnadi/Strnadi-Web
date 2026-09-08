@@ -49,7 +49,7 @@ const { data: categories, isLoading, error } = useQuery({
           <div>
             <h2>{{ category.label }}</h2>
             <p>
-              {{ category.articles.length }}
+              {{ (category.articles ?? []).length }}
               <TranslatedText identifier="pages.information.articles_count" />
             </p>
           </div>

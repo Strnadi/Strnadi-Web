@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import type { TranslationIdentifier } from '@/constants/Translations';
 import { useQuery } from '@tanstack/vue-query';
 import draggable from 'vuedraggable';
 import type { Article } from '@/api/articles';
@@ -12,8 +13,8 @@ const props = withDefaults(
     name: string;
     label: string;
     selectedArticles: Article[];
-    titleKey: string;
-    submitKey: string;
+    titleKey: TranslationIdentifier;
+    submitKey: TranslationIdentifier;
     submitting?: boolean;
     titleSuffix?: string;
   }>(),

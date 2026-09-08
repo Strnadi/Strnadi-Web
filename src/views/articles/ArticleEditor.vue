@@ -139,7 +139,7 @@ const normalizeContents = () => {
   return Object.keys(editorContents)
     .sort()
     .reduce<Record<string, string>>((acc, key) => {
-      acc[key] = editorContents[key];
+      acc[key] = editorContents[key] ?? '';
       return acc;
     }, {});
 };

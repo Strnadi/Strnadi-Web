@@ -9,7 +9,7 @@ export interface Polygon {
 
 export interface Marker {
   id: number | string;
-  icon?: Icon;
+  icon?: Icon | L.DivIcon;
   position: [number, number];
   data?: any;
 }
@@ -38,7 +38,7 @@ export interface MapProps {
 </script>
 
 <script setup lang="ts">
-import { ref, watch, computed, onBeforeUnmount } from 'vue';
+import { ref, shallowRef, watch, computed, onBeforeUnmount } from 'vue';
 import { useGeolocation } from '@vueuse/core';
 import { type Map as LeafletMap, type LeafletMouseEvent, Icon } from 'leaflet';
 
@@ -275,7 +275,8 @@ function rebuildGlifyPoints() {
 }
 
 /** Overlay markers that are NOT handled by glify and need normal Leaflet rendering. */
-const overlayMarkersForTemplate = ref<Marker[]>([]);
+// LMarker types omit DivIcon, although Leaflet accepts both icon classes.
+const overlayMarkersForTemplate = shallowRef<Marker[]>([]);
 
 // ─── Clustering state (used when useGlify === false) ──────────────────────────
 let clusterGroups: { group: MarkerClusterGroup; sample: Marker }[] = [];
@@ -609,7 +610,7 @@ onBeforeUnmount(() => {
         v-for="m in overlayMarkersForTemplate"
         :key="m.id"
         :lat-lng="m.position"
-        :icon="m.icon"
+        :icon="m.icon as Icon | undefined"
         @click="
           (event: LeafletMouseEvent) => emit('click', { event, marker: m })
         "
