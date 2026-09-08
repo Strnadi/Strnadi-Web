@@ -4,7 +4,7 @@ meta:
 </route>
 
 <script setup vapor lang="ts">
-import { accountStore } from '@/state/AccountStore';
+
 </script>
 
 <template>

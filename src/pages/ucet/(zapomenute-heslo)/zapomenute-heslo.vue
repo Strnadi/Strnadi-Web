@@ -13,7 +13,7 @@ import TranslatedText, { t } from '@/components/TranslatedText.vue';
 const email = ref('');
 const router = useRouter();
 
-const { mutate, isSuccess } = useMutation({
+const { mutate, isSuccess, isPending, error } = useMutation({
   mutationFn: ({ email }: { email: string }) => getPasswordResetRequest(email)
 });
 
@@ -24,14 +24,15 @@ const submit = () => {
 
 <template>
   <div class="flex flex-col items-center gap-y-6 w-full">
-    <img src="/logo-no-text.svg" />
+    <img src="/logo-no-text.svg" alt="Strnadi" />
     <h1 class="text-center">
       <TranslatedText identifier="auth.reset_password.title" />
     </h1>
 
-    <div
+    <form
       v-if="!isSuccess"
       class="flex flex-col items-center gap-y-6 w-full"
+      @submit.prevent="submit"
     >
       <div class="w-full flex flex-col gap-y-1">
         <label
@@ -49,12 +50,16 @@ const submit = () => {
         />
       </div>
       <button
+        type="submit"
         class="secondary p-2 w-full"
-        @click="submit"
+        :disabled="isPending || !email"
       >
         <TranslatedText identifier="buttons.send_code" />
       </button>
-    </div>
+      <p v-if="error" role="alert" class="text-red-700">
+        {{ error.message }}
+      </p>
+    </form>
 
     <div
       v-else

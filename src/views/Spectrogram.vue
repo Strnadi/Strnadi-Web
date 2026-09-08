@@ -28,6 +28,7 @@
         :class="overlayCursorClass"
         @mousedown="onRangeSelectStart"
         @touchstart="onRangeSelectTouchStart"
+        @contextmenu.self="onEmptySpectrogramContextMenu"
       >
         <!-- Hover line shows the nextRangeColor -->
         <div
@@ -64,6 +65,7 @@
               top: `${margin.top}px`,
               height: `${containerHeight - margin.top - margin.bottom}px`
             }"
+            @mousedown.stop
             @contextmenu.prevent="onRangeContextMenu($event, r.id)"
             @click.stop="handleRangeFillClick(r.id, $event)"
             @mouseenter="handleRangeFillHover(r.id, $event)"
@@ -445,6 +447,16 @@
         </div>
         <span>{{ Math.round(loadingProgress * 100) }}%</span>
       </div>
+      <div
+        v-else-if="loadError && !isLoaded"
+        class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/90 p-4 text-center"
+        role="alert"
+      >
+        <p>{{ loadError }}</p>
+        <button type="button" class="button-secondary p-2" @click="loadAndProcessAudio">
+          Zkusit znovu
+        </button>
+      </div>
     </div>
 
     <!-- Context Menu for Ranges -->
@@ -603,6 +615,11 @@ import {
 } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
 import type { Numeric } from '@/types/basic';
+import type {
+  SpectrogramRange,
+  SpectrogramRangeCreated,
+  SpectrogramRangeInputSource
+} from '@/types/spectrogram';
 import TranslatedText from '@/components/TranslatedText.vue';
 import {
   parseWavHeader,
@@ -615,14 +632,7 @@ import {
   setSpectrogramCache
 } from '@/utils/spectrogram-cache';
 
-interface Range {
-  id: Numeric;
-  start: number;
-  end: number;
-  color?: string;
-  colors?: string[];
-  payload?: unknown;
-}
+type Range = SpectrogramRange;
 
 const DEFAULT_RANGE_COLOR = '#111827';
 
@@ -663,7 +673,6 @@ const TILE_COLS = CANVAS_COL_LIMIT / 4;
 const ANALYSER_FFT_SIZE = 1024;
 const PROGRESSIVE_FRAME_BATCH = 512;
 const IDLE_TASK_TIMEOUT_MS = 50;
-const PREVIEW_FILL_VALUE = 64;
 let activeSpectrogramJobId = 0;
 const activeIdleCallbacks = new Set<number>();
 const cacheTileContexts: CanvasRenderingContext2D[] = [];
@@ -724,7 +733,9 @@ interface Props {
   simpleControls?: boolean;
   downloadOnlySelections?: boolean; // NEW
   joinSelectionSegments?: boolean; // Whether to concatenate selected regions without gaps
+  initialViewport?: 'default' | 'fit-audio' | 'fit-selection';
   showTooltipOnHover?: boolean; // Whether to show tooltip on hover (readonly mode only)
+  secondaryButtonSelection?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -756,7 +767,9 @@ const props = withDefaults(defineProps<Props>(), {
   currentTime: 0,
   noControls: false,
   downloadOnlySelections: false,
+  initialViewport: 'default',
   showTooltipOnHover: true // Default to true
+  ,secondaryButtonSelection: false
 });
 
 const joinSelectionSegments = computed(() => {
@@ -774,6 +787,7 @@ const useFastSelectionDownloadPath = computed(() => {
 const emit = defineEmits<{
   'update:selected': [range: Range[]];
   'update:currentTime': [currentTime: number];
+  'range-created': [event: SpectrogramRangeCreated];
 }>();
 
 // Helper function to set alpha on any color format
@@ -822,6 +836,9 @@ const rangeTooltipRef = ref<HTMLElement | null>(null); // Ref for range tooltip
 
 const isLoaded = ref(false);
 const isLoading = ref(false);
+const loadError = ref<string | null>(null);
+let loadRequestId = 0;
+const activeAudioRequests = new Set<XMLHttpRequest>();
 const isPlaying = ref(false);
 const isPaused = ref(false);
 const totalAudioBytes = ref(0);
@@ -952,7 +969,7 @@ function cloneRanges(source: Range[] | undefined | null): Range[] {
 
 watch(
   () => props.selected,
-  (newSelectedRanges) => {
+  async (newSelectedRanges) => {
     const snapshot = JSON.stringify(newSelectedRanges ?? []);
     if (snapshot === lastPropsSelectedSnapshot.value) {
       return;
@@ -961,6 +978,10 @@ watch(
     isSyncingSelectedFromParent.value = true;
     ranges.value = cloneRanges(newSelectedRanges ?? []);
     isSyncingSelectedFromParent.value = false;
+    if (isLoaded.value) {
+      await nextTick();
+      renderSpectrogram();
+    }
   },
   { deep: true, immediate: true }
 );
@@ -1015,6 +1036,78 @@ function getRangeEffectiveBounds(range: Range | null | undefined) {
   return { start: range.start, end: range.end };
 }
 
+function initializeViewport() {
+  const totalColumns = spectrogramData.value.length;
+  if (!totalColumns) {
+    zoomLevel.value = MIN_ZOOM_LEVEL;
+    offsetIndex.value = 0;
+    windowSize.value = 0;
+    return;
+  }
+
+  const fitEntireAudio =
+    props.initialViewport === 'fit-audio' ||
+    (props.initialViewport === 'fit-selection' && joinSelectionSegments.value);
+
+  if (fitEntireAudio) {
+    zoomLevel.value = MIN_ZOOM_LEVEL;
+    offsetIndex.value = 0;
+    windowSize.value = totalColumns;
+    return;
+  }
+
+  if (props.initialViewport === 'fit-selection' && ranges.value.length) {
+    const bounds = ranges.value
+      .map(getRangeEffectiveBounds)
+      .filter(
+        ({ start, end }) =>
+          Number.isFinite(start) && Number.isFinite(end) && end > start
+      );
+
+    if (bounds.length) {
+      const firstSecond = Math.min(...bounds.map(({ start }) => start));
+      const lastSecond = Math.max(...bounds.map(({ end }) => end));
+      const selectionDuration = lastSecond - firstSecond;
+      const paddingSeconds = Math.max(0.25, selectionDuration * 0.08);
+      const secondsPerColumn =
+        columnDuration.value || audioDuration.value / totalColumns;
+      const firstColumn = clamp(
+        Math.floor((firstSecond - paddingSeconds) / secondsPerColumn),
+        0,
+        totalColumns - 1
+      );
+      const lastColumn = clamp(
+        Math.ceil((lastSecond + paddingSeconds) / secondsPerColumn),
+        firstColumn + 1,
+        totalColumns
+      );
+      const minColumns = Math.max(1, MIN_COLS_AT_MAX_ZOOM_DISPLAY.value);
+      windowSize.value = Math.min(
+        totalColumns,
+        Math.max(minColumns, lastColumn - firstColumn)
+      );
+      zoomLevel.value = Math.max(
+        MIN_ZOOM_LEVEL,
+        totalColumns / windowSize.value
+      );
+      offsetIndex.value = clamp(
+        Math.floor((firstColumn + lastColumn - windowSize.value) / 2),
+        0,
+        Math.max(0, totalColumns - windowSize.value)
+      );
+      return;
+    }
+  }
+
+  offsetIndex.value = 0;
+  const minColumns = Math.max(1, MIN_COLS_AT_MAX_ZOOM_DISPLAY.value);
+  zoomLevel.value = Math.max(MIN_ZOOM_LEVEL, totalColumns / minColumns);
+  windowSize.value = Math.min(
+    totalColumns,
+    Math.max(minColumns, Math.floor(totalColumns / zoomLevel.value))
+  );
+}
+
 watch(
   normalizedGain,
   (gain) => {
@@ -1025,12 +1118,54 @@ watch(
 
 // Selection
 const isSelecting = ref(false);
+const selectionInputSource = ref<SpectrogramRangeInputSource>('primary');
 const selectStartXPx = ref(0);
 const selectCurrentXPx = ref(0);
 let mousedownX = 0;
 let mousedownTime = 0;
 const CLICK_THRESHOLD_MS = 250;
 const CLICK_THRESHOLD_PX = 5;
+
+function createRangeFromCurrentSelection(
+  inputSource: SpectrogramRangeInputSource,
+  anchor: { x: number; y: number }
+) {
+  const x0 = Math.min(selectStartXPx.value, selectCurrentXPx.value);
+  const x1 = Math.max(selectStartXPx.value, selectCurrentXPx.value);
+  if (x1 - x0 < CLICK_THRESHOLD_PX) return false;
+
+  const dispW = containerWidth.value - margin.value.left - margin.value.right;
+  if (dispW <= 0 || !canvasRef.value || !spectrogramData.value.length)
+    return false;
+
+  const f0 = clamp((x0 - margin.value.left) / dispW, 0, 1);
+  const f1 = clamp((x1 - margin.value.left) / dispW, 0, 1);
+  const sIdx = Math.floor(offsetIndex.value);
+  const win = Math.floor(windowSize.value);
+  const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
+  if (sIdx >= eIdx || sIdx < 0 || sIdx >= spectrogramData.value.length)
+    return false;
+
+  const startElement = spectrogramData.value[sIdx];
+  const endElement =
+    spectrogramData.value[Math.min(eIdx - 1, spectrogramData.value.length - 1)];
+  if (!startElement || !endElement) return false;
+
+  const duration = endElement.time - startElement.time;
+  if (duration <= 0) return false;
+
+  const range: Range = {
+    id: Date.now() + Math.random(),
+    start: clamp(startElement.time + f0 * duration, 0, audioDuration.value),
+    end: clamp(startElement.time + f1 * duration, 0, audioDuration.value),
+    color:
+      inputSource === 'secondary' ? DEFAULT_RANGE_COLOR : nextRangeColor.value
+  };
+  ranges.value.push(range);
+  emit('range-created', { range, inputSource, anchor });
+  updateNextRangeColor(ranges.value);
+  return true;
+}
 
 // Handle‐drag
 const draggingRangeId = ref<Numeric | null>(null); // Changed from number
@@ -1394,38 +1529,6 @@ function paintColumnsToTiles(
   }
 }
 
-function renderCoarsePreview(
-  buffer: AudioBuffer,
-  totalColumns: number,
-  rows: number,
-  palette: Uint8ClampedArray
-) {
-  const channelData = buffer.getChannelData(0);
-  if (!channelData.length) return;
-  const stride = Math.max(1, Math.floor(channelData.length / totalColumns));
-  let produced = 0;
-  const batchSize = 256;
-  while (produced < totalColumns) {
-    const len = Math.min(batchSize, totalColumns - produced);
-    const batch: Uint8Array[] = [];
-    for (let i = 0; i < len; i++) {
-      const absoluteCol = produced + i;
-      const sampleIndex = clamp(
-        absoluteCol * stride,
-        0,
-        channelData.length - 1
-      );
-      const sample = channelData[sampleIndex] ?? 0;
-      const intensity = clamp(Math.round(Math.abs(sample) * 255), 0, 255);
-      const column = new Uint8Array(rows);
-      column.fill(intensity || PREVIEW_FILL_VALUE);
-      batch.push(column);
-    }
-    paintColumnsToTiles(produced, batch, palette);
-    produced += len;
-  }
-}
-
 function pcmSampleToFloat(value: number, bitsPerSample: number): number {
   switch (bitsPerSample) {
     case 8:
@@ -1619,6 +1722,21 @@ function handleResize() {
 
 // Process audio
 async function loadAndProcessAudio() {
+  const requestId = ++loadRequestId;
+  loadError.value = null;
+  try {
+    await loadAndProcessAudioImpl();
+  } catch (error) {
+    if (requestId !== loadRequestId) return;
+    loadError.value =
+      error instanceof Error ? error.message : 'Audio se nepodařilo načíst.';
+    isLoaded.value = false;
+  } finally {
+    if (requestId === loadRequestId) isLoading.value = false;
+  }
+}
+
+async function loadAndProcessAudioImpl() {
   isLoading.value = true;
   audioProgress.value = 0;
   spectroProgress.value = 0;
@@ -2110,7 +2228,7 @@ async function legacyFullDownload(
     }
   };
 
-  const downloadFile = (url: string, index: number) =>
+  const downloadFile = (url: string, index: number, rebuild = true) =>
     (async () => {
       const arrayBuffer = await fetchArrayBufferWithProgress(url);
       const buffer = await audioCtx.decodeAudioData(arrayBuffer);
@@ -2119,30 +2237,25 @@ async function legacyFullDownload(
         // fallback fraction by count if total size unknown
         audioProgress.value = loadedBuffers.size / urls.length;
       }
-      await processContiguousPrefix();
+      if (rebuild) await processContiguousPrefix();
     })().catch((err) => {
       console.error(`Failed to download audio file at index ${index}`, err);
       throw err;
     });
 
-  const initialIndexes: number[] = [];
-  // Initial viewport always starts at time 0, so ensure first file is prioritized.
-  if (urls.length > 0) initialIndexes.push(0);
+  if (urls[0]) await downloadFile(urls[0], 0);
 
-  const deferredIndexes = urls
-    .map((_, idx) => idx)
-    .filter((idx) => !initialIndexes.includes(idx));
-
-  const downloadPromises = urls.map((url, idx) => downloadFile(url, idx));
-
-  const initialPromises = initialIndexes.map((idx) => downloadPromises[idx]!);
-  await Promise.all(initialPromises);
-
-  const deferredPromises = deferredIndexes.map((idx) => downloadPromises[idx]!);
-  if (deferredPromises.length) {
-    // Background downloads; no need to await for initial render, but ensure errors surface.
-    void Promise.allSettled(deferredPromises);
-  }
+  let nextIndex = 1;
+  const worker = async () => {
+    while (nextIndex < urls.length) {
+      const index = nextIndex++;
+      await downloadFile(urls[index]!, index, false);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(3, Math.max(0, urls.length - 1)) }, worker)
+  );
+  await processContiguousPrefix();
 }
 
 async function generateSpectrogramDataOffline(cacheKey: string) {
@@ -2192,22 +2305,7 @@ async function generateSpectrogramDataOffline(cacheKey: string) {
   setupTileCanvases(totalColumns, cacheHeightBins.value);
   // renderCoarsePreview(buf, totalColumns, cacheHeightBins.value, palette);
 
-  offsetIndex.value = 0;
-  const currentTotalColumns = spectrogramData.value.length || 1;
-  const minColsForView = Math.max(1, MIN_COLS_AT_MAX_ZOOM_DISPLAY.value);
-  zoomLevel.value = Math.max(
-    MIN_ZOOM_LEVEL,
-    currentTotalColumns / minColsForView
-  );
-  windowSize.value = Math.min(
-    currentTotalColumns,
-    Math.max(minColsForView, Math.floor(currentTotalColumns / zoomLevel.value))
-  );
-  offsetIndex.value = clamp(
-    offsetIndex.value,
-    0,
-    Math.max(0, spectrogramData.value.length - windowSize.value)
-  );
+  initializeViewport();
 
   if (!props.audioElementProp) {
     const actx = getAudioContext();
@@ -3037,6 +3135,7 @@ function onRangeSelectTouchStart(e: TouchEvent) {
       containerWidth.value - margin.value.right
     );
     selectCurrentXPx.value = selectStartXPx.value;
+    selectionInputSource.value = 'touch';
     isSelecting.value = true;
     document.addEventListener('touchmove', onRangeSelectTouchMoveHandler, {
       passive: false
@@ -3079,41 +3178,12 @@ function onRangeSelectTouchEndHandler(_e: TouchEvent) {
     timeDiff < CLICK_THRESHOLD_MS && distDiff < CLICK_THRESHOLD_PX;
 
   if (wasSelectionProcessActive && !props.readonly) {
-    const x0 = Math.min(selectStartXPx.value, selectCurrentXPx.value);
-    const x1 = Math.max(selectStartXPx.value, selectCurrentXPx.value);
-
-    if (x1 - x0 >= CLICK_THRESHOLD_PX) {
-      const dispW =
-        containerWidth.value - margin.value.left - margin.value.right;
-      if (dispW > 0 && canvasRef.value && spectrogramData.value.length > 0) {
-        const f0 = clamp((x0 - margin.value.left) / dispW, 0, 1);
-        const f1 = clamp((x1 - margin.value.left) / dispW, 0, 1);
-        const sIdx = Math.floor(offsetIndex.value);
-        const win = Math.floor(windowSize.value);
-        const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
-        if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
-          const startElement = spectrogramData.value[sIdx];
-          const endElement =
-            spectrogramData.value[
-              Math.min(eIdx - 1, spectrogramData.value.length - 1)
-            ];
-          if (startElement && endElement) {
-            const vs = startElement.time;
-            const ve = endElement.time;
-            const dur = ve - vs;
-            if (dur > 0) {
-              const usedColor = nextRangeColor.value;
-              ranges.value.push({
-                id: Date.now() + Math.random(),
-                start: vs + f0 * dur,
-                end: vs + f1 * dur,
-                color: usedColor
-              });
-              updateNextRangeColor(ranges.value);
-            }
-          }
-        }
-      }
+    if (
+      createRangeFromCurrentSelection('touch', {
+        x: touch.clientX,
+        y: touch.clientY
+      })
+    ) {
       return;
     }
   }
@@ -3194,13 +3264,15 @@ function onRangeSelectStart(e: MouseEvent) {
     return; // Middle click handled
   }
 
-  // Existing logic for left-click (e.button === 0)
-  if (e.button !== 0) return; // Ensure only left click proceeds from here for selection/space-pan
+  const isSecondarySelection = e.button === 2 && props.secondaryButtonSelection;
+  if (e.button !== 0 && !isSecondarySelection) return;
+  if (isSecondarySelection) e.preventDefault();
 
   // Set mousedown time and position for potential click detection in onRangeSelectEndHandler
   // This needs to be done before any early returns for left-clicks that should lead to onRangeSelectEndHandler.
   mousedownX = e.clientX;
   mousedownTime = Date.now();
+  selectionInputSource.value = isSecondarySelection ? 'secondary' : 'primary';
 
   const tgt = e.target as HTMLElement;
   if (
@@ -3279,43 +3351,12 @@ function onRangeSelectEndHandler(e: MouseEvent) {
 
   // Handle range creation if a selection process was active, not readonly, and it's a drag.
   if (wasSelectionProcessActive && !props.readonly) {
-    const x0 = Math.min(selectStartXPx.value, selectCurrentXPx.value);
-    const x1 = Math.max(selectStartXPx.value, selectCurrentXPx.value);
-
-    if (x1 - x0 >= CLICK_THRESHOLD_PX) {
-      // If it was a drag, not a simple click
-      const dispW =
-        containerWidth.value - margin.value.left - margin.value.right;
-      if (dispW > 0 && canvasRef.value && spectrogramData.value.length > 0) {
-        const f0 = clamp((x0 - margin.value.left) / dispW, 0, 1);
-        const f1 = clamp((x1 - margin.value.left) / dispW, 0, 1);
-        const sIdx = Math.floor(offsetIndex.value);
-        const win = Math.floor(windowSize.value);
-        const eIdx = Math.min(sIdx + win, spectrogramData.value.length);
-        if (sIdx < eIdx && sIdx >= 0 && sIdx < spectrogramData.value.length) {
-          const startElement = spectrogramData.value[sIdx];
-          const endElement =
-            spectrogramData.value[
-              Math.min(eIdx - 1, spectrogramData.value.length - 1)
-            ];
-          if (startElement && endElement) {
-            const vs = startElement.time;
-            const ve = endElement.time;
-            const dur = ve - vs;
-            if (dur > 0) {
-              const usedColor = nextRangeColor.value;
-              ranges.value.push({
-                id: Date.now() + Math.random(),
-                start: vs + f0 * dur,
-                end: vs + f1 * dur,
-                color: usedColor
-              });
-              // now generate a fresh color for the *next* range
-              updateNextRangeColor(ranges.value);
-            }
-          }
-        }
-      }
+    if (
+      createRangeFromCurrentSelection(selectionInputSource.value, {
+        x: e.clientX,
+        y: e.clientY
+      })
+    ) {
       return; // Range created, so don't fall through to click-to-seek
     }
   }
@@ -3325,6 +3366,7 @@ function onRangeSelectEndHandler(e: MouseEvent) {
   // or in non-readonly mode if the "selection" was too small (i.e., a click).
   if (
     isClick &&
+    selectionInputSource.value !== 'secondary' &&
     !isSpacePanningActive.value && // Ensure not part of a space pan
     !isSpacebarPressed.value && // Redundant if isSpacePanningActive is true, but safe
     canvasRef.value
@@ -3358,6 +3400,10 @@ function onRangeSelectEndHandler(e: MouseEvent) {
       }
     }
   }
+}
+
+function onEmptySpectrogramContextMenu(event: MouseEvent) {
+  if (props.secondaryButtonSelection) event.preventDefault();
 }
 
 // HANDLE DRAG
@@ -3821,6 +3867,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  loadRequestId++;
+  activeAudioRequests.forEach((request) => request.abort());
+  activeAudioRequests.clear();
   // 1. Reset and clean up audio-specific resources and state
   resetAndCleanupAudioResources();
   cancelIdleTasks();
@@ -4209,19 +4258,6 @@ const normalizedZoom = computed(() => {
     1
   );
 });
-
-const zoomThumbLeftPx = computed(() => {
-  if (!zoomTrackDOMWidth.value) return 0;
-  const scrollableTrackWidth = zoomTrackDOMWidth.value - Z_THUMB_W;
-  if (scrollableTrackWidth <= 0) return 0;
-  return normalizedZoom.value * scrollableTrackWidth;
-});
-
-const zoomThumbStyle = computed(() => ({
-  left: `${zoomThumbLeftPx.value}px`,
-  cursor: isDraggingZoomThumb.value ? 'grabbing' : 'grab',
-  width: `${Z_THUMB_W}px`
-}));
 
 const zoomThumbTopPx = computed(() => {
   if (!zoomTrackDOMHeight.value) return 0;
@@ -4689,18 +4725,6 @@ function onRangeContextMenu(event: MouseEvent, rangeId: Numeric) {
   });
 }
 
-function deleteRangeFromContextMenu() {
-  if (contextMenuRangeId.value === null) return;
-  const index = ranges.value.findIndex(
-    (r) => r.id === contextMenuRangeId.value
-  );
-  if (index !== -1) {
-    ranges.value.splice(index, 1);
-    // The watcher on `ranges` will automatically emit 'update:selected'
-  }
-  closeContextMenu(); // Close menu after action
-}
-
 function handleEscapeKey(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     if (isContextMenuVisible.value) {
@@ -4846,6 +4870,9 @@ watch(
 );
 
 function resetAndCleanupAudioResources() {
+  loadRequestId++;
+  activeAudioRequests.forEach((request) => request.abort());
+  activeAudioRequests.clear();
   stopAudio(); // Stops current playback and disconnects audioSourceNode
   cancelSpectrogramGeneration?.();
   cancelSpectrogramGeneration = null;
@@ -4939,6 +4966,7 @@ async function fetchArrayBufferWithProgress(url: string): Promise<ArrayBuffer> {
 
   return await new Promise<ArrayBuffer>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    activeAudioRequests.add(xhr);
     xhr.open('GET', url, true);
     xhr.responseType = 'arraybuffer';
     let lastLoaded = 0;
@@ -4959,6 +4987,7 @@ async function fetchArrayBufferWithProgress(url: string): Promise<ArrayBuffer> {
     };
 
     xhr.onload = () => {
+      activeAudioRequests.delete(xhr);
       if (xhr.status >= 200 && xhr.status < 300) {
         if (registeredTotalForDownload === 0) {
           const headerTotal = parseInt(
@@ -4981,8 +5010,15 @@ async function fetchArrayBufferWithProgress(url: string): Promise<ArrayBuffer> {
     };
 
     xhr.onerror = () => {
+      activeAudioRequests.delete(xhr);
       rollbackTotalBytes(registeredTotalForDownload);
       reject(new Error('Network error while downloading audio resource'));
+    };
+
+    xhr.onabort = () => {
+      activeAudioRequests.delete(xhr);
+      rollbackTotalBytes(registeredTotalForDownload);
+      reject(new Error('Audio download was cancelled'));
     };
 
     xhr.send();

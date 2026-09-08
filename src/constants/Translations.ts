@@ -54,6 +54,7 @@ export const translations = {
 
     buttons: {
       show_more: 'Zobrazit více',
+      show_less: 'Zobrazit méně',
       enter: 'Vstoupit',
       app: 'Stáhnout aplikaci',
       contacts: 'Kontakty',
@@ -145,6 +146,41 @@ export const translations = {
       login: 'Přihlásit'
     },
 
+    mobile: {
+      shell: { back: 'Zpět', close: 'Zavřít' },
+      navigation: { label: 'Hlavní navigace' },
+      map_tools: {
+        label: 'Nástroje',
+        open: 'Otevřít nástroje mapy',
+        panel_label: 'Nástroje mapy',
+        search: 'Hledat místo…',
+        my_location: 'Přejít na moji polohu',
+        recordings: 'Zobrazené nahrávky',
+        scale: 'Měřítko',
+        aerial: 'Letecká mapa',
+        grouping: 'Seskupovat body',
+        dialect_only: 'Jen nahrávky s dialektem',
+        hide_unfinished: 'Skrýt nedokončené nahrávky ostatních',
+        legend: 'Otevřít legendu mapy',
+        reset: 'Vrátit mapu na území projektu',
+        on: 'Zapnuto',
+        off: 'Vypnuto',
+        filters: {
+          all: 'Všechny nahrávky',
+          new: 'Jen nové nahrávky',
+          old: 'Jen staré nahrávky',
+          my: 'Jen moje nahrávky',
+          others: 'Jen nahrávky ostatních',
+          dialect: 'Jen nahrávky s dialektem'
+        }
+      },
+      dialect_palette: {
+        title: 'Vyberte dialekt úseku',
+        hint: 'Šipkami vyberte, Enter potvrdí, Escape zruší.',
+        unnamed: 'Bez názvu'
+      }
+    },
+
     pages: {
       application: {
         title: 'Stažení aplikace',
@@ -154,7 +190,9 @@ export const translations = {
         contacts_heading: 'Kontakty'
       },
       information: {
-        title: 'Informace'
+        title: 'Informace',
+        description: 'Přehled článků, návodů a informací o projektu.',
+        articles_count: 'článků'
       },
       map: {
         legend: {
@@ -236,6 +274,7 @@ export const translations = {
       },
       details: {
         heading: 'Detail nahrávky',
+        photos_heading: 'Fotografie',
         name_label: 'Název nahrávky',
         name_placeholder: 'Nepojmenovaná nahrávka 1',
         date_label: 'Datum',
@@ -535,6 +574,7 @@ export const translations = {
         total_parts_label: 'Celkový počet částí:',
         filters_label: 'Filtrování',
         filter_out_confirmed_dialects: 'Skrýt potvrzená nářečí',
+        filter_out_unconfirmed: 'Skrýt nepotvrzené nahrávky',
         filtered_count: 'Zobrazeno nahrávek:',
         download_selected: 'Stáhnout vybrané',
         downloading: 'Stahování...',
@@ -578,11 +618,34 @@ export const translations = {
       },
       detail: {
         map_heading: 'Mapa',
+        audio_heading: 'Zvuk a spektrogram',
+        note_heading: 'Poznámka',
+        recording_label: 'Nahrávka',
+        birds_short: 'strnadů',
+        analysis_label: 'Analýza záznamu',
+        about_heading: 'O nahrávce',
+        uploaded_by: 'Nahrál(a)',
+        location_label: 'Místo nahrávky',
+        display_options: 'Možnosti zobrazení',
+        hide_unknown: 'Skrýt nedokončená a neznámá nářečí',
+        only_representatives: 'Pouze reprezentativní úseky',
+        representative: 'Reprezentativní úsek',
+        no_dialects: 'V této nahrávce nejsou zobrazena žádná nářečí.',
+        unknown_dialect: 'Neznámé nářečí',
+        photo_alt: 'Fotografie místa nahrávky',
+        technical_details: 'Technické podrobnosti',
+        device_label: 'Zařízení',
+        source_label: 'Zdroj',
+        source_app: 'Mobilní aplikace',
+        source_web: 'Web',
+        manage_heading: 'Správa nahrávky',
+        location_unavailable: 'Poloha nahrávky není k dispozici.',
         editing_prefix: 'Upravování:',
         fallback_prefix: 'Nahrávka #',
         by_app_suffix: 'přes aplikaci',
         no_note: 'Žádná poznámka.',
         parts_heading: 'Části nahrávky',
+        photos_heading: 'Fotografie',
         detected_dialects_heading: 'Detekovaná nářečí',
         edit_dialects_title: 'Upravit dialekty nahrávky',
         edit_recording_title: 'Upravit nahrávku',
@@ -780,6 +843,7 @@ export const translations = {
 
     buttons: {
       show_more: 'Show more',
+      show_less: 'Show less',
       enter: 'Enter',
       app: 'Download the app',
       contacts: 'Contacts',
@@ -871,6 +935,41 @@ export const translations = {
       login: 'Login'
     },
 
+    mobile: {
+      shell: { back: 'Back', close: 'Close' },
+      navigation: { label: 'Main navigation' },
+      map_tools: {
+        label: 'Tools',
+        open: 'Open map tools',
+        panel_label: 'Map tools',
+        search: 'Search for a place…',
+        my_location: 'Go to my location',
+        recordings: 'Visible recordings',
+        scale: 'Scale',
+        aerial: 'Aerial map',
+        grouping: 'Group markers',
+        dialect_only: 'Recordings with dialect only',
+        hide_unfinished: 'Hide other users’ unfinished recordings',
+        legend: 'Open map legend',
+        reset: 'Reset map to the project area',
+        on: 'On',
+        off: 'Off',
+        filters: {
+          all: 'All recordings',
+          new: 'New recordings only',
+          old: 'Old recordings only',
+          my: 'My recordings only',
+          others: 'Other users’ recordings only',
+          dialect: 'Recordings with dialect only'
+        }
+      },
+      dialect_palette: {
+        title: 'Choose a segment dialect',
+        hint: 'Use arrow keys, Enter to choose, Escape to cancel.',
+        unnamed: 'Unnamed'
+      }
+    },
+
     pages: {
       application: {
         title: 'Download the app',
@@ -880,7 +979,9 @@ export const translations = {
         contacts_heading: 'Contacts'
       },
       information: {
-        title: 'Information'
+        title: 'Information',
+        description: 'Articles, guides and information about the project.',
+        articles_count: 'articles'
       },
       map: {
         legend: {
@@ -936,6 +1037,7 @@ export const translations = {
         'I have checked the recording and want to submit it to the<br> database. I am aware that it will remain there even after my<br> account is deleted and will only be removed in exceptional cases.',
       uploading: 'Uploading your recording to the database...',
       uploaded: 'The recording was successfully uploaded.',
+      upload_another: 'Upload another',
       next: 'Next',
       back: 'Back',
       steps: {
@@ -954,8 +1056,14 @@ export const translations = {
           'Uploading runs in the background. You can continue using the app.',
         track_status: 'Track the progress in the top bar.'
       },
+      progress: {
+        uploading: 'Uploading',
+        queued: 'Queued',
+        error: 'Upload error'
+      },
       details: {
         heading: 'Recording details',
+        photos_heading: 'Photos',
         name_label: 'Recording name',
         name_placeholder: 'Untitled recording 1',
         date_label: 'Date',
@@ -1255,6 +1363,7 @@ export const translations = {
         total_parts_label: 'Total number of parts:',
         filters_label: 'Filters',
         filter_out_confirmed_dialects: 'Hide confirmed dialects',
+        filter_out_unconfirmed: 'Hide unconfirmed recordings',
         filtered_count: 'Recordings shown:',
         download_selected: 'Download selected',
         downloading: 'Downloading...',
@@ -1298,6 +1407,28 @@ export const translations = {
       },
       detail: {
         map_heading: 'Map',
+        audio_heading: 'Audio and spectrogram',
+        note_heading: 'Note',
+        recording_label: 'Recording',
+        birds_short: 'yellowhammers',
+        analysis_label: 'Recording analysis',
+        about_heading: 'About this recording',
+        uploaded_by: 'Uploaded by',
+        location_label: 'Recording location',
+        display_options: 'Display options',
+        hide_unknown: 'Hide unfinished and unknown dialects',
+        only_representatives: 'Representative segments only',
+        representative: 'Representative segment',
+        no_dialects: 'No dialects are shown for this recording.',
+        unknown_dialect: 'Unknown dialect',
+        photo_alt: 'Photo of the recording location',
+        technical_details: 'Technical details',
+        device_label: 'Device',
+        source_label: 'Source',
+        source_app: 'Mobile app',
+        source_web: 'Web',
+        manage_heading: 'Manage recording',
+        location_unavailable: 'The recording location is not available.',
         editing_prefix: 'Editing:',
         fallback_prefix: 'Recording #',
         by_app_suffix: 'via the app',
@@ -1502,6 +1633,7 @@ export const translations = {
 
     buttons: {
       show_more: 'Mehr anzeigen',
+      show_less: 'Weniger anzeigen',
       enter: 'Eintreten',
       app: 'App herunterladen',
       contacts: 'Kontakte',
@@ -1595,6 +1727,41 @@ export const translations = {
       login: 'Anmelden'
     },
 
+    mobile: {
+      shell: { back: 'Zurück', close: 'Schließen' },
+      navigation: { label: 'Hauptnavigation' },
+      map_tools: {
+        label: 'Werkzeuge',
+        open: 'Kartenwerkzeuge öffnen',
+        panel_label: 'Kartenwerkzeuge',
+        search: 'Ort suchen…',
+        my_location: 'Zu meinem Standort',
+        recordings: 'Sichtbare Aufnahmen',
+        scale: 'Maßstab',
+        aerial: 'Luftbildkarte',
+        grouping: 'Marker gruppieren',
+        dialect_only: 'Nur Aufnahmen mit Dialekt',
+        hide_unfinished: 'Unfertige Aufnahmen anderer ausblenden',
+        legend: 'Kartenlegende öffnen',
+        reset: 'Karte auf das Projektgebiet zurücksetzen',
+        on: 'An',
+        off: 'Aus',
+        filters: {
+          all: 'Alle Aufnahmen',
+          new: 'Nur neue Aufnahmen',
+          old: 'Nur alte Aufnahmen',
+          my: 'Nur meine Aufnahmen',
+          others: 'Nur Aufnahmen anderer',
+          dialect: 'Nur Aufnahmen mit Dialekt'
+        }
+      },
+      dialect_palette: {
+        title: 'Dialekt für den Abschnitt wählen',
+        hint: 'Mit Pfeiltasten wählen, Enter bestätigt, Escape bricht ab.',
+        unnamed: 'Ohne Namen'
+      }
+    },
+
     pages: {
       application: {
         title: 'App herunterladen',
@@ -1604,7 +1771,9 @@ export const translations = {
         contacts_heading: 'Kontakte'
       },
       information: {
-        title: 'Informationen'
+        title: 'Informationen',
+        description: 'Artikel, Anleitungen und Informationen zum Projekt.',
+        articles_count: 'Artikel'
       },
       map: {
         legend: {
@@ -1612,6 +1781,23 @@ export const translations = {
         },
         square: {
           title: 'Quadrat'
+        }
+      },
+      user_profile: {
+        title: 'Benutzerprofil',
+        admin: {
+          actions_section: 'Aktionen',
+          delete_account_button: 'Konto löschen'
+        },
+        details_section: 'Details',
+        contact_section: 'Kontakt',
+        location_label: 'Ort',
+        role_label: 'Rolle',
+        joined_label: 'Registriert',
+        recordings_section: 'Aufnahmen',
+        roles: {
+          user: 'Benutzer',
+          admin: 'Administrator'
         }
       },
       not_found: {
@@ -1646,6 +1832,7 @@ export const translations = {
         'Ich habe die Aufnahme überprüft und möchte sie in die<br> Datenbank einreichen. Mir ist bewusst, dass sie dort auch nach der Löschung meines<br> Kontos verbleibt und nur in Ausnahmefällen entfernt wird.',
       uploading: 'Ihre Aufnahme wird in die Datenbank hochgeladen...',
       uploaded: 'Die Aufnahme wurde erfolgreich hochgeladen.',
+      upload_another: 'Weitere Aufnahme hochladen',
       next: 'Weiter',
       back: 'Zurück',
       steps: {
@@ -1664,6 +1851,11 @@ export const translations = {
           'Der Upload läuft im Hintergrund. Sie können die App weiter nutzen.',
         track_status: 'Verfolgen Sie den Fortschritt in der oberen Leiste.'
       },
+      progress: {
+        uploading: 'Wird hochgeladen',
+        queued: 'In der Warteschlange',
+        error: 'Upload-Fehler'
+      },
       details: {
         heading: 'Aufnahmedetails',
         name_label: 'Name der Aufnahme',
@@ -1673,6 +1865,8 @@ export const translations = {
         photos_heading: 'Fotografien',
         notifications_label:
           'Ich möchte Benachrichtigungen zu dieser Aufnahme erhalten',
+        confirm_upload_label:
+          'Ich habe die Aufnahme überprüft und möchte sie in die Datenbank einreichen. Mir ist bewusst, dass sie dort auch nach der Löschung meines Kontos verbleibt und nur in Ausnahmefällen entfernt wird.',
         comment_label: 'Kommentar',
         cta: 'Weiter zur Standortauswahl',
         slider_more: 'mehr'
@@ -1975,6 +2169,7 @@ export const translations = {
         total_recordings_label: 'Gesamtzahl der Aufnahmen:',
         total_parts_label: 'Gesamtzahl der Teile:',
         filters_label: 'Filter',
+        filter_out_confirmed_dialects: 'Bestätigte Dialekte ausblenden',
         filter_out_unconfirmed: 'Noch nicht bestätigte Aufnahmen ausblenden',
         filtered_count: 'Angezeigte Aufnahmen:',
         download_selected: 'Auswahl herunterladen',
@@ -2019,11 +2214,34 @@ export const translations = {
       },
       detail: {
         map_heading: 'Karte',
+        audio_heading: 'Audio und Spektrogramm',
+        note_heading: 'Notiz',
+        recording_label: 'Aufnahme',
+        birds_short: 'Goldammern',
+        analysis_label: 'Aufnahmeanalyse',
+        about_heading: 'Über diese Aufnahme',
+        uploaded_by: 'Hochgeladen von',
+        location_label: 'Aufnahmeort',
+        display_options: 'Anzeigeoptionen',
+        hide_unknown: 'Unfertige und unbekannte Dialekte ausblenden',
+        only_representatives: 'Nur repräsentative Abschnitte',
+        representative: 'Repräsentativer Abschnitt',
+        no_dialects: 'Für diese Aufnahme werden keine Dialekte angezeigt.',
+        unknown_dialect: 'Unbekannter Dialekt',
+        photo_alt: 'Foto vom Aufnahmeort',
+        technical_details: 'Technische Details',
+        device_label: 'Gerät',
+        source_label: 'Quelle',
+        source_app: 'Mobile App',
+        source_web: 'Web',
+        manage_heading: 'Aufnahme verwalten',
+        location_unavailable: 'Der Aufnahmeort ist nicht verfügbar.',
         editing_prefix: 'Bearbeitung:',
         fallback_prefix: 'Aufnahme #',
         by_app_suffix: 'über die App',
         no_note: 'Keine Notiz.',
         parts_heading: 'Aufnahmeteile',
+        photos_heading: 'Fotografien',
         detected_dialects_heading: 'Detektierte Dialekte',
         edit_dialects_title: 'Dialekte der Aufnahme bearbeiten',
         edit_recording_title: 'Aufnahme bearbeiten',

@@ -11,12 +11,12 @@ import TranslatedText from '@/components/TranslatedText.vue';
 import DropdownIcon from '@/icons/interface/dropdown.svg';
 
 const { data: categories } = useQuery({
-  queryKey: ['categories'],
+  queryKey: ['article-categories'],
   queryFn: () => getArticleCategories()
 });
 
 const { data: allArticles } = useQuery({
-  queryKey: ['articles'],
+  queryKey: ['articles', 'list'],
   queryFn: () => getArticles()
 });
 

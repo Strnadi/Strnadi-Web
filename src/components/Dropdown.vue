@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 
 const isOpen = ref(false);
 const dropdownRef = ref<HTMLElement | null>(null);
+const menuId = `dropdown-${Math.random().toString(36).slice(2)}`;
 
 function toggle() {
   isOpen.value = !isOpen.value;
@@ -37,8 +38,13 @@ onBeforeUnmount(() => {
     ref="dropdownRef"
     class="relative p-4 -m-4 max-desktop:hidden"
     @mouseleave="close"
+    @keydown.escape="close"
   >
     <button
+      type="button"
+      aria-haspopup="menu"
+      :aria-expanded="isOpen"
+      :aria-controls="menuId"
       class="flex items-center focus:outline-none hover:bg-gray-100 hover:border-0 rounded-xl px-5 py-2"
       @mouseenter="open"
       @click.stop="toggle"
@@ -47,6 +53,8 @@ onBeforeUnmount(() => {
     </button>
     <ul
       v-if="isOpen"
+      :id="menuId"
+      role="menu"
       class="absolute p-2 left-0 desktop:left-0 desktop:right-auto mt-2 w-max z-[100] bg-white border border-gray-200 rounded shadow-lg"
     >
       <slot />
@@ -60,7 +68,7 @@ onBeforeUnmount(() => {
       >
         <slot name="title" />
       </summary>
-      <ul class="mt-2 p-2 bg-white border border-gray-200 rounded shadow-lg">
+      <ul role="menu" class="mt-2 p-2 bg-white border border-gray-200 rounded shadow-lg">
         <slot />
       </ul>
     </details>

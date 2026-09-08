@@ -7,7 +7,6 @@ meta:
 import { onMounted } from 'vue';
 import { useCountdown } from '@vueuse/core';
 import { type OAuthPopupResult } from '@/components/OAuthButton.vue';
-import * as jose from 'jose';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 
 const SuccessTimeout = 5; // seconds
@@ -19,7 +18,9 @@ const { remaining, start } = useCountdown(SuccessTimeout, {
 });
 
 const postMessage = (message: OAuthPopupResult) => {
-  (window.opener as Window).postMessage(message);
+  if (window.opener) {
+    window.opener.postMessage(message, window.location.origin);
+  }
 };
 
 onMounted(() => {
@@ -33,22 +34,13 @@ onMounted(() => {
   const params = new URLSearchParams(fragment);
   const idToken = params.get('id_token');
   const state = params.get('state');
+  const user = params.get('user') ?? '';
 
-  if (!idToken) {
+  if (!idToken || !state) {
     postMessage({
       message: 'error',
-      data: 'No token returned'
-    });
-
-    return;
-  }
-
-  const decodedToken = jose.decodeJwt(idToken);
-
-  if (!decodedToken.nonce || decodedToken.nonce !== state) {
-    postMessage({
-      message: 'error',
-      data: 'Nonce mismatch'
+      data: 'No token or state returned',
+      state: state ?? ''
     });
 
     return;
@@ -56,7 +48,9 @@ onMounted(() => {
 
   postMessage({
     message: 'success',
-    data: idToken
+    data: idToken,
+    state,
+    user
   });
 
   start();

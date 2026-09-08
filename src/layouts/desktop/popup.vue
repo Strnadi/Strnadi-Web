@@ -8,7 +8,7 @@ const closePopup = () => {
 </script>
 
 <template>
-  <router-view v-slot="{ Component, route }">
+  <router-view v-slot="{ Component }">
     <aside
       class="popup"
       @click="closePopup"

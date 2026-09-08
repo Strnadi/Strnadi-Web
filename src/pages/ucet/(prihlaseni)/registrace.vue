@@ -1,6 +1,7 @@
 <route lang="yaml">
 meta:
   layout: desktop/small-popup
+  mobilePresentation: workspace
 </route>
 
 <script lang="ts">
@@ -13,7 +14,7 @@ export const registerStore = reactive({
   email: '',
   password: '',
   passwordConfirm: '',
-  postCode: 0,
+  postCode: '',
   city: '',
   dataAgreement: false,
   marketingAgreement: false,
@@ -22,6 +23,7 @@ export const registerStore = reactive({
   jwt: null as string | null,
   userExists: false,
   checkingEmail: false,
+  emailCheckError: '',
 
   reset() {
     this.name = '';
@@ -29,7 +31,7 @@ export const registerStore = reactive({
     this.nickname = '';
     this.email = '';
     this.password = '';
-    this.postCode = 0;
+    this.postCode = '';
     this.city = '';
     this.appleId = '';
     this.dataAgreement = false;
@@ -39,6 +41,7 @@ export const registerStore = reactive({
     this.jwt = null;
     this.userExists = false;
     this.checkingEmail = false;
+    this.emailCheckError = '';
   }
 });
 </script>
@@ -69,14 +72,39 @@ const emailElement = ref<HTMLInputElement | null>(null);
 // 1) Pre‐fetch whether the email exists whenever email or agreement changes
 watch(
   () => [registerStore.email, registerStore.dataAgreement],
-  async ([email, agreed]) => {
-    if (email && agreed) {
-      registerStore.checkingEmail = true;
-      registerStore.userExists = await getUserExists(email);
-      registerStore.checkingEmail = false;
-    } else {
+  ([email, agreed], _oldValue, onCleanup) => {
+    const normalizedEmail = String(email ?? '').trim();
+    registerStore.emailCheckError = '';
+
+    if (!normalizedEmail || !agreed || !emailElement.value?.checkValidity()) {
       registerStore.userExists = false;
+      registerStore.checkingEmail = false;
+      return;
     }
+
+    registerStore.checkingEmail = true;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      try {
+        registerStore.userExists = await getUserExists(
+          normalizedEmail,
+          controller.signal
+        );
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          registerStore.userExists = false;
+          registerStore.emailCheckError =
+            error instanceof Error ? error.message : 'Email check failed';
+        }
+      } finally {
+        if (!controller.signal.aborted) registerStore.checkingEmail = false;
+      }
+    }, 400);
+
+    onCleanup(() => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    });
   }
 );
 
@@ -97,12 +125,9 @@ const {
     if (signupJWT.firstName) registerStore.name = signupJWT.firstName;
     if (signupJWT.lastName) registerStore.surname = signupJWT.lastName;
     registerStore.email = userJWT.sub;
+    registerStore.jwt = signupJWT.jwt;
     registerStore.isExternalSignup = true;
     stepper.goToNext();
-  },
-
-  onError: (err) => {
-    error.value = err.message;
   }
 });
 
@@ -111,36 +136,35 @@ const {
   mutate: registerMutate,
   isPending: isRegPending,
   isError: isRegError,
-  data: regData,
   error: regError
 } = useMutation({
   mutationFn: (data: SignUpRequest) =>
     postRegister(data, registerStore.jwt ?? undefined),
 
-  onSuccess: (jwt: string) => {
-    accountStore.login(jwt);
+  onSuccess: async (jwt: string) => {
+    await accountStore.login(jwt);
     registerStore.reset();
     stepper.goToNext();
   }
 });
 
-const stepper = useStepper<
-  Record<string, { title: TranslationIdentifier; isValid: () => boolean }>
->({
+const registrationSteps = {
   email: {
     title: 'auth.register.steps.email',
     isValid: () =>
-      emailElement.value &&
+      !!emailElement.value &&
       !!registerStore.email &&
       registerStore.dataAgreement &&
       !registerStore.userExists &&
       !registerStore.checkingEmail &&
+      !registerStore.emailCheckError &&
       emailElement.value.checkValidity()
   },
 
   'personal-info': {
     title: 'auth.register.steps.personal_info',
-    isValid: () => registerStore.nickname.trim() !== ''
+    isValid: () =>
+      registerStore.name.trim() !== '' && registerStore.surname.trim() !== ''
   },
 
   location: {
@@ -153,8 +177,8 @@ const stepper = useStepper<
     isValid: () => {
       const { password, passwordConfirm } = registerStore;
       return (
-        password &&
-        passwordConfirm &&
+        !!password &&
+        !!passwordConfirm &&
         password === passwordConfirm &&
         password.length >= 8 &&
         /[A-Z]/.test(password) &&
@@ -177,7 +201,8 @@ const stepper = useStepper<
     title: 'auth.register.steps.done',
     isValid: () => true
   }
-});
+} satisfies Record<string, { title: TranslationIdentifier; isValid: () => boolean }>;
+const stepper = useStepper(registrationSteps);
 
 const googleSignup = (idToken: string) => {
   googleSignupMutate({ idToken });
@@ -213,10 +238,12 @@ const register = () => {
         ? registerStore.nickname
         : null,
     password: registerStore.password,
-    postCode: registerStore.postCode,
+    postCode: registerStore.postCode
+      ? Number.parseInt(registerStore.postCode, 10)
+      : null,
     city: registerStore.city,
     appleId: registerStore.appleId,
-    consent: false
+    consent: registerStore.dataAgreement
   });
 };
 
@@ -261,6 +288,21 @@ watch(
                 />
               </p>
             </template>
+            <p
+              v-if="registerStore.emailCheckError"
+              role="alert"
+              class="text-red-600"
+            >
+              <TranslatedText identifier="common.error_prefix" />
+              {{ registerStore.emailCheckError }}
+            </p>
+            <p
+              v-else-if="registerStore.checkingEmail"
+              role="status"
+              aria-live="polite"
+            >
+              <TranslatedText identifier="states.loading" />
+            </p>
 
             <div class="flex flex-col w-full">
               <label for="email">
@@ -458,7 +500,7 @@ watch(
           </span>
           <span>
             <TranslatedText identifier="auth.register.summary.postal_code" />
-            {{ registerStore.postCode }}
+            {{ registerStore.postCode || '—' }}
           </span>
           <span>
             <TranslatedText identifier="auth.register.summary.city" />
@@ -479,6 +521,8 @@ watch(
             <p>{{ (error ?? regError)!.message }}</p>
             <button
               class="secondary p-2 w-full"
+              type="button"
+              :disabled="isRegPending"
               @click="register"
             >
               <TranslatedText identifier="buttons.retry" />
@@ -502,6 +546,8 @@ watch(
             <p>{{ regError!.message }}</p>
             <button
               class="secondary p-2 w-full"
+              type="button"
+              :disabled="isRegPending"
               @click="register"
             >
               <TranslatedText identifier="buttons.retry" />

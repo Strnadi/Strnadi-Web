@@ -10,6 +10,33 @@ export interface WavHeaderInfo {
   dataSize: number; // payload size in bytes
 }
 
+export const getAudioDuration = (file: File): Promise<number> =>
+  new Promise((resolve, reject) => {
+    const audio = new Audio();
+    const objectUrl = URL.createObjectURL(file);
+    const cleanup = () => {
+      audio.removeAttribute('src');
+      audio.load();
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    audio.preload = 'metadata';
+    audio.onloadedmetadata = () => {
+      const duration = audio.duration;
+      cleanup();
+      if (!Number.isFinite(duration) || duration <= 0) {
+        reject(new Error('Audio duration is invalid'));
+      } else {
+        resolve(duration);
+      }
+    };
+    audio.onerror = () => {
+      cleanup();
+      reject(new Error('The browser cannot decode this audio file'));
+    };
+    audio.src = objectUrl;
+  });
+
 /**
  * Parse the minimal information we need from the first ~256 bytes of a WAV file.
  * The buffer MUST start at byte 0 of the file (because we look for the RIFF header).

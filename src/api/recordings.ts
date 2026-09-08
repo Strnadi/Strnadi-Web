@@ -28,6 +28,11 @@ export interface RecordingModel {
   note: string | null;
   notePost: string | null;
   parts: RecordingPartModel[] | null;
+  photos?: Array<{
+    id: number;
+    url: string;
+    name?: string | null;
+  }> | null;
 }
 
 export interface DetectedDialect {
@@ -51,6 +56,30 @@ export interface FilteredPartModel {
   detectedDialects: DetectedDialect[] | null;
   representantFlag?: boolean;
   // representant?: boolean;
+}
+
+export interface RecordingMapBounds {
+  north: number;
+  south: number;
+  west: number;
+  east: number;
+}
+
+export interface RecordingMapPoint {
+  recordingId: number;
+  recordingPartId: number;
+  latitude: number;
+  longitude: number;
+  colors: string[];
+  fromModel: boolean;
+  fromUser: boolean;
+  confirmed: boolean;
+}
+
+export interface RecordingMapPointQuery extends RecordingMapBounds {
+  filter: 'all' | 'new' | 'old' | 'my' | 'others' | 'any-dialect';
+  onlyDialects: boolean;
+  userId?: number;
 }
 
 export interface DialectDefinition {
@@ -116,8 +145,11 @@ export const postRecording = async (
   token: string,
   recording: RecordingUploadReq,
   recordingParts: RecordingPartUploadParams[],
-  photos?: File[]
+  photos?: File[],
+  onProgress?: (completed: number, total: number, step: string) => void
 ): Promise<number> => {
+  const total = 1 + recordingParts.length + (photos?.length ?? 0);
+  let completed = 0;
   const uploadedRecordingId = (
     await axios.post(
       `/recordings`,
@@ -127,8 +159,9 @@ export const postRecording = async (
       }
     )
   ).data;
+  onProgress?.(++completed, total, 'Nahrávání údajů');
 
-  for (const part of recordingParts) {
+  for (const [index, part] of recordingParts.entries()) {
     const formData = new FormData();
     formData.append('startDate', part.startDate);
     formData.append('endDate', part.endDate);
@@ -142,14 +175,27 @@ export const postRecording = async (
     await axios.post(`/recordings/part-new`, formData, {
       headers: { Authorization: `Bearer ${token}` }
     });
+    onProgress?.(
+      ++completed,
+      total,
+      `Nahrávání zvuku ${index + 1}/${recordingParts.length}`
+    );
   }
 
-  for (const photo of photos ?? []) {
-    await postPhoto({
-      recordingId: uploadedRecordingId,
-      format: photo.type,
-      photosBase64: toBase64(await photo.arrayBuffer())
-    });
+  for (const [index, photo] of (photos ?? []).entries()) {
+    await postPhoto(
+      {
+        recordingId: uploadedRecordingId,
+        format: photo.type,
+        photosBase64: toBase64(await photo.arrayBuffer())
+      },
+      token
+    );
+    onProgress?.(
+      ++completed,
+      total,
+      `Nahrávání fotografie ${index + 1}/${photos?.length ?? 0}`
+    );
   }
 
   return uploadedRecordingId;
@@ -206,6 +252,18 @@ export const getFilteredRecordings = async (): Promise<FilteredPartModel[]> => {
   return response.data as FilteredPartModel[];
 };
 
+export const getRecordingMapPoints = async (
+  query: RecordingMapPointQuery,
+  signal?: AbortSignal
+): Promise<RecordingMapPoint[]> => {
+  const response = await axios.get('/recordings/map-points', {
+    params: query,
+    signal
+  });
+
+  return response.data as RecordingMapPoint[];
+};
+
 export const getFilteredRecording = async (
   id: Numeric
 ): Promise<FilteredPartModel[]> => {
@@ -221,13 +279,15 @@ export const postFilteredPart = async (
     endDate: string;
     dialectCode: string;
   }
-): Promise<void> =>
-  authorizedPost(`/recordings/filtered`, token, filteredPart);
+): Promise<void> => authorizedPost(`/recordings/filtered`, token, filteredPart);
 
 export const patchFilteredPart = async (
   token: string,
   id: Numeric,
-  patchedFilteredPart: Omit<FilteredPartModel, 'id' | 'detectedDialects' | 'representantFlag'> & { representant: boolean}
+  patchedFilteredPart: Omit<
+    FilteredPartModel,
+    'id' | 'detectedDialects' | 'representantFlag'
+  > & { representant: boolean }
 ): Promise<void> =>
   authorizedPatch(`/recordings/filtered/${id}`, token, patchedFilteredPart);
 

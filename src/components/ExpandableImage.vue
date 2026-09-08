@@ -1,16 +1,26 @@
 <template>
-  <img
-    :src="src"
-    :alt="alt"
-    class="cursor-pointer hover:transform hover:scale-102 transition-transform duration-200 max-w-full"
-    @click="isExpanded = true"
-  />
+  <button
+    ref="trigger"
+    type="button"
+    class="max-w-full"
+    :aria-label="`Zvětšit obrázek${alt ? `: ${alt}` : ''}`"
+    @click="open"
+  >
+    <img
+      :src="src"
+      :alt="alt"
+      class="cursor-pointer hover:transform hover:scale-102 transition-transform duration-200 max-w-full"
+    />
+  </button>
 
   <teleport to="body">
     <div
       v-if="isExpanded"
       class="fullscreen-overlay"
-      @click="isExpanded = false"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="alt || 'Zvětšený obrázek'"
+      @click="close"
     >
       <img
         :src="src"
@@ -20,7 +30,9 @@
       />
       <button
         class="button-secondary absolute top-4 right-4 w-12 h-12 rounded-full flex justify-center items-center text-2xl z-[10000]"
-        @click="isExpanded = false"
+        type="button"
+        aria-label="Zavřít obrázek"
+        @click="close"
       >
         &times;
       </button>
@@ -29,7 +41,7 @@
 </template>
 
 <script setup vapor lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { nextTick, ref, onMounted, onUnmounted } from 'vue';
 
 defineProps<{
   src?: string;
@@ -37,11 +49,19 @@ defineProps<{
 }>();
 
 const isExpanded = ref(false);
+const trigger = ref<HTMLButtonElement | null>(null);
+const close = () => {
+  isExpanded.value = false;
+  nextTick(() => trigger.value?.focus());
+};
+const open = () => {
+  isExpanded.value = true;
+};
 
 onMounted(() => {
   const handleKeydown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
-      isExpanded.value = false;
+      close();
     }
   };
   window.addEventListener('keydown', handleKeydown);

@@ -1,7 +1,7 @@
 <template>
   <div
     :style="squareStyle"
-    class="inline-block box-border hover:scale-120 transition-transform relative"
+    class="block box-border aspect-square hover:scale-120 transition-transform relative"
   >
     <div
       v-if="dot === 'true'"
@@ -18,7 +18,7 @@
 </template>
 
 <script setup vapor lang="ts">
-import { computed, defineProps } from 'vue';
+import { computed } from 'vue';
 
 const props = defineProps<{
   colors: string[] | string;

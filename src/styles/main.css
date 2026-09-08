@@ -10,9 +10,12 @@
 @import './links.css';
 @import './forms.css';
 @import './scrollbar.css';
+@import './mobile-ui.css';
 
 :root {
   font-family: 'Bricolage Grotesque', Arial, Helvetica, sans-serif;
+  color: #252319;
+  background: #fff9e8;
 }
 
 * {

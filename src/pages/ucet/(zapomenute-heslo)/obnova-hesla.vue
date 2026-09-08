@@ -8,7 +8,7 @@ import { patchPasswordChange } from '@/api/account';
 import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue';
 import { useMutation } from '@tanstack/vue-query';
 import { useRouteQuery } from '@vueuse/router';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import type { TranslationIdentifier } from '@/constants/Translations';
 
@@ -21,8 +21,9 @@ const token = useRouteQuery('token');
 const userId = useRouteQuery('userId');
 const password = ref('');
 const passwordConfirm = ref('');
+const missingLinkData = computed(() => !token.value || !userId.value);
 
-const { mutate, isPending, isIdle, isSuccess, isError, error } = useMutation({
+const { mutate, isPending, isSuccess, isError, error } = useMutation({
   mutationFn: ({
     token,
     userId,
@@ -53,6 +54,9 @@ const submitPasswordChange = () => {
     <TranslatedText identifier="auth.reset_password.reset_title" />
   </h1>
   <div class="flex flex-col items-center gap-y-6 w-full">
+    <p v-if="missingLinkData" role="alert" class="text-center text-red-700">
+      Odkaz pro obnovu hesla je neplatný nebo neúplný.
+    </p>
     <template v-if="isSuccess">
       <p class="text-center">
         <TranslatedText :identifier="resetPasswordSuccessKey" />
@@ -83,7 +87,9 @@ const submitPasswordChange = () => {
           v-if="!isPending"
           class="secondary p-2 w-full"
           :disabled="
-            !(passwordConfirm && passwordConfirm === password && token && isIdle)
+            missingLinkData ||
+            isPending ||
+            !(passwordConfirm && passwordConfirm === password)
           "
           @click="submitPasswordChange"
         >

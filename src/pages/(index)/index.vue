@@ -1,5 +1,5 @@
 <script setup vapor lang="ts">
-import RecordingsMap, { MapEvents } from '@/views/map/RecordingsMap.vue';
+import { MapEvents } from '@/views/map/RecordingsMap.vue';
 import MapControls from '@/views/map/controls/Mobile.vue';
 import { useEventLast } from '@/utils/events';
 import { useCssVar, useMediaQuery } from '@vueuse/core';
@@ -12,13 +12,10 @@ const isDesktop = useMediaQuery(
   computed(() => `(min-width: ${desktopBp.value})`)
 );
 
-useEventLast(MapEvents, 'click', ({ recording, recordingPart, square }) => {
-  if (recording && recordingPart) {
-    router.push(`/mapa/nahravka/${recording.id}`);
-  } else if (square) {
-    // TODO: this gets cancelled for some reason
-    // Error: Navigation cancelled from "/" to "/mapa/ctverec/5658" with a new navigation.
-    console.log(router.push(`/mapa/ctverec/${square}`));
+useEventLast(MapEvents, 'click', ({ recording, recordingId }) => {
+  const id = recordingId ?? recording?.id;
+  if (id !== undefined) {
+    router.push(`/mapa/nahravka/${id}`);
   } else {
     router.push('/');
   }
