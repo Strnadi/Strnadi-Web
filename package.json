@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "postinstall": "node scripts/copy-litert-wasm.mjs",
     "format": "prettier --write src",
-    "check": "vue-tsc --noEmit -p tsconfig.app.json",
+    "check": "vue-tsc --build --noEmit",
     "test": "vitest run",
     "lint": "eslint"
   },
@@ -107,6 +107,6 @@
   },
   "overrides": {
     "vite": "npm:vite@beta",
-    "vue": "npm:vue@beta"
+    "vue": "3.6.0-rc.6"
   }
 }

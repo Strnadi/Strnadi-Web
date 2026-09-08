@@ -21,11 +21,8 @@ import SVGLoader from 'vite-svg-loader';
 import DocsPlugin from './plugins/docs.ts';
 import Inspect from 'vite-plugin-inspect';
 import { qrcode as QRCode } from 'vite-plugin-qrcode';
-import mkcert from 'vite-plugin-mkcert';
 import path from 'node:path';
 import fs from 'node:fs';
-
-import { NetworkFirst, CacheFirst } from 'workbox-strategies';
 
 // import * as workbox from 'workbox';
 
@@ -132,23 +129,23 @@ export default defineConfig(({ mode }) => ({
     Compression({ algorithms: ['brotliCompress'] }),
     ...(uploadSourcemaps
       ? [
-          SentryVitePlugin({
-            org: 'delta-strnadi',
-            project:
-              mode === 'production'
-                ? 'strnadi-web'
-                : 'strnadi-web-staging',
-            telemetry: false
-          })
-        ]
+        SentryVitePlugin({
+          org: 'delta-strnadi',
+          project:
+            mode === 'production'
+              ? 'strnadi-web'
+              : 'strnadi-web-staging',
+          telemetry: false
+        })
+      ]
       : []),
     // mkcert(),
     ...(mode === 'development'
       ? [
-          vueDevTools({
-            launchEditor: 'subl4'
-          })
-        ]
+        vueDevTools({
+          launchEditor: 'subl4'
+        })
+      ]
       : []),
     Visualizer({
       gzipSize: true,
@@ -198,6 +195,7 @@ export default defineConfig(({ mode }) => ({
   // },
 
   resolve: {
+    dedupe: ['vue'],
     tsconfigPaths: true,
 
     alias: [
