@@ -196,36 +196,22 @@ function collectDialectMeta(parts: TimedFilteredPart[]): DialectMetaFlags {
     confirmed: false
   };
 }
-const nonDialectCodes = new Set(['none', 'nobird', 'no-bird', 'unfinished']);
-const nonRealDialectCodes = new Set([...nonDialectCodes, 'unknown']);
+const nonRealDialectCodes = new Set([
+  'none',
+  'nobird',
+  'no-bird',
+  'unfinished',
+  'unknown'
+]);
 const normalizeDialect = (dialect: string) =>
   dialect.toLowerCase().replace(/\s+/g, '');
 
 const hasMeaningfulDialect = (parts: TimedFilteredPart[]) => {
   const { dialects } = collectDialectMeta(parts);
   return dialects.some(
-    (dialect) => !nonDialectCodes.has(normalizeDialect(dialect))
+    (dialect) => !nonRealDialectCodes.has(normalizeDialect(dialect))
   );
 };
-
-function isUnfinishedWithoutRealDialect(parts: TimedFilteredPart[]) {
-  const dialects = parts.flatMap((part) =>
-    (part.detectedDialects ?? []).flatMap((detection) =>
-      [
-        detection.confirmedDialect,
-        detection.predictedDialect,
-        detection.userGuessDialect
-      ].filter((dialect): dialect is string => Boolean(dialect))
-    )
-  );
-
-  return (
-    dialects.some((dialect) => normalizeDialect(dialect) === 'unfinished') &&
-    !dialects.some(
-      (dialect) => !nonRealDialectCodes.has(normalizeDialect(dialect))
-    )
-  );
-}
 
 function getIconDimensions() {
   const isMobile =
@@ -552,7 +538,7 @@ const markers = computed<Marker[]>(() => {
     if (
       MapStore.hideOthersUnfinished &&
       rec.userId !== userId &&
-      isUnfinishedWithoutRealDialect(relevantFiltered)
+      !hasMeaningfulDialect(relevantFiltered)
     ) {
       continue;
     }
