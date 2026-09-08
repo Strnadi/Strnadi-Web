@@ -2,6 +2,8 @@
 export interface OAuthPopupResult {
   message: string;
   data: string;
+  state: string;
+  user?: string;
 }
 
 export interface OAuthButtonProps {
@@ -18,11 +20,12 @@ export interface OAuthButtonProps {
 </script>
 
 <script setup lang="ts">
-import * as jose from 'jose';
 import { onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-
-const env = import.meta.env;
+import {
+  createOAuthTransaction,
+  validateOAuthResponse
+} from '@/utils/oauth';
 
 const router = useRouter();
 const route = useRoute();
@@ -42,23 +45,22 @@ onMounted(() => {
   const fragment = route.hash.substring(1);
   const params = new URLSearchParams(fragment);
   const idToken = params.get('id_token');
-  // const state = params.get('state');
+  const state = params.get('state');
   const user = params.get('user');
 
-  if (!idToken) {
+  if (!idToken || !state) {
     emit('error', 'No token returned');
     return;
   }
 
-  const decodedToken = jose.decodeJwt(idToken);
-  console.log(decodedToken);
+  try {
+    validateOAuthResponse(state, idToken);
+  } catch (error) {
+    emit('error', error instanceof Error ? error.message : 'Invalid login');
+    return;
+  }
 
-  // if(!decodedToken['nonce'] || decodedToken['nonce'] !== state) {
-  //   emit('error', "Nonce mismatch")
-  //   return;
-  // }
-
-  emit('success', idToken, user);
+  emit('success', idToken, user ?? '');
   router.replace({ hash: '' });
 });
 
@@ -71,20 +73,20 @@ const submitLogin = (
   responseMode?: string,
   prompt?: string
 ) => {
-  const nonce = encodeURIComponent(
-    `${window.location.href}|${Math.random().toString()}`
+  const providerUrl = new URL(url);
+  const { state, nonce } = createOAuthTransaction(
+    clientId,
+    providerUrl.origin
   );
-
-  const oauthUrl =
-    url +
-    `?client_id=${clientId}` +
-    `&redirect_uri=${redirectUri}` +
-    `&scope=${scope}` +
-    `&response_type=${responseType}` +
-    `&nonce=${nonce}` +
-    `&state=${nonce}` +
-    (prompt ? `&prompt=${prompt}` : '') +
-    (responseMode ? `&response_mode=${responseMode}` : '');
+  providerUrl.searchParams.set('client_id', clientId);
+  providerUrl.searchParams.set('redirect_uri', redirectUri);
+  providerUrl.searchParams.set('scope', scope);
+  providerUrl.searchParams.set('response_type', responseType);
+  providerUrl.searchParams.set('nonce', nonce);
+  providerUrl.searchParams.set('state', state);
+  if (prompt) providerUrl.searchParams.set('prompt', prompt);
+  if (responseMode) providerUrl.searchParams.set('response_mode', responseMode);
+  const oauthUrl = providerUrl.toString();
 
   if (!props.popup) {
     window.location.href = oauthUrl;
@@ -96,38 +98,57 @@ const submitLogin = (
       return;
     }
 
-    popup.addEventListener(
-      'message',
-      (event: MessageEvent<OAuthPopupResult>) => {
-        if (event.data.message === 'success') {
-          const idToken = event.data.data;
-          emit('success', idToken);
-          popup.close();
-        } else if (event.data.message === 'error') {
-          emit('error', event.data.data);
-          popup.close();
-        }
+    let completed = false;
+    const cleanup = () => {
+      completed = true;
+      window.removeEventListener('message', handleMessage);
+      window.clearInterval(closePoll);
+    };
+    const handleMessage = (event: MessageEvent<OAuthPopupResult>) => {
+      if (
+        event.origin !== window.location.origin ||
+        event.source !== popup ||
+        event.data?.state !== state
+      ) {
+        return;
       }
-    );
 
-    popup.addEventListener('close', () => {
-      console.error('Popup closed before completing the login flow');
-    });
+      cleanup();
+      popup.close();
+      if (event.data.message === 'success') {
+        try {
+          validateOAuthResponse(state, event.data.data);
+          emit('success', event.data.data, event.data.user ?? '');
+        } catch (error) {
+          emit(
+            'error',
+            error instanceof Error ? error.message : 'Invalid login'
+          );
+        }
+      } else if (event.data.message === 'error') {
+        emit('error', event.data.data);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+
+    const closePoll = window.setInterval(() => {
+      if (!completed && popup.closed) {
+        cleanup();
+        sessionStorage.removeItem(`strnadi.oauth.${state}`);
+        emit('error', 'Login window was closed');
+      }
+    }, 500);
   }
 };
 
 const login = () => {
   const url = props.url;
   const clientId = props.clientId;
-  const redirectUri = encodeURIComponent(
-    props.redirectUrl ?? window.location.href
-  );
-  const scope = encodeURIComponent(props.scope);
-  const responseType = encodeURIComponent(props.responseType);
-  const prompt = props.prompt ? encodeURIComponent(props.prompt) : null;
-  const responseMode = props.responseMode
-    ? encodeURIComponent(props.responseMode)
-    : null;
+  const redirectUri = props.redirectUrl ?? window.location.href;
+  const scope = props.scope;
+  const responseType = props.responseType;
+  const prompt = props.prompt ?? undefined;
+  const responseMode = props.responseMode ?? undefined;
 
   submitLogin(
     url,

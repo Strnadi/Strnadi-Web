@@ -25,7 +25,7 @@ export const useFetched = <A extends unknown[], T>(
 
 export const useFetchedWithOptions = <A extends unknown[], T>(
   fetcher: (...args: A) => T | Promise<T>,
-  options: UseQueryOptions<T>,
+  options: Omit<UseQueryOptions<T>, 'queryKey' | 'queryFn'>,
   ...params: { [K in keyof A]: MaybeRef<A[K]> }
 ) =>
   useQuery<T>({

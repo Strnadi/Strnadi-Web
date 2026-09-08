@@ -6,6 +6,38 @@ const TAB_TRAINING = 'Training';
 const TAB_MODEL = 'Model';
 const TAB_EVALUATION = 'Evaluation';
 
+const METRIC_SURFACE_STYLES = {
+  width: '100%',
+  maxWidth: '100%',
+  height: '320px',
+  maxHeight: '320px'
+};
+
+function metricChartData(
+  history: EpochLog[],
+  trainValue: (log: EpochLog) => number,
+  validationValue: (log: EpochLog) => number
+) {
+  const finiteHistory = history.filter(
+    (log) =>
+      Number.isFinite(trainValue(log)) && Number.isFinite(validationValue(log))
+  );
+
+  return {
+    values: [
+      finiteHistory.map((log) => ({
+        x: log.epoch + 1,
+        y: trainValue(log)
+      })),
+      finiteHistory.map((log) => ({
+        x: log.epoch + 1,
+        y: validationValue(log)
+      }))
+    ],
+    series: ['Training', 'Validation']
+  };
+}
+
 export function openVisor() {
   tfvis.visor().open();
 }
@@ -29,7 +61,7 @@ export function setActiveTab(tab: string) {
 export async function showModelSummary(model: LayersModel) {
   await tfvis.show.modelSummary(
     { name: 'Model Summary', tab: TAB_MODEL },
-    model as any,
+    model as any
   );
 }
 
@@ -38,7 +70,7 @@ export async function showLayer(model: LayersModel, layerIndex: number) {
   if (layer) {
     await tfvis.show.layer(
       { name: `Layer ${layerIndex}`, tab: TAB_MODEL },
-      layer,
+      layer
     );
   }
 }
@@ -46,62 +78,91 @@ export async function showLayer(model: LayersModel, layerIndex: number) {
 export async function updateTrainingMetrics(history: EpochLog[]) {
   if (history.length === 0) return;
 
-  const lossSurface = { name: 'Loss', tab: TAB_TRAINING };
-  const accSurface = { name: 'Accuracy', tab: TAB_TRAINING };
+  const lossData = metricChartData(
+    history,
+    (log) => log.loss,
+    (log) => log.valLoss
+  );
+  const accuracyData = metricChartData(
+    history,
+    (log) => log.acc,
+    (log) => log.valAcc
+  );
 
-  const lossData = [
-    { name: 'train loss', x: history.map((h) => h.epoch), y: history.map((h) => h.loss) },
-    { name: 'val loss', x: history.map((h) => h.epoch), y: history.map((h) => h.valLoss) },
-  ];
-  const accData = [
-    { name: 'train acc', x: history.map((h) => h.epoch), y: history.map((h) => h.acc) },
-    { name: 'val acc', x: history.map((h) => h.epoch), y: history.map((h) => h.valAcc) },
-  ];
+  const renders: Promise<void>[] = [];
+  if (lossData.values[0]!.length > 0) {
+    renders.push(
+      tfvis.render.linechart(
+        {
+          name: 'Loss',
+          tab: TAB_TRAINING,
+          styles: METRIC_SURFACE_STYLES
+        },
+        lossData,
+        {
+          xLabel: 'Epoch',
+          yLabel: 'Loss',
+          zoomToFit: true
+        }
+      )
+    );
+  }
 
-  await tfvis.render.linechart(lossSurface, lossData as any, {
-    xLabel: 'Epoch',
-    yLabel: 'Loss',
-    zoomToFit: true,
-  });
+  if (accuracyData.values[0]!.length > 0) {
+    renders.push(
+      tfvis.render.linechart(
+        {
+          name: 'Accuracy',
+          tab: TAB_TRAINING,
+          styles: METRIC_SURFACE_STYLES
+        },
+        accuracyData,
+        {
+          xLabel: 'Epoch',
+          yLabel: 'Accuracy',
+          yAxisDomain: [0, 1]
+        }
+      )
+    );
+  }
 
-  await tfvis.render.linechart(accSurface, accData as any, {
-    xLabel: 'Epoch',
-    yLabel: 'Accuracy',
-    zoomToFit: true,
-  });
+  await Promise.all(renders);
 }
 
 export async function showConfusionMatrix(
   values: number[][],
-  classNames: string[],
+  classNames: string[]
 ) {
   const data = { values, tickLabels: classNames };
   await tfvis.render.confusionMatrix(
     { name: 'Confusion Matrix', tab: TAB_EVALUATION },
     data,
-    { shadeDiagonal: true },
+    { shadeDiagonal: true }
   );
 }
 
 export async function showPerClassAccuracy(
   classAccuracy: Array<{ accuracy: number; count: number }>,
-  classNames: string[],
+  classNames: string[]
 ) {
   await tfvis.show.perClassAccuracy(
     { name: 'Per-class Accuracy', tab: TAB_EVALUATION },
     classAccuracy,
-    classNames,
+    classNames
   );
 }
 
 export async function showTrainingConfig(config: Record<string, unknown>) {
   const rows = Object.entries(config).map(([key, value]) => ({
     key,
-    value: String(value),
+    value: String(value)
   }));
   await tfvis.render.table(
     { name: 'Training Config', tab: TAB_TRAINING },
-    { headers: ['Parameter', 'Value'], values: rows.map((r) => [r.key, r.value]) },
+    {
+      headers: ['Parameter', 'Value'],
+      values: rows.map((r) => [r.key, r.value])
+    }
   );
 }
 
@@ -116,18 +177,21 @@ export async function showDatasetInfo(info: {
   const { classWeights, classNames, ...rest } = info;
   const rows = Object.entries(rest).map(([key, value]) => ({
     key,
-    value: String(value),
+    value: String(value)
   }));
   rows.push({ key: 'classes', value: classNames.join(', ') });
   rows.push({
     key: 'class_weights',
     value: Object.entries(classWeights)
       .map(([k, v]) => `${classNames[Number(k)] ?? k}: ${v.toFixed(2)}`)
-      .join(', '),
+      .join(', ')
   });
 
   await tfvis.render.table(
     { name: 'Dataset Info', tab: TAB_TRAINING },
-    { headers: ['Property', 'Value'], values: rows.map((r) => [r.key, r.value]) },
+    {
+      headers: ['Property', 'Value'],
+      values: rows.map((r) => [r.key, r.value])
+    }
   );
 }

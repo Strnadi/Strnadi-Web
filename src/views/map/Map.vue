@@ -9,7 +9,7 @@ export interface Polygon {
 
 export interface Marker {
   id: number | string;
-  icon: Icon;
+  icon?: Icon | L.DivIcon;
   position: [number, number];
   data?: any;
 }
@@ -29,8 +29,8 @@ export interface MapProps {
   allowedClustering?: [Marker, Marker][];
   /**
    * When true, render markers via WebGL (leaflet.glify) instead of DOM-based
-   * MarkerClusterGroup. Dramatically improves performance for large datasets
-   * (1 000+ points). Falls back to DOM markers for individual non-data markers
+   * MarkerClusterGroup. Dramatically improves performance for map datasets.
+   * Falls back to DOM markers for individual non-data markers
    * (e.g. the "selected-part-*" markers from the upload flow).
    */
   useGlify?: boolean;
@@ -38,7 +38,7 @@ export interface MapProps {
 </script>
 
 <script setup lang="ts">
-import { ref, watch, computed, onBeforeUnmount } from 'vue';
+import { ref, shallowRef, watch, computed, onBeforeUnmount } from 'vue';
 import { useGeolocation } from '@vueuse/core';
 import { type Map as LeafletMap, type LeafletMouseEvent, Icon } from 'leaflet';
 
@@ -53,6 +53,7 @@ import {
 } from '@vue-leaflet/vue-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { t } from '@/components/TranslatedText.vue';
 
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -64,6 +65,9 @@ import 'leaflet.glify';
 
 const env = import.meta.env;
 let leafletMap: LeafletMap | null = null;
+const useRetinaTiles =
+  typeof window !== 'undefined' && window.devicePixelRatio > 1;
+const vectorTileSize = useRetinaTiles ? '256@2x' : '256';
 
 // ─── Glify state ──────────────────────────────────────────────────────────────
 //
@@ -113,9 +117,18 @@ let glifyColorCache: L.glify.GlifyColor[] = [];
 
 /** Remove all three glify layers. */
 function removeAllGlifyLayers() {
-  if (glifyBaseLayer) { glifyBaseLayer.remove(); glifyBaseLayer = null; }
-  if (glifyDotLayer)  { glifyDotLayer.remove();  glifyDotLayer = null; }
-  if (glifyRingLayer) { glifyRingLayer.remove(); glifyRingLayer = null; }
+  if (glifyBaseLayer) {
+    glifyBaseLayer.remove();
+    glifyBaseLayer = null;
+  }
+  if (glifyDotLayer) {
+    glifyDotLayer.remove();
+    glifyDotLayer = null;
+  }
+  if (glifyRingLayer) {
+    glifyRingLayer.remove();
+    glifyRingLayer = null;
+  }
 }
 
 /**
@@ -129,14 +142,14 @@ function rebuildGlifyPoints() {
 
   if (!leafletMap || !props.useGlify || !props.markers?.length) return;
 
-  // Separate "data" markers (recordings) from "overlay" markers (e.g. selected-part-*)
+  // Separate recording markers from custom overlay markers (e.g. selected-part-*).
   // Overlay markers are rendered as normal Leaflet markers so they keep their
   // custom icons. Data markers go through glify.
   const dataMarkers: Marker[] = [];
   const overlayMarkers: Marker[] = [];
 
   for (const m of props.markers) {
-    if (m.data?.colors) {
+    if (m.data?.isRecording) {
       dataMarkers.push(m);
     } else {
       overlayMarkers.push(m);
@@ -173,16 +186,17 @@ function rebuildGlifyPoints() {
   }
 
   // Store the data markers array so click handler can resolve the index
-  glifyDataMarkers = dataMarkers;
-
   // Click handler shared by all layers.
   // We use a coordinate->index lookup so it works even when the clicked point
   // comes from a subset layer (dot/ring overlays).
   const posKey = (p: [number, number]) => `${p[0]},${p[1]}`;
-  const posToIndex = new Map<string, number>();
+  const posToMarkers = new Map<string, Marker[]>();
   for (let i = 0; i < allLatLngs.length; i++) {
     const pos = allLatLngs[i]!;
-    posToIndex.set(posKey(pos), i);
+    const key = posKey(pos);
+    const atPosition = posToMarkers.get(key) ?? [];
+    atPosition.push(dataMarkers[i]!);
+    posToMarkers.set(key, atPosition);
   }
 
   const handleClick = (
@@ -190,10 +204,27 @@ function rebuildGlifyPoints() {
     feature: [number, number],
     _xy: { x: number; y: number }
   ) => {
-    const idx = posToIndex.get(posKey(feature));
-    const marker = idx !== undefined ? glifyDataMarkers[idx] : undefined;
-    if (marker) {
-      emit('click', { event: e, marker });
+    const candidates = posToMarkers.get(posKey(feature)) ?? [];
+    if (candidates.length === 1) {
+      emit('click', { event: e, marker: candidates[0]! });
+      return;
+    }
+    if (candidates.length > 1 && leafletMap) {
+      const chooser = document.createElement('div');
+      chooser.setAttribute('role', 'list');
+      candidates.forEach((marker) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = `Nahrávka ${marker.data?.recording?.id ?? marker.id}`;
+        button.style.display = 'block';
+        button.style.padding = '6px';
+        button.addEventListener('click', () => {
+          emit('click', { event: e, marker });
+          leafletMap?.closePopup();
+        });
+        chooser.appendChild(button);
+      });
+      L.popup().setLatLng(feature).setContent(chooser).openOn(leafletMap);
     }
   };
 
@@ -243,28 +274,36 @@ function rebuildGlifyPoints() {
   }
 }
 
-/** Data markers currently rendered by glify (kept for click resolution). */
-let glifyDataMarkers: Marker[] = [];
-
 /** Overlay markers that are NOT handled by glify and need normal Leaflet rendering. */
-const overlayMarkersForTemplate = ref<Marker[]>([]);
+// LMarker types omit DivIcon, although Leaflet accepts both icon classes.
+const overlayMarkersForTemplate = shallowRef<Marker[]>([]);
 
 // ─── Clustering state (used when useGlify === false) ──────────────────────────
 let clusterGroups: { group: MarkerClusterGroup; sample: Marker }[] = [];
+let plainMarkerLayer: L.LayerGroup | null = null;
+
+function removeMarkerLayers() {
+  clusterGroups.forEach((cluster) => leafletMap?.removeLayer(cluster.group));
+  clusterGroups = [];
+  if (plainMarkerLayer) {
+    leafletMap?.removeLayer(plainMarkerLayer);
+    plainMarkerLayer = null;
+  }
+}
 
 /** Create or update cluster groups according to current markers & clusterTest. */
 function rebuildClusters() {
   if (!leafletMap) return;
 
   // Remove previous groups from map
-  clusterGroups.forEach((cg) => leafletMap!.removeLayer(cg.group));
-  clusterGroups = [];
+  removeMarkerLayers();
 
   if (!props.markers || props.markers.length === 0) return;
 
   // Helper to create leaflet marker with reference
   const createLeafletMarker = (m: Marker) => {
-    const lm = L.marker(m.position as L.LatLngExpression, { icon: m.icon });
+    const options = m.icon ? { icon: m.icon } : undefined;
+    const lm = L.marker(m.position as L.LatLngExpression, options);
     // @ts-ignore custom data
     lm.__original = m;
     lm.on('click', (ev) => {
@@ -272,6 +311,15 @@ function rebuildClusters() {
     });
     return lm;
   };
+
+  // With grouping disabled, use one lightweight layer rather than one
+  // MarkerClusterGroup per marker.
+  if (!props.allowedClustering?.length && !props.clusterTest) {
+    plainMarkerLayer = L.layerGroup(
+      props.markers.map((marker) => createLeafletMarker(marker))
+    ).addTo(leafletMap);
+    return;
+  }
 
   props.markers.forEach((m) => {
     // find existing compatible group
@@ -369,13 +417,24 @@ function onClusterClick(e: any) {
 const hoveredPolygon = ref<(number | string) | null>(null);
 
 const { coords, isSupported: isGeolocationSupported } = useGeolocation();
+const hasValidLocation = computed(
+  () =>
+    isGeolocationSupported.value &&
+    Number.isFinite(coords.value.latitude) &&
+    Number.isFinite(coords.value.longitude) &&
+    coords.value.latitude >= -90 &&
+    coords.value.latitude <= 90 &&
+    coords.value.longitude >= -180 &&
+    coords.value.longitude <= 180 &&
+    !(coords.value.latitude === 0 && coords.value.longitude === 0)
+);
 const iconCurrent = new Icon({
   iconUrl: '/dialects/current-location.svg',
   iconSize: [24, 24],
   iconAnchor: [19, 19]
 });
 const iconCurrentHeading = new Icon({
-  iconUrl: '/dialects/current-location.svg',
+  iconUrl: '/dialects/current-location-heading.svg',
   iconSize: [24, 24],
   iconAnchor: [19, 19]
 });
@@ -390,6 +449,10 @@ const props = withDefaults(defineProps<MapProps>(), {
 
 const zoom = ref<number>(props.position[2]);
 const center = ref<[number, number]>([props.position[0], props.position[1]]);
+const PROJECT_BOUNDS: L.LatLngBoundsExpression = [
+  [47, 10],
+  [53, 21]
+];
 
 const emit = defineEmits<{
   click: [
@@ -407,7 +470,12 @@ watch(
     if (!leafletMap) return;
     center.value = [newLat, newLon];
     zoom.value = newZoom;
-  }
+    // Leaflet must receive center and zoom atomically. Updating the two v-models
+    // separately could apply the zoom while retaining the previous center until
+    // another reactive update (most visible after choosing a search result).
+    leafletMap.setView([newLat, newLon], newZoom, { animate: true });
+  },
+  { deep: true, flush: 'post' }
 );
 
 function updateBounds() {
@@ -424,6 +492,12 @@ function updateZoom(newZoom: number) {
 
 function onMapReady(mapComp: any) {
   leafletMap = mapComp.mapObject ?? mapComp;
+  const [latitude, longitude, requestedZoom] = props.position;
+  center.value = [latitude, longitude];
+  zoom.value = requestedZoom;
+  leafletMap?.setView([latitude, longitude], requestedZoom, {
+    animate: false
+  });
   updateBounds();
 
   if (props.useGlify) {
@@ -433,18 +507,21 @@ function onMapReady(mapComp: any) {
   }
 }
 
-watch([zoom, center], updateBounds);
+const resetProjectView = () => {
+  leafletMap?.fitBounds(PROJECT_BOUNDS, { padding: [20, 20] });
+};
 
 // ─── Reactivity: rebuild rendering when markers or mode changes ───────────────
 watch(
-  () => [props.markers, props.clusterTest, props.allowedClustering, props.useGlify],
+  [
+    () => props.markers,
+    () => props.clusterTest,
+    () => props.allowedClustering,
+    () => props.useGlify
+  ],
   () => {
     if (props.useGlify) {
-      // Tear down any leftover cluster groups when switching to glify
-      if (clusterGroups.length) {
-        clusterGroups.forEach((cg) => leafletMap?.removeLayer(cg.group));
-        clusterGroups = [];
-      }
+      removeMarkerLayers();
       rebuildGlifyPoints();
     } else {
       // Tear down glify when switching to clusters
@@ -452,8 +529,7 @@ watch(
       overlayMarkersForTemplate.value = [];
       rebuildClusters();
     }
-  },
-  { deep: true }
+  }
 );
 
 // Redraw glify on zoom changes so point sizes update across all layers
@@ -468,20 +544,22 @@ watch(zoom, () => {
 // ─── Cleanup ──────────────────────────────────────────────────────────────────
 onBeforeUnmount(() => {
   removeAllGlifyLayers();
-  clusterGroups.forEach((cg) => {
-    if (leafletMap) leafletMap.removeLayer(cg.group);
-  });
-  clusterGroups = [];
+  removeMarkerLayers();
 });
 </script>
 
 <template>
-  <div class="flex flex-1 saturate-[1.2]">
+  <div class="strnadi-map flex min-h-0 flex-1 saturate-[1.2]">
     <l-map
       v-model:center="center"
       class="flex-1"
       :zoom="zoom"
-      :options="{ zoomControl: false }"
+      :options="{
+        zoomControl: false,
+        maxBounds: PROJECT_BOUNDS,
+        maxBoundsViscosity: 0.75,
+        worldCopyJump: true
+      }"
       @ready="onMapReady"
       @moveend="updateBounds"
       @click="(event: LeafletMouseEvent) => emit('click', { event })"
@@ -489,11 +567,11 @@ onBeforeUnmount(() => {
     >
       <!-- Tile Layers -->
       <l-tile-layer
-        :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode !== 'aerial' ? '256@2x' : '256'}/{z}/{x}/{y}`"
+        :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode !== 'aerial' ? vectorTileSize : '256'}/{z}/{x}/{y}`"
         :max-zoom="19"
         :min-zoom="5"
         :z-index="1"
-        attribution="<a href='https://api.mapy.cz/copyright' target='_blank'>&copy; Seznam.cz a.s. a další</a>"
+        attribution="<a href='https://api.mapy.cz/copyright' target='_blank' rel='noopener noreferrer'>&copy; Seznam.cz a.s. a další</a>"
       />
       <l-tile-layer
         v-if="mode === 'aerial'"
@@ -501,7 +579,7 @@ onBeforeUnmount(() => {
         :max-zoom="19"
         :min-zoom="5"
         :z-index="2"
-        attribution="<a href='https://api.mapy.cz/copyright' target='_blank'>&copy; Seznam.cz a.s. a další</a>"
+        attribution="<a href='https://api.mapy.cz/copyright' target='_blank' rel='noopener noreferrer'>&copy; Seznam.cz a.s. a další</a>"
       />
 
       <!-- Polygons -->
@@ -509,7 +587,9 @@ onBeforeUnmount(() => {
         v-for="polygon in polygons"
         :key="polygon.id"
         :color="hoveredPolygon === polygon.id ? '#000000' : polygon.color"
-        :weight="hoveredPolygon === polygon.id ? polygon.weight * 2 : polygon.weight"
+        :weight="
+          hoveredPolygon === polygon.id ? polygon.weight * 2 : polygon.weight
+        "
         :lat-lngs="polygon.position"
         :fill-opacity="hoveredPolygon === polygon.id ? 0.05 : 0"
         :bubbling-mouse-events="false"
@@ -530,13 +610,15 @@ onBeforeUnmount(() => {
         v-for="m in overlayMarkersForTemplate"
         :key="m.id"
         :lat-lng="m.position"
-        :icon="m.icon"
-        @click="(event: LeafletMouseEvent) => emit('click', { event, marker: m })"
+        :icon="m.icon as Icon | undefined"
+        @click="
+          (event: LeafletMouseEvent) => emit('click', { event, marker: m })
+        "
       />
 
       <!-- Current Location -->
       <l-marker
-        v-if="isGeolocationSupported"
+        v-if="hasValidLocation"
         :lat-lng="[coords.latitude, coords.longitude]"
         :rotation-angle="coords.heading || 0"
         :icon="coords.heading ? iconCurrentHeading : iconCurrent"
@@ -546,8 +628,9 @@ onBeforeUnmount(() => {
       <l-control position="bottomleft">
         <div class="z-[40]">
           <a
-            href="http://mapy.cz/"
+            href="https://mapy.cz/"
             target="_blank"
+            rel="noopener noreferrer"
           >
             <img
               src="https://api.mapy.cz/img/api/logo.svg"
@@ -555,6 +638,17 @@ onBeforeUnmount(() => {
             />
           </a>
         </div>
+      </l-control>
+
+      <l-control position="bottomleft">
+        <button
+          type="button"
+          class="rounded bg-white px-3 py-2 shadow"
+          :aria-label="t('mobile.map_tools.reset')"
+          @click.stop="resetProjectView"
+        >
+          {{ t('mobile.map_tools.reset') }}
+        </button>
       </l-control>
 
       <!-- Controls -->
@@ -570,3 +664,41 @@ onBeforeUnmount(() => {
     </l-map>
   </div>
 </template>
+
+<style scoped>
+.strnadi-map :deep(.leaflet-bottom) {
+  bottom: 0.35rem;
+}
+
+.strnadi-map :deep(.leaflet-control-zoom),
+.strnadi-map :deep(.leaflet-control > button) {
+  overflow: hidden;
+  border: 1px solid var(--mobile-border);
+  border-radius: 0.85rem;
+  background: var(--mobile-surface);
+  box-shadow: var(--mobile-shadow);
+}
+
+.strnadi-map :deep(.leaflet-control-zoom a) {
+  display: flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-color: var(--mobile-border);
+  background: var(--mobile-surface);
+  color: var(--mobile-ink);
+}
+
+.strnadi-map :deep(.leaflet-control-attribution) {
+  max-width: min(75vw, 30rem);
+  background: color-mix(in srgb, var(--mobile-surface) 92%, transparent);
+}
+
+.strnadi-map :deep(.recording-map-marker),
+.strnadi-map :deep(.recording-map-marker multi-color-square),
+.strnadi-map :deep(.recording-map-marker multi-color-square > div) {
+  aspect-ratio: 1 / 1 !important;
+  line-height: 0;
+}
+</style>

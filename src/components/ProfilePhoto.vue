@@ -7,6 +7,7 @@ import { accountStore } from '@/state/AccountStore';
 
 const props = defineProps<{
   userId: Numeric;
+  fallbackText?: string;
 }>();
 
 const photoSource = computedAsync(async () => {
@@ -41,6 +42,24 @@ const photoSource = computedAsync(async () => {
   <img
     v-if="photoSource"
     :src="photoSource"
-    alt="Profile photo"
+    alt=""
   />
+  <span v-else class="profile-photo-fallback" aria-hidden="true">
+    {{ props.fallbackText || '?' }}
+  </span>
 </template>
+
+<style scoped>
+.profile-photo-fallback {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  background: var(--mobile-yellow, #ffd641);
+  color: var(--mobile-ink, #252319);
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+</style>

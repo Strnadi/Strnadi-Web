@@ -25,7 +25,11 @@ import { setupLayouts } from 'virtual:meta-layouts';
 // import { useTimeoutFn, useEventListener } from '@vueuse/core';
 import { EditorView } from '@codemirror/view';
 import { config } from 'md-editor-v3';
-import { createTreeHistory } from '@/plugins/router/tree-history';
+import {
+  accountInitialization,
+  accountStore
+} from '@/state/AccountStore';
+import type { MobilePresentation } from '@/router-meta';
 
 // // @ts-expect-error No types available.
 // import VueVirtualScroller from 'vue-virtual-scroller';
@@ -34,7 +38,6 @@ import { createTreeHistory } from '@/plugins/router/tree-history';
 // import VWave from 'v-wave';
 import vSelect from 'vue-select';
 import { VueDatePicker } from '@vuepic/vue-datepicker';
-import ExpandableImage from '@/components/ExpandableImage.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import { ApiError } from '@/classes/api-error';
 import './styles/main.css';
@@ -42,25 +45,14 @@ import './styles/main.css';
 
 // console.log(process.env);
 
-declare global {
-  interface Array<T> {
-    guarded: (
-      guard: (
-        to: RouteLocationNormalized,
-        from: RouteLocationNormalized
-      ) => boolean | RouteLocationRaw
-    ) => RouteRecordRaw[];
-  }
-}
-
-Array.prototype.guarded = function (
+const addRouteGuard = (
+  routes: RouteRecordRaw[],
   guard: (
     to: RouteLocationNormalized,
     from: RouteLocationNormalized
   ) => boolean | RouteLocationRaw
-): RouteRecordRaw[] {
-  return this.map((route: RouteRecordRaw) => {
-    // add guard to this route
+): RouteRecordRaw[] => {
+  return routes.map((route) => {
     const guardedRoute: RouteRecordRaw = {
       ...route,
       beforeEnter: [
@@ -72,13 +64,12 @@ Array.prototype.guarded = function (
         guard as any
       ]
     };
-    // recurse into children if any
     if (route.children) {
-      guardedRoute.children = route.children.guarded(guard);
+      guardedRoute.children = addRouteGuard(route.children, guard);
     }
     return guardedRoute;
   });
-};
+}
 
 const desktopBp = getComputedStyle(document.documentElement)
   .getPropertyValue('--breakpoint-desktop')
@@ -87,27 +78,9 @@ const desktopBp = getComputedStyle(document.documentElement)
 const desktopQuery = window.matchMedia(`(min-width: ${desktopBp})`);
 // const mobileQuery = window.matchMedia(`(max-width: ${desktopBp})`);
 
-// Mobile Firefox users (yes, all two of you), tough luck
-// Y'all will just recieve the desktop site :^)
-const initialIsDesktop =
-  navigator.userAgent.includes('Firefox') || desktopQuery.matches;
+const initialIsDesktop = desktopQuery.matches;
 
 // const initialIsMobile = !initialIsDesktop;
-
-const handleResize = () => {
-  const currentIsDesktop = desktopQuery.matches;
-  if (currentIsDesktop !== initialIsDesktop) {
-    window.location.reload();
-  }
-
-  // const currentIsMobile = mobileQuery.matches;
-  // if (currentIsMobile !== initialIsMobile) {
-  //   window.location.reload();
-  // }
-};
-
-desktopQuery.addEventListener('change', handleResize);
-// mobileQuery.addEventListener('change', handleResize);
 
 const removeUnlayoutedRoutes = (
   routes: RouteRecordRaw[],
@@ -159,29 +132,75 @@ const removeLayoutsRecursively = (
   });
 };
 
-const nameRoutes = (
+const annotateAccess = (
   routes: RouteRecordRaw[],
-  suffix: string,
-  predicate: (route: RouteRecordRaw) => boolean
-): RouteRecordRaw[] => {
-  return routes.map((route) => {
-    const processedRoute = { ...route };
+  parentPath = ''
+): RouteRecordRaw[] =>
+  routes.map((route) => {
+    const fullPath = route.path.startsWith('/')
+      ? route.path
+      : `${parentPath}/${route.path}`.replace(/\/+/g, '/');
+    const admin = fullPath === '/sprava' || fullPath.startsWith('/sprava/');
+    const authenticated =
+      admin ||
+      fullPath === '/mapa/nahrat' ||
+      fullPath === '/ucet/muj-ucet' ||
+      fullPath.startsWith('/ucet/sprava/') ||
+      /^\/mapa\/nahravka\/[^/]+\/(upravit|upravit-dialekt|smazat)$/.test(
+        fullPath
+      ) ||
+      /^\/mapa\/nahravka\/[^/]+\/[^/]+\/smazat$/.test(fullPath);
+    const guestOnly =
+      fullPath === '/ucet/prihlaseni' || fullPath === '/ucet/registrace';
 
-    if (processedRoute.children && processedRoute.children.length > 0) {
-      processedRoute.children = nameRoutes(
-        processedRoute.children,
-        suffix,
-        predicate
-      );
+    const workspaceRoutes = [
+      '/mapa/nahrat',
+      '/ucet/registrace',
+      '/ucet/sprava/osobni-udaje',
+      '/ucet/sprava/moje-nahravky',
+      '/sprava/oznameni',
+      '/sprava/potvrzeni-dialektu',
+      '/sprava/vsechny-nahravky',
+      '/sprava/uzivatele'
+    ];
+    const dialogRoutes = [
+      '/aplikace',
+      '/vitejte',
+      '/ucet/vitejte',
+      '/ucet/prihlaseni',
+      '/ucet/zapomenute-heslo',
+      '/ucet/obnova-hesla',
+      '/ucet/email-overen',
+      '/ucet/email-neoveren',
+      '/ucet/sprava/smazat'
+    ];
+    const isEditorWorkspace =
+      fullPath.includes('/upravit-dialekt') ||
+      fullPath.includes('/informace/prispevky/novy') ||
+      fullPath.includes('/informace/kategorie/nova') ||
+      /\/informace\/(prispevky|kategorie)\/[^/]+\/upravit$/.test(fullPath);
+    const mobilePresentation: MobilePresentation =
+      workspaceRoutes.includes(fullPath) || isEditorWorkspace
+        ? 'workspace'
+        : dialogRoutes.includes(fullPath) || fullPath.endsWith('/smazat')
+          ? 'dialog'
+          : 'sheet';
+
+    const processedRoute = {
+      ...route,
+      meta: {
+        ...route.meta,
+        authenticated,
+        admin,
+        guestOnly,
+        mobilePresentation
+      }
+    } as RouteRecordRaw;
+    if (route.children) {
+      processedRoute.children = annotateAccess(route.children, fullPath);
     }
-
-    if (predicate(processedRoute)) {
-      processedRoute.name = `${processedRoute.name as string}|${suffix}|`;
-    }
-
     return processedRoute;
   });
-};
 
 const welcomeGuard = (
   to: RouteLocationNormalized,
@@ -248,16 +267,11 @@ routes = generatedRoutes as RouteRecordRaw[];
 // routes = removeUnlayoutedRoutes(routes, initialIsDesktop);
 routes = removeLayoutsRecursively(routes, initialIsDesktop);
 routes = setupLayouts(routes) as RouteRecordRaw[];
-// routes = nameRoutes(routes, "guest", route => route.meta?.auth === false);
-// routes = nameRoutes(routes, "auth", route => !!route.meta?.auth);
-// routes = nameRoutes(routes, "admin", route => !!route.meta?.admin);
-// routes = routes.guarded(authGuard);
+routes = annotateAccess(routes);
 
-if (!import.meta.env.MODE) {
-  routes = routes.guarded(serverGuard);
-}
+routes = addRouteGuard(routes, serverGuard);
 
-routes = routes.guarded(welcomeGuard);
+routes = addRouteGuard(routes, welcomeGuard);
 
 // console.log(routes)
 
@@ -286,6 +300,23 @@ const router = createRouter({
     // Reset window scroll position as well
     return { top: 0, left: 0, behavior: 'smooth' };
   }
+});
+
+router.beforeEach(async (to) => {
+  await accountInitialization;
+
+  if (to.meta['guestOnly'] && accountStore.user) return { path: '/' };
+  if (to.meta['authenticated'] && !accountStore.user) {
+    return {
+      path: '/ucet/prihlaseni',
+      query: { redirect: to.fullPath }
+    };
+  }
+  if (to.meta['admin'] && accountStore.user?.role !== 'admin') {
+    return { path: '/' };
+  }
+
+  return true;
 });
 
 const reducedMotionQuery = window.matchMedia(

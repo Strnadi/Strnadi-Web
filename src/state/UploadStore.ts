@@ -9,6 +9,7 @@ import {
   getFilteredRecording
 } from '@/api/recordings';
 import type { DraftFilteredPart } from '@/state/UploadDraftStore';
+import { getAudioDuration } from '@/utils/audio';
 
 export interface UploadTask {
   id: string;
@@ -88,72 +89,40 @@ export const uploadQueueStore = reactive({
   },
 
   async uploadTask(task: UploadTask) {
-    // const totalSteps = 1 + task.parts.length + (task.photos?.length || 0);
-    // let completedSteps = 0;
+    let cursor = new Date(task.recording.createdAt);
+    if (Number.isNaN(cursor.getTime())) {
+      throw new Error('Neplatné datum nahrávky');
+    }
 
-    // const updateProgress = () => {
-    //   task.progress = Math.round((completedSteps / totalSteps) * 100);
-    // };
-
-    // Helper function to get audio duration
-    const getAudioDuration = (file: File): Promise<number> => {
-      return new Promise((resolve, reject) => {
-        const audio = new Audio();
-        audio.preload = 'metadata';
-
-        audio.onloadedmetadata = () => {
-          URL.revokeObjectURL(audio.src);
-          resolve(audio.duration);
-        };
-
-        audio.onerror = () => {
-          URL.revokeObjectURL(audio.src);
-          reject(new Error('Failed to load audio metadata'));
-        };
-
-        audio.src = URL.createObjectURL(file);
+    const modifiedParts: RecordingPartUploadParams[] = [];
+    for (const part of task.parts) {
+      const duration = await getAudioDuration(part.data);
+      const startDate = cursor.toISOString();
+      cursor = new Date(cursor.getTime() + duration * 1000);
+      modifiedParts.push({
+        ...part,
+        startDate,
+        endDate: cursor.toISOString()
       });
-    };
-
-    let lastEndDate: Date | undefined;
-    const modifiedParts = await Promise.all(
-      task.parts.map(async (part) => {
-        // Calculate end date based on audio duration
-        let endDate = part.endDate;
-        try {
-          const duration = await getAudioDuration(part.data);
-          const startDate = new Date(
-            new Date(part.startDate).getTime() + (lastEndDate?.getTime() ?? 0)
-          ).toISOString();
-          const calculatedEndDate = new Date(
-            new Date(startDate).getTime() + duration * 1000
-          );
-          endDate = calculatedEndDate.toISOString();
-          lastEndDate = calculatedEndDate;
-        } catch (error) {
-          console.warn(
-            'Failed to get audio duration, using original endDate',
-            error
-          );
-        }
-
-        return {
-          ...part,
-          endDate: endDate
-        };
-      })
-    );
+    }
 
     const recordingId = await postRecording(
       task.token,
       task.recording,
       modifiedParts,
-      task.photos
+      task.photos,
+      (completed, total, step) => {
+        // Reserve the last 10% for optional dialect finalization.
+        task.progress = Math.min(90, Math.round((completed / total) * 90));
+        task.currentStep = step;
+      }
     );
 
     if (task.draftFilteredParts?.length) {
+      task.currentStep = 'Ukládání dialektů';
       await this.uploadDraftDialects(task, recordingId);
     }
+    task.progress = 99;
   },
 
   async uploadDraftDialects(task: UploadTask, recordingId: number) {
@@ -185,24 +154,26 @@ export const uploadQueueStore = reactive({
 
       const draftDetections = draft.detectedDialects ?? [];
       const existingDetections = serverPart.detectedDialects ?? [];
-      const source = draftDetections[0];
-      const target = existingDetections[0];
-
-      if (source && target) {
-        await updateDetectedDialect(task.token, {
-          id: target.id,
-          userGuessDialectId: source.userGuessDialectId ?? target.userGuessDialectId ?? null,
-          predictedDialectId: source.predictedDialectId ?? target.predictedDialectId ?? null,
-          confirmedDialectId:
-            source.confirmedDialectId ?? target.confirmedDialectId ?? null
-        });
-      } else if (source) {
-        await postDetectedDialect(task.token, {
-          filteredPartId: serverPart.id,
-          userGuessDialectId: source.userGuessDialectId ?? null,
-          predictedDialectId: source.predictedDialectId ?? null,
-          confirmedDialectId: source.confirmedDialectId ?? null
-        });
+      for (const [index, source] of draftDetections.entries()) {
+        const target = existingDetections[index];
+        if (target) {
+          await updateDetectedDialect(task.token, {
+            id: target.id,
+            userGuessDialectId:
+              source.userGuessDialectId ?? target.userGuessDialectId ?? null,
+            predictedDialectId:
+              source.predictedDialectId ?? target.predictedDialectId ?? null,
+            confirmedDialectId:
+              source.confirmedDialectId ?? target.confirmedDialectId ?? null
+          });
+        } else {
+          await postDetectedDialect(task.token, {
+            filteredPartId: serverPart.id,
+            userGuessDialectId: source.userGuessDialectId ?? null,
+            predictedDialectId: source.predictedDialectId ?? null,
+            confirmedDialectId: source.confirmedDialectId ?? null
+          });
+        }
       }
     }
   },

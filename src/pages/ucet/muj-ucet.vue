@@ -33,80 +33,70 @@ const displayName = computed(() => {
     t('labels.user')
   );
 });
+
+const initials = computed(() => {
+  const parts = [
+    accountStore.user?.firstName,
+    accountStore.user?.lastName
+  ].filter(Boolean) as string[];
+  if (parts.length) return parts.map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+  return (accountStore.user?.nickname || accountStore.user?.email || '?')
+    .slice(0, 2)
+    .toUpperCase();
+});
 </script>
 
 <template>
   <div class="profile-container">
-    <h1 class="text-2xl font-bold mb-6">
+    <h1>
       <TranslatedText identifier="account.profile.title" />
     </h1>
 
-    <!-- User info card -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-      <ProfilePhoto :user-id="accountStore.user?.id!" />
-      <div
-        class="flex flex-col md:flex-row justify-between items-start md:items-center"
-      >
-        <div class="flex flex-col">
-          <span class="text-xl font-medium">
+    <section class="profile-hero">
+      <div class="profile-hero__photo">
+        <ProfilePhoto :user-id="accountStore.user?.id!" :fallback-text="initials" />
+      </div>
+      <div class="profile-hero__identity">
+          <strong class="text-xl">
             {{ displayName || accountStore.user?.nickname }}
-            <template v-if="accountStore.user?.nickname && displayName">
+            <template
+              v-if="
+                accountStore.user?.nickname &&
+                displayName !== accountStore.user.nickname
+              "
+            >
               ({{ accountStore.user?.nickname }})
             </template>
-          </span>
-          <span class="text-gray-600">{{ accountStore.user?.email }}</span>
-
-          <div
-            v-if="accountStore.user?.isEmailVerified"
-            class="flex items-center mt-2"
-          >
-            <span
-              class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
-            >
+          </strong>
+          <span class="profile-hero__email">{{ accountStore.user?.email }}</span>
+          <div class="profile-hero__chips">
+            <span v-if="accountStore.user?.isEmailVerified" class="mobile-chip profile-chip--success">
               <TranslatedText
                 identifier="account.profile.email_verified_badge"
               />
             </span>
-          </div>
-          <div
-            v-else
-            class="flex items-center mt-2"
-          >
-            <span
-              class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full"
-            >
+            <span v-else class="mobile-chip profile-chip--warning">
               <TranslatedText
                 identifier="account.profile.email_unverified_badge"
               />
             </span>
-          </div>
-        </div>
-
-        <div class="mt-4 md:mt-0">
-          <span
-            v-if="accountStore.user?.city"
-            class="text-gray-600"
-          >
+            <span v-if="accountStore.user?.city" class="mobile-chip">
             {{ accountStore.user?.city }}
             <span v-if="accountStore.user?.postCode"
               >({{ accountStore.user?.postCode }})</span
             >
-          </span>
-          <span
-            v-else
-            class="text-gray-400 text-sm"
-          >
+            </span>
+            <span v-else class="mobile-chip profile-chip--muted">
             <TranslatedText identifier="account.profile.no_location" />
-          </span>
+            </span>
+          </div>
         </div>
-      </div>
-    </div>
+    </section>
 
-    <!-- Navigation links -->
-    <div class="grid md:grid-cols-2 gap-3 mb-6">
+    <section class="profile-actions">
       <RouterLink
         to="/ucet/sprava/moje-nahravky"
-        class="link"
+        class="mobile-action-row"
       >
         <span class="font-medium">
           <TranslatedText identifier="account.profile.my_recordings" />
@@ -117,58 +107,10 @@ const displayName = computed(() => {
           />
         </span>
       </RouterLink>
-
-      <RouterLink
-        to="/ucet/sprava/uspechy"
-        class="link"
-      >
-        <span class="font-medium">
-          <TranslatedText identifier="account.profile.achievements" />
-        </span>
-        <span class="text-sm text-gray-600">
-          <TranslatedText
-            identifier="account.profile.achievements_description"
-          />
-        </span>
-      </RouterLink>
-
-      <RouterLink
-        to="/ucet/sprava/odmeny"
-        class="link"
-      >
-        <span class="font-medium">
-          <TranslatedText identifier="account.profile.rewards" />
-        </span>
-        <span class="text-sm text-gray-600">
-          <TranslatedText identifier="account.profile.rewards_description" />
-        </span>
-      </RouterLink>
-
-      <RouterLink
-        to="/ucet/sprava/oznameni"
-        class="link"
-      >
-        <span class="font-medium">
-          <TranslatedText identifier="account.profile.notifications" />
-        </span>
-        <span class="text-sm text-gray-600">
-          <TranslatedText
-            identifier="account.profile.notifications_description"
-          />
-        </span>
-      </RouterLink>
-    </div>
-
-    <!-- Account actions -->
-    <div class="mt-4 border-t border-gray-200 pt-4">
-      <h2 class="text-lg font-medium mb-3">
-        <TranslatedText identifier="account.settings.title" />
-      </h2>
-
       <RouterLink
         v-if="!accountStore.user?.isEmailVerified"
         to="/ucet/sprava/overeni-emailu"
-        class="flex items-center p-3 mb-3 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100"
+        class="mobile-action-row"
       >
         <span class="font-medium">
           <TranslatedText identifier="account.settings.resend_verification" />
@@ -177,7 +119,7 @@ const displayName = computed(() => {
 
       <RouterLink
         to="/ucet/sprava/osobni-udaje"
-        class="link"
+        class="mobile-action-row"
       >
         <span class="font-medium">
           <TranslatedText identifier="account.profile.personal_data" />
@@ -188,26 +130,28 @@ const displayName = computed(() => {
           />
         </span>
       </RouterLink>
+      <RouterLink v-if="accountStore.user?.role === 'admin'" to="/sprava" class="mobile-action-row">
+        <span class="flex flex-col">
+          <strong><TranslatedText identifier="account.profile.administration" /></strong>
+          <small><TranslatedText identifier="account.profile.administration_description" /></small>
+        </span>
+      </RouterLink>
+    </section>
 
+    <section class="mobile-danger-zone profile-danger">
+      <h2><TranslatedText identifier="account.settings.title" /></h2>
+      <button class="button-secondary p-3 w-full" @click="logout">
+        <TranslatedText identifier="buttons.logout" />
+      </button>
       <RouterLink
         to="/ucet/sprava/smazat"
-        class="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100"
+        class="button-danger flex min-h-11 items-center justify-center p-3"
       >
         <span class="text-red-600 font-medium">
           <TranslatedText identifier="buttons.delete_account" />
         </span>
       </RouterLink>
-    </div>
-
-    <!-- Logout button -->
-    <div class="mt-6">
-      <button
-        class="button-secondary p-2 w-full"
-        @click="logout"
-      >
-        <TranslatedText identifier="buttons.logout" />
-      </button>
-    </div>
+    </section>
   </div>
 </template>
 
@@ -215,16 +159,59 @@ const displayName = computed(() => {
 @reference "../../styles/main.css";
 
 .profile-container {
-  @apply w-full mx-auto;
+  @apply mx-auto flex w-full flex-col gap-5;
 }
 
-.link {
-  @apply flex flex-col justify-center;
-  @apply p-3 border-2 border-gray-300 rounded-lg;
-  @apply hover:bg-gray-100 transition duration-200;
+.profile-hero {
+  @apply flex items-center gap-4 p-4;
+  border: 1px solid var(--mobile-border);
+  border-radius: var(--mobile-radius-lg);
+  background: var(--mobile-surface);
+  box-shadow: var(--mobile-shadow);
 }
 
-.link span:first-child {
-  @apply mb-1;
+.profile-hero__photo {
+  @apply h-20 w-20 shrink-0 overflow-hidden rounded-full;
+  border: 3px solid var(--mobile-yellow);
+  background: var(--mobile-yellow);
+}
+
+.profile-hero__photo :deep(img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-hero__identity {
+  @apply flex min-w-0 flex-1 flex-col gap-1;
+}
+
+.profile-hero__email {
+  @apply truncate text-sm;
+  color: var(--mobile-muted);
+}
+
+.profile-hero__chips {
+  @apply mt-1 flex flex-wrap gap-1.5;
+}
+
+.profile-chip--success { background: #e7f6e7; border-color: #9ccc9c; }
+.profile-chip--warning { background: #fff2b8; border-color: #e4c952; }
+.profile-chip--muted { color: var(--mobile-muted); }
+
+.profile-actions {
+  @apply grid gap-2;
+}
+
+.profile-actions small {
+  color: var(--mobile-muted);
+}
+
+.profile-danger {
+  @apply grid gap-3;
+}
+
+.profile-danger h2 {
+  @apply text-lg font-bold;
 }
 </style>

@@ -46,46 +46,6 @@ const {
     })
 });
 
-const profileName = computed(() => {
-  const current = user.value;
-  if (!current) {
-    return t('labels.user');
-  }
-
-  const first = current.firstName?.trim();
-  const last = current.lastName?.trim();
-
-  if (first || last) {
-    return [first, last].filter(Boolean).join(' ');
-  }
-
-  if (current.nickname) {
-    return `@${current.nickname}`;
-  }
-
-  return `${t('labels.user')} #${current.id}`;
-});
-
-const nicknameTagVisible = computed(
-  () => Boolean(user.value?.nickname) && !profileName.value.startsWith('@')
-);
-
-const signupDate = computed(() =>
-  user.value ? new Date(user.value.creationDate).toLocaleString() : ''
-);
-
-const roleLabel = computed(() => {
-  if (!user.value) {
-    return '';
-  }
-
-  return t(
-    user.value.role === 'admin'
-      ? 'pages.user_profile.roles.admin'
-      : 'pages.user_profile.roles.user'
-  );
-});
-
 const emailStatusLabel = computed(() => {
   if (!user.value) {
     return '';
@@ -292,22 +252,6 @@ const recordingsCount = computed(() => recordingsList.value.length);
           </template>
         </section>
 
-        <section class="space-y-4">
-          <h2 class="text-xl font-semibold">
-            <TranslatedText
-              identifier="pages.user_profile.admin.actions_section"
-            />
-          </h2>
-          <div class="flex flex-col md:flex-row w-full gap-3">
-            <button class="secondary p-2 w-full">Poslat oznámení</button>
-
-            <button class="secondary danger p-2 w-full">
-              <TranslatedText
-                identifier="pages.user_profile.admin.delete_account_button"
-              />
-            </button>
-          </div>
-        </section>
       </div>
     </template>
   </div>

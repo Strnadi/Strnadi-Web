@@ -11,38 +11,37 @@ import { visualizer as Visualizer } from 'rollup-plugin-visualizer';
 import { purgePolyfills } from 'unplugin-purge-polyfills';
 import Vue from '@vitejs/plugin-vue';
 import TailwindCSS from '@tailwindcss/vite';
-import TSConfigPaths from 'vite-tsconfig-paths';
+// import TSConfigPaths from 'vite-tsconfig-paths';
 import Compression from 'vite-plugin-compression2';
 import vueDevTools from 'vite-plugin-vue-devtools';
 import VueRouter from 'unplugin-vue-router/vite';
 import MetaLayouts from 'vite-plugin-vue-meta-layouts';
 import Terminal from 'vite-plugin-terminal';
 import SVGLoader from 'vite-svg-loader';
-import DocsPlugin from './plugins/docs';
+import DocsPlugin from './plugins/docs.ts';
 import Inspect from 'vite-plugin-inspect';
 import { qrcode as QRCode } from 'vite-plugin-qrcode';
-import mkcert from 'vite-plugin-mkcert';
 import path from 'node:path';
 import fs from 'node:fs';
-
-import { NetworkFirst, CacheFirst } from 'workbox-strategies';
 
 // import * as workbox from 'workbox';
 
 // Add a unique build identifier that changes on every deployment. This will be appended
 // to runtime cache names so they become versioned and won‘t clash with older builds.
 const BUILD_VERSION = new Date().toISOString().replace(/[-:T.Z]/g, '');
+const uploadSourcemaps =
+  process.env['SENTRY_UPLOAD_SOURCEMAPS'] === 'true' &&
+  Boolean(process.env['SENTRY_AUTH_TOKEN']);
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
-    Inspect(),
-    QRCode(),
+    ...(mode === 'development' ? [Inspect(), QRCode()] : []),
     purgePolyfills.rollup({ logLevel: 'verbose' }),
-    TSConfigPaths({ loose: true }),
+    // TSConfigPaths({ loose: true }),
     TailwindCSS(),
     DocsPlugin(),
-    VueRouter({ importMode: 'sync', routeBlockLang: 'yaml' }),
+    VueRouter({ importMode: 'async', routeBlockLang: 'yaml' }),
     Vue({ include: [/\.vue$/, /\.md$/] }),
     SVGLoader({
       defaultImport: 'component'
@@ -51,7 +50,7 @@ export default defineConfig({
       output: ['terminal', 'console']
     }),
     MetaLayouts({
-      importMode: 'sync',
+      importMode: 'async',
       target: 'src/layouts',
       defaultLayout: 'default',
       skipTopLevelRouteLayout: false
@@ -60,7 +59,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       devOptions: {
-        enabled: true
+        enabled: process.env['PWA_DEV'] === 'true'
       },
       manifest: {
         name: 'Strnadi - web',
@@ -90,7 +89,7 @@ export default defineConfig({
         runtimeCaching: [
           {
             urlPattern:
-              /^https:\/\/(dev|new|old)?api.strnadi.cz\/recordings\/part\/(\d+)\/(\d+)\/sound$/,
+              /^https:\/\/(?:(?:dev|new|old|staging)\.)?api\.strnadi\.cz\/recordings\/part\/(\d+)\/(\d+)\/sound$/,
             handler: 'CacheFirst',
             options: {
               cacheName: `strnadi-api-cache-sounds`,
@@ -101,7 +100,8 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /^https:\/\/(dev|new|old)?api.strnadi.cz\/map\/.*$/,
+            urlPattern:
+              /^https:\/\/(?:(?:dev|new|old|staging)\.)?api\.strnadi\.cz\/map\/.*$/,
             handler: 'CacheFirst',
             options: {
               cacheName: `strnadi-api-cache-maps`,
@@ -127,18 +127,26 @@ export default defineConfig({
       }
     }),
     Compression({ algorithms: ['brotliCompress'] }),
-    SentryVitePlugin({
-      org: 'delta-strnadi',
-      project:
-        process.env['MODE'] === 'production'
-          ? 'strnadi-web'
-          : 'strnadi-web-staging',
-      telemetry: false
-    }),
+    ...(uploadSourcemaps
+      ? [
+        SentryVitePlugin({
+          org: 'delta-strnadi',
+          project:
+            mode === 'production'
+              ? 'strnadi-web'
+              : 'strnadi-web-staging',
+          telemetry: false
+        })
+      ]
+      : []),
     // mkcert(),
-    vueDevTools({
-      launchEditor: 'subl4'
-    }),
+    ...(mode === 'development'
+      ? [
+        vueDevTools({
+          launchEditor: 'subl4'
+        })
+      ]
+      : []),
     Visualizer({
       gzipSize: true,
       open: false,
@@ -150,7 +158,7 @@ export default defineConfig({
         server.middlewares.use((req, res, next) => {
           if (req.originalUrl?.startsWith('/.well-known')) {
             res.setHeader('Content-Type', 'application/json');
-            const filePath = path.join(__dirname, `public${req.originalUrl}`);
+            const filePath = path.join(import.meta.dirname, `public${req.originalUrl}`);
             fs.createReadStream(filePath).pipe(res);
           } else {
             next();
@@ -161,7 +169,7 @@ export default defineConfig({
         server.middlewares.use((req, res, next) => {
           if (req.originalUrl?.startsWith('/.well-known')) {
             res.setHeader('Content-Type', 'application/json');
-            const filePath = path.join(__dirname, `public${req.originalUrl}`);
+            const filePath = path.join(import.meta.dirname, `public${req.originalUrl}`);
             fs.createReadStream(filePath).pipe(res);
           } else {
             next();
@@ -172,31 +180,14 @@ export default defineConfig({
   ],
 
   define: {
-    'global': 'globalThis',
+    global: 'globalThis'
   },
 
   build: {
     target: 'ESNext',
     cssTarget: 'es2022',
-    rollupOptions: {
-      output: {
-        codeSplitting: {
-          groups: [
-            {
-              name: 'vendor',
-              test: /node_modules/,
-            },
-          ],
-        }
-      }
-    },
-
-    sourcemap: true,
+    sourcemap: uploadSourcemaps ? 'hidden' : mode === 'development',
     reportCompressedSize: false
-  },
-
-  dev: {
-    sourcemap: true
   },
 
   // experimental: {
@@ -204,7 +195,8 @@ export default defineConfig({
   // },
 
   resolve: {
-    // tsconfigPaths: true,
+    dedupe: ['vue'],
+    tsconfigPaths: true,
 
     alias: [
       {
@@ -219,9 +211,9 @@ export default defineConfig({
 
     headers: {
       'content-security-policy':
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'script-src-elem' blob:;"
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' blob:;"
       // "cross-origin-embedder-policy": "require-corp",
       // "cross-origin-opener-policy": "same-origin"
     }
   }
-});
+}));

@@ -5,14 +5,25 @@ meta:
 
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
+import { computed } from 'vue';
 import { getUsers } from '@/api/account';
 import { accountStore } from '@/state/AccountStore';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
+import UserCard from '@/views/UserCard.vue';
 
-const { data: users, isLoading } = useQuery({
+const { data: users, isLoading, error } = useQuery({
   queryKey: ['users'],
   queryFn: async () => await getUsers(accountStore.token!)
 });
+const orderedUsers = computed(() =>
+  [...(users.value ?? [])].sort((left, right) =>
+    `${left.lastName} ${left.firstName} ${left.id}`.localeCompare(
+      `${right.lastName} ${right.firstName} ${right.id}`,
+      'cs',
+      { sensitivity: 'base' }
+    )
+  )
+);
 </script>
 
 <template>
@@ -23,41 +34,34 @@ const { data: users, isLoading } = useQuery({
   <template v-if="isLoading">
     <TranslatedText identifier="states.loading" />
   </template>
+  <p v-else-if="error" role="alert" class="text-red-700">
+    {{ error.message }}
+  </p>
   <template v-else>
-    <ul class="flex flex-col-reverse gap-y-3">
-      <RouterLink
-        v-for="user in users"
-        :key="user.id"
-        :to="`/uzivatel/${user.id}`"
-        class="flex flex-col button-secondary p-4 gap-y-2"
-      >
-        <div @click.stop>
-          <div>
-            <span>{{ user.firstName }} {{ user.lastName }}</span>
-            <div class="flex flex-row justify-between">
-              <span>{{ user.email ?? t('account.users.unknown_email') }}</span>
-              <span
-                class="text-sm"
-                :class="{
-                  'text-lime-400': user.isEmailVerified,
-                  'text-red-500': !user.isEmailVerified
-                }"
-              >
-                {{
-                  t(
-                    user.isEmailVerified
-                      ? 'account.users.email_verified'
-                      : 'account.users.email_unverified'
-                  )
-                }}
-              </span>
-            </div>
-          </div>
-          <div class="flex flex-row justify-between">
-            <button class="secondary p-2">Poslat oznámení</button>
-          </div>
+    <ul class="flex flex-col gap-y-3">
+      <li v-for="user in orderedUsers" :key="user.id" class="space-y-2">
+        <RouterLink :to="`/uzivatel/${user.id}`" class="block rounded-xl focus:outline-2">
+          <UserCard :user="user" />
+        </RouterLink>
+        <div class="flex items-center justify-between gap-2 px-2 text-sm">
+          <span>{{ user.email ?? t('account.users.unknown_email') }}</span>
+          <span :class="user.isEmailVerified ? 'text-green-700' : 'text-red-700'">
+            {{
+              t(
+                user.isEmailVerified
+                  ? 'account.users.email_verified'
+                  : 'account.users.email_unverified'
+              )
+            }}
+          </span>
+          <RouterLink
+            :to="{ path: '/sprava/oznameni', query: { userId: user.id } }"
+            class="button-secondary p-2"
+          >
+            Poslat oznámení
+          </RouterLink>
         </div>
-      </RouterLink>
+      </li>
     </ul>
   </template>
 </template>

@@ -12,6 +12,16 @@ export interface PersistOptions<T> {
   syncCallback: (store: T) => void | Promise<void>;
 }
 
+export const readPersistedObject = (
+  storage: Storage,
+  key: string
+): Record<string, unknown> | null => {
+  const value = getStore<unknown>(storage, key);
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+};
+
 /* Persists a Vue reactive object */
 export const persist = <T>(object: T, options?: Partial<PersistOptions<T>>) => {
   if (!object) {
@@ -24,7 +34,13 @@ export const persist = <T>(object: T, options?: Partial<PersistOptions<T>>) => {
   const _store = assertStore(_storage, _key);
 
   syncReactiveWithLocal(object, _store, _paths);
-  options?.syncCallback?.(object);
+  const syncResult = options?.syncCallback?.(object);
+  if (syncResult instanceof Promise) {
+    syncResult.catch(() => {
+      // Async initialization is owned by the caller. Avoid an unhandled rejection
+      // for older callers which do not expose their initialization promise.
+    });
+  }
 
   watch(
     object,

@@ -27,7 +27,7 @@ export interface LoginRequest {
 }
 
 export interface SignUpRequest {
-  postCode: number;
+  postCode: number | null;
   city: string;
   email: string;
   password: string;
@@ -43,7 +43,7 @@ export interface UserUpdateRequest {
   firstName: string;
   lastName: string;
   city: string;
-  postCode: number;
+  postCode: number | null;
 }
 
 export type OAuth2Token = string;
@@ -52,6 +52,48 @@ export interface OAuth2SignUpResponse {
   firstName: string | null;
   lastName: string | null;
 }
+
+export type AppleLoginResponse =
+  | { exists: true; jwt: string }
+  | {
+      exists: false;
+      jwt: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      appleid: string;
+    };
+
+const parseAppleLoginResponse = (value: unknown): AppleLoginResponse => {
+  if (!value || typeof value !== 'object') {
+    throw new Error('Invalid Apple login response');
+  }
+
+  const data = value as Record<string, unknown>;
+  if (typeof data['jwt'] !== 'string' || typeof data['exists'] !== 'boolean') {
+    throw new Error('Invalid Apple login response');
+  }
+
+  if (data['exists']) return { exists: true, jwt: data['jwt'] };
+
+  if (
+    typeof data['firstName'] !== 'string' ||
+    typeof data['lastName'] !== 'string' ||
+    typeof data['email'] !== 'string' ||
+    typeof data['appleid'] !== 'string'
+  ) {
+    throw new Error('Incomplete Apple sign-up response');
+  }
+
+  return {
+    exists: false,
+    jwt: data['jwt'],
+    firstName: data['firstName'],
+    lastName: data['lastName'],
+    email: data['email'],
+    appleid: data['appleid']
+  };
+};
 
 const genericPost = async <T>(path: string, data: T) => {
   const response = await axios.post(`/auth/${path}`, data);
@@ -122,7 +164,7 @@ export const postAppleLogin = async (loginInfo: {
   idToken: string;
   givenName?: string;
   familyName?: string;
-}): Promise<OAuth2Token> => {
+}): Promise<AppleLoginResponse> => {
   const token = jose.decodeJwt(loginInfo.idToken);
 
   const data = {
@@ -133,19 +175,35 @@ export const postAppleLogin = async (loginInfo: {
     familyName: loginInfo.familyName ?? ''
   };
 
-  return genericPost('apple', data);
+  return parseAppleLoginResponse(await genericPost('apple', data));
 };
 
 export const postGoogleSignup = async (signupInfo: {
   idToken: string;
 }): Promise<OAuth2SignUpResponse> => genericPost('sign-up-google', signupInfo);
 
-export const getUserExists = async (email: string): Promise<boolean> => {
-  const response = await axios.get(`/users/exists?email=${email}`, {
-    validateStatus: () => true
+export const getUserExists = async (
+  email: string,
+  signal?: AbortSignal
+): Promise<boolean> => {
+  const params = new URLSearchParams({ email });
+  const response = await axios.get(`/users/exists?${params.toString()}`, {
+    signal,
+    validateStatus: (status) => status === 200 || status === 404
   });
 
-  return response.status !== 200;
+  if (typeof response.data === 'boolean') return response.data;
+  if (
+    response.data &&
+    typeof response.data === 'object' &&
+    typeof response.data.exists === 'boolean'
+  ) {
+    return response.data.exists;
+  }
+
+  // Preserve the current API's 200=available / 404=already registered
+  // contract, while allowing all other failures to reject normally.
+  return response.status === 404;
 };
 
 export const patchUser = async (

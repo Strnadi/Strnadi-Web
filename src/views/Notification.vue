@@ -8,17 +8,19 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="w-96 h-max flex flex-row gap-x-1 relative">
+  <div
+    class="w-96 h-max flex flex-row gap-x-1 relative"
+    role="status"
+    aria-live="polite"
+  >
     <button
       class="absolute top-0 right-0 p-2"
+      type="button"
+      aria-label="Zavřít oznámení"
       @click="emit('dismiss')"
     >
       x
     </button>
-    <img
-      src=""
-      alt=""
-    />
     <div class="flex flex-col">
       <h1
         v-if="props.title"

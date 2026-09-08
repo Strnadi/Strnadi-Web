@@ -4,30 +4,55 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onBeforeUnmount } from 'vue';
 import Dropzone from '@/components/Dropzone.vue';
 import SegmentedProgress from '@/components/SegmentedProgress.vue';
 import TrainingChart from '@/components/TrainingChart.vue';
 import { useModelTraining } from '@/composables/useModelTraining';
-import { toggleVisor, isVisorOpen } from '@/services/tfjs/vis';
+import { toggleVisor } from '@/services/tfjs/vis';
 
 const training = useModelTraining();
 const zipFile = ref<File | null>(null);
+const splitConfig = ref({
+  validationPct: 30,
+  testPct: 33
+});
 const config = ref({
   learningRate: 1e-4,
   epochs: 100,
   batchSize: 32,
   denseUnits: 512,
   dropoutRate: 0.3,
-  patience: 20,
+  patience: 20
+});
+
+const splitError = computed(() => {
+  const { validationPct, testPct } = splitConfig.value;
+  if (
+    !Number.isFinite(validationPct) ||
+    !Number.isFinite(testPct) ||
+    validationPct <= 0 ||
+    testPct < 0
+  ) {
+    return 'Validace musí být větší než 0 % a test nesmí být záporný.';
+  }
+  if (validationPct + testPct >= 100) {
+    return 'Součet validační a testovací části musí být menší než 100 %.';
+  }
+  return null;
 });
 
 async function handleDrop(files: File | File[]) {
   const file = Array.isArray(files) ? files[0] : files;
-  if (!file || !file.name.endsWith('.zip')) return;
+  if (!file || !file.name.toLowerCase().endsWith('.zip') || splitError.value) {
+    return;
+  }
   zipFile.value = file;
   try {
-    await training.loadDataset(file);
+    await training.loadDataset(file, {
+      validation: splitConfig.value.validationPct / 100,
+      test: splitConfig.value.testPct / 100
+    });
   } catch (e: any) {
     console.error('Dataset loading failed:', e);
   }
@@ -54,25 +79,28 @@ function handleToggleVisor() {
 }
 
 const canTrain = computed(
-  () =>
-    training.phase.value === 'idle' && training.datasetInfo.value !== null,
+  () => training.phase.value === 'idle' && training.datasetInfo.value !== null
 );
 
 const isTraining = computed(() => training.phase.value === 'training');
 const isDone = computed(() => training.phase.value === 'done');
 const hasError = computed(() => training.phase.value === 'error');
 const isExtracting = computed(
-  () => training.phase.value === 'extracting' || training.phase.value === 'loading-dataset',
+  () =>
+    training.phase.value === 'extracting' ||
+    training.phase.value === 'loading-dataset'
 );
 const isEvaluating = computed(() => training.phase.value === 'evaluating');
 const showVisControls = computed(
-  () => training.phase.value === 'training' || training.phase.value === 'done',
+  () => training.phase.value === 'training' || training.phase.value === 'done'
 );
 
 function resetTraining() {
   training.reset();
   zipFile.value = null;
 }
+
+onBeforeUnmount(() => training.cancel());
 </script>
 
 <template>
@@ -84,26 +112,100 @@ function resetTraining() {
         class="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
         @click="handleToggleVisor"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-4 h-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+          />
         </svg>
         Vizualizace (~)
       </button>
     </div>
 
     <p class="text-gray-600">
-      Nahrajte ZIP soubor s označenými audio nahrávkami pro trénink klasifikátoru založeného na modelu Perch v2 (LiteRT).
-      Stažený model obsahuje pouze trénovanou klasifikační hlavu; Perch backbone běží přes LiteRT.
-      <span v-if="showVisControls" class="block mt-1 text-xs text-gray-400">
+      Nahrajte ZIP soubor s označenými audio nahrávkami pro trénink
+      klasifikátoru založeného na modelu Perch v2 (LiteRT). Stažený model
+      obsahuje pouze trénovanou klasifikační hlavu; Perch backbone běží přes
+      LiteRT.
+      <span
+        v-if="showVisControls"
+        class="block mt-1 text-xs text-gray-400"
+      >
         Stiskněte klávesu ~ pro zobrazení pokročilé vizualizace (tfjs-vis).
       </span>
     </p>
 
     <!-- Dataset Upload -->
-    <section v-if="!training.datasetInfo.value" class="space-y-2">
-      <Dropzone accept=".zip" @drop="handleDrop">
+    <section
+      v-if="!training.datasetInfo.value"
+      class="space-y-4"
+    >
+      <div class="space-y-2">
+        <h2 class="font-semibold">Rozdělení datasetu</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col">
+            <label
+              class="text-xs text-gray-500"
+              for="validation-split"
+            >
+              Validace (%)
+            </label>
+            <input
+              id="validation-split"
+              v-model.number="splitConfig.validationPct"
+              type="number"
+              min="1"
+              max="99"
+              step="1"
+              class="border rounded-md px-2 py-1 text-sm"
+              :disabled="isExtracting"
+            />
+          </div>
+          <div class="flex flex-col">
+            <label
+              class="text-xs text-gray-500"
+              for="test-split"
+            >
+              Test (%)
+            </label>
+            <input
+              id="test-split"
+              v-model.number="splitConfig.testPct"
+              type="number"
+              min="0"
+              max="98"
+              step="1"
+              class="border rounded-md px-2 py-1 text-sm"
+              :disabled="isExtracting"
+            />
+          </div>
+        </div>
+        <p class="text-xs text-gray-500">
+          Trénink: {{ 100 - splitConfig.validationPct - splitConfig.testPct }} %
+        </p>
+        <p
+          v-if="splitError"
+          class="text-sm text-red-600"
+        >
+          {{ splitError }}
+        </p>
+      </div>
+      <Dropzone
+        accept=".zip"
+        @drop="handleDrop"
+      >
         <div class="flex flex-col items-center justify-center py-8 text-center">
-          <p class="text-lg font-medium mb-1">Přetáhněte ZIP soubor s tréninkovými daty</p>
+          <p class="text-lg font-medium mb-1">
+            Přetáhněte ZIP soubor s tréninkovými daty
+          </p>
           <p class="text-sm text-gray-500 max-w-md">
             ZIP musí obsahovat složky podle tříd. Každá složka = jedna třída.
             Podporované formáty: WAV, MP3, FLAC, OGG, AIFF.
@@ -118,8 +220,12 @@ function resetTraining() {
       class="space-y-2"
     >
       <div class="flex items-center justify-between">
-        <span class="text-sm text-gray-600">{{ training.statusMessage.value }}</span>
-        <span class="text-sm font-mono text-gray-600">{{ training.progressPct.value }}%</span>
+        <span class="text-sm text-gray-600">{{
+          training.statusMessage.value
+        }}</span>
+        <span class="text-sm font-mono text-gray-600"
+          >{{ training.progressPct.value }}%</span
+        >
       </div>
       <SegmentedProgress
         :progress="training.progressPct.value"
@@ -133,60 +239,148 @@ function resetTraining() {
       class="space-y-2"
     >
       <div class="flex items-center justify-between">
-        <span class="text-sm text-gray-600">{{ training.statusMessage.value }}</span>
-        <span v-if="isTraining" class="text-sm font-mono text-gray-600">Epocha {{ training.currentEpoch.value }} / {{ training.totalEpochs.value }}</span>
-        <span v-else class="text-sm font-mono text-gray-600">{{ training.progressPct.value }}%</span>
+        <span class="text-sm text-gray-600">{{
+          training.statusMessage.value
+        }}</span>
+        <span
+          v-if="isTraining"
+          class="text-sm font-mono text-gray-600"
+          >Epocha {{ training.currentEpoch.value }} /
+          {{ training.totalEpochs.value }}</span
+        >
+        <span
+          v-else
+          class="text-sm font-mono text-gray-600"
+          >{{ training.progressPct.value }}%</span
+        >
       </div>
       <SegmentedProgress
-        :progress="training.progressPct.value / 100"
+        :progress="(training.progressPct.value / 100) * 6"
         :total-segments="6"
       />
     </div>
 
     <!-- Dataset Info -->
-    <section v-if="training.datasetInfo.value" class="bg-gray-50 rounded-lg p-4">
+    <section
+      v-if="training.datasetInfo.value"
+      class="bg-gray-50 rounded-lg p-4"
+    >
       <div class="flex items-center justify-between mb-2">
         <h2 class="font-semibold">Dataset</h2>
-        <button class="text-sm text-red-600 hover:underline" @click="resetTraining">
+        <button
+          class="text-sm text-red-600 hover:underline"
+          @click="resetTraining"
+        >
           Reset
         </button>
       </div>
       <div class="grid grid-cols-2 gap-2 text-sm">
-        <div>Celkem vzorků: <span class="font-medium">{{ training.datasetInfo.value.totalSamples }}</span></div>
-        <div>Třídy: <span class="font-medium">{{ training.classNames.value.join(', ') }}</span></div>
-        <div>Trénink: <span class="font-medium">{{ training.datasetInfo.value.trainCount }}</span></div>
-        <div>Validace: <span class="font-medium">{{ training.datasetInfo.value.valCount }}</span></div>
-        <div>Test: <span class="font-medium">{{ training.datasetInfo.value.testCount }}</span></div>
+        <div>
+          Celkem vzorků:
+          <span class="font-medium">{{
+            training.datasetInfo.value.totalSamples
+          }}</span>
+        </div>
+        <div>
+          Třídy:
+          <span class="font-medium">{{
+            training.classNames.value.join(', ')
+          }}</span>
+        </div>
+        <div>
+          Trénink:
+          <span class="font-medium">{{
+            training.datasetInfo.value.trainCount
+          }}</span>
+        </div>
+        <div>
+          Validace:
+          <span class="font-medium">{{
+            training.datasetInfo.value.valCount
+          }}</span>
+        </div>
+        <div>
+          Test:
+          <span class="font-medium">{{
+            training.datasetInfo.value.testCount
+          }}</span>
+        </div>
       </div>
     </section>
 
     <!-- Training Config -->
-    <section v-if="canTrain || isTraining || isDone" class="space-y-3">
+    <section
+      v-if="canTrain || isTraining || isDone"
+      class="space-y-3"
+    >
       <h2 class="font-semibold">Nastavení tréninku</h2>
       <div class="grid grid-cols-2 gap-3">
         <div class="flex flex-col">
           <label class="text-xs text-gray-500">Learning Rate</label>
-          <input v-model.number="config.learningRate" type="number" step="0.0001" class="border rounded-md px-2 py-1 text-sm" :disabled="isTraining || isEvaluating" />
+          <input
+            v-model.number="config.learningRate"
+            type="number"
+            min="0.000001"
+            step="0.0001"
+            class="border rounded-md px-2 py-1 text-sm"
+            :disabled="isTraining || isEvaluating"
+          />
         </div>
         <div class="flex flex-col">
           <label class="text-xs text-gray-500">Epochs</label>
-          <input v-model.number="config.epochs" type="number" class="border rounded-md px-2 py-1 text-sm" :disabled="isTraining || isEvaluating" />
+          <input
+            v-model.number="config.epochs"
+            type="number"
+            min="1"
+            step="1"
+            class="border rounded-md px-2 py-1 text-sm"
+            :disabled="isTraining || isEvaluating"
+          />
         </div>
         <div class="flex flex-col">
           <label class="text-xs text-gray-500">Batch Size</label>
-          <input v-model.number="config.batchSize" type="number" class="border rounded-md px-2 py-1 text-sm" :disabled="isTraining || isEvaluating" />
+          <input
+            v-model.number="config.batchSize"
+            type="number"
+            min="1"
+            step="1"
+            class="border rounded-md px-2 py-1 text-sm"
+            :disabled="isTraining || isEvaluating"
+          />
         </div>
         <div class="flex flex-col">
           <label class="text-xs text-gray-500">Dense Units</label>
-          <input v-model.number="config.denseUnits" type="number" class="border rounded-md px-2 py-1 text-sm" :disabled="isTraining || isEvaluating" />
+          <input
+            v-model.number="config.denseUnits"
+            type="number"
+            min="1"
+            step="1"
+            class="border rounded-md px-2 py-1 text-sm"
+            :disabled="isTraining || isEvaluating"
+          />
         </div>
         <div class="flex flex-col">
           <label class="text-xs text-gray-500">Dropout</label>
-          <input v-model.number="config.dropoutRate" type="number" step="0.1" class="border rounded-md px-2 py-1 text-sm" :disabled="isTraining || isEvaluating" />
+          <input
+            v-model.number="config.dropoutRate"
+            type="number"
+            min="0"
+            max="0.99"
+            step="0.1"
+            class="border rounded-md px-2 py-1 text-sm"
+            :disabled="isTraining || isEvaluating"
+          />
         </div>
         <div class="flex flex-col">
           <label class="text-xs text-gray-500">Patience</label>
-          <input v-model.number="config.patience" type="number" class="border rounded-md px-2 py-1 text-sm" :disabled="isTraining || isEvaluating" />
+          <input
+            v-model.number="config.patience"
+            type="number"
+            min="1"
+            step="1"
+            class="border rounded-md px-2 py-1 text-sm"
+            :disabled="isTraining || isEvaluating"
+          />
         </div>
       </div>
 
@@ -196,7 +390,10 @@ function resetTraining() {
           :disabled="!canTrain || isTraining || isEvaluating"
           @click="startTraining"
         >
-          <span v-if="isTraining">Trénink probíhá ({{ training.currentEpoch.value }} / {{ training.totalEpochs.value }})…</span>
+          <span v-if="isTraining"
+            >Trénink probíhá ({{ training.currentEpoch.value }} /
+            {{ training.totalEpochs.value }})…</span
+          >
           <span v-else-if="isEvaluating">Hodnocení modelu…</span>
           <span v-else-if="isDone">Trénink dokončen</span>
           <span v-else>Spustit trénink</span>
@@ -213,7 +410,10 @@ function resetTraining() {
     </section>
 
     <!-- Inline Visualization (keep for quick in-page view) -->
-    <section v-if="isTraining || isDone" class="space-y-2">
+    <section
+      v-if="isTraining || isDone"
+      class="space-y-2"
+    >
       <div class="flex items-center justify-between">
         <h2 class="font-semibold">Průběh tréninku</h2>
         <button
@@ -223,24 +423,39 @@ function resetTraining() {
           Podrobná vizualizace
         </button>
       </div>
-      <div class="border rounded-lg p-2 bg-white" style="height: 300px;">
+      <div
+        class="border rounded-lg p-2 bg-white"
+        style="height: 300px"
+      >
         <TrainingChart :history="training.epochHistory.value" />
       </div>
     </section>
 
     <!-- Evaluation Results Summary -->
-    <section v-if="isDone && training.evaluationDone.value" class="bg-green-50 rounded-lg p-4">
+    <section
+      v-if="isDone && training.evaluationDone.value"
+      class="bg-green-50 rounded-lg p-4"
+    >
       <h2 class="font-semibold text-green-800 mb-1">Hodnocení dokončeno</h2>
       <p class="text-sm text-green-700">
-        Matice záměn a přesnost podle tříd jsou k dispozici v panelu vizualizace.
-        Klikněte na <em>Podrobná vizualizace</em> nebo stiskněte klávesu <kbd class="px-1 py-0.5 bg-green-100 rounded text-xs">~</kbd>.
+        Matice záměn a přesnost podle tříd jsou k dispozici v panelu
+        vizualizace. Klikněte na <em>Podrobná vizualizace</em> nebo stiskněte
+        klávesu <kbd class="px-1 py-0.5 bg-green-100 rounded text-xs">~</kbd>.
       </p>
     </section>
 
     <!-- Error -->
-    <div v-if="hasError" class="bg-red-50 text-red-700 rounded-lg p-4">
+    <div
+      v-if="hasError"
+      class="bg-red-50 text-red-700 rounded-lg p-4"
+    >
       <p class="font-medium">Chyba: {{ training.error.value }}</p>
-      <button class="mt-2 text-sm underline" @click="resetTraining">Zkusit znovu</button>
+      <button
+        class="mt-2 text-sm underline"
+        @click="resetTraining"
+      >
+        Zkusit znovu
+      </button>
     </div>
   </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup vapor lang="ts">
-import { computed } from 'vue';
+import { computed, useId } from 'vue';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -15,13 +15,15 @@ const value = computed({
     emit('update:modelValue', newValue);
   }
 });
+const inputId = useId();
 </script>
 
 <template>
-  <div class="details-toggle-card">
-    <p class="details-toggle-text"><slot /></p>
-    <label class="toggle-switch">
+  <label class="details-toggle-card" :for="inputId">
+    <span class="details-toggle-text"><slot /></span>
+    <span class="toggle-switch">
       <input
+        :id="inputId"
         v-model="value"
         type="checkbox"
         class="toggle-switch-input"
@@ -34,8 +36,8 @@ const value = computed({
       >
         <span class="toggle-switch-thumb" />
       </span>
-    </label>
-  </div>
+    </span>
+  </label>
 </template>
 
 <style scoped>

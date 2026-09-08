@@ -1,9 +1,13 @@
 import { reactive } from 'vue';
 
 export const soundAccept = [
-  'audio/*',
-  'application/ogg',
-  'application/vorbis'
+  'audio/wav',
+  'audio/mpeg',
+  'audio/mp4',
+  'audio/flac',
+  'audio/aac',
+  'audio/ogg',
+  'audio/webm'
 ];
 
 export interface LatLng {
@@ -12,8 +16,12 @@ export interface LatLng {
 }
 
 export interface RecordingPartDraft {
+  id: string;
   file: File;
   location: LatLng | null;
+  duration: number;
+  latitudeInput: string;
+  longitudeInput: string;
 }
 
 export interface DraftDetectedDialect {
@@ -34,6 +42,7 @@ export interface DraftFilteredPart {
   representantFlag?: boolean;
   dialectCode: string | null;
   detectedDialects: DraftDetectedDialect[];
+  recordingPartId?: string;
 }
 
 export const uploadStore = reactive({
@@ -51,12 +60,16 @@ export const uploadStore = reactive({
   nextPartId: 1,
   nextDetectionId: 1,
 
-  setRecordings(recordings: File[]) {
+  setRecordings(recordings: File[], durations: number[] = []) {
     this.parts ??= [];
     this.parts.push(
-      ...(recordings.map((recording) => ({
+      ...(recordings.map((recording, index) => ({
+        id: crypto.randomUUID(),
         file: recording,
-        location: null
+        location: null,
+        duration: durations[index] ?? 0,
+        latitudeInput: '',
+        longitudeInput: ''
       })) as RecordingPartDraft[])
     );
   },
@@ -69,6 +82,33 @@ export const uploadStore = reactive({
 
   removePartByIndex(index: number) {
     if (this.parts) {
+      const removed = this.parts[index];
+      if (!removed) return;
+      const removedStart =
+        new Date(this.dateTime).getTime() +
+        this.parts
+          .slice(0, index)
+          .reduce((total, part) => total + part.duration * 1000, 0);
+      const removedEnd = removedStart + removed.duration * 1000;
+
+      this.draftFilteredParts = this.draftFilteredParts
+        .filter((part) => {
+          if (part.recordingPartId) return part.recordingPartId !== removed.id;
+          const start = Date.parse(part.startDate);
+          return start < removedStart || start >= removedEnd;
+        })
+        .map((part) => {
+          if (Date.parse(part.startDate) < removedEnd) return part;
+          return {
+            ...part,
+            startDate: new Date(
+              Date.parse(part.startDate) - removed.duration * 1000
+            ).toISOString(),
+            endDate: new Date(
+              Date.parse(part.endDate) - removed.duration * 1000
+            ).toISOString()
+          };
+        });
       this.parts.splice(index, 1);
     }
   },
@@ -98,10 +138,18 @@ export const uploadStore = reactive({
       detectedDialects?: DraftDetectedDialect[];
     }
   ): DraftFilteredPart {
+    const partTime = Date.parse(part.startDate);
+    let cursor = Date.parse(this.dateTime);
+    const recordingPartId = this.parts?.find((recordingPart) => {
+      const start = cursor;
+      cursor += recordingPart.duration * 1000;
+      return partTime >= start && partTime < cursor;
+    })?.id;
     const created: DraftFilteredPart = {
       ...part,
       id: this.nextPartId++,
-      detectedDialects: part.detectedDialects ?? []
+      detectedDialects: part.detectedDialects ?? [],
+      recordingPartId
     };
     this.draftFilteredParts.push(created);
     return created;
@@ -113,8 +161,10 @@ export const uploadStore = reactive({
   ) {
     const idx = this.draftFilteredParts.findIndex((p) => p.id === id);
     if (idx === -1) return;
+    const current = this.draftFilteredParts[idx];
+    if (!current) return;
     this.draftFilteredParts[idx] = {
-      ...this.draftFilteredParts[idx],
+      ...current,
       ...patch
     };
   },
@@ -152,8 +202,10 @@ export const uploadStore = reactive({
     this.draftFilteredParts.forEach((part) => {
       const idx = part.detectedDialects.findIndex((d) => d.id === detectionId);
       if (idx !== -1) {
+        const current = part.detectedDialects[idx];
+        if (!current) return;
         part.detectedDialects[idx] = {
-          ...part.detectedDialects[idx],
+          ...current,
           ...patch
         };
       }

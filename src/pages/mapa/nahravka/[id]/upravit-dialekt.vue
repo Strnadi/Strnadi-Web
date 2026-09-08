@@ -1,10 +1,19 @@
 <route lang="yaml">
 meta:
   layout: desktop/center
+  mobilePresentation: workspace
 </route>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch, onMounted, onUnmounted } from 'vue';
+import {
+  computed,
+  nextTick,
+  reactive,
+  ref,
+  watch,
+  onMounted,
+  onUnmounted
+} from 'vue';
 import Spectrogram from '@/views/Spectrogram.vue';
 import { useRouteParams } from '@vueuse/router';
 import { useRoute } from 'vue-router';
@@ -27,19 +36,15 @@ import {
   updateDetectedDialect
 } from '@/api/recordings';
 import { type Numeric } from '@/types/basic';
-import TranslatedText from '@/components/TranslatedText.vue';
+import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import { accountStore } from '@/state/AccountStore';
 import { uploadStore, type DraftFilteredPart } from '@/state/UploadDraftStore';
-
-interface SpectrogramRange {
-  id: number;
-  start: number;
-  end: number;
-  color?: string;
-  colors?: string[];
-  payload?: SegmentMeta;
-}
+import { draftPartToModel } from '@/utils/draft-part-to-model';
+import type {
+  SpectrogramRange as SharedSpectrogramRange,
+  SpectrogramRangeCreated
+} from '@/types/spectrogram';
 
 interface SegmentMeta {
   key: number;
@@ -56,19 +61,12 @@ interface SegmentMeta {
   originalEnd: number;
 }
 
+type SpectrogramRange = SharedSpectrogramRange<SegmentMeta, number>;
+
 interface DialectSelection {
   userGuessDialectId: number | null;
   predictedDialectId: number | null;
   confirmedDialectId: number | null;
-}
-
-interface FilteredPartPatchPayload {
-  recordingId: number;
-  parentId: number | null;
-  startDate: string;
-  endDate: string;
-  state: number;
-  representantFlag?: boolean;
 }
 
 interface FilteredPartCreatePayload {
@@ -82,7 +80,7 @@ const env = import.meta.env;
 const id = useRouteParams<Numeric>('id');
 const route = useRoute();
 
-const isDraftMode = computed(() => route.query?.draft === '1');
+const isDraftMode = computed(() => route.query?.['draft'] === '1');
 
 const recordingQuery = useFetchedWithOptions(
   getRecording,
@@ -107,10 +105,11 @@ const recording = computed(() =>
   isDraftMode.value ? draftRecording.value : recordingQuery.data.value
 );
 
+
 const filteredParts = computed<FilteredPartModel[] | null>(() =>
   isDraftMode.value
-    ? (draftFilteredParts.value as unknown as FilteredPartModel[] | null)
-    : filteredPartsQuery.data.value
+    ? (draftFilteredParts.value?.map(draftPartToModel) ?? null)
+    : filteredPartsQuery.data.value ?? null
 );
 
 const dialectDefinitions = computed(
@@ -248,7 +247,6 @@ const segmentMetas = reactive<Record<number, SegmentMeta>>({});
 const detectionForms = ref<Record<number, DialectSelection>>({});
 const newDetectionForms = reactive<Record<number, DialectSelection>>({});
 const detectionSaving = reactive<Record<number, boolean>>({});
-const detectionCreateSaving = reactive<Record<number, boolean>>({});
 const detectionMessage = ref<string | null>(null);
 const detectionError = ref<string | null>(null);
 const segmentError = ref<string | null>(null);
@@ -260,6 +258,11 @@ const tooltipCreateDialectId = ref<number | null>(null);
 const tooltipCreateSaving = ref(false);
 const tooltipAddDetectionDialectId = ref<number | null>(null);
 const tooltipAddDetectionSaving = ref(false);
+const pendingSecondaryRangeIds = new Set<number>();
+const paletteRangeId = ref<number | null>(null);
+const paletteRef = ref<HTMLElement | null>(null);
+const palettePosition = ref({ x: 8, y: 8 });
+const paletteActiveIndex = ref(0);
 
 const DEFAULT_SEGMENT_COLOR = '#4B5563';
 
@@ -344,10 +347,6 @@ watch(segments, (newRanges, oldRanges) => {
     autoSaveDraft();
   }
 });
-
-const activeSegmentMetas = computed(() =>
-  Object.values(segmentMetas).filter((meta) => !meta.markedForDeletion)
-);
 
 const deletedSegmentMetas = computed(() =>
   Object.values(segmentMetas).filter(
@@ -457,18 +456,6 @@ function formatRelativeTime(seconds: number) {
     .toString()
     .padStart(2, '0');
   return `${sign}${minutes}:${secs}`;
-}
-
-function formatAbsoluteFromSeconds(seconds: number) {
-  const anchor = anchorTimestamp.value;
-  if (anchor === null || !Number.isFinite(seconds)) return '--:--';
-  const date = new Date(anchor + seconds * 1000);
-  if (isNaN(date.getTime())) return '--:--';
-  return date.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
 }
 
 function hydrateSegments(parts: FilteredPartModel[] | null | undefined) {
@@ -582,10 +569,13 @@ function syncSegmentRanges(
 }
 
 function createMetaForNewRange(range: SpectrogramRange): SegmentMeta {
+  const isPendingSecondary = pendingSecondaryRangeIds.has(range.id);
   const fallback =
-    selectedDialectCode.value ??
-    availableDialects.value[0]?.dialectCode ??
-    null;
+    isPendingSecondary
+      ? null
+      : (selectedDialectCode.value ??
+        availableDialects.value[0]?.dialectCode ??
+        null);
   return {
     key: range.id,
     filteredPart: undefined,
@@ -601,6 +591,122 @@ function createMetaForNewRange(range: SpectrogramRange): SegmentMeta {
     originalEnd: range.end
   };
 }
+
+async function positionDialectPalette(anchor: { x: number; y: number }) {
+  await nextTick();
+  const palette = paletteRef.value;
+  if (!palette) return;
+  const margin = 8;
+  palettePosition.value = {
+    x: Math.max(
+      margin,
+      Math.min(anchor.x, window.innerWidth - palette.offsetWidth - margin)
+    ),
+    y: Math.max(
+      margin,
+      Math.min(anchor.y, window.innerHeight - palette.offsetHeight - margin)
+    )
+  };
+  palette.querySelector<HTMLButtonElement>('[role="option"]')?.focus();
+}
+
+function onRangeCreated(event: SpectrogramRangeCreated) {
+  if (event.inputSource !== 'secondary' || typeof event.range.id !== 'number')
+    return;
+  const range = event.range as SpectrogramRange;
+  pendingSecondaryRangeIds.add(range.id);
+  const meta = createMetaForNewRange(range);
+  segmentMetas[range.id] = meta;
+  range.payload = meta;
+  range.color = DEFAULT_SEGMENT_COLOR;
+  range.colors = [DEFAULT_SEGMENT_COLOR];
+  paletteRangeId.value = range.id;
+  paletteActiveIndex.value = 0;
+  palettePosition.value = { x: event.anchor.x, y: event.anchor.y };
+  void positionDialectPalette(event.anchor);
+}
+
+function dismissDialectPalette() {
+  const rangeId = paletteRangeId.value;
+  if (rangeId === null) return;
+  pendingSecondaryRangeIds.delete(rangeId);
+  if (segments.value) {
+    segments.value = segments.value.filter((range) => range.id !== rangeId);
+  }
+  delete segmentMetas[rangeId];
+  paletteRangeId.value = null;
+}
+
+function choosePaletteDialect(index: number) {
+  const rangeId = paletteRangeId.value;
+  const dialect = availableDialects.value[index];
+  if (rangeId === null || !dialect) return;
+  const meta = segmentMetas[rangeId];
+  if (!meta) return;
+  meta.dialectCode = dialect.dialectCode;
+  meta.dirty = true;
+  pendingSecondaryRangeIds.delete(rangeId);
+  if (segments.value) {
+    const range = segments.value.find((item) => item.id === rangeId);
+    if (range) {
+      range.color = resolveDialectColor(dialect.dialectCode);
+      range.colors = [resolveDialectColor(dialect.dialectCode)];
+      range.payload = meta;
+    }
+    segments.value = [...segments.value];
+  }
+  paletteRangeId.value = null;
+  if (isDraftMode.value) autoSaveDraft();
+}
+
+function onPaletteKeydown(event: KeyboardEvent) {
+  const lastIndex = availableDialects.value.length - 1;
+  if (lastIndex < 0) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    dismissDialectPalette();
+    return;
+  }
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    choosePaletteDialect(paletteActiveIndex.value);
+    return;
+  }
+  if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+    event.preventDefault();
+    paletteActiveIndex.value = (paletteActiveIndex.value + 1) % (lastIndex + 1);
+  } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+    event.preventDefault();
+    paletteActiveIndex.value =
+      (paletteActiveIndex.value - 1 + lastIndex + 1) % (lastIndex + 1);
+  } else if (event.key === 'Home') {
+    event.preventDefault();
+    paletteActiveIndex.value = 0;
+  } else if (event.key === 'End') {
+    event.preventDefault();
+    paletteActiveIndex.value = lastIndex;
+  } else {
+    return;
+  }
+  nextTick(() => {
+    paletteRef.value
+      ?.querySelectorAll<HTMLButtonElement>('[role="option"]')
+      [paletteActiveIndex.value]?.focus();
+  });
+}
+
+const onPaletteOutsidePointerDown = (event: PointerEvent) => {
+  if (
+    paletteRangeId.value !== null &&
+    paletteRef.value &&
+    !paletteRef.value.contains(event.target as Node)
+  ) dismissDialectPalette();
+};
+
+onMounted(() => document.addEventListener('pointerdown', onPaletteOutsidePointerDown));
+onUnmounted(() =>
+  document.removeEventListener('pointerdown', onPaletteOutsidePointerDown)
+);
 
 function applyRangeMeta(range: SpectrogramRange) {
   let meta = segmentMetas[range.id];
@@ -720,9 +826,9 @@ const saveSegmentChanges = async () => {
         throw new Error('Nepodařilo se převést čas úseku.');
       }
       const parentId = meta.filteredPart?.parentId;
-      // if (parentId == null) {
-      //   throw new Error('Chybí parentId úseku.');
-      // }
+      if (parentId == null) {
+        throw new Error('Chybí parentId úseku.');
+      }
       await patchFilteredPart(token, meta.filteredPart!.id, {
         recordingId: recording.value.id,
         parentId,
@@ -873,13 +979,13 @@ async function saveDraftSegmentChanges(silent = false) {
           confirmedDialectId: canConfirmDialects.value ? dialectId : null
         });
       }
-      meta.filteredPart = created as unknown as FilteredPartModel;
+      meta.filteredPart = draftPartToModel(created);
       meta.isNew = false;
       meta.dirty = false;
     }
 
     draftFilteredParts.value = [...uploadStore.draftFilteredParts];
-    hydrateSegments((draftFilteredParts.value ?? []) as FilteredPartModel[]);
+    hydrateSegments((draftFilteredParts.value ?? []).map(draftPartToModel));
     if (!silent) segmentSuccess.value = 'Změny úseků byly uloženy.';
   } catch (err) {
     segmentError.value =
@@ -964,71 +1070,6 @@ const deleteDetection = async (detected: DetectedDialect) => {
         : 'Nepodařilo se odstranit záznam dialektu.';
   } finally {
     detectionSaving[detected.id] = false;
-  }
-};
-
-const createDetection = async (meta: SegmentMeta) => {
-  if (!meta.filteredPart) {
-    detectionError.value = 'Nejprve uložte úsek.';
-    return;
-  }
-  const form =
-    newDetectionForms[meta.key] ??
-    (newDetectionForms[meta.key] = {
-      userGuessDialectId: null,
-      predictedDialectId: null,
-      confirmedDialectId: null
-    });
-  const hasValue =
-    form.userGuessDialectId ??
-    form.predictedDialectId ??
-    form.confirmedDialectId;
-  if (!hasValue) {
-    detectionError.value = 'Vyberte alespoň jednu hodnotu dialektu.';
-    return;
-  }
-  detectionCreateSaving[meta.key] = true;
-  detectionError.value = null;
-  detectionMessage.value = null;
-  try {
-    if (isDraftMode.value) {
-      const created = uploadStore.createDraftDetection(meta.filteredPart.id, {
-        userGuessDialectId: form.userGuessDialectId,
-        predictedDialectId: form.predictedDialectId,
-        confirmedDialectId: canConfirmDialects.value
-          ? form.confirmedDialectId
-          : null
-      });
-      meta.filteredPart.detectedDialects ??= [];
-      meta.filteredPart.detectedDialects.push(
-        created as unknown as DetectedDialect
-      );
-      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
-      detectionMessage.value = 'Záznam dialektu byl přidán.';
-    } else {
-      await postDetectedDialect(accountStore.token!, {
-        filteredPartId: meta.filteredPart.id,
-        userGuessDialectId: form.userGuessDialectId,
-        predictedDialectId: form.predictedDialectId,
-        confirmedDialectId: canConfirmDialects.value
-          ? form.confirmedDialectId
-          : null
-      });
-      detectionMessage.value = 'Záznam dialektu byl přidán.';
-      await refetchFilteredParts();
-    }
-    newDetectionForms[meta.key] = {
-      userGuessDialectId: null,
-      predictedDialectId: null,
-      confirmedDialectId: null
-    };
-  } catch (err) {
-    detectionError.value =
-      err instanceof Error
-        ? err.message
-        : 'Nepodařilo se přidat záznam dialektu.';
-  } finally {
-    detectionCreateSaving[meta.key] = false;
   }
 };
 
@@ -1160,58 +1201,11 @@ const confirmExistingDetection = async (
   }
 };
 
-const clearConfirmedDialect = async (
-  detected: DetectedDialect,
-  close?: () => void
-) => {
-  if (!canConfirmDialects.value) {
-    detectionError.value = 'Nemáte oprávnění odebrat potvrzení.';
-    return;
-  }
-  const form = ensureDetectionForm(detected);
-  detectionSaving[detected.id] = true;
-  detectionError.value = null;
-  detectionMessage.value = null;
-  try {
-    if (isDraftMode.value) {
-      uploadStore.updateDraftDetection(detected.id, {
-        userGuessDialectId: form.userGuessDialectId,
-        predictedDialectId: form.predictedDialectId,
-        confirmedDialectId: null
-      });
-      detectionMessage.value = 'Potvrzený dialekt byl odebrán.';
-      if (close) close();
-      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
-    } else {
-      await updateDetectedDialect(accountStore.token!, {
-        id: detected.id,
-        userGuessDialectId: form.userGuessDialectId,
-        predictedDialectId: form.predictedDialectId,
-        confirmedDialectId: null
-      });
-      detectionMessage.value = 'Potvrzený dialekt byl odebrán.';
-      if (close) close();
-      await refetchFilteredParts();
-    }
-  } catch (err) {
-    detectionError.value =
-      err instanceof Error
-        ? err.message
-        : 'Nepodařilo se odebrat potvrzení dialektu.';
-  } finally {
-    detectionSaving[detected.id] = false;
-  }
-};
-
-const quickCreateFilteredPart = async (
+const quickCreateFilteredPart = (
   range: SpectrogramRange,
   dialectId: number | null,
   close?: () => void
 ) => {
-  if (!recording.value && !isDraftMode.value) {
-    segmentError.value = 'Chybí metadata nahrávky.';
-    return;
-  }
   if (!Number.isFinite(range.start) || !Number.isFinite(range.end)) {
     segmentError.value = 'Úsek nemá platný čas.';
     return;
@@ -1225,57 +1219,22 @@ const quickCreateFilteredPart = async (
     segmentError.value = 'Vybraný dialekt nebyl nalezen.';
     return;
   }
-  const startDate = convertRelativeToIso(range.start);
-  const endDate = convertRelativeToIso(range.end);
-  if (!startDate || !endDate) {
-    segmentError.value = 'Nepodařilo se převést čas úseku.';
-    return;
-  }
-  tooltipCreateSaving.value = true;
   segmentError.value = null;
   segmentSuccess.value = null;
-  try {
-    if (isDraftMode.value) {
-      const created = uploadStore.createDraftFilteredPart({
-        parentId: 0,
-        recordingId: 0,
-        startDate,
-        endDate,
-        state: 0,
-        representantFlag: false,
-        dialectCode: dialect.dialectCode,
-        detectedDialects: []
-      });
-      uploadStore.createDraftDetection(created.id, {
-        userGuessDialectId: dialect.id,
-        predictedDialectId: null,
-        confirmedDialectId: canConfirmDialects.value ? dialect.id : null
-      });
-      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
-      hydrateSegments((draftFilteredParts.value ?? []) as FilteredPartModel[]);
-    } else {
-      await postFilteredPart(accountStore.token!, {
-        recordingId: recording.value.id,
-        startDate,
-        endDate,
-        dialectCode: dialect.dialectCode
-      });
-      await refetchFilteredParts();
-      const part = findFilteredPartByTime(startDate, endDate);
-      if (part) {
-        await autoConfirmDetectedDialect(part, dialect.id);
-        await refetchFilteredParts();
-      }
-    }
-    tooltipCreateDialectId.value = null;
-    segmentSuccess.value = 'Úsek byl vytvořen.';
-    if (close) close();
-  } catch (err) {
-    segmentError.value =
-      err instanceof Error ? err.message : 'Nepodařilo se vytvořit úsek.';
-  } finally {
-    tooltipCreateSaving.value = false;
+  const meta = segmentMetas[range.id] ?? createMetaForNewRange(range);
+  meta.dialectCode = dialect.dialectCode;
+  meta.dirty = true;
+  segmentMetas[range.id] = meta;
+  range.payload = meta;
+  range.color = resolveDialectColor(dialect.dialectCode);
+  range.colors = [resolveDialectColor(dialect.dialectCode)];
+  if (segments.value) {
+    segments.value = [...segments.value];
   }
+  tooltipCreateDialectId.value = null;
+  segmentSuccess.value = 'Úsek je připraven k uložení.';
+  close?.();
+  if (isDraftMode.value) autoSaveDraft();
 };
 
 const quickAddDetectedDialect = async (
@@ -1433,6 +1392,8 @@ const confirmAll = async () => {
         :min-frequency="3000"
         :selection-color-resolver="selectionColorResolver"
         :readonly="!canEditDialects"
+        :secondary-button-selection="canEditDialects"
+        @range-created="onRangeCreated"
       >
         <template #context-menu="{ range: rangeId, close }">
           <div
@@ -1740,7 +1701,7 @@ const confirmAll = async () => {
           </select>
         </label>
 
-        <div class="flex flex-wrap gap-2 ml-auto">
+        <div class="mobile-workspace-actions flex flex-wrap gap-2 ml-auto">
           <button
             @click="confirmAll"
             class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1794,4 +1755,80 @@ const confirmAll = async () => {
       </section>
     </div>
   </template>
+
+  <Teleport v-if="paletteRangeId !== null" to="body">
+    <section
+      ref="paletteRef"
+      class="dialect-palette"
+      :style="{ left: `${palettePosition.x}px`, top: `${palettePosition.y}px` }"
+      role="listbox"
+      :aria-label="t('mobile.dialect_palette.title')"
+      @keydown="onPaletteKeydown"
+      @contextmenu.prevent
+    >
+      <header>
+        <strong>{{ t('mobile.dialect_palette.title') }}</strong>
+        <small>{{ t('mobile.dialect_palette.hint') }}</small>
+      </header>
+      <div class="dialect-palette__options">
+        <button
+          v-for="(dialect, index) in availableDialects"
+          :key="dialect.id"
+          type="button"
+          role="option"
+          :aria-selected="paletteActiveIndex === index"
+          :tabindex="paletteActiveIndex === index ? 0 : -1"
+          @focus="paletteActiveIndex = index"
+          @click="choosePaletteDialect(index)"
+        >
+          <span
+            class="dialect-palette__swatch"
+            :style="{ background: resolveDialectColor(dialect.dialectCode) }"
+          />
+          <span>{{ dialect.dialectCode }}</span>
+        </button>
+      </div>
+    </section>
+  </Teleport>
 </template>
+
+<style scoped>
+@reference '../../../../styles/main.css';
+
+.dialect-palette {
+  @apply fixed z-[10000] flex w-[min(22rem,calc(100vw-1rem))] max-h-[min(28rem,calc(100dvh-1rem))] flex-col overflow-hidden p-3;
+  border: 1px solid var(--mobile-border);
+  border-radius: var(--mobile-radius);
+  background: var(--mobile-surface);
+  color: var(--mobile-ink);
+  box-shadow: var(--mobile-shadow-raised);
+}
+
+.dialect-palette header {
+  @apply flex flex-col gap-1 px-1 pb-2;
+}
+
+.dialect-palette header small {
+  color: var(--mobile-muted);
+}
+
+.dialect-palette__options {
+  @apply grid min-h-0 gap-1 overflow-y-auto;
+}
+
+.dialect-palette__options button {
+  @apply flex min-h-11 items-center gap-3 rounded-xl px-3 text-left;
+  border: 1px solid transparent;
+  background: var(--mobile-cream);
+}
+
+.dialect-palette__options button[aria-selected='true'] {
+  border-color: var(--mobile-ink);
+  background: var(--mobile-yellow);
+}
+
+.dialect-palette__swatch {
+  @apply h-6 w-6 shrink-0 rounded-md;
+  border: 1px solid var(--mobile-ink);
+}
+</style>

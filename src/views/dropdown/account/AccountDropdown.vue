@@ -16,6 +16,7 @@ const user = accountStore.user!;
         <img
           v-else
           :src="user.profilePicture"
+          :alt="`Profilový obrázek uživatele ${user.nickname || user.firstName}`"
         />
 
         <template v-if="user.nickname && !user.firstName && !user.lastName">

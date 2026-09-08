@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/vue-query';
 import TranslatedText from '@/components/TranslatedText.vue';
 
 const { data: articles } = useQuery({
-  queryKey: ['articles'],
+  queryKey: ['articles', 'list'],
   queryFn: () => getArticles()
 });
 </script>

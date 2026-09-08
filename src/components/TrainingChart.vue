@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import type { EpochLog } from '@/services/tfjs/training';
 
 const props = defineProps<{
@@ -9,6 +9,12 @@ const props = defineProps<{
 }>();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
+const chartDescription = computed(() => {
+  const latest = props.history.at(-1);
+  return latest
+    ? `Epocha ${latest.epoch + 1}: loss ${latest.loss.toFixed(3)}, validační loss ${latest.valLoss.toFixed(3)}, přesnost ${latest.acc.toFixed(3)}, validační přesnost ${latest.valAcc.toFixed(3)}.`
+    : 'Graf čeká na první epochu.';
+});
 
 function draw() {
   const canvas = canvasRef.value;
@@ -87,7 +93,7 @@ function draw() {
     let started = false;
     for (let i = 0; i < values.length; i++) {
       const v = values[i];
-      if (!Number.isFinite(v)) continue;
+      if (v === undefined || !Number.isFinite(v)) continue;
       const x = xFor(i);
       const y = yFn(v);
       if (!started) {
@@ -154,6 +160,8 @@ defineExpose({ draw });
     ref="canvasRef"
     class="w-full h-full"
     :style="{ minHeight: '200px' }"
+    role="img"
+    :aria-label="chartDescription"
   />
 </template>
 

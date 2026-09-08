@@ -7,7 +7,10 @@ export interface PhotoUploadRequest {
 }
 
 export const postPhoto = async (
-  uploadRequest: PhotoUploadRequest
+  uploadRequest: PhotoUploadRequest,
+  token: string
 ): Promise<void> => {
-  await axios.post(`/photos/recording-photo`, uploadRequest);
+  await axios.post(`/photos/recording-photo`, uploadRequest, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 };

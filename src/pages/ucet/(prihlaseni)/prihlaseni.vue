@@ -29,9 +29,9 @@ const {
 } = useMutation({
   mutationFn: (loginInfo: { idToken: string }) => postGoogleLogin(loginInfo),
 
-  onSuccess: (data) => {
-    router.replace('/');
-    accountStore.login(data);
+  onSuccess: async (data) => {
+    await accountStore.login(data);
+    await router.replace('/');
   }
 });
 
@@ -47,8 +47,6 @@ const {
   }) => postAppleLogin(loginInfo),
 
   onSuccess: async (data) => {
-    console.log('data', data);
-
     if (data.exists === false) {
       registerStore.name = data.firstName;
       registerStore.surname = data.lastName;
@@ -72,9 +70,9 @@ const {
   mutationFn: (loginInfo: { email: string; password: string }) =>
     postLogin(loginInfo),
 
-  onSuccess: (data) => {
+  onSuccess: async (data) => {
+    await accountStore.login(data);
     router.back();
-    accountStore.login(data);
   }
 });
 
@@ -119,7 +117,10 @@ const errorHandler = (error: string) => {
   <h1 class="text-xl sm:text-2xl">
     <TranslatedText identifier="auth.login.title" />
   </h1>
-  <div class="flex flex-col items-center gap-y-4 sm:gap-y-6">
+  <form
+    class="flex flex-col items-center gap-y-4 sm:gap-y-6"
+    @submit.prevent="handleLogin"
+  >
     <div
       v-if="error"
       class="text-sm sm:text-base text-red-600 p-3 bg-red-50 rounded-lg w-full"
@@ -181,7 +182,6 @@ const errorHandler = (error: string) => {
           class="primary py-3 px-4 w-full text-sm sm:text-base touch-manipulation"
           type="submit"
           :disabled="isPending"
-          @click="handleLogin"
         >
           <TranslatedText identifier="buttons.login" />
         </button>
@@ -191,5 +191,5 @@ const errorHandler = (error: string) => {
         />
       </div>
     </div>
-  </div>
+  </form>
 </template>

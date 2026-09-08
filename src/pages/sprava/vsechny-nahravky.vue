@@ -77,7 +77,22 @@ function getDialectMetadata(fr: FilteredPartModel) {
   };
 }
 
-const zipFileName = `strnadi-${new Date().toUTCString()}.zip`;
+const zipFileName = `strnadi-${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
+
+const extensionForContentType = (contentType?: string) => {
+  const type = contentType?.split(';')[0]?.trim().toLowerCase();
+  return (
+    {
+      'audio/wav': 'wav',
+      'audio/x-wav': 'wav',
+      'audio/mpeg': 'mp3',
+      'audio/mp4': 'm4a',
+      'audio/ogg': 'ogg',
+      'audio/webm': 'webm',
+      'audio/flac': 'flac'
+    }[type ?? ''] ?? 'bin'
+  );
+};
 
 const {
   data: recordings,
@@ -298,10 +313,14 @@ async function downloadSelectedRecordings() {
               responseType: 'arraybuffer' // Fetch as ArrayBuffer
             }
           );
-          // Assuming the sound file is a WAV file.
-          // You might need to adjust the extension based on the actual Content-Type
-          // or if the API guarantees a specific format.
-          partFolder.file('sound.wav', soundResponse.data, { binary: true });
+          const extension = extensionForContentType(
+            typeof soundResponse.headers['content-type'] === 'string'
+              ? soundResponse.headers['content-type']
+              : undefined
+          );
+          partFolder.file(`sound.${extension}`, soundResponse.data, {
+            binary: true
+          });
         } catch (error) {
           console.error(
             `Failed to download sound for recording ${recording.id}, part ${part.id}:`,
@@ -418,7 +437,7 @@ async function downloadSelectedRecordings() {
         :key="recording.id"
         class="button-secondary flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-4"
       >
-        <RouterLink :to="`/mapa/nahravka/${recording.id}`">
+        <div>
           <div
             @click.stop
             @mouseup.stop
@@ -428,15 +447,18 @@ async function downloadSelectedRecordings() {
               <div class="flex flex-row gap-x-2 items-center">
                 <input
                   type="checkbox"
+                  :aria-label="`Vybrat všechny části nahrávky ${recording.id}`"
                   class="form-checkbox h-5 w-5 text-blue-600"
                   :checked="areAllRecordingPartsSelected(recording)"
                   @change="toggleRecordingSelection(recording)"
                 />
                 <h2 class="text-lg font-semibold mb-1">
-                  {{
-                    recording.name ||
-                    `${t('recordings.id_prefix')} ${recording.id}`
-                  }}
+                  <RouterLink :to="`/mapa/nahravka/${recording.id}`" class="underline">
+                    {{
+                      recording.name ||
+                      `${t('recordings.id_prefix')} ${recording.id}`
+                    }}
+                  </RouterLink>
                 </h2>
               </div>
               <RouterLink
@@ -464,6 +486,7 @@ async function downloadSelectedRecordings() {
               >
                 <input
                   type="checkbox"
+                  :aria-label="`Vybrat část ${part.id} nahrávky ${recording.id}`"
                   :checked="isPartSelected(recording.id, part.id)"
                   class="form-checkbox h-5 w-5 text-blue-600"
                   @change="togglePartSelection(recording.id, part.id)"
@@ -536,7 +559,7 @@ async function downloadSelectedRecordings() {
               </li>
             </ul>
           </div>
-        </RouterLink>
+        </div>
       </li>
     </ul>
 

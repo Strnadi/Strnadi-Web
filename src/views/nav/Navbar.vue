@@ -35,7 +35,7 @@ const changeLanguage = (lang: keyof typeof translations) => {
 <template>
   <nav class="w-full">
     <div class="nav-container">
-      <div class="nav-glass flex justify-between gap-x-4 items-center h-16 rounded-4xl m-2 desktop:m-5 pr-4">
+      <div class="nav-glass flex justify-between gap-x-3 items-center h-16 rounded-4xl m-2 desktop:m-5 pr-4 whitespace-nowrap">
         <!-- Logo -->
         <div
           class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc] shrink-0">
@@ -53,8 +53,8 @@ const changeLanguage = (lang: keyof typeof translations) => {
         </span>
 
         <!-- Desktop navigation -->
-        <div class="flex justify-between items-center w-full gap-x-4">
-          <ul class="flex flex-row gap-x-4 items-center">
+        <div class="desktop-nav-items flex min-w-0 justify-between items-center w-full gap-x-3">
+          <ul class="flex min-w-0 flex-row gap-x-3 items-center">
             <template v-if="accountStore.user">
               <li>
                 <RouterLink to="/mapa/nahrat" class="dropdown-item">
@@ -85,7 +85,7 @@ const changeLanguage = (lang: keyof typeof translations) => {
           <!-- Upload Progress (inline with nav items) -->
           <UploadProgress />
 
-          <ul class="flex flex-row gap-x-4 items-center">
+          <ul class="flex shrink-0 flex-row gap-x-3 items-center">
             <Dropdown>
               <template #title>
                 <!--              {{ translations[applicationStore.language].lang_name }}-->
@@ -128,7 +128,7 @@ const changeLanguage = (lang: keyof typeof translations) => {
 @reference "../../styles/main.css";
 
 :deep(.dropdown-item) {
-  @apply font-semibold flex flex-row items-center gap-x-1 px-5 py-2 hover:bg-gray-100 hover:border-0 rounded-xl;
+  @apply whitespace-nowrap font-semibold flex flex-row items-center gap-x-1 px-3 py-2 hover:bg-gray-100 hover:border-0 rounded-xl;
 }
 
 nav {
@@ -141,6 +141,23 @@ nav {
 
 .nav-glass {
   @apply bg-white;
+}
+
+.nav-glass :deep(a),
+.nav-glass :deep(button) {
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+@media (max-width: 78rem) {
+  .desktop-nav-items {
+    gap: 0.35rem;
+    font-size: clamp(0.7rem, 1.3vw, 1rem);
+  }
+
+  :deep(.dropdown-item) {
+    padding-inline: 0.45rem;
+  }
 }
 
 /* @supports (
