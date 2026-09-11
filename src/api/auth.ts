@@ -4,6 +4,8 @@ export const AUTHORIZATION_CODE_GRANT = 'authorization_code';
 export const REFRESH_TOKEN_GRANT = 'refresh_token';
 export const TOKEN_EXCHANGE_GRANT =
   'urn:ietf:params:oauth:grant-type:token-exchange';
+export const ACCESS_TOKEN_TYPE =
+  'urn:ietf:params:oauth:token-type:access_token';
 
 export interface TokenResponse {
   accessToken: string;
@@ -82,22 +84,27 @@ export const exchangeAuthorizationCode = (
     })
   );
 
-export const exchangeProjectToken = (
-  subjectToken: string
-): Promise<TokenResponse> => {
-  if (!authorizationConfig.projectId) {
+export const createProjectTokenExchangeParameters = (
+  subjectToken: string,
+  projectId = authorizationConfig.projectId
+): URLSearchParams => {
+  if (!projectId) {
     throw new Error('Chybí konfigurace VITE_PROJECT_ID.');
   }
 
-  return postToken(
-    new URLSearchParams({
-      grant_type: TOKEN_EXCHANGE_GRANT,
-      client_id: authorizationConfig.clientId,
-      subject_token: subjectToken,
-      project_id: authorizationConfig.projectId
-    })
-  );
+  return new URLSearchParams({
+    grant_type: TOKEN_EXCHANGE_GRANT,
+    client_id: authorizationConfig.clientId,
+    subject_token: subjectToken,
+    subject_token_type: ACCESS_TOKEN_TYPE,
+    project_id: projectId
+  });
 };
+
+export const exchangeProjectToken = (
+  subjectToken: string
+): Promise<TokenResponse> =>
+  postToken(createProjectTokenExchangeParameters(subjectToken));
 
 export const refreshAccessToken = (
   refreshToken: string
