@@ -19,7 +19,7 @@ export interface RecordingPartModel {
 
 export interface RecordingModel {
   id: number;
-  userId: number;
+  userId: string;
   name: string;
   createdAt: string; // ISO date-time
   estimatedBirdsCount: number;
@@ -79,7 +79,7 @@ export interface RecordingMapPoint {
 export interface RecordingMapPointQuery extends RecordingMapBounds {
   filter: 'all' | 'new' | 'old' | 'my' | 'others' | 'any-dialect';
   onlyDialects: boolean;
-  userId?: number;
+  userId?: string;
 }
 
 export interface DialectDefinition {
@@ -234,7 +234,7 @@ export const getRecordings = async ({
   audio = false,
   parts = false,
   userId
-}: { audio?: boolean; parts?: boolean; userId?: number } = {}): Promise<
+}: { audio?: boolean; parts?: boolean; userId?: string } = {}): Promise<
   RecordingModel[]
 > => {
   const response = await axios.get(

@@ -1,71 +1,95 @@
-import * as jose from 'jose';
-
-const STORAGE_PREFIX = 'strnadi.oauth.';
+const AUTHORIZATION_STORAGE_PREFIX = 'strnadi.authorization.';
 const MAX_TRANSACTION_AGE_MS = 10 * 60 * 1000;
 
-interface OAuthTransaction {
-  nonce: string;
-  clientId: string;
-  issuer: string;
+export interface AuthorizationTransaction {
+  codeVerifier: string;
+  redirectUri: string;
+  returnTo: string;
   createdAt: number;
 }
 
-const randomToken = () => {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join(
-    ''
-  );
+const base64UrlEncode = (bytes: Uint8Array): string => {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+
+  return btoa(binary)
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replace(/=+$/, '');
 };
 
-export const createOAuthTransaction = (
-  clientId: string,
-  issuer: string
-): { state: string; nonce: string } => {
+const randomBytes = (length: number): Uint8Array => {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return bytes;
+};
+
+const randomToken = (): string => base64UrlEncode(randomBytes(32));
+
+const normalizeReturnTo = (returnTo: string): string =>
+  returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/';
+
+/** Creates the one-use state and PKCE values that survive the authorization redirect. */
+export const createAuthorizationTransaction = async (
+  redirectUri: string,
+  returnTo: string
+): Promise<{ state: string; codeChallenge: string }> => {
   const state = randomToken();
-  const nonce = randomToken();
-  const transaction: OAuthTransaction = {
-    nonce,
-    clientId,
-    issuer,
+  // RFC 7636 permits 43-128 characters. 64 random bytes produce 86 characters.
+  const codeVerifier = base64UrlEncode(randomBytes(64));
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(codeVerifier)
+  );
+  const transaction: AuthorizationTransaction = {
+    codeVerifier,
+    redirectUri,
+    returnTo: normalizeReturnTo(returnTo),
     createdAt: Date.now()
   };
 
   sessionStorage.setItem(
-    `${STORAGE_PREFIX}${state}`,
+    `${AUTHORIZATION_STORAGE_PREFIX}${state}`,
     JSON.stringify(transaction)
   );
-  return { state, nonce };
+
+  return {
+    state,
+    codeChallenge: base64UrlEncode(new Uint8Array(digest))
+  };
 };
 
-export const validateOAuthResponse = (state: string, idToken: string) => {
-  const key = `${STORAGE_PREFIX}${state}`;
+/** Reads and immediately removes a PKCE transaction, preventing code replay. */
+export const consumeAuthorizationTransaction = (
+  state: string
+): AuthorizationTransaction => {
+  const key = `${AUTHORIZATION_STORAGE_PREFIX}${state}`;
   const stored = sessionStorage.getItem(key);
   sessionStorage.removeItem(key);
 
-  if (!stored) throw new Error('OAuth session is missing or expired');
+  if (!stored) throw new Error('Přihlašovací relace chybí nebo vypršela.');
 
-  let transaction: OAuthTransaction;
+  let transaction: AuthorizationTransaction;
   try {
-    transaction = JSON.parse(stored) as OAuthTransaction;
+    transaction = JSON.parse(stored) as AuthorizationTransaction;
   } catch {
-    throw new Error('OAuth session is invalid');
+    throw new Error('Přihlašovací relace je neplatná.');
   }
 
+  if (
+    typeof transaction.codeVerifier !== 'string' ||
+    typeof transaction.redirectUri !== 'string' ||
+    typeof transaction.returnTo !== 'string' ||
+    typeof transaction.createdAt !== 'number'
+  ) {
+    throw new Error('Přihlašovací relace je neplatná.');
+  }
   if (Date.now() - transaction.createdAt > MAX_TRANSACTION_AGE_MS) {
-    throw new Error('OAuth session has expired');
+    throw new Error('Přihlašovací relace vypršela.');
   }
 
-  const token = jose.decodeJwt(idToken);
-  const audiences = Array.isArray(token.aud) ? token.aud : [token.aud];
-
-  if (token['nonce'] !== transaction.nonce) {
-    throw new Error('OAuth nonce mismatch');
-  }
-  if (token.iss !== transaction.issuer) {
-    throw new Error('OAuth issuer mismatch');
-  }
-  if (!audiences.includes(transaction.clientId)) {
-    throw new Error('OAuth audience mismatch');
-  }
+  return {
+    ...transaction,
+    returnTo: normalizeReturnTo(transaction.returnTo)
+  };
 };

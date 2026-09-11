@@ -1,37 +1,25 @@
 <script setup vapor lang="ts">
 import axios from 'axios';
 import { computedAsync } from '@vueuse/core';
-import type { Numeric } from '@/types/basic';
 import { extensionToMime } from '@/utils/files';
-import { accountStore } from '@/state/AccountStore';
+import { authorizationConfig } from '@/api/auth';
 
 const props = defineProps<{
-  userId: Numeric;
+  userId: string | number;
   fallbackText?: string;
 }>();
 
 const photoSource = computedAsync(async () => {
   try {
     const response = await axios.get(
-      `/users/${props.userId}/get-profile-photo`,
-      {
-        headers: {
-          Authorization: accountStore.token
-            ? `Bearer ${accountStore.token}`
-            : undefined
-        }
-      }
+      `${authorizationConfig.baseUrl}/users/${encodeURIComponent(props.userId)}/profile-photo`
     );
-    return (
-      'data:image/' +
-      extensionToMime[
-        (response.data.format as string).substring(
-          response.data.format.lastIndexOf('.')
-        )
-      ] +
-      ';base64,' +
-      response.data.photoBase64
-    );
+    const format = response.data.format as string;
+    const extension = format.startsWith('.') ? format : `.${format}`;
+    const mime = format.includes('/')
+      ? format
+      : extensionToMime[extension.toLowerCase()] || 'image/jpeg';
+    return `data:${mime};base64,${response.data.photoBase64}`;
   } catch (error) {
     return null;
   }
@@ -44,7 +32,11 @@ const photoSource = computedAsync(async () => {
     :src="photoSource"
     alt=""
   />
-  <span v-else class="profile-photo-fallback" aria-hidden="true">
+  <span
+    v-else
+    class="profile-photo-fallback"
+    aria-hidden="true"
+  >
     {{ props.fallbackText || '?' }}
   </span>
 </template>

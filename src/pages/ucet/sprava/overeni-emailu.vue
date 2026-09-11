@@ -26,11 +26,12 @@ const { isActive, remaining, start, stop, reset } = useCountdown(
 );
 
 const { mutate } = useMutation({
-  mutationFn: ({ userId }: { userId: number }) => getResendVerifyEmail(userId)
+  mutationFn: ({ email }: { email: string }) => getResendVerifyEmail(email)
 });
 
 const resendEmail = () => {
-  mutate({ userId: accountStore.user!.id });
+  if (!accountStore.user?.email) return;
+  mutate({ email: accountStore.user.email });
   start();
 };
 </script>

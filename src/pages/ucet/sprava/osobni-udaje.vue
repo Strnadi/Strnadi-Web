@@ -22,10 +22,11 @@ const nickname = ref(accountStore.user?.nickname ?? '');
 const zipcode = ref(accountStore.user?.postCode?.toString() ?? '');
 const town = ref(accountStore.user?.city ?? '');
 
+const currentPassword = ref('');
 const password = ref('');
 const passwordAgain = ref('');
 
-const { mutate, isPending, error } = useMutation({
+const { mutate, isPending, isSuccess, error } = useMutation({
   mutationFn: ({
     userInfo,
     token,
@@ -36,14 +37,8 @@ const { mutate, isPending, error } = useMutation({
     userId: string | number;
   }) => patchUser(token, userId, userInfo),
 
-  onSuccess: () => {
-    accountStore.user!.firstName = name.value;
-    accountStore.user!.lastName = surname.value;
-    accountStore.user!.nickname = nickname.value;
-    accountStore.user!.postCode = zipcode.value
-      ? Number.parseInt(zipcode.value, 10)
-      : null;
-    accountStore.user!.city = town.value;
+  onSuccess: (user) => {
+    accountStore.user = user;
   }
 });
 
@@ -56,13 +51,16 @@ const {
   mutationFn: ({
     token,
     userId,
-    newPassword
+    newPassword,
+    currentPassword
   }: {
     token: string;
     userId: string | number;
     newPassword: string;
-  }) => patchPasswordChange(token, userId, newPassword),
+    currentPassword: string;
+  }) => patchPasswordChange(token, userId, newPassword, currentPassword),
   onSuccess: () => {
+    currentPassword.value = '';
     password.value = '';
     passwordAgain.value = '';
   }
@@ -72,7 +70,8 @@ const submitPasswordChange = () => {
   passwordChangeMutate({
     token: accountStore.token!,
     userId: accountStore.user!.id,
-    newPassword: password.value
+    newPassword: password.value,
+    currentPassword: currentPassword.value
   });
 };
 
@@ -107,6 +106,13 @@ const submit = () => {
       <span class="ml-1">{{ error!.message }}</span>
     </p>
   </template>
+  <p
+    v-else-if="isSuccess"
+    role="status"
+    class="text-green-700"
+  >
+    Osobní údaje byly uloženy.
+  </p>
   <!-- <template v-if="error">
     <h1>Chyba</h1>
     <p>{{ error!.message }}</p>
@@ -200,27 +206,49 @@ const submit = () => {
     <TranslatedText identifier="account.personal_data.password_section_title" />
   </h2>
   <div class="flex flex-col gap-y-2 w-full">
-    <p v-if="passwordError" role="alert" class="text-red-700">
+    <p
+      v-if="passwordError"
+      role="alert"
+      class="text-red-700"
+    >
       {{ passwordError.message }}
     </p>
-    <p v-else-if="isPasswordSuccess" role="status" class="text-green-700">
+    <p
+      v-else-if="isPasswordSuccess"
+      role="status"
+      class="text-green-700"
+    >
       Heslo bylo změněno.
     </p>
     <RevealablePasswordInput
+      v-model="currentPassword"
+      class="p-2"
+      autocomplete="current-password"
+    >
+      Současné heslo
+    </RevealablePasswordInput>
+    <RevealablePasswordInput
       v-model="password"
       class="p-2"
+      autocomplete="new-password"
     >
       <TranslatedText identifier="labels.password" />
     </RevealablePasswordInput>
     <RevealablePasswordInput
       v-model="passwordAgain"
       class="p-2"
+      autocomplete="new-password"
     >
       <TranslatedText identifier="labels.password_confirm" />
     </RevealablePasswordInput>
     <button
       class="primary p-2 w-full"
-      :disabled="isPasswordPending || !passwordAgain || passwordAgain !== password"
+      :disabled="
+        isPasswordPending ||
+        !currentPassword ||
+        !passwordAgain ||
+        passwordAgain !== password
+      "
       @click="submitPasswordChange"
     >
       <TranslatedText identifier="buttons.change_password" />

@@ -14,9 +14,11 @@ interface ViteTypeOptions {
 }
 
 interface ImportMetaEnv {
-  readonly VITE_GOOGLE_CLIENT_ID: string;
-  readonly VITE_APPLE_CLIENT_ID: string;
   readonly VITE_API_URL: string;
+  readonly VITE_AUTH_URL?: string;
+  readonly VITE_AUTH_CLIENT_ID?: string;
+  readonly VITE_AUTH_SCOPE?: string;
+  readonly VITE_PROJECT_ID?: string;
   readonly VITE_POSTHOG_KEY: string;
   readonly VITE_PUBLIC_URL: string;
 }

@@ -25,10 +25,7 @@ import { setupLayouts } from 'virtual:meta-layouts';
 // import { useTimeoutFn, useEventListener } from '@vueuse/core';
 import { EditorView } from '@codemirror/view';
 import { config } from 'md-editor-v3';
-import {
-  accountInitialization,
-  accountStore
-} from '@/state/AccountStore';
+import { initializeAccount, accountStore } from '@/state/AccountStore';
 import type { MobilePresentation } from '@/router-meta';
 
 // // @ts-expect-error No types available.
@@ -69,7 +66,7 @@ const addRouteGuard = (
     }
     return guardedRoute;
   });
-}
+};
 
 const desktopBp = getComputedStyle(document.documentElement)
   .getPropertyValue('--breakpoint-desktop')
@@ -390,6 +387,8 @@ axios.interceptors.response.use(
   }
 );
 
+const accountInitialization = initializeAccount();
+
 // Directive definition
 // const autoScrollbar = {
 //   mounted(el: HTMLElement) {
@@ -421,7 +420,7 @@ config({
       }
     ];
   }
-})
+});
 
 app.use(router);
 app.use(firebasePlugin);

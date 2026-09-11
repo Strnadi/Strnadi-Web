@@ -73,7 +73,8 @@ const toHTMLElement = (el: unknown): HTMLElement | null =>
   el instanceof HTMLElement ? el : null;
 
 const activeTab = ref<TabId>(
-  typeof window !== 'undefined' && window.matchMedia('(max-width: 59.999rem)').matches
+  typeof window !== 'undefined' &&
+    window.matchMedia('(max-width: 59.999rem)').matches
     ? 'search'
     : 'table'
 );
@@ -83,7 +84,7 @@ const messages = reactive<Record<Language, string>>({ cs: '', en: '', de: '' });
 
 const searchQuery = ref('');
 const tableFilter = ref('');
-const selectedUserIds = ref<Set<number>>(new Set());
+const selectedUserIds = ref<Set<string>>(new Set());
 const columnFilters = reactive<Record<ColumnKey, ColumnFilterState>>(
   Object.fromEntries(
     tableColumns.map((col) => [col.key, createColumnFilterState()])
@@ -141,8 +142,8 @@ watch(
   availableUsers,
   (available) => {
     if (queryRecipientApplied) return;
-    const requestedId = Number(route.query['userId']);
-    if (!Number.isInteger(requestedId)) return;
+    const requestedId = route.query['userId'];
+    if (typeof requestedId !== 'string') return;
     if (available.some((user) => user.id === requestedId)) {
       selectedUserIds.value = new Set([requestedId]);
       queryRecipientApplied = true;
@@ -563,28 +564,28 @@ const hasPartialSelection = computed(() => {
   );
 });
 
-const mutateSelectedIds = (mutator: (draft: Set<number>) => void) => {
+const mutateSelectedIds = (mutator: (draft: Set<string>) => void) => {
   const next = new Set(selectedUserIds.value);
   mutator(next);
   selectedUserIds.value = next;
 };
 
-const isUserSelected = (userId: number) => selectedUserIds.value.has(userId);
+const isUserSelected = (userId: string) => selectedUserIds.value.has(userId);
 
-const toggleRecipient = (userId: number) => {
+const toggleRecipient = (userId: string) => {
   mutateSelectedIds((draft) => {
     draft.has(userId) ? draft.delete(userId) : draft.add(userId);
   });
 };
 
-const addRecipient = (userId: number) => {
+const addRecipient = (userId: string) => {
   if (selectedUserIds.value.has(userId)) return;
   mutateSelectedIds((draft) => {
     draft.add(userId);
   });
 };
 
-const removeRecipient = (userId: number) => {
+const removeRecipient = (userId: string) => {
   if (!selectedUserIds.value.has(userId)) return;
   mutateSelectedIds((draft) => {
     draft.delete(userId);

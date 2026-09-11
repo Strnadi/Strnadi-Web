@@ -1,266 +1,160 @@
-import type { Numeric } from '@/types/basic';
 import axios from 'axios';
 import type { JWTPayload } from 'jose';
-import * as jose from 'jose';
+import { authorizationConfig } from '@/api/auth';
 
 export interface JWTObject extends JWTPayload {}
 
-export interface User {
-  id: number;
-  email: string;
+export interface UserProfileResponse {
+  id: string;
+  userName: string | null;
   firstName: string;
   lastName: string;
-  nickname: string | null;
-  creationDate: string;
-  consent: boolean;
-  isEmailVerified: boolean;
-  password: string;
-  role: 'user' | 'admin';
-  profilePicture: string | null;
-  postCode: number | null;
+  email: string | null;
   city: string | null;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface SignUpRequest {
   postCode: number | null;
-  city: string;
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
+  roles: string[];
+}
+
+/**
+ * Account model used by the existing UI. The compatibility fields can be
+ * removed once the remaining Tenant v1 administration screens are migrated.
+ */
+export interface User extends UserProfileResponse {
   nickname: string | null;
-  consent: boolean;
-  appleId?: string | null;
+  role: 'user' | 'admin';
+  isEmailVerified: boolean | null;
+  profilePicture: null;
 }
 
 export interface UserUpdateRequest {
   nickname: string;
   firstName: string;
   lastName: string;
-  city: string;
+  city: string | null;
   postCode: number | null;
 }
 
-export type OAuth2Token = string;
-export interface OAuth2SignUpResponse {
-  jwt: string;
-  firstName: string | null;
-  lastName: string | null;
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
 }
 
-export type AppleLoginResponse =
-  | { exists: true; jwt: string }
-  | {
-      exists: false;
-      jwt: string;
-      firstName: string;
-      lastName: string;
-      email: string;
-      appleid: string;
-    };
+const administrationUrl = (path: string): string =>
+  `${authorizationConfig.baseUrl}${path}`;
 
-const parseAppleLoginResponse = (value: unknown): AppleLoginResponse => {
-  if (!value || typeof value !== 'object') {
-    throw new Error('Invalid Apple login response');
-  }
+const bearerHeaders = (token: string) => ({
+  Authorization: `Bearer ${token}`
+});
 
-  const data = value as Record<string, unknown>;
-  if (typeof data['jwt'] !== 'string' || typeof data['exists'] !== 'boolean') {
-    throw new Error('Invalid Apple login response');
-  }
-
-  if (data['exists']) return { exists: true, jwt: data['jwt'] };
-
-  if (
-    typeof data['firstName'] !== 'string' ||
-    typeof data['lastName'] !== 'string' ||
-    typeof data['email'] !== 'string' ||
-    typeof data['appleid'] !== 'string'
-  ) {
-    throw new Error('Incomplete Apple sign-up response');
-  }
-
-  return {
-    exists: false,
-    jwt: data['jwt'],
-    firstName: data['firstName'],
-    lastName: data['lastName'],
-    email: data['email'],
-    appleid: data['appleid']
-  };
-};
-
-const genericPost = async <T>(path: string, data: T) => {
-  const response = await axios.post(`/auth/${path}`, data);
-  return response.data;
-};
-
-export const getUsers = async (token: string): Promise<User[]> => {
-  const response = await axios.get(`/users`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-
-  return response.data as User[];
-};
-
-export const getUserInfo = async (
-  id: Numeric,
-  token?: string
-): Promise<User> => {
-  const response = await axios.get(`/users/${id}`, {
-    headers: {
-      Authorization: token ? `Bearer ${token}` : undefined
-    }
-  });
-
-  return response.data as User;
-};
-
-export const getUserId = async (token: string): Promise<Numeric> => {
-  const response = await axios.get(`/users/get-id`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-
-  return response.data as Numeric;
-};
+const toUser = (profile: UserProfileResponse): User => ({
+  ...profile,
+  nickname: profile.userName,
+  role: profile.roles.some((role) => role.toLowerCase() === 'admin')
+    ? 'admin'
+    : 'user',
+  // The new profile response intentionally does not expose confirmation state.
+  isEmailVerified: null,
+  profilePicture: null
+});
 
 export const getCurrentUserInfo = async (token: string): Promise<User> => {
-  const userId = await getUserId(token);
-  return getUserInfo(userId, token);
-};
-
-export const postLogin = async (
-  loginData: LoginRequest
-): Promise<OAuth2Token> => genericPost('login', loginData);
-
-export const postRegister = async (
-  signUpData: SignUpRequest,
-  signUpJwt?: string
-): Promise<OAuth2Token> => {
-  const response = await axios.post(`/auth/sign-up`, signUpData, {
-    headers: signUpJwt
-      ? {
-          Authorization: `Bearer ${signUpJwt}`
-        }
-      : {}
-  });
-  return response.data;
-};
-
-export const postGoogleLogin = async (loginInfo: {
-  idToken: string;
-}): Promise<OAuth2Token> => genericPost('login-google', loginInfo);
-
-export const postAppleLogin = async (loginInfo: {
-  idToken: string;
-  givenName?: string;
-  familyName?: string;
-}): Promise<AppleLoginResponse> => {
-  const token = jose.decodeJwt(loginInfo.idToken);
-
-  const data = {
-    idToken: loginInfo.idToken,
-    email: token['email'],
-    userIdentifier: token.sub,
-    givenName: loginInfo.givenName ?? '',
-    familyName: loginInfo.familyName ?? ''
-  };
-
-  return parseAppleLoginResponse(await genericPost('apple', data));
-};
-
-export const postGoogleSignup = async (signupInfo: {
-  idToken: string;
-}): Promise<OAuth2SignUpResponse> => genericPost('sign-up-google', signupInfo);
-
-export const getUserExists = async (
-  email: string,
-  signal?: AbortSignal
-): Promise<boolean> => {
-  const params = new URLSearchParams({ email });
-  const response = await axios.get(`/users/exists?${params.toString()}`, {
-    signal,
-    validateStatus: (status) => status === 200 || status === 404
-  });
-
-  if (typeof response.data === 'boolean') return response.data;
-  if (
-    response.data &&
-    typeof response.data === 'object' &&
-    typeof response.data.exists === 'boolean'
-  ) {
-    return response.data.exists;
-  }
-
-  // Preserve the current API's 200=available / 404=already registered
-  // contract, while allowing all other failures to reject normally.
-  return response.status === 404;
+  const response = await axios.get<UserProfileResponse>(
+    administrationUrl('/account/profile'),
+    { headers: bearerHeaders(token) }
+  );
+  return toUser(response.data);
 };
 
 export const patchUser = async (
   token: string,
-  id: number | string,
+  _id: string | number,
   data: UserUpdateRequest
 ): Promise<User> => {
-  const response = await axios.patch(`/users/${id}`, data, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
+  const response = await axios.patch<UserProfileResponse>(
+    administrationUrl('/account/profile'),
+    {
+      userName: data.nickname || null,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      city: data.city || null,
+      postCode: data.postCode
+    },
+    { headers: bearerHeaders(token) }
+  );
+  return toUser(response.data);
+};
 
+export const getPasswordResetRequest = async (email: string): Promise<void> => {
+  await axios.post(administrationUrl('/account/forgot-password'), { email });
+};
+
+export const getResendVerifyEmail = async (email: string): Promise<void> => {
+  await axios.post(administrationUrl('/account/resend-confirmation-email'), {
+    email
+  });
+};
+
+export const getExternalLogins = async (token: string): Promise<string[]> => {
+  const response = await axios.get<string[]>(
+    administrationUrl('/account/external-logins'),
+    { headers: bearerHeaders(token) }
+  );
   return response.data;
 };
 
-export const getPasswordResetRequest = async (email: string) => {
-  await axios.get(`/auth/${email}/reset-password`);
+export const getExternalLoginUrl = (provider: 'Google' | 'Apple'): string => {
+  const url = new URL(administrationUrl(`/account/external-login/${provider}`));
+  url.searchParams.set('returnUrl', '/dashboard');
+  return url.toString();
 };
 
-export const getResendVerifyEmail = async (userId: number) => {
-  await axios.get(`/auth/${userId}/resend-verify-email`);
-};
-
-export const getRenewedJWT = async (oldJWT: string) => {
-  const response = await axios.get(`/auth/renew-jwt`, {
-    headers: {
-      Authorization: `Bearer ${oldJWT}`
-    }
+export const uploadProfilePhoto = async (
+  token: string,
+  file: File
+): Promise<void> => {
+  const photoBase64 = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () =>
+      reject(new Error('Profilovou fotku se nepodařilo načíst.'));
+    reader.onload = () => {
+      const result = String(reader.result);
+      resolve(result.slice(result.indexOf(',') + 1));
+    };
+    reader.readAsDataURL(file);
   });
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  const format = extension || file.type.split('/').pop() || 'jpg';
 
-  return response.data as string;
+  await axios.post(
+    administrationUrl('/account/profile-photo'),
+    { format, photoBase64 },
+    { headers: bearerHeaders(token) }
+  );
 };
 
 export const patchPasswordChange = async (
   token: string,
-  id: number | string,
-  newPassword: string
-) => {
-  await axios.patch(
-    `/users/${id}/change-password`,
-    { newPassword },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }
-  );
+  _id: string | number,
+  newPassword: string,
+  currentPassword: string
+): Promise<void> => {
+  const request: ChangePasswordRequest = { currentPassword, newPassword };
+  await axios.post(administrationUrl('/account/change-password'), request, {
+    headers: bearerHeaders(token)
+  });
 };
 
 export const deleteAccount = async (
   token: string,
-  userId: string | number
+  _userId: string | number
 ): Promise<void> => {
-  await axios.delete(`/users/${userId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
+  await axios.delete(administrationUrl('/account'), {
+    headers: bearerHeaders(token)
   });
+};
+
+// Administration v2 currently exposes only the caller's profile. This export
+// remains while the notification-recipient picker still needs a directory API.
+export const getUsers = async (_token: string): Promise<User[]> => {
+  throw new Error('Administration API v2 zatím neposkytuje seznam uživatelů.');
 };
