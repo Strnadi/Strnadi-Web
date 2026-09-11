@@ -24,7 +24,7 @@ export default {
       const app = initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
       let currentFcmToken: string | null = null;
-      let boundUserId: number | null = null;
+      let boundUserId: string | null = null;
 
       const syncDevice = async () => {
         if (Notification.permission !== 'granted' || !accountStore.user) return;
@@ -48,7 +48,10 @@ export default {
       registerPushDevice = syncDevice;
 
       watch(
-        () => ({ userId: accountStore.user?.id ?? null, token: accountStore.token }),
+        () => ({
+          userId: accountStore.user?.id ?? null,
+          token: accountStore.token
+        }),
         async (next, previous) => {
           try {
             if (

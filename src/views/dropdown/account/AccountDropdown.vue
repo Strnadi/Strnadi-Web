@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import ProfileIcon from '@/icons/interface/icon-profile.svg';
 import DropdownIcon from '@/icons/interface/dropdown.svg';
 import { accountStore } from '@/state/AccountStore';
 import Dropdown from '@/components/Dropdown.vue';
+import ProfilePhoto from '@/components/ProfilePhoto.vue';
 // import List from '@/icons/interface/icon-list.svg';
 
 const user = accountStore.user!;
@@ -12,15 +12,17 @@ const user = accountStore.user!;
   <Dropdown>
     <template #title>
       <div class="flex flex-row items-center">
-        <ProfileIcon v-if="!user.profilePicture" />
-        <img
-          v-else
-          :src="user.profilePicture"
-          :alt="`Profilový obrázek uživatele ${user.nickname || user.firstName}`"
-        />
+        <div class="h-8 w-8 overflow-hidden rounded-full">
+          <ProfilePhoto
+            :user-id="user.id"
+            :fallback-text="
+              (user.userName || user.firstName || '?').slice(0, 1)
+            "
+          />
+        </div>
 
-        <template v-if="user.nickname && !user.firstName && !user.lastName">
-          @{{ user.nickname }}
+        <template v-if="user.userName && !user.firstName && !user.lastName">
+          @{{ user.userName }}
         </template>
         <template v-else> {{ user.firstName }} {{ user.lastName }} </template>
         <DropdownIcon />
@@ -60,7 +62,7 @@ const user = accountStore.user!;
     </li>
     <li
       class="cursor-pointer dropdown-item"
-      @click="accountStore.logout"
+      @click="accountStore.logoutFromIdentityProvider"
     >
       Odhlásit se
     </li>

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export interface AddDeviceRequest {
-  userId: number;
+  userId: string;
   fcmToken: string;
   devicePlatform: string;
   deviceModel: string;

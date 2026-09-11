@@ -229,7 +229,6 @@ function submit() {
   // Reset form and show success
   uploadSuccess.value = true;
   isSubmitting.value = false;
-
 }
 
 const photoPreviewUrls = new Map<File, string>();
@@ -441,7 +440,7 @@ const timeInputValue = computed({
       </p>
     </template>
 
-    <template v-else-if="!accountStore.user.isEmailVerified">
+    <template v-else-if="accountStore.user.isEmailVerified === false">
       <h1 class="text-xl sm:text-2xl">
         <TranslatedText identifier="upload.title" />
       </h1>
@@ -463,9 +462,16 @@ const timeInputValue = computed({
         {{ error }}
       </p>
 
-      <form class="flex flex-col gap-4" @submit.prevent="submitOrNext">
+      <form
+        class="flex flex-col gap-4"
+        @submit.prevent="submitOrNext"
+      >
         <template v-if="stepper.isCurrent('file')">
-          <Dropzone :accept="soundAccept" :multiple="true" @drop="onSoundDrop">
+          <Dropzone
+            :accept="soundAccept"
+            :multiple="true"
+            @drop="onSoundDrop"
+          >
             <template #dragging>
               <div class="text-center py-8">
                 <div class="text-4xl mb-2">📁</div>
@@ -492,10 +498,20 @@ const timeInputValue = computed({
           </Dropzone>
 
           <!-- File List Outside Dropzone -->
-          <ul v-if="uploadStore.parts?.length" class="flex flex-col w-full gap-3 mt-2" @click.stop>
-            <li v-for="(part, index) in uploadStore.parts" :key="part.id"
-              class="flex flex-row w-full items-center gap-3 p-3 bg-white border-2 border-gray-200 rounded-lg shadow-sm">
-              <MaterialIcon class="h-10 sm:h-12 shrink-0 text-blue-500" :filename="part.file.name" />
+          <ul
+            v-if="uploadStore.parts?.length"
+            class="flex flex-col w-full gap-3 mt-2"
+            @click.stop
+          >
+            <li
+              v-for="(part, index) in uploadStore.parts"
+              :key="part.id"
+              class="flex flex-row w-full items-center gap-3 p-3 bg-white border-2 border-gray-200 rounded-lg shadow-sm"
+            >
+              <MaterialIcon
+                class="h-10 sm:h-12 shrink-0 text-blue-500"
+                :filename="part.file.name"
+              />
               <div class="flex flex-col min-w-0 flex-1">
                 <p class="text-sm sm:text-base font-medium truncate">
                   {{ part.file.name }}
@@ -504,10 +520,12 @@ const timeInputValue = computed({
                   {{ (part.file.size / 1_000_000).toFixed(2) }} MB
                 </p>
               </div>
-              <button type="button"
+              <button
+                type="button"
                 :aria-label="`${t('upload.remove')}: ${part.file.name}`"
                 class="danger-text text-sm sm:text-base px-3 py-2 touch-manipulation shrink-0 font-medium"
-                @click="removeAudioPart(index)">
+                @click="removeAudioPart(index)"
+              >
                 ✕
               </button>
             </li>
@@ -525,32 +543,53 @@ const timeInputValue = computed({
             </div> -->
 
             <ul class="space-y-3">
-              <li v-for="(part, index) in uploadStore.parts" :key="part.id" class="location-item" :class="{
-                'location-item-active': index == currentPartIndex
-              }" :style="{
+              <li
+                v-for="(part, index) in uploadStore.parts"
+                :key="part.id"
+                class="location-item"
+                :class="{
+                  'location-item-active': index == currentPartIndex
+                }"
+                :style="{
                   borderLeftColor: colors[index]
-                }">
-                <div class="location-marker" :style="{ backgroundColor: colors[index] }" />
+                }"
+              >
+                <div
+                  class="location-marker"
+                  :style="{ backgroundColor: colors[index] }"
+                />
                 <div class="flex-1 min-w-0">
                   <p class="text-xs sm:text-sm font-medium truncate mb-1">
                     {{ part.file.name }}
                   </p>
                   <p class="text-xs sm:text-sm text-gray-600">
-                    <TextualCoords v-if="part.location" :lat="part.location.lat" :lng="part.location.lng"
-                      type="municipality_part" />
+                    <TextualCoords
+                      v-if="part.location"
+                      :lat="part.location.lat"
+                      :lng="part.location.lng"
+                      type="municipality_part"
+                    />
                     <template v-else>
                       <TranslatedText identifier="upload.location_not_set" />
                     </template>
                   </p>
                 </div>
-                <button type="button" class="p-2" :class="{
-                  'primary': index == currentPartIndex,
-                  'secondary': index != currentPartIndex
-                }" @click="selectPartForLocation(index)">
+                <button
+                  type="button"
+                  class="p-2"
+                  :class="{
+                    primary: index == currentPartIndex,
+                    secondary: index != currentPartIndex
+                  }"
+                  @click="selectPartForLocation(index)"
+                >
                   {{ index == currentPartIndex ? 'Vybráno' : 'Vybrat' }}
                 </button>
                 <div class="grid w-full grid-cols-2 gap-2 pt-2">
-                  <label :for="`latitude-${part.id}`" class="text-xs">
+                  <label
+                    :for="`latitude-${part.id}`"
+                    class="text-xs"
+                  >
                     Zeměpisná šířka
                     <input
                       :id="`latitude-${part.id}`"
@@ -563,7 +602,10 @@ const timeInputValue = computed({
                       @input="updateManualCoordinate(part.id, 'lat', $event)"
                     />
                   </label>
-                  <label :for="`longitude-${part.id}`" class="text-xs">
+                  <label
+                    :for="`longitude-${part.id}`"
+                    class="text-xs"
+                  >
                     Zeměpisná délka
                     <input
                       :id="`longitude-${part.id}`"
@@ -585,8 +627,14 @@ const timeInputValue = computed({
               <RecordingsMap :selection-mode="true" />
             </div>
 
-            <div v-if="uploadStore.parts?.map((p) => p.location).some((l) => l === null)"
-              class="text-sm sm:text-base text-red-500">
+            <div
+              v-if="
+                uploadStore.parts
+                  ?.map((p) => p.location)
+                  .some((l) => l === null)
+              "
+              class="text-sm sm:text-base text-red-500"
+            >
               <TranslatedText identifier="upload.location_not_set" />
             </div>
           </div>
@@ -606,40 +654,82 @@ const timeInputValue = computed({
 
             <div class="recording-details-form">
               <div class="details-field details-field--full">
-                <label for="recordingTitle" class="details-label">
+                <label
+                  for="recordingTitle"
+                  class="details-label"
+                >
                   <TranslatedText identifier="upload.details.name_label" />
                 </label>
-                <input id="recordingTitle" v-model="uploadStore.title" type="text" maxlength="50" required class="details-input"
-                  :placeholder="t('upload.details.name_placeholder')" />
+                <input
+                  id="recordingTitle"
+                  v-model="uploadStore.title"
+                  type="text"
+                  maxlength="50"
+                  required
+                  class="details-input"
+                  :placeholder="t('upload.details.name_placeholder')"
+                />
               </div>
 
               <div class="details-field details-field--full">
-                <label for="detailsComment" class="details-label">
+                <label
+                  for="detailsComment"
+                  class="details-label"
+                >
                   <TranslatedText identifier="upload.details.comment_label" />
                 </label>
-                <textarea id="detailsComment" v-model="uploadStore.note" class="details-input details-textarea"
-                  placeholder=""></textarea>
+                <textarea
+                  id="detailsComment"
+                  v-model="uploadStore.note"
+                  class="details-input details-textarea"
+                  placeholder=""
+                ></textarea>
               </div>
 
               <div class="details-field details-field--full">
-                <label for="recordingDevice" class="details-label">
+                <label
+                  for="recordingDevice"
+                  class="details-label"
+                >
                   Nahrávací zařízení
                 </label>
-                <input id="recordingDevice" v-model="uploadStore.device" class="details-input" placeholder="" />
+                <input
+                  id="recordingDevice"
+                  v-model="uploadStore.device"
+                  class="details-input"
+                  placeholder=""
+                />
               </div>
 
               <div class="details-field">
-                <label for="recordingDate" class="details-label">
+                <label
+                  for="recordingDate"
+                  class="details-label"
+                >
                   <TranslatedText identifier="upload.details.date_label" />
                 </label>
-                  <input id="recordingDate" v-model="dateInputValue" type="date" :max="new Date().toISOString().slice(0, 10)" class="details-input" />
+                <input
+                  id="recordingDate"
+                  v-model="dateInputValue"
+                  type="date"
+                  :max="new Date().toISOString().slice(0, 10)"
+                  class="details-input"
+                />
               </div>
 
               <div class="details-field">
-                <label for="recordingTime" class="details-label">
+                <label
+                  for="recordingTime"
+                  class="details-label"
+                >
                   <TranslatedText identifier="upload.details.time_label" />
                 </label>
-                <input id="recordingTime" v-model="timeInputValue" type="time" class="details-input" />
+                <input
+                  id="recordingTime"
+                  v-model="timeInputValue"
+                  type="time"
+                  class="details-input"
+                />
               </div>
 
               <div class="details-field details-field--full">
@@ -657,12 +747,20 @@ const timeInputValue = computed({
                   </span>
                 </div>
                 <div class="bird-slider-wrapper">
-                  <input id="birdCount" v-model.number="uploadStore.birdCount" type="range" min="1" max="3" step="1"
+                  <input
+                    id="birdCount"
+                    v-model.number="uploadStore.birdCount"
+                    type="range"
+                    min="1"
+                    max="3"
+                    step="1"
                     :aria-label="t('upload.bird_count_label')"
-                    class="bird-slider" :style="{
+                    class="bird-slider"
+                    :style="{
                       '--slider-progress':
                         ((uploadStore.birdCount - 1) / 2) * 100 + '%'
-                    }" />
+                    }"
+                  />
                   <div class="bird-slider-labels">
                     <span>1</span>
                     <span>2</span>
@@ -674,7 +772,10 @@ const timeInputValue = computed({
               </div>
 
               <div class="details-field details-field--full">
-                <RouterLink to="/mapa/nahravka/-1/upravit-dialekt?draft=1" class="button-secondary">
+                <RouterLink
+                  to="/mapa/nahravka/-1/upravit-dialekt?draft=1"
+                  class="button-secondary"
+                >
                   Navrhnout dialekty
                 </RouterLink>
               </div>
@@ -682,15 +783,24 @@ const timeInputValue = computed({
               <div class="details-field details-field--full">
                 <div class="details-toggle-card">
                   <p class="details-toggle-text">
-                    <TranslatedText identifier="upload.details.notifications_label" />
+                    <TranslatedText
+                      identifier="upload.details.notifications_label"
+                    />
                   </p>
                   <label class="toggle-switch">
-                    <input v-model="uploadStore.notificationsOptIn" type="checkbox" class="toggle-switch-input"
-                      :aria-label="t('upload.details.notifications_label')" />
-                    <span class="toggle-switch-track" :class="{
-                      'toggle-switch-track--active':
-                        uploadStore.notificationsOptIn
-                    }">
+                    <input
+                      v-model="uploadStore.notificationsOptIn"
+                      type="checkbox"
+                      class="toggle-switch-input"
+                      :aria-label="t('upload.details.notifications_label')"
+                    />
+                    <span
+                      class="toggle-switch-track"
+                      :class="{
+                        'toggle-switch-track--active':
+                          uploadStore.notificationsOptIn
+                      }"
+                    >
                       <span class="toggle-switch-thumb" />
                     </span>
                   </label>
@@ -698,14 +808,23 @@ const timeInputValue = computed({
 
                 <div class="details-toggle-card">
                   <p class="details-toggle-text">
-                    <TranslatedText identifier="upload.details.confirm_upload_label" />
+                    <TranslatedText
+                      identifier="upload.details.confirm_upload_label"
+                    />
                   </p>
                   <label class="toggle-switch">
-                    <input v-model="uploadStore.confirmUpload" type="checkbox" class="toggle-switch-input"
-                      :aria-label="t('upload.details.confirm_upload_label')" />
-                    <span class="toggle-switch-track" :class="{
-                      'toggle-switch-track--active': uploadStore.confirmUpload
-                    }">
+                    <input
+                      v-model="uploadStore.confirmUpload"
+                      type="checkbox"
+                      class="toggle-switch-input"
+                      :aria-label="t('upload.details.confirm_upload_label')"
+                    />
+                    <span
+                      class="toggle-switch-track"
+                      :class="{
+                        'toggle-switch-track--active': uploadStore.confirmUpload
+                      }"
+                    >
                       <span class="toggle-switch-thumb" />
                     </span>
                   </label>
@@ -717,7 +836,11 @@ const timeInputValue = computed({
 
         <!-- Photos Stage -->
         <template v-if="stepper.isCurrent('photos')">
-          <Dropzone :multiple="true" :accept="photoAccept" @drop="onPhotoDrop">
+          <Dropzone
+            :multiple="true"
+            :accept="photoAccept"
+            @drop="onPhotoDrop"
+          >
             <template #dragging>
               <div class="text-center py-8">
                 <div class="text-4xl mb-2">📷</div>
@@ -739,10 +862,21 @@ const timeInputValue = computed({
           </Dropzone>
 
           <!-- Photo List Outside Dropzone -->
-          <ul v-if="uploadStore.photos?.length" class="flex flex-col w-full gap-4 mt-4" @click.stop>
-            <li v-for="(file, index) in uploadStore.photos" :key="`${file.name}-${file.size}-${file.lastModified}-${index}`"
-              class="flex flex-col sm:flex-row w-full items-center gap-3 p-3 bg-white border-2 border-gray-200 rounded-lg shadow-sm">
-              <img :src="makeURL(file)" :alt="file.name" class="w-full sm:w-32 h-32 object-cover rounded" />
+          <ul
+            v-if="uploadStore.photos?.length"
+            class="flex flex-col w-full gap-4 mt-4"
+            @click.stop
+          >
+            <li
+              v-for="(file, index) in uploadStore.photos"
+              :key="`${file.name}-${file.size}-${file.lastModified}-${index}`"
+              class="flex flex-col sm:flex-row w-full items-center gap-3 p-3 bg-white border-2 border-gray-200 rounded-lg shadow-sm"
+            >
+              <img
+                :src="makeURL(file)"
+                :alt="file.name"
+                class="w-full sm:w-32 h-32 object-cover rounded"
+              />
               <div class="flex-1 text-center sm:text-left">
                 <p class="text-sm font-medium">
                   {{ file.name }}
@@ -751,8 +885,11 @@ const timeInputValue = computed({
                   {{ (file.size / 1_000_000).toFixed(2) }} MB
                 </p>
               </div>
-              <button type="button" class="danger w-full sm:w-auto px-4 py-2 text-sm touch-manipulation"
-                @click="removePhoto(index)">
+              <button
+                type="button"
+                class="danger w-full sm:w-auto px-4 py-2 text-sm touch-manipulation"
+                @click="removePhoto(index)"
+              >
                 <TranslatedText identifier="upload.remove" />
               </button>
             </li>
@@ -760,7 +897,9 @@ const timeInputValue = computed({
         </template>
 
         <template v-if="stepper.isCurrent('submit')">
-          <div class="flex flex-col gap-6 items-center justify-center py-12 px-4">
+          <div
+            class="flex flex-col gap-6 items-center justify-center py-12 px-4"
+          >
             <template v-if="uploadSuccess">
               <div class="text-2xl sm:text-4xl">✅</div>
               <div class="text-center">
@@ -778,12 +917,18 @@ const timeInputValue = computed({
                 </p>
 
                 <div class="mt-8 flex flex-wrap justify-center gap-3">
-                  <button type="button"
+                  <button
+                    type="button"
                     class="primary px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95"
-                    @click="startNewUpload">
+                    @click="startNewUpload"
+                  >
                     <TranslatedText identifier="upload.upload_another" />
                   </button>
-                  <button type="button" class="secondary px-8 py-3" @click="closeUpload">
+                  <button
+                    type="button"
+                    class="secondary px-8 py-3"
+                    @click="closeUpload"
+                  >
                     <TranslatedText identifier="buttons.close" />
                   </button>
                 </div>
@@ -798,43 +943,85 @@ const timeInputValue = computed({
           </div>
         </template>
 
-        <div class="flex items-center justify-center gap-1 mb-6 overflow-x-auto px-2"
-          :class="{ 'info-step-navigator': stepper.isCurrent('info') }">
-          <div v-for="(step, id, i) in stepper.steps.value" :key="id" class="flex items-center shrink-0">
-            <button :disabled="uploadSuccess || (!allStepsBeforeAreValid(i) && stepper.isBefore(id))"
-              class="step-indicator touch-manipulation" :class="{
+        <div
+          class="flex items-center justify-center gap-1 mb-6 overflow-x-auto px-2"
+          :class="{ 'info-step-navigator': stepper.isCurrent('info') }"
+        >
+          <div
+            v-for="(step, id, i) in stepper.steps.value"
+            :key="id"
+            class="flex items-center shrink-0"
+          >
+            <button
+              :disabled="
+                uploadSuccess ||
+                (!allStepsBeforeAreValid(i) && stepper.isBefore(id))
+              "
+              class="step-indicator touch-manipulation"
+              :class="{
                 'step-active': stepper.isCurrent(id),
-                'step-completed': stepper.isAfter(id) && (step.isValid() || uploadSuccess),
-                'step-incomplete': stepper.isAfter(id) && !step.isValid() && !uploadSuccess,
+                'step-completed':
+                  stepper.isAfter(id) && (step.isValid() || uploadSuccess),
+                'step-incomplete':
+                  stepper.isAfter(id) && !step.isValid() && !uploadSuccess,
                 'step-pending':
-                  !uploadSuccess && stepper.isBefore(id) && allStepsBeforeAreValid(i),
+                  !uploadSuccess &&
+                  stepper.isBefore(id) &&
+                  allStepsBeforeAreValid(i),
                 'step-disabled':
-                  uploadSuccess || (!allStepsBeforeAreValid(i) && stepper.isBefore(id))
-              }" :title="step.title" @click="stepper.goTo(id)">
+                  uploadSuccess ||
+                  (!allStepsBeforeAreValid(i) && stepper.isBefore(id))
+              }"
+              :title="step.title"
+              @click="stepper.goTo(id)"
+            >
               <span class="step-number">{{ i + 1 }}</span>
             </button>
-            <div v-if="i < Object.keys(stepper.steps.value).length - 1" class="step-connector" :class="{
-              'step-connector-completed':
-                (stepper.isAfter(id) && step.isValid()) || uploadSuccess,
-              'step-connector-active': stepper.isCurrent(id) && !uploadSuccess
-            }" />
+            <div
+              v-if="i < Object.keys(stepper.steps.value).length - 1"
+              class="step-connector"
+              :class="{
+                'step-connector-completed':
+                  (stepper.isAfter(id) && step.isValid()) || uploadSuccess,
+                'step-connector-active': stepper.isCurrent(id) && !uploadSuccess
+              }"
+            />
           </div>
         </div>
 
         <!-- Navigation Buttons -->
-        <div class="nav-buttons" :class="{ 'info-step-nav-buttons': stepper.isCurrent('info') }">
-          <button v-if="!stepper.isFirst.value && !stepper.isLast.value" type="button"
+        <div
+          class="nav-buttons"
+          :class="{ 'info-step-nav-buttons': stepper.isCurrent('info') }"
+        >
+          <button
+            v-if="!stepper.isFirst.value && !stepper.isLast.value"
+            type="button"
             class="secondary flex-1 sm:flex-none py-3 px-6 text-sm sm:text-base touch-manipulation font-medium"
-            @click="stepper.goToPrevious()">
+            @click="stepper.goToPrevious()"
+          >
             ←
             <TranslatedText identifier="upload.back" />
           </button>
-          <button v-if="!stepper.isLast.value" type="submit" :disabled="!(
-              stepper.current.value.isValid() &&
-              allStepsBeforeAreValid(stepper.index.value)
-            )
-            " class="primary flex-1 sm:flex-none py-3 px-6 text-sm sm:text-base touch-manipulation font-medium">
-            <TranslatedText :identifier="stepper.isCurrent('photos') ? 'upload.steps.submit' : 'upload.next'" /> →
+          <button
+            v-if="!stepper.isLast.value"
+            type="submit"
+            :disabled="
+              !(
+                stepper.current.value.isValid() &&
+                allStepsBeforeAreValid(stepper.index.value)
+              )
+            "
+            class="primary flex-1 sm:flex-none py-3 px-6 text-sm sm:text-base touch-manipulation font-medium"
+          >
+            <TranslatedText
+              :identifier="
+                stepper.isCurrent('photos')
+                  ? 'upload.steps.submit'
+                  : 'upload.next'
+              "
+            />
+            →
           </button>
         </div>
       </form>
@@ -1069,11 +1256,13 @@ const timeInputValue = computed({
 .bird-slider {
   --slider-progress: 0%;
   @apply w-full h-3 rounded-full appearance-none cursor-pointer;
-  background: linear-gradient(90deg,
-      #ffd400 0%,
-      #ffd400 var(--slider-progress),
-      #e5e7eb var(--slider-progress),
-      #e5e7eb 100%);
+  background: linear-gradient(
+    90deg,
+    #ffd400 0%,
+    #ffd400 var(--slider-progress),
+    #e5e7eb var(--slider-progress),
+    #e5e7eb 100%
+  );
 }
 
 .bird-slider::-webkit-slider-thumb {

@@ -10,7 +10,9 @@ export class ApiError extends Error {
     this.stringCode = stringCode;
     this.responseCode = responseCode;
 
-    if (body?.title !== undefined && body.errors !== undefined) {
+    if (body?.error_description) {
+      this.body = body.error_description;
+    } else if (body?.title !== undefined && body.errors !== undefined) {
       this.body =
         body.title +
         Object.values(body.errors)

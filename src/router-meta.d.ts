@@ -8,6 +8,7 @@ declare module 'vue-router' {
     authenticated?: boolean;
     admin?: boolean;
     guestOnly?: boolean;
+    'landing-bypass'?: boolean;
   }
 }
 
