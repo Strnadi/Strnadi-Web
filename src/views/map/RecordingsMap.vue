@@ -1,11 +1,14 @@
 <script lang="ts">
 import mitt from '@/vendor/mitt';
 import { reactive } from 'vue';
-import { type LeafletMouseEvent } from 'leaflet';
-import type { Polygon, Marker } from '@/views/map/Map.vue';
-import { computedAsync, refDebounced } from '@vueuse/core';
+import type { LeafletMouseEvent } from 'leaflet';
+import type { Marker } from '@/views/map/Map.vue';
+import { computedAsync } from '@vueuse/core';
+import { getDialectColors } from '@/api/recordings';
+import type { RecordingModel, RecordingPartModel } from '@/api/recordings';
 
 export type MapFilter = 'all' | 'new' | 'old' | 'my' | 'others' | 'any-dialect';
+
 export interface MapClickEvent {
   event: LeafletMouseEvent;
   recording?: RecordingModel;
@@ -44,7 +47,6 @@ export const MapStore = reactive<{
   onlyDialects: false,
   hideOthersUnfinished: true,
   center: [49.9, 15.5, 8.25],
-  /** Default to glify — drastically faster for large datasets. */
   glify: false,
   markers: {},
 
@@ -59,309 +61,242 @@ export const MapStore = reactive<{
 </script>
 
 <script setup vapor lang="ts">
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { getRecordings, getFilteredRecordings, getDialectColors } from '@/api/recordings';
-
-
-import { accountStore } from '@/state/AccountStore';
-
-import Map from '@/views/map/Map.vue';
-import {
-  type FilteredPartModel,
-  type RecordingModel,
-  type RecordingPartModel
-} from '@/api/recordings';
-import { divIcon, type Icon } from 'leaflet';
-
+import { refDebounced } from '@vueuse/core';
+import { divIcon, type Icon, type LeafletMouseEvent } from 'leaflet';
 import L from 'leaflet';
+
+import {
+  getRecordingMapClusterItems,
+  getRecordingMapClusters
+} from '@/api/recordings';
+import type {
+  RecordingMapClusterFeature,
+  RecordingMapClusterItem,
+  RecordingMapClustersQuery,
+  RecordingMapFeature,
+  RecordingMapSource
+} from '@/api/recordings';
+import { accountStore } from '@/state/AccountStore';
+import Map from '@/views/map/Map.vue';
+import type { Marker, Polygon } from '@/views/map/Map.vue';
 
 const props = defineProps<{
   selectionMode?: boolean;
 }>();
 
 const publicDataEnabled = computed(() => !props.selectionMode);
-const optimizedMapEndpointAvailable = ref(false);
-
-type TimedFilteredPart = FilteredPartModel & {
-  startMs: number;
-  endMs: number;
-};
-
-type PartRange = { start: number; end: number };
-type FilteredPartsMap = Map<number, TimedFilteredPart[]>;
-
-interface DialectMetaFlags {
-  dialects: string[];
-  fromModel: boolean;
-  fromUser: boolean;
-  confirmed: boolean;
-}
-
-function buildPartRanges(parts: RecordingPartModel[]): PartRange[] {
-  return parts.map((part) => ({
-    start: Date.parse(part.startDate),
-    end: Date.parse(part.endDate)
-  }));
-}
-
-function overlapsRecording(
-  part: TimedFilteredPart,
-  ranges: PartRange[]
-): boolean {
-  return ranges.some(
-    ({ start, end }) => part.endMs >= start && part.startMs <= end
-  );
-}
-
-function fltr(parts: TimedFilteredPart[], thing: 'predictedDialect' | 'userGuessDialect') {
-  const hasRepresentants = parts.some((part) => part.representantFlag);
-
-  return parts.flatMap((part) =>
-    (hasRepresentants ? part.representantFlag : true)
-      ? (part.detectedDialects ?? [])
-        .map((dd) => dd[thing])
-        .filter((dialect): dialect is string => typeof dialect === 'string' && dialect.length > 0)
-      : []
-  );
-}
-
-function collectDialectMeta(parts: TimedFilteredPart[]): DialectMetaFlags {
-  const confirmed = parts.flatMap((part) =>
-    (part.detectedDialects ?? [])
-      .map((detection) => detection.confirmedDialect)
-      .filter((dialect): dialect is string => Boolean(dialect))
-  );
-
-  const realConfirmed = confirmed.filter(
-    (dialect) =>
-      dialect.toLowerCase().replace(/\s+/g, '') !== 'unfinished' &&
-      dialect.toLowerCase().replace(/\s+/g, '') !== 'none' &&
-      dialect.toLowerCase().replace(/\s+/g, '') !== 'unknown'
-  );
-
-  const predicted: string[] = fltr(parts, 'predictedDialect');
-  const userGuess: string[] = fltr(parts, 'userGuessDialect');
-
-  // If a completed confirmed dialect exists, ignore unfinished segments.
-  if (realConfirmed.length) {
-    return {
-      dialects: realConfirmed,
-      fromModel: false,
-      fromUser: false,
-      confirmed: true
-    };
-  }
-
-  // There were confirmed values, but they were all unfinished.
-  if (confirmed.length) {
-    return {
-      dialects: confirmed,
-      fromModel: false,
-      fromUser: false,
-      confirmed: true
-    };
-  }
-
-  if (predicted.length) {
-    return {
-      dialects: predicted,
-      fromModel: true,
-      fromUser: false,
-      confirmed: false
-    };
-  }
-
-  if (userGuess.length) {
-    return {
-      dialects: userGuess,
-      fromModel: false,
-      fromUser: true,
-      confirmed: false
-    };
-  }
-
-  return {
-    dialects: ['None'],
-    fromModel: false,
-    fromUser: false,
-    confirmed: false
-  };
-}
-const nonRealDialectCodes = new Set([
-  'none',
-  'nobird',
-  'no-bird',
-  'unfinished',
-  'unknown'
-]);
-const normalizeDialect = (dialect: string) =>
-  dialect.toLowerCase().replace(/\s+/g, '');
-
-const hasMeaningfulDialect = (parts: TimedFilteredPart[]) => {
-  const { dialects } = collectDialectMeta(parts);
-  return dialects.some(
-    (dialect) => !nonRealDialectCodes.has(normalizeDialect(dialect))
-  );
-};
-
-function getIconDimensions() {
-  const isMobile =
-    typeof window !== 'undefined' ? window.innerWidth < 768 : false;
-  return {
-    iconSize: isMobile ? 20 : 16,
-    iconAnchor: isMobile ? 10 : 8
-  };
-}
-
-function matchesMapFilter(
-  recording: RecordingModel,
-  filter: MapFilter,
-  createdAtMs: number,
-  userId: number | undefined,
-  oldCutoffMs: number,
-  filteredParts: FilteredPartsMap
-): boolean {
-  switch (filter) {
-    case 'my':
-      return recording.userId === userId;
-    case 'others':
-      return recording.userId !== userId;
-    case 'old':
-      return createdAtMs <= oldCutoffMs;
-    case 'new':
-      return createdAtMs > oldCutoffMs;
-    case 'any-dialect':
-      return hasMeaningfulDialect(filteredParts.get(recording.id) ?? []);
-    default:
-      return true;
-  }
-}
-
-// Helper to compare dialect color sets for clustering
-function clusterTest(a: Marker, b: Marker): boolean {
-  if (MapStore.grouping === false) return false;
-
-  const colorsA = (a.data?.colors ?? []) as string[];
-  const colorsB = (b.data?.colors ?? []) as string[];
-  if (colorsA.length !== colorsB.length) return false;
-  const setA = new Set(colorsA);
-  const setB = new Set(colorsB);
-  if (setA.size !== setB.size) return false;
-  for (const c of setA) if (!setB.has(c)) return false;
-
-  const distance = L.latLng(a.position[0], a.position[1]).distanceTo(
-    L.latLng(b.position[0], b.position[1])
-  );
-  if (distance > 10_000) return false;
-
-  return true;
-}
-
-const allowedClustering = computed<[Marker, Marker][]>(() => {
-  if (!MapStore.grouping) return [];
-
-  const allowedPairs: [Marker, Marker][] = [];
-
-  const buckets = new globalThis.Map<string, Marker[]>();
-  const cellSize = 0.75;
-  for (const marker of allMarkers.value) {
-    const latCell = Math.floor(marker.position[0] / cellSize);
-    const lngCell = Math.floor(marker.position[1] / cellSize);
-    for (let latOffset = -1; latOffset <= 1; latOffset++) {
-      for (let lngOffset = -1; lngOffset <= 1; lngOffset++) {
-        const nearby = buckets.get(
-          `${latCell + latOffset}:${lngCell + lngOffset}`
-        );
-        for (const candidate of nearby ?? []) {
-          if (clusterTest(candidate, marker)) {
-            allowedPairs.push([candidate, marker]);
-          }
-        }
-      }
-    }
-    const key = `${latCell}:${lngCell}`;
-    const bucket = buckets.get(key) ?? [];
-    bucket.push(marker);
-    buckets.set(key, bucket);
-  }
-  return allowedPairs;
-});
-
 const fixed = { minLon: 12, maxLon: 19.5, minLat: 48.5, maxLat: 51.5 };
+const oldCutoffDate = '2024-12-31';
+
 const viewBounds = ref<
   [north: number, south: number, west: number, east: number] | null
 >(null);
+const zoom = ref(0);
 
-// const { data: mapPoints } = useQuery({
-//   queryKey: mapPointQueryKey,
-//   enabled: computed(
-//     () =>
-//       publicDataEnabled.value &&
-//       optimizedMapEndpointAvailable.value &&
-//       requestedMapBounds.value !== null
-//   ),
-//   queryFn: async ({ signal }) => {
-//     try {
-//       return await getRecordingMapPoints(
-//         {
-//           ...requestedMapBounds.value!,
-//           filter: MapStore.filter,
-//           onlyDialects: MapStore.onlyDialects,
-//           userId: accountStore.user?.id
-//         },
-//         signal
-//       );
-//     } catch (error) {
-//       // Allow the frontend to be deployed before the optimized endpoint. A
-//       // 404 permanently switches this component instance to the legacy API.
-//       if (error instanceof ApiError && error.responseCode === 404) {
-//         optimizedMapEndpointAvailable.value = false;
-//         return [];
-//       }
-//       throw error;
-//     }
-//   },
-//   placeholderData: (previousData) => previousData,
-//   staleTime: 5 * 60 * 1000
-// });
+const mapRequest = refDebounced(
+  computed<RecordingMapClustersQuery | null>(() => {
+    if (!viewBounds.value) return null;
 
-const legacyDataEnabled = computed(
-  () => publicDataEnabled.value && !optimizedMapEndpointAvailable.value
+    const [north, south, west, east] = viewBounds.value;
+    const userId = accountStore.user?.id;
+    const ownerScope =
+      userId && MapStore.filter === 'my'
+        ? 1
+        : userId && MapStore.filter === 'others'
+          ? 2
+          : 0;
+
+    return {
+      north,
+      south,
+      west,
+      east,
+      zoom: zoom.value,
+      clustered: MapStore.grouping,
+      // The previous client-side clustering only combined markers with the
+      // same dialect colours and the same visual source marker.
+      mixDialects: false,
+      mixSources: false,
+      ownerScope,
+      userId,
+      createdFrom: MapStore.filter === 'new' ? oldCutoffDate : undefined,
+      createdTo: MapStore.filter === 'old' ? oldCutoffDate : undefined,
+      onlyMeaningfulDialects:
+        MapStore.onlyDialects || MapStore.filter === 'any-dialect',
+      hideOthersWithoutMeaningfulDialect: MapStore.hideOthersUnfinished,
+      dialectMode: 0
+    };
+  }),
+  150
 );
 
-const { data: recordings } = useQuery({
-  queryKey: ['recordings'],
-  queryFn: () => getRecordings({ parts: true }),
-  enabled: legacyDataEnabled,
+const { data: mapData } = useQuery({
+  queryKey: computed(() => ['recording-map-clusters', mapRequest.value]),
+  queryFn: ({ signal }) => getRecordingMapClusters(mapRequest.value!, signal),
+  enabled: computed(() => publicDataEnabled.value && mapRequest.value !== null),
+  placeholderData: (previousData) => previousData,
   staleTime: 5 * 60 * 1000
 });
 
-const { data: filteredRecordings } = useQuery({
-  queryKey: ['filtered-recordings'],
-  queryFn: () => getFilteredRecordings(),
-  enabled: legacyDataEnabled,
-  staleTime: 5 * 60 * 1000
-});
+function getIconDimensions(cluster = false) {
+  const isMobile =
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+  const baseSize = isMobile ? 20 : 16;
+  const iconSize = cluster ? baseSize * 1.5 : baseSize;
+  return {
+    iconSize,
+    iconAnchor: iconSize / 2
+  };
+}
 
-const filteredPartsByRecordingId = computed<FilteredPartsMap>(() => {
-  const map = new globalThis.Map<number, TimedFilteredPart[]>();
-  for (const part of filteredRecordings.value ?? []) {
-    const enhanced: TimedFilteredPart = {
-      ...part,
-      startMs: Date.parse(part.startDate),
-      endMs: Date.parse(part.endDate)
-    };
+function markerIcon(
+  colors: string[],
+  source: RecordingMapSource | 'mixed',
+  cluster = false
+): Icon {
+  const { iconSize, iconAnchor } = getIconDimensions(cluster);
+  return divIcon({
+    className: cluster ? '' : 'recording-map-marker',
+    iconSize: [iconSize, iconSize],
+    iconAnchor: [iconAnchor, iconAnchor],
+    html: `<multi-color-square style="display:block;width:${iconSize}px;height:${iconSize}px;aspect-ratio:1/1" size="${iconSize}px" dot="${source === 'ai'}" questionmark="${source === 'user'}" colors='${JSON.stringify(colors)}'></multi-color-square>`
+  }) as Icon;
+}
 
-    const existing = map.get(part.recordingId);
-    if (existing) {
-      existing.push(enhanced);
-    } else {
-      map.set(part.recordingId, [enhanced]);
+const hiddenConfirmedDialectCodes = new Set(['none', 'nobird', 'no-bird']);
+const normalizeDialect = (dialect: string) =>
+  dialect.toLowerCase().replace(/\s+/g, '');
+
+function isVisibleFeature(feature: RecordingMapFeature): boolean {
+  if (MapStore.filter === 'my' && !accountStore.user?.id) return false;
+
+  return !(
+    feature.source === 'confirmed' &&
+    feature.dialects.some((dialect) =>
+      hiddenConfirmedDialectCodes.has(normalizeDialect(dialect.dialectCode))
+    )
+  );
+}
+
+const markers = computed<Marker[]>(() =>
+  (mapData.value?.features ?? [])
+    .filter(isVisibleFeature)
+    .map((feature): Marker => {
+      const colors = feature.dialects.map((dialect) => dialect.color);
+
+      if (feature.kind === 'cluster') {
+        return {
+          id: `cluster-${feature.id}`,
+          icon: markerIcon(colors, feature.source, true),
+          position: [feature.latitude, feature.longitude],
+          data: {
+            isRecordingCluster: true,
+            cluster: feature,
+            colors,
+            fromModel: feature.source === 'ai',
+            fromUser: feature.source === 'user',
+            confirmed: feature.source === 'confirmed'
+          }
+        };
+      }
+
+      return {
+        id: `${feature.recordingId}-${feature.locationPartId}`,
+        icon: markerIcon(colors, feature.source),
+        position: [feature.latitude, feature.longitude],
+        data: {
+          isRecording: true,
+          recordingId: feature.recordingId,
+          recordingPartId: feature.locationPartId,
+          colors,
+          fromModel: feature.source === 'ai',
+          fromUser: feature.source === 'user',
+          confirmed: feature.source === 'confirmed'
+        }
+      };
+    })
+    .sort((a, b) => Number(a.data?.confirmed) - Number(b.data?.confirmed))
+);
+
+const clusterItemsCache = new globalThis.Map<
+  string,
+  Promise<RecordingMapClusterItem[]>
+>();
+
+function getAllClusterItems(
+  cluster: RecordingMapClusterFeature
+): Promise<RecordingMapClusterItem[]> {
+  const cacheKey = `${cluster.id}:${cluster.nextItemsCursor ?? ''}:${cluster.count}`;
+  const cached = clusterItemsCache.get(cacheKey);
+  if (cached) return cached;
+
+  const request = (async () => {
+    const items = [...(cluster.items ?? [])];
+    let hasMoreItems = cluster.hasMoreItems;
+    let cursor = cluster.nextItemsCursor;
+    const seenCursors = new Set<string>();
+
+    while (hasMoreItems && cursor && !seenCursors.has(cursor)) {
+      seenCursors.add(cursor);
+      const page = await getRecordingMapClusterItems(cluster.id, cursor);
+      items.push(...(page.items ?? []));
+      hasMoreItems = page.hasMoreItems;
+      cursor = page.nextItemsCursor;
     }
+
+    return items;
+  })();
+
+  clusterItemsCache.set(cacheKey, request);
+  void request.catch(() => clusterItemsCache.delete(cacheKey));
+  return request;
+}
+
+async function openClusterPopup(
+  event: LeafletMouseEvent,
+  marker: Marker,
+  cluster: RecordingMapClusterFeature
+) {
+  const map = (event.target as L.Layer & { _map?: L.Map })._map;
+  if (!map) return;
+
+  const content = document.createElement('div');
+  content.textContent = 'Načítání nahrávek…';
+  const popup = L.popup()
+    .setLatLng(marker.position)
+    .setContent(content)
+    .openOn(map);
+
+  try {
+    const items = await getAllClusterItems(cluster);
+    content.replaceChildren();
+
+    for (const item of items) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = `Nahrávka ${item.recordingId}`;
+      button.style.display = 'block';
+      button.style.padding = '4px 0';
+      button.addEventListener('click', () => {
+        MapEvents.emit('click', {
+          event,
+          recordingId: item.recordingId,
+          recordingPartId: item.locationPartId
+        });
+        map.closePopup(popup);
+      });
+      content.appendChild(button);
+    }
+
+    if (items.length === 0) content.textContent = 'Cluster je prázdný.';
+    popup.update();
+  } catch {
+    content.textContent = 'Nahrávky v clusteru se nepodařilo načíst.';
+    popup.update();
   }
-  return map;
-});
+}
 
 // --- Grids ---
 function makeGrid(stepLon: number, stepLat: number): Polygon[] {
@@ -378,19 +313,22 @@ function makeGrid(stepLon: number, stepLat: number): Polygon[] {
   const startLat =
     fixed.minLat + Math.floor((minLat - fixed.minLat) / stepLat) * stepLat;
   const polys: Polygon[] = [];
+
   for (let lon = startLon; lon < maxLon; lon += stepLon) {
     for (let lat = startLat; lat < maxLat; lat += stepLat) {
-      const lon1 = lon,
-        lat1 = lat;
-      const lon2 = lon + stepLon,
-        lat2 = lat + stepLat;
+      const lon1 = lon;
+      const lat1 = lat;
+      const lon2 = lon + stepLon;
+      const lat2 = lat + stepLat;
       if (
         lon2 <= fixed.minLon ||
         lon1 >= fixed.maxLon ||
         lat2 <= fixed.minLat ||
         lat1 >= fixed.maxLat
-      )
+      ) {
         continue;
+      }
+
       const id = `${stepLon}-${lon1.toFixed(4)}-${lat1.toFixed(4)}`;
       const coordsLatLng: [number, number][] = [
         [lat1, lon1],
@@ -407,10 +345,9 @@ function makeGrid(stepLon: number, stepLat: number): Polygon[] {
       });
     }
   }
+
   return polys;
 }
-
-const zoom = ref<number>(0);
 
 const polygons = refDebounced(
   computed<Polygon[]>(() => [
@@ -419,133 +356,6 @@ const polygons = refDebounced(
   ]),
   75
 );
-
-const oldCutoff = new Date(2024, 11, 31);
-const oldCutoffMs = oldCutoff.getTime();
-
-function markerIcon(
-  colors: string[],
-  fromModel: boolean,
-  fromUser: boolean
-): Icon | undefined {
-  // if (!MapStore.grouping) return undefined;
-
-  const { iconSize, iconAnchor } = getIconDimensions();
-  return divIcon({
-    className: 'recording-map-marker',
-    iconSize: [iconSize, iconSize],
-    iconAnchor: [iconAnchor, iconAnchor],
-    html: `<multi-color-square style="display:block;width:${iconSize}px;height:${iconSize}px;aspect-ratio:1/1" size="${iconSize}px" dot="${fromModel}" questionmark="${fromUser}" colors='${JSON.stringify(colors)}'></multi-color-square>`
-  }) as Icon;
-}
-
-const markers = computed<Marker[]>(() => {
-  // if (optimizedMapEndpointAvailable.value) {
-  //   return (mapPoints.value ?? []).map(mapPointToMarker);
-  // }
-
-  const dialectColors = DialectColors.value;
-  if (!dialectColors) return [];
-
-  const filteredMap = filteredPartsByRecordingId.value;
-  const userId = accountStore.user?.id;
-  const filter = MapStore.filter;
-  const result: Marker[] = [];
-
-  for (const rec of recordings.value ?? []) {
-    const createdAtMs = Date.parse(rec.createdAt);
-    if (
-      !matchesMapFilter(
-        rec,
-        filter,
-        createdAtMs,
-        userId,
-        oldCutoffMs,
-        filteredMap
-      )
-    ) {
-      continue;
-    }
-
-    const parts = rec.parts ?? [];
-    if (parts.length === 0) continue;
-    const lastPart = parts[parts.length - 1]!;
-
-    const filteredForRecording = filteredMap.get(rec.id);
-    let relevantFiltered: TimedFilteredPart[] = [];
-    if (filteredForRecording?.length) {
-      const partRanges = buildPartRanges(parts);
-      relevantFiltered = filteredForRecording.filter((fp) =>
-        overlapsRecording(fp, partRanges)
-      );
-    }
-
-    const dialectMeta = collectDialectMeta(relevantFiltered);
-    let { dialects, fromModel, fromUser, confirmed } = dialectMeta;
-
-    if (
-      MapStore.hideOthersUnfinished &&
-      rec.userId !== userId &&
-      !hasMeaningfulDialect(relevantFiltered)
-    ) {
-      continue;
-    }
-
-    if (
-      confirmed &&
-      dialects.some((dialect) =>
-        ['none', 'nobird', 'no-bird'].includes(
-          dialect.toLowerCase().replace(/\s+/g, '')
-        )
-      )
-    ) {
-      continue;
-    }
-
-    let dedupedDialects = new Set(dialects);
-    dialects = [...dedupedDialects.values()];
-
-    if (MapStore.onlyDialects) {
-      if (!hasMeaningfulDialect(relevantFiltered)) continue;
-    }
-
-    const latitude = lastPart.gpsLatitudeStart;
-    const longitude = lastPart.gpsLongitudeStart;
-    if (
-      !Number.isFinite(latitude) ||
-      !Number.isFinite(longitude) ||
-      latitude < -90 ||
-      latitude > 90 ||
-      longitude < -180 ||
-      longitude > 180
-    ) {
-      continue;
-    }
-
-    const colors = dialects.map((code) => dialectColors[code] ?? '#000000');
-
-    result.push({
-      id: `${rec.id}-${lastPart.id}`,
-      icon: markerIcon(colors, fromModel, fromUser),
-      position: [latitude, longitude],
-      data: {
-        isRecording: true,
-        recordingId: rec.id,
-        recordingPartId: lastPart.id,
-        recording: rec,
-        part: lastPart,
-        colors,
-        fromModel,
-        fromUser,
-        confirmed
-      }
-    });
-  }
-
-  return result.sort(
-    (a, b) => Number(a.data?.confirmed) - Number(b.data?.confirmed)
-  );
-});
 
 const onClick = ({
   event,
@@ -558,7 +368,9 @@ const onClick = ({
 }) => {
   event.originalEvent.stopPropagation();
 
-  if (marker) {
+  if (marker?.data?.isRecordingCluster) {
+    void openClusterPopup(event, marker, marker.data.cluster);
+  } else if (marker) {
     MapEvents.emit('click', {
       event,
       recording: marker.data.recording,
@@ -575,14 +387,10 @@ const onClick = ({
     if (p0 && p2) {
       const lat = ((p0[0] ?? 0) + (p2[0] ?? 0)) / 2;
       const lng = ((p0[1] ?? 0) + (p2[1] ?? 0)) / 2;
-
       const y = Math.floor(560 - lat * 10);
       const x = Math.floor(lng * 6 - 34);
 
       MapEvents.emit('click', { event, square: `${y}${x}` });
-    } else {
-      console.warn('Polygon clicked with unexpected structure:', polygon);
-      return;
     }
   } else {
     MapEvents.emit('click', { event });
@@ -590,15 +398,24 @@ const onClick = ({
 };
 
 const allMarkers = computed<Marker[]>(() => [
-  ...(markers.value ?? []),
+  ...markers.value,
   ...Object.values(MapStore.markers)
 ]);
 </script>
 
 <template>
-  <Map v-model:bounds="viewBounds" v-model:zoom="zoom" :scale-bar="MapStore.scale"
-    :polygons="!props.selectionMode ? polygons : []" :markers="!props.selectionMode ? allMarkers : Object.values(MapStore.markers)
-      " :allowed-clustering="!props.selectionMode && MapStore.grouping ? allowedClustering : undefined
-        " :mode="MapStore.aerial ? 'aerial' : 'outdoor'" :zoom-control="true"
-    :use-glify="!props.selectionMode && MapStore.glify && !MapStore.grouping" :position="MapStore.center" @click="onClick" />
+  <Map
+    v-model:bounds="viewBounds"
+    v-model:zoom="zoom"
+    :scale-bar="MapStore.scale"
+    :polygons="!props.selectionMode ? polygons : []"
+    :markers="
+      !props.selectionMode ? allMarkers : Object.values(MapStore.markers)
+    "
+    :mode="MapStore.aerial ? 'aerial' : 'outdoor'"
+    :zoom-control="true"
+    :use-glify="!props.selectionMode && MapStore.glify && !MapStore.grouping"
+    :position="MapStore.center"
+    @click="onClick"
+  />
 </template>

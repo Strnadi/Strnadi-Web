@@ -1,11 +1,11 @@
 import { authorizationConfig, getAuthorizationCallbackUri } from '@/api/auth';
 import { createAuthorizationTransaction } from '@/utils/oauth';
 
-export const beginAuthorization = async (
+export const createAuthorizationUrl = async (
   returnTo = '/',
   callbackPath = '/ucet/prihlaseni',
   registration = false
-): Promise<void> => {
+): Promise<string> => {
   if (!authorizationConfig.baseUrl) {
     throw new Error('Chybí adresa autorizačního serveru.');
   }
@@ -14,7 +14,6 @@ export const beginAuthorization = async (
   }
 
   const redirectUri = getAuthorizationCallbackUri(callbackPath);
-  console.log(redirectUri)
   const { state, codeChallenge } = await createAuthorizationTransaction(
     redirectUri,
     returnTo
@@ -41,9 +40,18 @@ export const beginAuthorization = async (
       'returnUrl',
       `${authorizeUrl.pathname}${authorizeUrl.search}`
     );
-    window.location.assign(registrationUrl.toString());
-    return;
+    return registrationUrl.toString();
   }
 
-  window.location.assign(authorizeUrl.toString());
+  return authorizeUrl.toString();
+};
+
+export const beginAuthorization = async (
+  returnTo = '/',
+  callbackPath = '/ucet/prihlaseni',
+  registration = false
+): Promise<void> => {
+  window.location.assign(
+    await createAuthorizationUrl(returnTo, callbackPath, registration)
+  );
 };
