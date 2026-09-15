@@ -65,21 +65,94 @@ export interface RecordingMapBounds {
   east: number;
 }
 
-export interface RecordingMapPoint {
-  recordingId: number;
-  recordingPartId: number;
-  latitude: number;
-  longitude: number;
-  colors: string[];
-  fromModel: boolean;
-  fromUser: boolean;
-  confirmed: boolean;
+export type RecordingMapOwnerScope = 0 | 1 | 2;
+export type RecordingMapDialectMode = 0 | 1 | 2;
+export type RecordingMapSource = 'confirmed' | 'ai' | 'user' | 'unknown';
+
+export interface RecordingMapDialect {
+  id: number;
+  dialectCode: string;
+  color: string;
+  hintOrder: number;
+  isDialect: boolean;
+  contributionCount: number;
+  percentage: number;
 }
 
-export interface RecordingMapPointQuery extends RecordingMapBounds {
-  filter: 'all' | 'new' | 'old' | 'my' | 'others' | 'any-dialect';
-  onlyDialects: boolean;
+export interface RecordingMapClusterItem {
+  recordingId: number;
+  representativePartId: number | null;
+  locationPartId: number;
+  locationSource: 'representative' | 'latestPart';
+  name: string | null;
+  createdAt: string;
+  position: {
+    latitude: number;
+    longitude: number;
+  };
+  source: RecordingMapSource;
+}
+
+export interface RecordingMapRecordingFeature {
+  kind: 'recording';
+  recordingId: number;
+  representativePartId: number | null;
+  locationPartId: number;
+  locationSource: 'representative' | 'latestPart';
+  latitude: number;
+  longitude: number;
+  name: string | null;
+  createdAt: string;
+  dialects: RecordingMapDialect[];
+  source: RecordingMapSource;
+}
+
+export interface RecordingMapClusterFeature {
+  kind: 'cluster';
+  id: string;
+  latitude: number;
+  longitude: number;
+  bounds: RecordingMapBounds;
+  count: number;
+  dialects: RecordingMapDialect[];
+  source: RecordingMapSource | 'mixed';
+  items: RecordingMapClusterItem[];
+  hasMoreItems: boolean;
+  nextItemsCursor: string | null;
+}
+
+export type RecordingMapFeature =
+  RecordingMapRecordingFeature | RecordingMapClusterFeature;
+
+export interface RecordingMapClustersResult {
+  bounds: RecordingMapBounds;
+  clustered: boolean;
+  clusterDistanceMeters: number | null;
+  visibleRecordingCount: number;
+  features: RecordingMapFeature[];
+}
+
+export interface RecordingMapClustersQuery extends RecordingMapBounds {
+  zoom: number;
+  clustered: boolean;
+  mixDialects?: boolean;
+  mixSources?: boolean;
+  clusterDistanceMeters?: number;
+  ownerScope?: RecordingMapOwnerScope;
   userId?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  onlyMeaningfulDialects?: boolean;
+  hideOthersWithoutMeaningfulDialect?: boolean;
+  dialectMode?: RecordingMapDialectMode;
+}
+
+export interface RecordingMapClusterItemsPage {
+  clusterId: string;
+  count: number;
+  items: RecordingMapClusterItem[];
+  hasMoreItems: boolean;
+  nextItemsCursor: string | null;
 }
 
 export interface DialectDefinition {
@@ -252,16 +325,36 @@ export const getFilteredRecordings = async (): Promise<FilteredPartModel[]> => {
   return response.data as FilteredPartModel[];
 };
 
-export const getRecordingMapPoints = async (
-  query: RecordingMapPointQuery,
+export const getRecordingMapClusters = async (
+  query: RecordingMapClustersQuery,
   signal?: AbortSignal
-): Promise<RecordingMapPoint[]> => {
-  const response = await axios.get('/recordings/map-points', {
-    params: query,
-    signal
-  });
+): Promise<RecordingMapClustersResult> => {
+  const response = await axios.get<RecordingMapClustersResult>(
+    '/recordings/map-clusters',
+    {
+      params: query,
+      signal
+    }
+  );
 
-  return response.data as RecordingMapPoint[];
+  return response.data;
+};
+
+export const getRecordingMapClusterItems = async (
+  clusterId: string,
+  cursor: string,
+  pageSize = 50,
+  signal?: AbortSignal
+): Promise<RecordingMapClusterItemsPage> => {
+  const response = await axios.get<RecordingMapClusterItemsPage>(
+    `/recordings/map-clusters/${encodeURIComponent(clusterId)}/items`,
+    {
+      params: { cursor, pageSize },
+      signal
+    }
+  );
+
+  return response.data;
 };
 
 export const getFilteredRecording = async (
