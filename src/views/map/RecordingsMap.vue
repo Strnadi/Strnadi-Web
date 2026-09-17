@@ -115,10 +115,8 @@ function overlapsRecording(
 }
 
 function fltr(parts: TimedFilteredPart[], thing: 'predictedDialect' | 'userGuessDialect') {
-  const hasRepresentants = parts.some((part) => part.representantFlag);
-
   return parts.flatMap((part) =>
-    (hasRepresentants ? part.representantFlag : true)
+    (part.representantFlag)
       ? (part.detectedDialects ?? [])
         .map((dd) => dd[thing])
         .filter((dialect): dialect is string => typeof dialect === 'string' && dialect.length > 0)
@@ -127,7 +125,7 @@ function fltr(parts: TimedFilteredPart[], thing: 'predictedDialect' | 'userGuess
 }
 
 function collectDialectMeta(parts: TimedFilteredPart[]): DialectMetaFlags {
-  const confirmed = parts.flatMap((part) =>
+  const confirmed = parts.filter(p => p.representantFlag === true).flatMap((part) =>
     (part.detectedDialects ?? [])
       .map((detection) => detection.confirmedDialect)
       .filter((dialect): dialect is string => Boolean(dialect))
