@@ -301,7 +301,7 @@ export const deleteRecordingPart = async (
   recordingId: Numeric,
   partId: Numeric
 ): Promise<void> =>
-  authorizedDelete(`/recordings/part/${recordingId}/${partId}`, token);
+  authorizedDelete(`/recordings/part/${partId}`, token);
 
 export const getRecordings = async ({
   audio = false,

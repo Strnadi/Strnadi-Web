@@ -92,7 +92,7 @@ function convertIsoToRelative(iso: string, anchor: number): number {
 function getAudioUrls(): string[] {
   if (!recording.value?.parts?.length) return [];
   return recording.value.parts
-    .map((p) => `${import.meta.env.VITE_API_URL}/recordings/part/${recording.value!.id}/${p.id}/sound`);
+    .map((p) => `${import.meta.env.VITE_API_URL}/recordings/part/${p.id}/sound`);
 }
 
 function buildSegmentRange(): SpectrogramRange[] {

@@ -240,7 +240,7 @@ const uploaderLocation = computed(() =>
           :audio-urls="
             recording.parts?.map(
               (part) =>
-                `${env.VITE_API_URL}/recordings/part/${recordingId}/${part.id}/sound`
+                `${env.VITE_API_URL}/recordings/part/${part.id}/sound`
             ) ?? []
           "
           :height="200"

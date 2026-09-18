@@ -308,7 +308,7 @@ async function downloadSelectedRecordings() {
         // Fetch and add sound file
         try {
           const soundResponse = await axios.get(
-            `/recordings/part/${recording.id}/${part.id}/sound`,
+            `/recordings/part/${part.id}/sound`,
             {
               responseType: 'arraybuffer' // Fetch as ArrayBuffer
             }
