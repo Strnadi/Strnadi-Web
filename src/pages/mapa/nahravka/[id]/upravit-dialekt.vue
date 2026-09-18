@@ -301,7 +301,7 @@ const audioUrls = computed(() => {
   }
   return recording.value.parts.map(
     (p) =>
-      `${env.VITE_API_URL}/recordings/part/${recording.value?.id}/${p.id}/sound`
+      `${env.VITE_API_URL}/recordings/part/${p.id}/sound`
   );
 });
 
