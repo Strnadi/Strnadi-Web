@@ -54,6 +54,7 @@ import {
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { t } from '@/components/TranslatedText.vue';
+import { projectStore } from '@/state/ProjectStore';
 
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -63,7 +64,6 @@ import type { MarkerClusterGroup, MarkerCluster } from 'leaflet';
 // Import glify — attaches L.glify to the leaflet namespace
 import 'leaflet.glify';
 
-const env = import.meta.env;
 let leafletMap: LeafletMap | null = null;
 const useRetinaTiles =
   typeof window !== 'undefined' && window.devicePixelRatio > 1;
@@ -567,7 +567,7 @@ onBeforeUnmount(() => {
     >
       <!-- Tile Layers -->
       <l-tile-layer
-        :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode !== 'aerial' ? vectorTileSize : '256'}/{z}/{x}/{y}`"
+        :url="`${projectStore.current.apiUrl}/map/v1/maptiles/${mode}/${mode !== 'aerial' ? vectorTileSize : '256'}/{z}/{x}/{y}`"
         :max-zoom="19"
         :min-zoom="5"
         :z-index="1"
@@ -575,7 +575,7 @@ onBeforeUnmount(() => {
       />
       <l-tile-layer
         v-if="mode === 'aerial'"
-        :url="`${env.VITE_API_URL}/map/v1/maptiles/names-overlay/256/{z}/{x}/{y}`"
+        :url="`${projectStore.current.apiUrl}/map/v1/maptiles/names-overlay/256/{z}/{x}/{y}`"
         :max-zoom="19"
         :min-zoom="5"
         :z-index="2"

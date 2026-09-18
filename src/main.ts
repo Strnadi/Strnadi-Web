@@ -26,6 +26,7 @@ import { setupLayouts } from 'virtual:meta-layouts';
 import { EditorView } from '@codemirror/view';
 import { config } from 'md-editor-v3';
 import { initializeAccount, accountStore } from '@/state/AccountStore';
+import { initializeProjects } from '@/state/ProjectStore';
 import type { MobilePresentation } from '@/router-meta';
 
 // // @ts-expect-error No types available.
@@ -375,7 +376,6 @@ if (import.meta.env.MODE === 'staging') {
   });
 }
 
-axios.defaults.baseURL = import.meta.env.VITE_API_URL;
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -387,7 +387,7 @@ axios.interceptors.response.use(
   }
 );
 
-const accountInitialization = initializeAccount();
+const accountInitialization = initializeProjects().then(initializeAccount);
 
 // Directive definition
 // const autoScrollbar = {
@@ -441,4 +441,5 @@ customElements.define(
   defineVaporCustomElement(MultiColorSquare, { shadowRoot: false })
 );
 
+await accountInitialization;
 app.mount('#app');

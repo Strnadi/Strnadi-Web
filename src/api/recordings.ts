@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { projectStore } from '@/state/ProjectStore';
 import { postPhoto } from './photos';
 import { authorizedPatch, authorizedDelete, authorizedPost } from './utils';
 import type { Numeric } from '@/types/basic';
@@ -298,7 +299,7 @@ export const deleteRecording = async (
 
 export const deleteRecordingPart = async (
   token: string,
-  recordingId: Numeric,
+  _recordingId: Numeric,
   partId: Numeric
 ): Promise<void> =>
   authorizedDelete(`/recordings/part/${partId}`, token);
@@ -389,15 +390,19 @@ export const deleteFilteredPart = async (
   id: Numeric
 ): Promise<void> => authorizedDelete(`/recordings/filtered/${id}`, token);
 
-export const getDialects = async (): Promise<DialectDefinition[]> => {
+export const getDialects = async (
+  apiUrl = projectStore.current.apiUrl
+): Promise<DialectDefinition[]> => {
   const response = await axios.get(
-    `${import.meta.env.VITE_API_URL}/recordings/dialects`
+    `${apiUrl}/recordings/dialects`
   );
   return response.data as DialectDefinition[];
 };
 
-export const getDialectColors = async (): Promise<Record<string, string>> => {
-  const dialects = await getDialects();
+export const getDialectColors = async (
+  apiUrl = projectStore.current.apiUrl
+): Promise<Record<string, string>> => {
+  const dialects = await getDialects(apiUrl);
   return dialects.reduce<Record<string, string>>((acc, dialect) => {
     acc[dialect.dialectCode] = dialect.color;
     return acc;

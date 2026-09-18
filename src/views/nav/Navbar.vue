@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue';
 import { kebabize } from '@/utils/strings';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { accountStore } from '@/state/AccountStore';
 import { getArticleCategories } from '@/api/articles';
+import { getUserProjectIds } from '@/api/projects';
 
 import Dropdown from '@/components/Dropdown.vue';
 import AccountDropdown from '@/views/dropdown/account/AccountDropdown.vue';
@@ -11,10 +13,38 @@ import UploadProgress from '@/components/UploadProgress.vue';
 import UploadIcon from '@/icons/interface/icon-upload.svg';
 import DropdownIcon from '@/icons/interface/dropdown.svg';
 import { applicationStore } from '@/state/ApplicationStore';
+import { projectStore, selectProject } from '@/state/ProjectStore';
 import TranslatedText from '@/components/TranslatedText.vue';
 import { translations } from '@/constants/Translations';
 
+const defaultProjectId = import.meta.env.VITE_PROJECT_ID;
 const queryClient = useQueryClient();
+const showAllProjects = ref(false);
+const userId = computed(() => accountStore.user?.id ?? null);
+const identityToken = computed(() => accountStore.identityToken);
+
+const {
+  data: memberProjectIds,
+  isLoading: membershipsLoading,
+  error: membershipsError
+} = useQuery({
+  queryKey: computed(() => ['member-projects', userId.value]),
+  queryFn: () => getUserProjectIds(userId.value!, identityToken.value!),
+  enabled: computed(() => !!userId.value && !!identityToken.value)
+});
+
+const memberProjectIdSet = computed(() => new Set(memberProjectIds.value ?? []));
+const visibleProjects = computed(() =>
+  !userId.value || showAllProjects.value
+    ? projectStore.projects
+    : projectStore.projects.filter((project) =>
+        memberProjectIdSet.value.has(project.id)
+      )
+);
+
+watch(userId, () => {
+  showAllProjects.value = false;
+});
 
 const {
   data: categories,
@@ -38,10 +68,59 @@ const changeLanguage = (lang: keyof typeof translations) => {
       <div class="nav-glass flex justify-between gap-x-3 items-center h-16 rounded-4xl m-2 desktop:m-5 pr-4 whitespace-nowrap">
         <!-- Logo -->
         <div
-          class="h-full flex flex-row items-center p-4 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc] shrink-0">
-          <RouterLink to="/vitejte">
-            <img src="/logo.svg" alt="Logo" />
+          class="h-full flex flex-row items-center gap-1 pl-4 pr-2 font-semibold rounded-4xl bg-[#fdfcdc] border-[#fdfcdc] shrink-0">
+          <RouterLink to="/vitejte" :title="projectStore.current.name">
+            <img
+              v-if="projectStore.current.id === defaultProjectId || projectStore.current.logoUrl"
+              :src="projectStore.current.logoUrl || '/logo.svg'"
+              :alt="projectStore.current.name"
+              class="max-h-10 max-w-32 object-contain"
+            />
+            <span v-else class="block max-w-32 truncate text-sm">
+              {{ projectStore.current.name }}
+            </span>
           </RouterLink>
+          <details class="project-switcher relative">
+            <summary class="flex items-center justify-center rounded-xl p-2 cursor-pointer hover:bg-black/5"
+              :aria-label="`Změnit projekt: ${projectStore.current.name}`"
+              :title="projectStore.current.name">
+              <DropdownIcon aria-hidden="true" />
+            </summary>
+            <ul class="absolute top-full left-0 z-[100] mt-3 min-w-64 max-w-96 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+              <li v-for="project in visibleProjects" :key="project.id" class="flex items-center gap-1">
+                <button type="button" class="dropdown-item min-w-0 flex-1 text-left"
+                  :class="{ 'font-bold': project.id === projectStore.current.id }"
+                  :aria-current="project.id === projectStore.current.id ? 'true' : undefined"
+                  @click="selectProject(project)">
+                  <span class="truncate">{{ project.name }}</span>
+                </button>
+                <button v-if="userId && showAllProjects && memberProjectIds && !memberProjectIdSet.has(project.id)"
+                  type="button" class="join-project-button rounded-lg px-2 py-1 text-xs font-semibold"
+                  :aria-label="`Připojit se k projektu ${project.name}`"
+                  title="Připojení k projektu zatím není dostupné">
+                  Připojit se
+                </button>
+              </li>
+              <li v-if="userId && membershipsLoading" class="px-3 py-2 text-sm text-gray-600" role="status">
+                Načítání projektů…
+              </li>
+              <li v-if="userId && membershipsError" class="px-3 py-2 text-sm text-red-700" role="status">
+                Projekty uživatele se nepodařilo načíst.
+              </li>
+              <li v-if="userId && !showAllProjects && memberProjectIds && !visibleProjects.length" class="px-3 py-2 text-sm text-gray-600" role="status">
+                Zatím nemáte žádné projekty.
+              </li>
+              <li v-if="userId" class="mt-1 border-t border-gray-200 pt-1">
+                <button type="button" class="dropdown-item w-full text-left text-sm"
+                  @click="showAllProjects = !showAllProjects">
+                  {{ showAllProjects ? 'Moje projekty' : 'Zobrazit všechny projekty' }}
+                </button>
+              </li>
+              <li v-if="projectStore.error" class="px-3 py-2 text-sm text-red-700" role="status">
+                {{ projectStore.error }}
+              </li>
+            </ul>
+          </details>
         </div>
 
         <span v-if="isLoading">
@@ -147,6 +226,19 @@ nav {
 .nav-glass :deep(button) {
   white-space: nowrap;
   line-height: 1.1;
+}
+
+.project-switcher summary {
+  list-style: none;
+}
+
+.project-switcher summary::-webkit-details-marker {
+  display: none;
+}
+
+.join-project-button {
+  border: 1px solid #e5e7eb;
+  background: #fdfcdc;
 }
 
 @media (max-width: 78rem) {

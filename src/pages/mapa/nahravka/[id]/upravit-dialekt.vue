@@ -39,6 +39,7 @@ import { type Numeric } from '@/types/basic';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import { accountStore } from '@/state/AccountStore';
+import { projectStore } from '@/state/ProjectStore';
 import { uploadStore, type DraftFilteredPart } from '@/state/UploadDraftStore';
 import { draftPartToModel } from '@/utils/draft-part-to-model';
 import type {
@@ -76,7 +77,6 @@ interface FilteredPartCreatePayload {
   dialectCode: string;
 }
 
-const env = import.meta.env;
 const id = useRouteParams<Numeric>('id');
 const route = useRoute();
 
@@ -301,7 +301,7 @@ const audioUrls = computed(() => {
   }
   return recording.value.parts.map(
     (p) =>
-      `${env.VITE_API_URL}/recordings/part/${p.id}/sound`
+      `${projectStore.current.apiUrl}/recordings/part/${p.id}/sound`
   );
 });
 

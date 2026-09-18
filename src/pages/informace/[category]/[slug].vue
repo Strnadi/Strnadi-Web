@@ -11,11 +11,11 @@ import { computed } from 'vue';
 import { getArticleByCategory, getArticleFile } from '@/api/articles';
 import { kebabize } from '@/utils/strings';
 import { applicationStore } from '@/state/ApplicationStore';
+import { projectStore } from '@/state/ProjectStore';
 
 import { MdPreview } from 'md-editor-v3';
 import 'md-editor-v3/lib/preview.css';
 
-const env = import.meta.env;
 
 const category = useRouteParams<string>('category');
 const slug = useRouteParams<string>('slug');
@@ -47,7 +47,7 @@ const { data: markdown, isLoading: markdownLoading, error: markdownError } = use
   enabled: computed(() => !!id.value)
 });
 
-const fileBase = computed(() => `${env.VITE_API_URL}/articles/${id.value}`);
+const fileBase = computed(() => `${projectStore.current.apiUrl}/articles/${id.value}`);
 
 const resolvedMarkdown = computed(() =>
   String(markdown.value ?? '').replace(

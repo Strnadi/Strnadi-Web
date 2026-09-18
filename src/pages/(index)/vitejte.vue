@@ -6,13 +6,15 @@ meta:
 <script setup lang="ts">
 import TranslatedText from '@/components/TranslatedText.vue';
 import { useRoute } from 'vue-router';
+import { projectStore } from '@/state/ProjectStore';
 
 const route = useRoute();
+const defaultProjectId = import.meta.env.VITE_PROJECT_ID;
 </script>
 
 <template>
   <div class="flex flex-col items-center gap-y-4 sm:gap-y-6 w-full">
-    <div class="flex flex-col sm:flex-row items-center gap-y-3 gap-x-10">
+    <div v-if="projectStore.current.id === defaultProjectId" class="flex flex-col sm:flex-row items-center gap-y-3 gap-x-10">
       <img src="/WIP.png" class="w-32 sm:w-36" />
       <div class="flex flex-col text-center sm:text-left">
         <h4 class="text-sm sm:text-base">
@@ -24,10 +26,14 @@ const route = useRoute();
       </div>
     </div>
     <h1 class="text-center text-xl sm:text-2xl">
-      <TranslatedText identifier="project_name" />
+      <TranslatedText v-if="projectStore.current.id === defaultProjectId" identifier="project_name" />
+      <template v-else>{{ projectStore.current.name }}</template>
     </h1>
-    <span class="text-sm sm:text-base text-justify [text-align-last:center]">
+    <span v-if="projectStore.current.id === defaultProjectId" class="text-sm sm:text-base text-justify [text-align-last:center]">
       <TranslatedText identifier="project_description" />
+    </span>
+    <span v-else-if="projectStore.current.description" class="text-sm sm:text-base text-justify [text-align-last:center]">
+      {{ projectStore.current.description }}
     </span>
 
     <!-- <span class="font-bold text-justify text-xs sm:text-sm text-red-400">
@@ -45,9 +51,9 @@ const route = useRoute();
       <h2 class="text-xl">Photo of the Week</h2>
     </div> -->
 
-    <hr class="w-full" />
+    <hr v-if="projectStore.current.id === defaultProjectId" class="w-full" />
 
-    <div class="flex flex-col w-full gap-y-2">
+    <div v-if="projectStore.current.id === defaultProjectId" class="flex flex-col w-full gap-y-2">
       <RouterLink to="/informace/projekt/projekt-podporuji"
         class="button-secondary text-sm sm:text-base py-3 px-4 w-full text-center touch-manipulation">
         <TranslatedText identifier="buttons.supporters" />

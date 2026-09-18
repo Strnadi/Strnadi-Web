@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { projectStore } from '@/state/ProjectStore';
 
 export const AUTHORIZATION_CODE_GRANT = 'authorization_code';
 export const REFRESH_TOKEN_GRANT = 'refresh_token';
@@ -31,7 +32,9 @@ const authorizationBaseUrl = (import.meta.env.VITE_AUTH_URL || '').replace(
 export const authorizationConfig = {
   baseUrl: authorizationBaseUrl,
   clientId: import.meta.env.VITE_AUTH_CLIENT_ID || 'strnadi-app',
-  projectId: import.meta.env.VITE_PROJECT_ID,
+  get projectId() {
+    return projectStore.current.id;
+  },
   scope: import.meta.env.VITE_AUTH_SCOPE || 'offline_access'
 };
 

@@ -10,6 +10,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { getFilteredRecordings, getDialects, getRecording, updateDetectedDialect, type FilteredPartModel, type DetectedDialect, type RecordingModel } from '@/api/recordings';
 
 import { accountStore } from '@/state/AccountStore';
+import { projectStore } from '@/state/ProjectStore';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
@@ -92,7 +93,7 @@ function convertIsoToRelative(iso: string, anchor: number): number {
 function getAudioUrls(): string[] {
   if (!recording.value?.parts?.length) return [];
   return recording.value.parts
-    .map((p) => `${import.meta.env.VITE_API_URL}/recordings/part/${p.id}/sound`);
+    .map((p) => `${projectStore.current.apiUrl}/recordings/part/${p.id}/sound`);
 }
 
 function buildSegmentRange(): SpectrogramRange[] {

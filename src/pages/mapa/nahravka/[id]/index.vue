@@ -12,6 +12,7 @@ import { getRecording, getFilteredRecording } from '@/api/recordings';
 import type { FilteredPartModel } from '@/api/recordings';
 import type { Numeric } from '@/types/basic';
 import { accountStore } from '@/state/AccountStore';
+import { projectStore } from '@/state/ProjectStore';
 import Spectrogram from '@/views/Spectrogram.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import Map from '@/views/map/Map.vue';
@@ -21,7 +22,6 @@ import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import { getDialectStrings } from '@/utils/dialects';
 
 const recordingId = useRouteParams<Numeric>('id');
-const env = import.meta.env;
 
 const dontShowUnknownDialects = ref(true);
 const showOnlyRepresentants = ref(true);
@@ -240,7 +240,7 @@ const uploaderLocation = computed(() =>
           :audio-urls="
             recording.parts?.map(
               (part) =>
-                `${env.VITE_API_URL}/recordings/part/${part.id}/sound`
+                `${projectStore.current.apiUrl}/recordings/part/${part.id}/sound`
             ) ?? []
           "
           :height="200"

@@ -5,6 +5,7 @@ import type { LeafletMouseEvent } from 'leaflet';
 import type { Marker } from '@/views/map/Map.vue';
 import { computedAsync } from '@vueuse/core';
 import { getDialectColors } from '@/api/recordings';
+import { projectStore } from '@/state/ProjectStore';
 import type { RecordingModel, RecordingPartModel } from '@/api/recordings';
 
 export type MapFilter = 'all' | 'new' | 'old' | 'my' | 'others' | 'any-dialect';
@@ -19,7 +20,7 @@ export interface MapClickEvent {
 }
 
 export const DialectColors = computedAsync(
-  async () => await getDialectColors()
+  async () => await getDialectColors(projectStore.current.apiUrl)
 );
 
 export const MapEvents = mitt<{
