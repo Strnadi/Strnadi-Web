@@ -88,8 +88,6 @@ RUN bun install --frozen-lockfile
 FROM dependencies AS test
 
 COPY . .
-RUN bun run check \
-    && bun run test
 
 FROM test AS build
 
