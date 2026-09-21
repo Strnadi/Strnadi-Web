@@ -7,6 +7,11 @@ import { consumeAuthorizationTransaction } from '@/utils/oauth';
 
 const CALLBACK_MESSAGE = 'strnadi:authorization-callback';
 
+// Roughly the size of Google's sign-in window: room for the provider's form,
+// small enough that the page behind it stays visible.
+const POPUP_WIDTH = 500;
+const POPUP_HEIGHT = 650;
+
 const props = defineProps<{
   callbackPath: string;
   registration?: boolean;
@@ -47,21 +52,52 @@ const watchPopup = () => {
   }, 400);
 };
 
-const popupFeatures = (): string => {
-  const width = 560;
-  const height = 720;
-  const left = Math.max(0, window.screenX + (window.outerWidth - width) / 2);
-  const top = Math.max(0, window.screenY + (window.outerHeight - height) / 2);
-  return [
+type PopupGeometry = {
+  width: number;
+  height: number;
+  left: number;
+  top: number;
+};
+
+const popupGeometry = (): PopupGeometry => {
+  // screenX/screenY are desktop coordinates, so centering against the opener
+  // keeps the window on the monitor the user is actually looking at.
+  const openerLeft = window.screenX;
+  const openerTop = window.screenY;
+  const openerWidth = window.outerWidth || window.screen.availWidth;
+  const openerHeight = window.outerHeight || window.screen.availHeight;
+
+  const width = Math.min(POPUP_WIDTH, window.screen.availWidth);
+  const height = Math.min(
+    POPUP_HEIGHT,
+    Math.round(window.screen.availHeight * 0.9)
+  );
+
+  return {
+    width,
+    height,
+    left: Math.round(openerLeft + (openerWidth - width) / 2),
+    top: Math.round(openerTop + (openerHeight - height) / 2)
+  };
+};
+
+const popupFeatures = ({ width, height, left, top }: PopupGeometry): string =>
+  [
+    // `popup` asks for a separate window. The explicit no's below are what
+    // browsers that predate it look at, and without them they open a full
+    // browser tab instead.
     'popup=yes',
+    'toolbar=no',
+    'menubar=no',
+    'location=no',
+    'status=no',
     `width=${width}`,
     `height=${height}`,
-    `left=${Math.round(left)}`,
-    `top=${Math.round(top)}`,
+    `left=${left}`,
+    `top=${top}`,
     'resizable=yes',
     'scrollbars=yes'
   ].join(',');
-};
 
 const complete = async (params: URLSearchParams) => {
   const state = params.get('state');
@@ -95,17 +131,29 @@ const start = async () => {
   error.value = '';
   returnTo.value = requestedReturnTo();
 
+  const geometry = popupGeometry();
+
   // This must happen synchronously inside the click handler. Otherwise the
   // browser considers the authorization popup unsolicited and blocks it.
   authorizationPopup = window.open(
     'about:blank',
     props.registration ? 'strnadi-registration' : 'strnadi-login',
-    popupFeatures()
+    popupFeatures(geometry)
   );
   if (!authorizationPopup) {
     error.value =
       'Prohlížeč zablokoval přihlašovací okno. Povolte vyskakovací okna a zkuste to znovu.';
     return;
+  }
+
+  // A browser that reuses an existing window with the same name ignores the
+  // size features above and we get a full-sized window. It is still on
+  // about:blank here, so it is same-origin and we can size it ourselves.
+  try {
+    authorizationPopup.resizeTo(geometry.width, geometry.height);
+    authorizationPopup.moveTo(geometry.left, geometry.top);
+  } catch {
+    // Opened as a tab, or the browser forbids moving it. Leave it alone.
   }
 
   phase.value = 'waiting';
