@@ -26,6 +26,13 @@ import { setupLayouts } from 'virtual:meta-layouts';
 import { EditorView } from '@codemirror/view';
 import { config } from 'md-editor-v3';
 import { initializeAccount, accountStore } from '@/state/AccountStore';
+import {
+  completeAuthorizationInPlace,
+  deliverAuthorizationCallback,
+  hasAuthorizationCallbackParams,
+  rememberAuthorizationTarget,
+  setAuthorizationRouter
+} from '@/services/authorizationPopup';
 import { initializeProjects, projectStore } from '@/state/ProjectStore';
 import type { MobilePresentation } from '@/router-meta';
 
@@ -42,6 +49,10 @@ import './styles/main.css';
 // import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 
 // console.log(process.env);
+
+// The sign-in popup returns to our own origin. All it has to do is hand the
+// result to the window that opened it, so the app never boots there.
+const isAuthorizationCallbackWindow = deliverAuthorizationCallback();
 
 const addRouteGuard = (
   routes: RouteRecordRaw[],
@@ -148,12 +159,8 @@ const annotateAccess = (
         fullPath
       ) ||
       /^\/mapa\/nahravka\/[^/]+\/[^/]+\/smazat$/.test(fullPath);
-    const guestOnly =
-      fullPath === '/ucet/prihlaseni' || fullPath === '/ucet/registrace';
-
     const workspaceRoutes = [
       '/mapa/nahrat',
-      '/ucet/registrace',
       '/ucet/sprava/osobni-udaje',
       '/ucet/sprava/moje-nahravky',
       '/sprava/oznameni',
@@ -164,7 +171,6 @@ const annotateAccess = (
     const dialogRoutes = [
       '/aplikace',
       '/vitejte',
-      '/ucet/prihlaseni',
       '/ucet/zapomenute-heslo',
       '/ucet/obnova-hesla',
       '/ucet/email-overen',
@@ -189,7 +195,6 @@ const annotateAccess = (
         ...route.meta,
         authenticated,
         admin,
-        guestOnly,
         mobilePresentation
       }
     } as RouteRecordRaw;
@@ -299,15 +304,16 @@ const router = createRouter({
   }
 });
 
+setAuthorizationRouter(router);
+
 router.beforeEach(async (to) => {
   await accountInitialization;
 
-  if (to.meta['guestOnly'] && accountStore.user) return { path: '/' };
   if (to.meta['authenticated'] && !accountStore.user) {
-    return {
-      path: '/ucet/prihlaseni',
-      query: { redirect: to.fullPath }
-    };
+    // There is no sign-in page to send them to any more. Remember where they
+    // were going so the popup can finish the trip once they sign in.
+    rememberAuthorizationTarget(to.fullPath);
+    return { path: '/' };
   }
   if (to.meta['admin'] && accountStore.user?.role !== 'admin') {
     return { path: '/' };
@@ -386,9 +392,11 @@ axios.interceptors.response.use(
   }
 );
 
-const accountInitialization = initializeProjects().then(() =>
-  projectStore.current ? initializeAccount() : undefined
-);
+const accountInitialization = isAuthorizationCallbackWindow
+  ? Promise.resolve()
+  : initializeProjects().then(() =>
+      projectStore.current ? initializeAccount() : undefined
+    );
 
 // Directive definition
 // const autoScrollbar = {
@@ -442,5 +450,10 @@ customElements.define(
   defineVaporCustomElement(MultiColorSquare, { shadowRoot: false })
 );
 
-await accountInitialization;
-app.mount('#app');
+if (!isAuthorizationCallbackWindow) {
+  await accountInitialization;
+  app.mount('#app');
+
+  // A popup-less browser sends the visitor back here rather than to an opener.
+  if (hasAuthorizationCallbackParams()) void completeAuthorizationInPlace();
+}

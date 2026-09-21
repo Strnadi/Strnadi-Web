@@ -2,6 +2,10 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { accountStore } from '@/state/AccountStore';
+import {
+  authorizationState,
+  startAuthorization
+} from '@/services/authorizationPopup';
 
 import MapIcon from '@/icons/interface/icon-map.svg';
 import AccountIcon from '@/icons/interface/icon-profile.svg';
@@ -17,13 +21,6 @@ const matchesRoute = (...prefixes: string[]) =>
   prefixes.some((prefix) =>
     prefix === '/' ? route.path === '/' : route.path.startsWith(prefix)
   );
-
-const accountLink = computed(() =>
-  accountStore.user ? '/ucet/muj-ucet' : '/ucet/prihlaseni'
-);
-const accountLabelIdentifier = computed(() =>
-  accountStore.user ? 'navigation.account' : 'navigation.login'
-);
 
 const isMapRoute = computed(
   () =>
@@ -93,16 +90,36 @@ const isAccountRoute = computed(() =>
     </RouterLink>
 
     <RouterLink
-      :to="accountLink"
+      v-if="accountStore.user"
+      to="/ucet/muj-ucet"
       class="mobile-nav__link"
       :class="{ 'mobile-nav__link--active': isAccountRoute }"
       :aria-current="isAccountRoute ? 'page' : undefined"
     >
       <AccountIcon class="mobile-nav__icon" />
       <span class="mobile-nav__label">
-        <TranslatedText :identifier="accountLabelIdentifier" />
+        <TranslatedText identifier="navigation.account" />
       </span>
     </RouterLink>
+
+    <button
+      v-else
+      type="button"
+      class="mobile-nav__link"
+      :aria-busy="authorizationState.pending"
+      @click="startAuthorization"
+    >
+      <AccountIcon class="mobile-nav__icon" />
+      <span class="mobile-nav__label">
+        <TranslatedText
+          :identifier="
+            authorizationState.pending
+              ? 'buttons.logging_in'
+              : 'navigation.login'
+          "
+        />
+      </span>
+    </button>
   </nav>
 </template>
 

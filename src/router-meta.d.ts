@@ -7,7 +7,6 @@ declare module 'vue-router' {
     mobilePresentation?: MobilePresentation;
     authenticated?: boolean;
     admin?: boolean;
-    guestOnly?: boolean;
     'landing-bypass'?: boolean;
   }
 }

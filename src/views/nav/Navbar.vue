@@ -14,6 +14,10 @@ import UploadIcon from '@/icons/interface/icon-upload.svg';
 import DropdownIcon from '@/icons/interface/dropdown.svg';
 import { applicationStore } from '@/state/ApplicationStore';
 import { projectStore, selectProject } from '@/state/ProjectStore';
+import {
+  authorizationState,
+  startAuthorization
+} from '@/services/authorizationPopup';
 import TranslatedText from '@/components/TranslatedText.vue';
 import { translations } from '@/constants/Translations';
 
@@ -186,9 +190,10 @@ const changeLanguage = (lang: keyof typeof translations) => {
 
             <li>
               <AccountDropdown v-if="accountStore.user" />
-              <RouterLink v-else to="/ucet/prihlaseni" class="button-secondary py-2 px-4">
-                <TranslatedText identifier="buttons.login" />
-              </RouterLink>
+              <button v-else type="button" class="button-secondary py-2 px-4"
+                :aria-busy="authorizationState.pending" @click="startAuthorization">
+                <TranslatedText :identifier="authorizationState.pending ? 'buttons.logging_in' : 'buttons.login'" />
+              </button>
             </li>
 
             <li>
