@@ -6,11 +6,17 @@ meta:
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import axios from 'axios';
 import JSZip from '@progress/jszip-esm';
 
-import { getFilteredRecordings, getRecordings } from '@/api/recordings';
-import type { RecordingModel, FilteredPartModel } from '@/api/recordings';
+import {
+  getDeletedRecordings,
+  getFilteredRecordings,
+  getRecordingPartSound,
+  getRecordings
+} from '@/api/recordings';
+import type { RecordingResponse, FilteredPartModel } from '@/api/recordings';
+import { Permissions } from '@/api/permissions';
+import { accountStore } from '@/state/AccountStore';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
@@ -94,13 +100,28 @@ const extensionForContentType = (contentType?: string) => {
   );
 };
 
+const showDeleted = ref(false);
+
+// Soft-deleted recordings are a moderator-only listing on its own endpoint.
+const canModerate = computed(() =>
+  accountStore.hasPermission(Permissions.ModerateRecordings)
+);
+
+// Bulk-exporting other people's audio is its own permission.
+const canDownload = computed(() =>
+  accountStore.hasPermission(Permissions.DownloadRecordings)
+);
+
 const {
   data: recordings,
   isLoading,
   isError
-} = useQuery<RecordingModel[]>({
-  queryKey: ['recordings'],
-  queryFn: async () => getRecordings({ parts: true })
+} = useQuery<RecordingResponse[]>({
+  queryKey: ['recordings', showDeleted],
+  queryFn: async () =>
+    showDeleted.value
+      ? getDeletedRecordings(accountStore.token!)
+      : getRecordings({ parts: true })
 });
 
 const { data: filteredRecordings } = useQuery({
@@ -191,7 +212,7 @@ function isPartSelected(recordingId: number, partId: number): boolean {
   );
 }
 
-function areAllRecordingPartsSelected(recording: RecordingModel): boolean {
+function areAllRecordingPartsSelected(recording: RecordingResponse): boolean {
   const parts = recording.parts ?? [];
 
   return (
@@ -200,7 +221,7 @@ function areAllRecordingPartsSelected(recording: RecordingModel): boolean {
   );
 }
 
-function toggleRecordingSelection(recording: RecordingModel) {
+function toggleRecordingSelection(recording: RecordingResponse) {
   const parts = recording.parts ?? [];
   const shouldSelect = !areAllRecordingPartsSelected(recording);
 
@@ -305,20 +326,15 @@ async function downloadSelectedRecordings() {
         partMetaContent += `GPS Longitude End: ${part.gpsLongitudeEnd ?? 'N/A'}\n`;
         partFolder.file('meta.txt', partMetaContent);
 
-        // Fetch and add sound file
+        // Fetch and add sound file. Downloading someone else's recording
+        // needs the recordings.download permission, which the API enforces.
         try {
-          const soundResponse = await axios.get(
-            `/recordings/part/${part.id}/sound`,
-            {
-              responseType: 'arraybuffer' // Fetch as ArrayBuffer
-            }
+          const sound = await getRecordingPartSound(
+            accountStore.token!,
+            part.id
           );
-          const extension = extensionForContentType(
-            typeof soundResponse.headers['content-type'] === 'string'
-              ? soundResponse.headers['content-type']
-              : undefined
-          );
-          partFolder.file(`sound.${extension}`, soundResponse.data, {
+          const extension = extensionForContentType(sound.contentType);
+          partFolder.file(`sound.${extension}`, sound.data, {
             binary: true
           });
         } catch (error) {
@@ -409,9 +425,23 @@ async function downloadSelectedRecordings() {
           />
         </span>
       </label>
+      <label
+        v-if="canModerate"
+        class="flex items-center gap-2 cursor-pointer"
+      >
+        <input
+          v-model="showDeleted"
+          type="checkbox"
+          class="form-checkbox h-4 w-4 text-blue-600"
+        />
+        <span>
+          <TranslatedText identifier="admin.recordings.show_deleted" />
+        </span>
+      </label>
     </fieldset>
 
     <button
+      v-if="canDownload"
       class="primary p-2 my-4"
       :disabled="!hasSelectedItems || isDownloading"
       @click="downloadSelectedRecordings"

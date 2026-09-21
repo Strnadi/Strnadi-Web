@@ -28,6 +28,8 @@ const {
 
 const name = ref('');
 const note = ref('');
+const notePost = ref('');
+const birdsCount = ref('');
 
 watch(
   recording,
@@ -35,6 +37,8 @@ watch(
     if (rec) {
       name.value = rec.name ?? '';
       note.value = rec.note ?? '';
+      notePost.value = rec.notePost ?? '';
+      birdsCount.value = rec.estimatedBirdsCount?.toString() ?? '';
     }
   },
   { immediate: true }
@@ -51,11 +55,12 @@ async function save() {
     saving.value = true;
     saveError.value = null;
     await patchRecording(accountStore.token, recordingId.value, {
-      byApp: recording.value?.byApp ?? false,
-      device: recording.value?.device ?? '',
-      estimatedBirdsCount: recording.value?.estimatedBirdsCount ?? 0,
       name: name.value,
-      note: note.value
+      note: note.value,
+      notePost: notePost.value,
+      estimatedBirdsCount: birdsCount.value
+        ? Number.parseInt(birdsCount.value, 10)
+        : null
     });
     await queryClient.invalidateQueries({
       queryKey: ['recording', recordingId.value],
@@ -114,6 +119,35 @@ async function save() {
           id="note"
           v-model="note"
           rows="4"
+          class="mt-1 block w-full border px-3 py-2 rounded"
+        />
+      </div>
+      <div>
+        <label
+          for="note-post"
+          class="block text-sm font-medium text-gray-700"
+        >
+          <TranslatedText identifier="labels.note_post" />
+        </label>
+        <textarea
+          id="note-post"
+          v-model="notePost"
+          rows="3"
+          class="mt-1 block w-full border px-3 py-2 rounded"
+        />
+      </div>
+      <div>
+        <label
+          for="birds-count"
+          class="block text-sm font-medium text-gray-700"
+        >
+          <TranslatedText identifier="labels.birds_count" />
+        </label>
+        <input
+          id="birds-count"
+          v-model="birdsCount"
+          type="number"
+          min="0"
           class="mt-1 block w-full border px-3 py-2 rounded"
         />
       </div>

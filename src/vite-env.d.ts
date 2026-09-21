@@ -14,13 +14,14 @@ interface ViteTypeOptions {
 }
 
 interface ImportMetaEnv {
-  readonly VITE_API_URL: string;
+  /** Administration base URL: OAuth endpoints and the project catalog. */
   readonly VITE_AUTH_URL?: string;
   readonly VITE_AUTH_CLIENT_ID?: string;
+  /** Must include offline_access; the app requires a refresh token. */
   readonly VITE_AUTH_SCOPE?: string;
+  /** Only used to recognise this deployment's own project in the catalog. */
   readonly VITE_PROJECT_ID?: string;
   readonly VITE_POSTHOG_KEY: string;
-  readonly VITE_PUBLIC_URL: string;
 }
 
 interface ImportMeta {

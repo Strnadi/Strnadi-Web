@@ -17,7 +17,8 @@ const {
   isPending: isPhotoPending,
   error: photoError
 } = useMutation({
-  mutationFn: (file: File) => uploadProfilePhoto(accountStore.token!, file),
+  mutationFn: (file: File) =>
+    uploadProfilePhoto(accountStore.identityToken!, file),
   onSuccess: () => {
     photoVersion.value += 1;
   }
@@ -178,6 +179,17 @@ const initials = computed(() => {
         </span>
       </RouterLink>
       <RouterLink
+        to="/ucet/sprava/souhlasy"
+        class="mobile-action-row"
+      >
+        <span class="flex flex-col">
+          <strong><TranslatedText identifier="account.consents.title" /></strong>
+          <small
+            ><TranslatedText identifier="account.consents.description"
+          /></small>
+        </span>
+      </RouterLink>
+      <RouterLink
         to="/ucet/sprava/propojene-ucty"
         class="mobile-action-row"
       >
@@ -187,7 +199,7 @@ const initials = computed(() => {
         </span>
       </RouterLink>
       <RouterLink
-        v-if="accountStore.user?.role === 'admin'"
+        v-if="accountStore.canAdminister"
         to="/sprava"
         class="mobile-action-row"
       >

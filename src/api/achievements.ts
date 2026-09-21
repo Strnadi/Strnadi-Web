@@ -1,75 +1,52 @@
 import axios from 'axios';
-import { authorizedPatch, authorizedPost } from '@/api/utils';
+import { authorizedPost } from '@/api/utils';
 
+/** Tenant `AchievementContentResponse` - one localisation of an achievement. */
 export interface AchievementContent {
-  id: number;
   title: string;
   description: string;
   languageCode: string;
-  achievementId: number;
 }
 
+/** Tenant `AchievementResponse`. */
 export interface Achievement {
   id: number;
-  sql: string;
-  imageUrl?: string | null;
+  /** Absolute URL of the badge PNG, served by GET /achievements/{id}/photo. */
+  imageUrl: string;
   contents: AchievementContent[];
 }
 
-export interface AchievementContentPayload {
-  languageCode: string;
-  title: string;
-  description: string;
-}
-
 export interface AchievementPayload {
+  /** SQL rule deciding who earns the badge; evaluated server-side. */
   sql: string;
-  contents: AchievementContentPayload[];
-  file?: File | null;
+  contents: AchievementContent[];
+  file: File;
 }
 
-export const getAchievements = async (): Promise<Achievement[]> => {
-  const response = await axios.get('/achievements');
-  return response.data as Achievement[];
+/**
+ * Every achievement, or - when a user id is given - the ones that user has
+ * earned. The scoped call also awards any they have newly qualified for.
+ */
+export const getAchievements = async (
+  userId?: string
+): Promise<Achievement[]> => {
+  const response = await axios.get<Achievement[]>('/achievements', {
+    params: userId ? { userId } : undefined
+  });
+  return response.data;
 };
 
+/** Requires the `achievements.manage` permission. Returns the new id. */
 export const createAchievement = async (
   token: string,
   payload: AchievementPayload
-): Promise<void> => {
-  if (!payload.file) {
-    throw new Error('Badge image is required when creating an achievement.');
-  }
+): Promise<number> => {
   const formData = new FormData();
   formData.append('sql', payload.sql);
   formData.append('contents', JSON.stringify(payload.contents));
   formData.append('file', payload.file);
 
-  await authorizedPost<void, FormData>('/achievements', token, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+  return authorizedPost<number, FormData>('/achievements', token, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
   });
-};
-
-export const updateAchievement = async (
-  token: string,
-  achievementId: number,
-  payload: AchievementPayload
-): Promise<void> => {
-  const formData = new FormData();
-  formData.append('sql', payload.sql);
-  formData.append('contents', JSON.stringify(payload.contents));
-  if (payload.file) {
-    formData.append('file', payload.file);
-  }
-
-  await authorizedPatch<void, FormData>(
-    `/achievements/${achievementId}`,
-    token,
-    formData,
-    {
-      'Content-Type': 'multipart/form-data'
-    }
-  );
 };

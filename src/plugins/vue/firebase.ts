@@ -1,9 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken } from 'firebase/messaging';
 import { firebaseConfig, vapidKey } from '@/constants/FirebaseConfig';
-import { postDevice } from '@/api/device';
+import { patchDevice, postDeleteDevice, postDevice } from '@/api/device';
 import { accountStore } from '@/state/AccountStore';
-import { postDeleteDevice } from '@/api/device';
 import { watch } from 'vue';
 
 let registerPushDevice: (() => Promise<void>) | null = null;
@@ -29,11 +28,27 @@ export default {
       const syncDevice = async () => {
         if (Notification.permission !== 'granted' || !accountStore.user) return;
         const registration = await navigator.serviceWorker.getRegistration('/');
+        const previousFcmToken = currentFcmToken;
         currentFcmToken = await getToken(messaging, {
           vapidKey,
           serviceWorkerRegistration: registration
         });
         if (!currentFcmToken) return;
+
+        // FCM rotates registration tokens on its own. Re-pointing the existing
+        // registration keeps one device row instead of orphaning the old one.
+        if (
+          previousFcmToken &&
+          previousFcmToken !== currentFcmToken &&
+          boundUserId === accountStore.user.id
+        ) {
+          await patchDevice(
+            { oldFcmToken: previousFcmToken, newFcmToken: currentFcmToken },
+            accountStore.token!
+          );
+          return;
+        }
+
         await postDevice(
           {
             fcmToken: currentFcmToken,

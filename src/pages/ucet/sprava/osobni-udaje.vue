@@ -7,7 +7,7 @@ meta:
 import {
   patchPasswordChange,
   patchUser,
-  type UserUpdateRequest
+  type UpdateProfileRequest
 } from '@/api/account';
 import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue';
 import LocationSearch from '@/components/map/LocationSearch.vue';
@@ -18,7 +18,7 @@ import TranslatedText, { t } from '@/components/TranslatedText.vue';
 
 const name = ref(accountStore.user?.firstName ?? '');
 const surname = ref(accountStore.user?.lastName ?? '');
-const nickname = ref(accountStore.user?.nickname ?? '');
+const nickname = ref(accountStore.user?.userName ?? '');
 const zipcode = ref(accountStore.user?.postCode?.toString() ?? '');
 const town = ref(accountStore.user?.city ?? '');
 
@@ -29,13 +29,11 @@ const passwordAgain = ref('');
 const { mutate, isPending, isSuccess, error } = useMutation({
   mutationFn: ({
     userInfo,
-    token,
-    userId
+    identityToken
   }: {
-    userInfo: UserUpdateRequest;
-    token: string;
-    userId: string | number;
-  }) => patchUser(token, userId, userInfo),
+    userInfo: UpdateProfileRequest;
+    identityToken: string;
+  }) => patchUser(identityToken, userInfo),
 
   onSuccess: (user) => {
     accountStore.user = user;
@@ -49,16 +47,14 @@ const {
   error: passwordError
 } = useMutation({
   mutationFn: ({
-    token,
-    userId,
+    identityToken,
     newPassword,
     currentPassword
   }: {
-    token: string;
-    userId: string | number;
+    identityToken: string;
     newPassword: string;
     currentPassword: string;
-  }) => patchPasswordChange(token, userId, newPassword, currentPassword),
+  }) => patchPasswordChange(identityToken, newPassword, currentPassword),
   onSuccess: () => {
     currentPassword.value = '';
     password.value = '';
@@ -68,25 +64,22 @@ const {
 
 const submitPasswordChange = () => {
   passwordChangeMutate({
-    token: accountStore.token!,
-    userId: accountStore.user!.id,
+    identityToken: accountStore.identityToken!,
     newPassword: password.value,
     currentPassword: currentPassword.value
   });
 };
 
 const submit = () => {
-  const token = accountStore.token!;
   mutate({
     userInfo: {
       firstName: name.value,
       lastName: surname.value,
-      nickname: nickname.value,
+      userName: nickname.value || null,
       postCode: zipcode.value ? Number.parseInt(zipcode.value, 10) : null,
-      city: town.value
+      city: town.value || null
     },
-    token,
-    userId: accountStore.user!.id
+    identityToken: accountStore.identityToken!
   });
 };
 </script>

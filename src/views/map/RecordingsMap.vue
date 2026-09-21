@@ -6,21 +6,24 @@ import type { Marker } from '@/views/map/Map.vue';
 import { computedAsync } from '@vueuse/core';
 import { getDialectColors } from '@/api/recordings';
 import { projectStore } from '@/state/ProjectStore';
-import type { RecordingModel, RecordingPartModel } from '@/api/recordings';
+import type {
+  RecordingResponse,
+  RecordingPartResponse
+} from '@/api/recordings';
 
 export type MapFilter = 'all' | 'new' | 'old' | 'my' | 'others' | 'any-dialect';
 
 export interface MapClickEvent {
   event: LeafletMouseEvent;
-  recording?: RecordingModel;
-  recordingPart?: RecordingPartModel;
+  recording?: RecordingResponse;
+  recordingPart?: RecordingPartResponse;
   recordingId?: number;
   recordingPartId?: number;
   square?: string;
 }
 
-export const DialectColors = computedAsync(
-  async () => await getDialectColors(projectStore.current.apiUrl)
+export const DialectColors = computedAsync(async () =>
+  projectStore.current ? await getDialectColors(projectStore.current.apiUrl) : {}
 );
 
 export const MapEvents = mitt<{
@@ -72,6 +75,10 @@ import {
   getRecordingMapClusterItems,
   getRecordingMapClusters
 } from '@/api/recordings';
+import {
+  RecordingMapDialectMode,
+  RecordingMapOwnerScope
+} from '@/api/recordings';
 import type {
   RecordingMapClusterFeature,
   RecordingMapClusterItem,
@@ -104,10 +111,10 @@ const mapRequest = refDebounced(
     const userId = accountStore.user?.id;
     const ownerScope =
       userId && MapStore.filter === 'my'
-        ? 1
+        ? RecordingMapOwnerScope.Mine
         : userId && MapStore.filter === 'others'
-          ? 2
-          : 0;
+          ? RecordingMapOwnerScope.Others
+          : RecordingMapOwnerScope.All;
 
     return {
       north,
@@ -127,7 +134,7 @@ const mapRequest = refDebounced(
       onlyMeaningfulDialects:
         MapStore.onlyDialects || MapStore.filter === 'any-dialect',
       hideOthersWithoutMeaningfulDialect: MapStore.hideOthersUnfinished,
-      dialectMode: 0
+      dialectMode: RecordingMapDialectMode.All
     };
   }),
   150

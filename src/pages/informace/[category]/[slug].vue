@@ -47,7 +47,9 @@ const { data: markdown, isLoading: markdownLoading, error: markdownError } = use
   enabled: computed(() => !!id.value)
 });
 
-const fileBase = computed(() => `${projectStore.current.apiUrl}/articles/${id.value}`);
+const fileBase = computed(
+  () => `${projectStore.current?.apiUrl ?? ''}/articles/${id.value}`
+);
 
 const resolvedMarkdown = computed(() =>
   String(markdown.value ?? '').replace(

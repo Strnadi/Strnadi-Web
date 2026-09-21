@@ -11,7 +11,7 @@ import TranslatedText from '@/components/TranslatedText.vue';
 
 const { data: categories, isLoading, error } = useQuery({
   queryKey: ['article-categories'],
-  queryFn: () => getArticleCategories()
+  queryFn: () => getArticleCategories(true)
 });
 </script>
 

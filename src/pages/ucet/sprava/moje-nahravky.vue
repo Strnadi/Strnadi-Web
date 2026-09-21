@@ -5,10 +5,11 @@ meta:
 
 <script lang="ts" setup>
 import { useQuery } from '@tanstack/vue-query';
-import { getRecordings } from '@/api/recordings';
+import { getIncompleteRecordings, getRecordings } from '@/api/recordings';
 import { accountStore } from '@/state/AccountStore';
 import { computed } from 'vue';
 import TranslatedText from '@/components/TranslatedText.vue';
+import type { TranslationIdentifier } from '@/constants/Translations';
 
 const {
   data: recordings,
@@ -18,6 +19,32 @@ const {
   queryKey: ['my-recordings', accountStore.user?.id],
   queryFn: () => getRecordings({ userId: accountStore.user!.id })
 });
+
+// Recordings whose parts never all arrived; the API tracks this separately so
+// a half-finished upload does not silently look complete.
+const { data: incomplete } = useQuery({
+  queryKey: ['my-recordings', 'incomplete', accountStore.user?.id],
+  queryFn: () => getIncompleteRecordings(accountStore.token!),
+  enabled: computed(() => Boolean(accountStore.token))
+});
+
+const incompleteIds = computed(
+  () => new Set((incomplete.value ?? []).map((recording) => recording.id))
+);
+
+const statusFor = (recording: {
+  id: number;
+  uploadConfirmed: boolean;
+}): { identifier: TranslationIdentifier; class: string } => {
+  if (incompleteIds.value.has(recording.id))
+    return { identifier: 'recordings.status.incomplete', class: 'text-red-600' };
+  if (!recording.uploadConfirmed)
+    return {
+      identifier: 'recordings.status.unconfirmed',
+      class: 'text-amber-600'
+    };
+  return { identifier: 'recordings.status.uploaded', class: 'text-lime-500' };
+};
 
 const recordingsLength = computed(() => recordings.value?.length || 0);
 
@@ -49,8 +76,8 @@ const recordingsLength = computed(() => recordings.value?.length || 0);
           >
             <div class="flex flex-row justify-between">
               <span class="text-lg font-bold">{{ rec.name }}</span>
-              <span class="text-lime-400">
-                <TranslatedText identifier="recordings.status.uploaded" />
+              <span :class="statusFor(rec).class">
+                <TranslatedText :identifier="statusFor(rec).identifier" />
               </span>
             </div>
             <div class="flex flex-row justify-between">

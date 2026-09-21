@@ -29,10 +29,10 @@ import { accountStore } from '@/state/AccountStore';
 import {
   createAchievement,
   getAchievements,
-  updateAchievement,
   type Achievement,
-  type AchievementContentPayload
+  type AchievementContent
 } from '@/api/achievements';
+import { Permissions } from '@/api/permissions';
 
 type SchemaTable = {
   name: string;
@@ -41,29 +41,10 @@ type SchemaTable = {
   columns: string[];
 };
 
+// The achievement rule runs against the Tenant database only - accounts live
+// in Administration and are not joinable from here, so a rule identifies its
+// winners by the user_id columns these tables carry.
 const schemaTables: SchemaTable[] = [
-  {
-    name: 'users',
-    label: 'Users',
-    alias: 'u',
-    columns: [
-      'id',
-      'email',
-      'nickname',
-      'first_name',
-      'last_name',
-      'post_code',
-      'city',
-      'consent',
-      'creation_date',
-      'role',
-      'is_email_verified',
-      'deleted',
-      'legacy',
-      'appleid',
-      'google_id'
-    ]
-  },
   {
     name: 'recordings',
     label: 'Recordings',
@@ -80,7 +61,8 @@ const schemaTables: SchemaTable[] = [
       'device',
       'deleted',
       'legacy',
-      'expected_parts_count'
+      'expected_parts_count',
+      'upload_confirmed'
     ]
   },
   {
@@ -101,6 +83,12 @@ const schemaTables: SchemaTable[] = [
     ]
   },
   {
+    name: 'recording_photos',
+    label: 'Recording photos',
+    alias: 'rph',
+    columns: ['id', 'recording_id', 'file_path', 'format']
+  },
+  {
     name: 'filtered_recording_parts',
     label: 'Filtered parts',
     alias: 'frp',
@@ -111,8 +99,32 @@ const schemaTables: SchemaTable[] = [
       'end_date',
       'state',
       'representant_flag',
-      'parent_id'
+      'probability_vector'
     ]
+  },
+  {
+    name: 'detected_dialects',
+    label: 'Detected dialects',
+    alias: 'dd',
+    columns: [
+      'id',
+      'filtered_recording_part_id',
+      'user_guess_dialect_id',
+      'confirmed_dialect_id',
+      'predicted_dialect_id'
+    ]
+  },
+  {
+    name: 'dialects',
+    label: 'Dialects',
+    alias: 'd',
+    columns: ['id', 'dialect_code', 'color', 'hint_order', 'is_dialect']
+  },
+  {
+    name: 'devices',
+    label: 'Devices',
+    alias: 'dev',
+    columns: ['id', 'user_id', 'fcm_token', 'device_platform', 'device_model']
   },
   {
     name: 'user_achievement',
@@ -269,6 +281,10 @@ const formError = ref<string | null>(null);
 
 const builderStorageKey = 'achievement_sql_editors';
 
+// The rule is executed as `SqlQueryRaw<Guid>`, so it must return exactly one
+// column and EF Core requires that column to be aliased `Value`.
+const USER_ID_COLUMN_ALIAS = 'Value';
+
 const starterXml = `
 <xml xmlns="https://developers.google.com/blockly/xml">
   <block type="achievement_select" x="30" y="30">
@@ -280,7 +296,7 @@ const starterXml = `
       <block type="achievement_column">
         <field name="AGGREGATION">RAW</field>
         <field name="EXPR">r.user_id</field>
-        <field name="ALIAS">user_id</field>
+        <field name="ALIAS">Value</field>
       </block>
     </statement>
   </block>
@@ -336,7 +352,7 @@ const builderTemplates = [
       <block type="achievement_column">
         <field name="AGGREGATION">RAW</field>
         <field name="EXPR">r.user_id</field>
-        <field name="ALIAS">user_id</field>
+        <field name="ALIAS">Value</field>
       </block>
     </statement>
     <statement name="JOINS">
@@ -375,14 +391,7 @@ const builderTemplates = [
       <block type="achievement_column">
         <field name="AGGREGATION">RAW</field>
         <field name="EXPR">r.user_id</field>
-        <field name="ALIAS">user_id</field>
-        <next>
-          <block type="achievement_column">
-            <field name="AGGREGATION">COUNT</field>
-            <field name="EXPR">*</field>
-            <field name="ALIAS">recordings_count</field>
-          </block>
-        </next>
+        <field name="ALIAS">Value</field>
       </block>
     </statement>
     <statement name="GROUP_BY">
@@ -574,7 +583,8 @@ const createTableBuilderJoin = (
 };
 
 const tableBuilderFields = ref<TableBuilderField[]>([
-  createTableBuilderField()
+  // A rule projects exactly one column, the user id, under EF's scalar alias.
+  createTableBuilderField({ alias: USER_ID_COLUMN_ALIAS })
 ]);
 const tableBuilderJoins = ref<TableBuilderJoin[]>([]);
 
@@ -1238,9 +1248,6 @@ const currentEditorIndex = ref(0);
 const currentEditor = computed(
   () => editors.value[currentEditorIndex.value] ?? null
 );
-const isExistingAchievement = computed(() =>
-  Boolean(currentEditor.value?.achievementId)
-);
 const isCurrentEditorDirty = computed(
   () => currentEditor.value?.dirty ?? false
 );
@@ -1450,7 +1457,7 @@ Blockly.Blocks['achievement_column'] = {
       .appendField(dropdown, 'EXPR_PICKER');
     this.appendDummyInput()
       .appendField('Alias')
-      .appendField(new Blockly.FieldTextInput('user_id'), 'ALIAS');
+      .appendField(new Blockly.FieldTextInput(USER_ID_COLUMN_ALIAS), 'ALIAS');
     this.setPreviousStatement(true, 'achievement_column');
     this.setNextStatement(true, 'achievement_column');
     this.setColour(120);
@@ -1860,14 +1867,11 @@ const sortedAchievements = computed<Achievement[]>(() => {
 const filteredAchievements = computed<Achievement[]>(() => {
   const query = achievementFilter.value.trim().toLowerCase();
   if (!query) return sortedAchievements.value;
-  return sortedAchievements.value.filter((achievement) => {
-    if (achievement.sql.toLowerCase().includes(query)) {
-      return true;
-    }
-    return achievement.contents.some((content) =>
+  return sortedAchievements.value.filter((achievement) =>
+    achievement.contents.some((content) =>
       `${content.title} ${content.description}`.toLowerCase().includes(query)
-    );
-  });
+    )
+  );
 });
 
 const normalizeLanguageCode = (
@@ -1937,50 +1941,39 @@ const hasCompleteContent = (editor: EditorTab) =>
       editor.contents[lang.code].description.trim()
   );
 
-const buildPayloadContents = (editor: EditorTab): AchievementContentPayload[] =>
+const buildPayloadContents = (editor: EditorTab): AchievementContent[] =>
   contentLanguages.map((lang) => ({
     languageCode: lang.code,
     title: editor.contents[lang.code].title.trim(),
     description: editor.contents[lang.code].description.trim()
   }));
 
+// The API only creates achievements - there is no update endpoint, so opening
+// an existing one prefills a new definition rather than editing it in place.
 const persistAchievementMutation = useMutation({
   mutationFn: async ({
     editor,
-    contents,
-    isUpdate
+    contents
   }: {
     editor: EditorTab;
-    contents: AchievementContentPayload[];
-    isUpdate: boolean;
+    contents: AchievementContent[];
   }) => {
     if (!accountStore.token) {
       throw new Error(t('admin.achievements.form.missingToken'));
     }
-    const payload = {
+    if (!editor.badgeFile) {
+      throw new Error(t('admin.achievements.form.missingImage'));
+    }
+    return createAchievement(accountStore.token, {
       sql: editor.sql,
       contents,
       file: editor.badgeFile
-    };
-    if (isUpdate && editor.achievementId) {
-      await updateAchievement(
-        accountStore.token,
-        editor.achievementId,
-        payload
-      );
-    } else {
-      if (!payload.file) {
-        throw new Error(t('admin.achievements.form.missingImage'));
-      }
-      await createAchievement(accountStore.token, payload);
-    }
+    });
   },
-  onSuccess: async (_data, variables) => {
-    await refreshAchievementState(variables.editor, variables.isUpdate);
+  onSuccess: async (createdId, variables) => {
+    await refreshAchievementState(variables.editor, createdId);
     formError.value = null;
-    formMessage.value = variables.isUpdate
-      ? t('admin.achievements.form.updated')
-      : t('admin.achievements.form.success');
+    formMessage.value = t('admin.achievements.form.success');
   },
   onError: (error) => {
     const message = error instanceof Error ? error.message : String(error);
@@ -1996,7 +1989,7 @@ const canSaveCurrentEditor = computed(() => {
   if (!editor) return false;
   if (!editor.sql.trim()) return false;
   if (!hasCompleteContent(editor)) return false;
-  if (!editor.achievementId && !editor.badgeFile) return false;
+  if (!editor.badgeFile) return false;
   if (!editor.dirty) return false;
   return !isSaving.value;
 });
@@ -2018,14 +2011,13 @@ const handleSaveCurrentEditor = () => {
     formError.value = t('admin.achievements.form.missingContent');
     return;
   }
-  if (!editor.achievementId && !editor.badgeFile) {
+  if (!editor.badgeFile) {
     formError.value = t('admin.achievements.form.missingImage');
     return;
   }
   persistAchievementMutation.mutate({
     editor,
-    contents: buildPayloadContents(editor),
-    isUpdate: Boolean(editor.achievementId)
+    contents: buildPayloadContents(editor)
   });
 };
 
@@ -2091,14 +2083,15 @@ function openAchievementInEditor(achievement: Achievement) {
     return;
   }
   const contents = buildContentStateFromAchievement(achievement);
+  // The API never returns an achievement's rule, so the SQL has to be
+  // re-authored; only the localized text and badge carry over.
   const newEditor = createEditorTab({
     title: editorTitleFromAchievement(achievement),
-    sql: achievement.sql,
     achievementId: achievement.id,
     contents,
     imageUrl: achievement.imageUrl ?? null,
     baseline: {
-      sql: achievement.sql,
+      sql: '',
       contents: cloneContentState(contents),
       imageUrl: achievement.imageUrl ?? null
     }
@@ -2115,7 +2108,6 @@ function duplicateAchievement(achievement: Achievement) {
   )})`;
   const newEditor = createEditorTab({
     title: duplicateTitle,
-    sql: achievement.sql,
     contents,
     imageUrl: achievement.imageUrl ?? null
   });
@@ -2124,44 +2116,17 @@ function duplicateAchievement(achievement: Achievement) {
   loadEditorXml(currentEditorIndex.value);
 }
 
-async function refreshAchievementState(editor: EditorTab, isUpdate: boolean) {
+async function refreshAchievementState(editor: EditorTab, createdId: number) {
   await queryClient.invalidateQueries({ queryKey: ['achievements-admin'] });
   const result = await refetchAchievements();
   const list = result.data ?? achievements.value ?? [];
-  if (!list.length) {
-    finalizeEditorAfterSave(editor);
-    return;
-  }
-  if (isUpdate && editor.achievementId) {
-    const updated = list.find((item) => item.id === editor.achievementId);
-    if (updated) {
-      editor.imageUrl = updated.imageUrl ?? editor.imageUrl ?? null;
-    }
-  } else {
-    const created =
-      list.find(
-        (item) =>
-          item.sql === editor.sql &&
-          contentLanguages.every((lang) => {
-            const target = editor.contents[lang.code];
-            const apiContent = item.contents.find(
-              (content) =>
-                content.languageCode.toLowerCase() === lang.code.toLowerCase()
-            );
-            if (!apiContent) {
-              return false;
-            }
-            return (
-              target.title.trim() === apiContent.title.trim() &&
-              target.description.trim() === apiContent.description.trim()
-            );
-          })
-      ) ?? list[0];
-    if (created) {
-      editor.achievementId = created.id;
-      editor.imageUrl = created.imageUrl ?? editor.imageUrl ?? null;
-      editor.title = editorTitleFromAchievement(created);
-    }
+
+  // POST returns the new id, so there is no need to guess which row is ours.
+  const created = list.find((item) => item.id === createdId);
+  editor.achievementId = createdId;
+  if (created) {
+    editor.imageUrl = created.imageUrl ?? editor.imageUrl ?? null;
+    editor.title = editorTitleFromAchievement(created);
   }
   finalizeEditorAfterSave(editor);
 }
@@ -2265,13 +2230,10 @@ function finalizeEditorAfterSave(editor: EditorTab) {
                   ?.description || ''
               }}
             </p>
-            <pre
-              class="max-h-36 overflow-y-auto rounded bg-white p-3 text-xs text-gray-800"
-            ><code>{{ achievement.sql }}</code></pre>
             <div class="flex flex-wrap gap-1">
               <span
                 v-for="content in achievement.contents"
-                :key="content.id"
+                :key="content.languageCode"
                 class="rounded bg-white px-2 py-1 text-xs font-medium text-gray-600"
               >
                 {{ content.languageCode.toUpperCase() }} · {{ content.title }}
@@ -2314,7 +2276,7 @@ function finalizeEditorAfterSave(editor: EditorTab) {
             </h2>
             <p class="text-xs text-gray-500">
               <span v-if="currentEditor?.achievementId">
-                {{ t('admin.achievements.list.identifier') }}
+                {{ t('admin.achievements.editor.basedOn') }}
                 {{ currentEditor?.achievementId }}
               </span>
               <span v-else>
@@ -2338,18 +2300,9 @@ function finalizeEditorAfterSave(editor: EditorTab) {
               }}
             </span>
             <span
-              class="rounded-full px-3 py-1 text-xs font-semibold"
-              :class="
-                isExistingAchievement
-                  ? 'bg-blue-100 text-blue-900'
-                  : 'bg-purple-100 text-purple-900'
-              "
+              class="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-900"
             >
-              {{
-                isExistingAchievement
-                  ? t('admin.achievements.editor.modeEdit')
-                  : t('admin.achievements.editor.modeCreate')
-              }}
+              {{ t('admin.achievements.editor.modeCreate') }}
             </span>
           </div>
         </div>
@@ -2363,11 +2316,7 @@ function finalizeEditorAfterSave(editor: EditorTab) {
           >
             <span v-if="isSaving">{{ t('states.loading') }}</span>
             <span v-else>
-              {{
-                isExistingAchievement
-                  ? t('admin.achievements.form.update')
-                  : t('admin.achievements.form.create')
-              }}
+              {{ t('admin.achievements.form.create') }}
             </span>
           </button>
           <button

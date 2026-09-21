@@ -49,8 +49,8 @@ const enabled = ref(false);
 const router = useRouter();
 
 const { mutate, isPending, error } = useMutation({
-  mutationKey: ['delete-account', accountStore.token],
-  mutationFn: () => deleteAccount(accountStore.token!, accountStore.user!.id),
+  mutationKey: ['delete-account', accountStore.user?.id],
+  mutationFn: () => deleteAccount(accountStore.identityToken!),
   onSuccess: () => {
     accountStore.logout();
     router.push('/');

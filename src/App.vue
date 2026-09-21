@@ -1,11 +1,25 @@
 <script setup vapor lang="ts">
+import { watch } from 'vue';
 import { initializeProjects, projectStore, selectProject } from '@/state/ProjectStore';
 import { authorizationState, dismissAuthorizationError } from '@/services/authorizationPopup';
+import { accountStore } from '@/state/AccountStore';
+import { consentStore } from '@/state/ConsentStore';
 
 const retry = async () => {
   await initializeProjects();
   if (projectStore.current) window.location.reload();
 };
+
+// An unaccepted required document strips every role and permission from the
+// project token, so the user has to be told rather than left wondering why
+// their screens vanished.
+watch(
+  () => accountStore.identityToken,
+  (token) => {
+    if (token) void consentStore.load();
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
@@ -16,6 +30,15 @@ const retry = async () => {
       &times;
     </button>
   </div>
+
+  <RouterLink
+    v-if="consentStore.outstanding.length"
+    to="/ucet/sprava/souhlasy"
+    class="consent-banner"
+  >
+    {{ consentStore.outstanding.length }}× souhlas čeká na potvrzení – bez něj
+    nemáte přístup ke svým oprávněním.
+  </RouterLink>
 
   <router-view v-if="projectStore.current" />
   <main v-else class="flex min-h-svh flex-col items-center justify-center gap-5 bg-[#fdfcdc] p-6 text-center">
@@ -38,6 +61,22 @@ const retry = async () => {
 </template>
 
 <style scoped>
+.consent-banner {
+  position: fixed;
+  z-index: 9999;
+  bottom: 1rem;
+  left: 50%;
+  display: block;
+  max-width: min(36rem, calc(100vw - 2rem));
+  transform: translateX(-50%);
+  border: 1px solid #fcd34d;
+  border-radius: 0.75rem;
+  background: #fffbeb;
+  padding: 0.75rem 1rem;
+  color: #92400e;
+  box-shadow: 0 10px 30px rgba(62, 51, 20, 0.18);
+}
+
 .auth-error {
   position: fixed;
   z-index: 10000;

@@ -1,7 +1,12 @@
 import * as jose from 'jose';
 import { reactive } from 'vue';
-import type { User, JWTObject } from '@/api/account';
+import type { JWTObject, UserProfile } from '@/api/account';
 import { getCurrentUserInfo } from '@/api/account';
+import {
+  ADMINISTRATIVE_PERMISSIONS,
+  readClaimValues,
+  type Permission
+} from '@/api/permissions';
 import {
   authorizationConfig,
   exchangeAuthorizationCode,
@@ -12,11 +17,13 @@ import {
 import { posthogInstance } from '@/plugins/vue/posthog';
 
 const REFRESH_TOKEN_STORAGE_KEY = 'strnadi.refresh-token.v1';
-const LEGACY_ACCOUNT_STORAGE_KEY = 'strnadi.account.v2';
 const REFRESH_WINDOW_MS = 60 * 1000;
 
 type AuthenticationStatus =
-  'initializing' | 'authenticated' | 'anonymous' | 'error';
+  | 'initializing'
+  | 'authenticated'
+  | 'anonymous'
+  | 'error';
 
 let refreshTimer: number | null = null;
 let activeRefresh: Promise<void> | null = null;
@@ -48,15 +55,36 @@ const persistRefreshToken = (refreshToken: string | null) => {
 export const accountStore = reactive({
   /** Project-audience token used exclusively for Tenant.Api calls. */
   token: null as string | null,
-  /** Administration access token used only as subject_token and for refresh. */
+  /** Administration access token: subject_token, refresh, and Administration calls. */
   identityToken: null as string | null,
   refreshToken: null as string | null,
-  user: null as User | null,
+  user: null as UserProfile | null,
   token_object: null as JWTObject | null,
+  /**
+   * Permissions granted in the current project, straight off the project
+   * token's `permission` claims. Empty while the user still has an outstanding
+   * required-document consent - the API withholds roles until they accept.
+   */
+  permissions: [] as string[],
+  /** Role names granted in the current project. */
+  roles: [] as string[],
   status: 'initializing' as AuthenticationStatus,
   initializationError: null as string | null,
   identityTokenExpiresAt: null as number | null,
   projectTokenExpiresAt: null as number | null,
+
+  hasPermission(permission: Permission): boolean {
+    return this.permissions.includes(permission);
+  },
+
+  hasAnyPermission(...permissions: Permission[]): boolean {
+    return permissions.some((permission) => this.hasPermission(permission));
+  },
+
+  /** True when at least one screen under /sprava is reachable. */
+  get canAdminister(): boolean {
+    return this.hasAnyPermission(...ADMINISTRATIVE_PERMISSIONS);
+  },
 
   async applyOAuthTokens(
     identityTokens: TokenResponse,
@@ -65,7 +93,7 @@ export const accountStore = reactive({
     const projectTokens = await exchangeProjectToken(
       identityTokens.accessToken
     );
-    const user = await getCurrentUserInfo(projectTokens.accessToken);
+    const user = await getCurrentUserInfo(identityTokens.accessToken);
     const decoded = jose.decodeJwt<JWTObject>(projectTokens.accessToken);
     const refreshToken = identityTokens.refreshToken ?? fallbackRefreshToken;
 
@@ -80,6 +108,8 @@ export const accountStore = reactive({
       projectTokens.expiresIn
     );
     this.token_object = decoded;
+    this.permissions = readClaimValues(decoded.permission);
+    this.roles = readClaimValues(decoded.role);
     this.refreshToken = refreshToken;
     this.user = user;
     this.status = 'authenticated';
@@ -152,6 +182,27 @@ export const accountStore = reactive({
     return activeRefresh;
   },
 
+  /**
+   * Re-runs the token exchange without a full sign-in. Needed after the user
+   * accepts an outstanding document, since the project token they hold was
+   * issued with no roles or permissions.
+   */
+  async reexchangeProjectToken() {
+    if (!this.identityToken) return;
+    const projectTokens = await exchangeProjectToken(this.identityToken);
+    const decoded = jose.decodeJwt<JWTObject>(projectTokens.accessToken);
+
+    this.token = projectTokens.accessToken;
+    this.projectTokenExpiresAt = getExpiry(
+      projectTokens.accessToken,
+      projectTokens.expiresIn
+    );
+    this.token_object = decoded;
+    this.permissions = readClaimValues(decoded.permission);
+    this.roles = readClaimValues(decoded.role);
+    this.scheduleRefresh();
+  },
+
   logout() {
     clearRefreshTimer();
     this.user = null;
@@ -159,11 +210,12 @@ export const accountStore = reactive({
     this.identityToken = null;
     this.refreshToken = null;
     this.token_object = null;
+    this.permissions = [];
+    this.roles = [];
     this.identityTokenExpiresAt = null;
     this.projectTokenExpiresAt = null;
     this.status = 'anonymous';
     persistRefreshToken(null);
-    sessionStorage.removeItem(LEGACY_ACCOUNT_STORAGE_KEY);
     posthogInstance?.reset();
   },
 
@@ -181,7 +233,6 @@ export const accountStore = reactive({
   async initialize() {
     this.status = 'initializing';
     this.initializationError = null;
-    sessionStorage.removeItem(LEGACY_ACCOUNT_STORAGE_KEY);
     const refreshToken = sessionStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
 
     if (!refreshToken) {

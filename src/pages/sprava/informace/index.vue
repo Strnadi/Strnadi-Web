@@ -12,7 +12,7 @@ import DropdownIcon from '@/icons/interface/dropdown.svg';
 
 const { data: categories } = useQuery({
   queryKey: ['article-categories'],
-  queryFn: () => getArticleCategories()
+  queryFn: () => getArticleCategories(true)
 });
 
 const { data: allArticles } = useQuery({

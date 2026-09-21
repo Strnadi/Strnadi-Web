@@ -8,16 +8,19 @@ import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router';
 import { divIcon } from 'leaflet';
-import { getRecording, getFilteredRecording } from '@/api/recordings';
+import { getRecording, getFilteredRecordings } from '@/api/recordings';
 import type { FilteredPartModel } from '@/api/recordings';
+import { getRecordingPhotos, recordingPhotoDataUrl } from '@/api/photos';
+import { Permissions } from '@/api/permissions';
 import type { Numeric } from '@/types/basic';
 import { accountStore } from '@/state/AccountStore';
-import { projectStore } from '@/state/ProjectStore';
+import { useRecordingPartAudioUrls } from '@/composables/useRecordingAudio';
 import Spectrogram from '@/views/Spectrogram.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import Map from '@/views/map/Map.vue';
 import TextualCoords from '@/components/map/TextualCoords.vue';
 import ProfilePhoto from '@/components/ProfilePhoto.vue';
+import ExpandableImage from '@/components/ExpandableImage.vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import { getDialectStrings } from '@/utils/dialects';
 
@@ -33,12 +36,17 @@ const {
   isLoading
 } = useQuery({
   queryKey: ['recording', recordingId],
-  queryFn: () => getRecording(recordingId.value, false)
+  queryFn: () => getRecording(recordingId.value)
 });
 
 const { data: filteredRec, isLoading: isFilteredRecLoading } = useQuery({
   queryKey: ['filtered-recordings', recordingId],
-  queryFn: () => getFilteredRecording(recordingId.value)
+  queryFn: () => getFilteredRecordings({ recordingId: recordingId.value })
+});
+
+const { data: photos } = useQuery({
+  queryKey: ['recording-photos', recordingId],
+  queryFn: () => getRecordingPhotos(recordingId.value)
 });
 
 const uploaderId = computed(() => recording.value?.userId);
@@ -46,19 +54,26 @@ const uploader = computed(() =>
   uploaderId.value === accountStore.user?.id ? accountStore.user : null
 );
 
-const hasAudio = computed(() =>
-  recording.value?.parts?.some((part) => part.filePath !== null)
+const hasAudio = computed(() => Boolean(recording.value?.parts?.length));
+
+// The audio endpoint is bearer-authorized, so the bytes have to be fetched
+// rather than handed to the player as a plain URL.
+const { urls: audioUrls } = useRecordingPartAudioUrls(
+  () => recording.value?.parts ?? []
+);
+
+const canModerate = computed(() =>
+  accountStore.hasPermission(Permissions.ModerateRecordings)
 );
 
 const canManage = computed(
-  () =>
-    accountStore.user?.role === 'admin' ||
-    accountStore.user?.id === recording.value?.userId
+  () => canModerate.value || accountStore.user?.id === recording.value?.userId
 );
 
 const recordingCoordinates = computed(() => {
   const part = recording.value?.parts?.[0];
-  if (!part) return null;
+  if (part?.gpsLatitudeStart == null || part.gpsLongitudeStart == null)
+    return null;
   const lat = part.gpsLatitudeStart;
   const lng = part.gpsLongitudeStart;
   return Number.isFinite(lat) &&
@@ -89,7 +104,8 @@ const formatRelTime = (dateStr: string) => {
 
 const segments = computed(() => {
   const firstPart = recording.value?.parts?.[0];
-  if (!filteredRec.value || !DialectColors.value || !firstPart) return [];
+  if (!filteredRec.value || !DialectColors.value || !firstPart?.startDate)
+    return [];
   let index = 0;
   return filteredRec.value
     .filter((part) => {
@@ -153,8 +169,8 @@ const getDialectColor = (part: FilteredPartModel) => {
 
 const uploaderName = computed(() => {
   if (!uploader.value) return t('labels.user');
-  return uploader.value.nickname
-    ? `@${uploader.value.nickname}`
+  return uploader.value.userName
+    ? `@${uploader.value.userName}`
     : [uploader.value.firstName, uploader.value.lastName]
         .filter(Boolean)
         .join(' ') || `${t('labels.user')} #${uploader.value.id}`;
@@ -163,7 +179,7 @@ const uploaderName = computed(() => {
 const uploaderInitials = computed(() => {
   if (!uploader.value) return '?';
   const source =
-    uploader.value.nickname ||
+    uploader.value.userName ||
     `${uploader.value.firstName} ${uploader.value.lastName}`;
   return (
     source
@@ -237,12 +253,7 @@ const uploaderLocation = computed(() =>
           <TranslatedText identifier="recordings.detail.audio_heading" />
         </h2>
         <Spectrogram
-          :audio-urls="
-            recording.parts?.map(
-              (part) =>
-                `${projectStore.current.apiUrl}/recordings/part/${part.id}/sound`
-            ) ?? []
-          "
+          :audio-urls="audioUrls"
           :height="200"
           :readonly="true"
           :download-only-selections="true"
@@ -482,31 +493,24 @@ const uploaderLocation = computed(() =>
           </p>
 
           <section
-            v-if="recording.photos?.length"
+            v-if="photos?.length"
             class="recording-section recording-photos"
           >
             <div class="recording-section__heading">
               <h2>
                 <TranslatedText identifier="recordings.detail.photos_heading" />
               </h2>
-              <span class="recording-count">{{ recording.photos.length }}</span>
+              <span class="recording-count">{{ photos.length }}</span>
             </div>
             <ul>
               <li
-                v-for="photo in recording.photos"
+                v-for="photo in photos"
                 :key="photo.id"
               >
-                <a
-                  :href="photo.url"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  <img
-                    :src="photo.url"
-                    :alt="photo.name || t('recordings.detail.photo_alt')"
-                    loading="lazy"
-                  />
-                </a>
+                <ExpandableImage
+                  :src="recordingPhotoDataUrl(photo)"
+                  :alt="t('recordings.detail.photo_alt')"
+                />
               </li>
             </ul>
           </section>
@@ -558,7 +562,28 @@ const uploaderLocation = computed(() =>
                     identifier="recordings.detail.parts_heading"
                   />
                 </dt>
-                <dd>{{ recording.parts?.length ?? 0 }}</dd>
+                <dd>
+                  {{ recording.parts?.length ?? 0
+                  }}<template v-if="recording.expectedPartsCount"
+                    >&nbsp;/&nbsp;{{ recording.expectedPartsCount }}</template
+                  >
+                </dd>
+              </div>
+              <div>
+                <dt>
+                  <TranslatedText
+                    identifier="recordings.detail.upload_confirmed_label"
+                  />
+                </dt>
+                <dd>
+                  <TranslatedText
+                    :identifier="
+                      recording.uploadConfirmed
+                        ? 'recordings.detail.upload_confirmed_yes'
+                        : 'recordings.detail.upload_confirmed_no'
+                    "
+                  />
+                </dd>
               </div>
             </dl>
           </details>
@@ -589,7 +614,7 @@ const uploaderLocation = computed(() =>
               >
                 <TranslatedText
                   :identifier="
-                    accountStore.user?.role === 'admin'
+                    canModerate
                       ? 'recordings.detail.delete_recording'
                       : 'recordings.detail.request_delete'
                   "

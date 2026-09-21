@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import type { TranslationIdentifier } from '@/constants/Translations';
 import { useQuery } from '@tanstack/vue-query';
 import draggable from 'vuedraggable';
-import type { Article } from '@/api/articles';
+import type { ArticleSummary } from '@/api/articles';
 import { getArticles } from '@/api/articles';
 import ListDeselect from '@/components/ListDeselect.vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
@@ -12,25 +12,28 @@ const props = withDefaults(
   defineProps<{
     name: string;
     label: string;
-    selectedArticles: Article[];
+    selectedArticles: ArticleSummary[];
     titleKey: TranslationIdentifier;
     submitKey: TranslationIdentifier;
     submitting?: boolean;
     titleSuffix?: string;
+    /** The API can create a category but never rename one. */
+    identityReadonly?: boolean;
   }>(),
   {
     name: '',
     label: '',
     selectedArticles: () => [],
     submitting: false,
-    titleSuffix: ''
+    titleSuffix: '',
+    identityReadonly: false
   }
 );
 
 const emit = defineEmits<{
   (e: 'update:name', value: string): void;
   (e: 'update:label', value: string): void;
-  (e: 'update:selectedArticles', value: Article[]): void;
+  (e: 'update:selectedArticles', value: ArticleSummary[]): void;
   (e: 'submit'): void;
 }>();
 
@@ -46,7 +49,7 @@ const formLabel = computed({
 
 const formArticles = computed({
   get: () => props.selectedArticles ?? [],
-  set: (value: Article[]) => emit('update:selectedArticles', value)
+  set: (value: ArticleSummary[]) => emit('update:selectedArticles', value)
 });
 
 const { data: articles } = useQuery({
@@ -92,7 +95,9 @@ const emitSubmit = () => emit('submit');
         v-model="formName"
         type="text"
         :placeholder="t('placeholders.title')"
-        class="w-full p-2 border rounded"
+        :readonly="identityReadonly"
+        :disabled="identityReadonly"
+        class="w-full p-2 border rounded disabled:bg-gray-100"
       />
     </div>
 
@@ -110,8 +115,16 @@ const emitSubmit = () => emit('submit');
         v-model="formLabel"
         type="text"
         :placeholder="t('placeholders.description')"
-        class="w-full p-2 border rounded"
+        :readonly="identityReadonly"
+        :disabled="identityReadonly"
+        class="w-full p-2 border rounded disabled:bg-gray-100"
       />
+      <p
+        v-if="identityReadonly"
+        class="mt-1 text-xs text-gray-500"
+      >
+        <TranslatedText identifier="admin.articles.category_rename_hint" />
+      </p>
     </div>
 
     <div class="flex flex-col gap-y-2">

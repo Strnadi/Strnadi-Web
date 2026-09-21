@@ -157,8 +157,7 @@ const annotateAccess = (
       fullPath.startsWith('/ucet/sprava/') ||
       /^\/mapa\/nahravka\/[^/]+\/(upravit|upravit-dialekt|smazat)$/.test(
         fullPath
-      ) ||
-      /^\/mapa\/nahravka\/[^/]+\/[^/]+\/smazat$/.test(fullPath);
+      );
     const workspaceRoutes = [
       '/mapa/nahrat',
       '/ucet/sprava/osobni-udaje',
@@ -315,7 +314,9 @@ router.beforeEach(async (to) => {
     rememberAuthorizationTarget(to.fullPath);
     return { path: '/' };
   }
-  if (to.meta['admin'] && accountStore.user?.role !== 'admin') {
+  // Administration screens are gated on the project token's permission claims,
+  // the same ones the API's [RequirePermission] filters check.
+  if (to.meta['admin'] && !accountStore.canAdminister) {
     return { path: '/' };
   }
 

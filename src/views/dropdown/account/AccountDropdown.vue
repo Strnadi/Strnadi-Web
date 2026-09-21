@@ -52,7 +52,7 @@ const user = accountStore.user!;
         Nastavení webové aplikace
       </RouterLink>
     </li>
-    <li v-if="accountStore.user?.role === 'admin'">
+    <li v-if="accountStore.canAdminister">
       <RouterLink
         to="/sprava"
         class="dropdown-item"

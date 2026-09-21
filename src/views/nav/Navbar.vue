@@ -56,7 +56,7 @@ const {
   error
 } = useQuery({
   queryKey: ['categories'],
-  queryFn: getArticleCategories
+  queryFn: () => getArticleCategories(true)
 });
 
 const changeLanguage = (lang: keyof typeof translations) => {

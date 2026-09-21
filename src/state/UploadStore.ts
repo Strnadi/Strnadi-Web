@@ -1,19 +1,16 @@
 import { reactive } from 'vue';
 import {
-  type RecordingUploadReq,
+  type RecordingUploadRequest,
   type RecordingPartUploadParams,
   postRecording,
-  postFilteredPart,
-  updateDetectedDialect,
-  postDetectedDialect,
-  getFilteredRecording
+  postFilteredPart
 } from '@/api/recordings';
 import type { DraftFilteredPart } from '@/state/UploadDraftStore';
 import { getAudioDuration } from '@/utils/audio';
 
 export interface UploadTask {
   id: string;
-  recording: RecordingUploadReq;
+  recording: RecordingUploadRequest;
   parts: RecordingPartUploadParams[];
   photos?: File[];
   token: string;
@@ -29,7 +26,7 @@ export const uploadQueueStore = reactive({
   isProcessing: false,
 
   addTask(
-    recording: RecordingUploadReq,
+    recording: RecordingUploadRequest,
     parts: RecordingPartUploadParams[],
     photos: File[] | undefined,
     token: string,
@@ -125,6 +122,11 @@ export const uploadQueueStore = reactive({
     task.progress = 99;
   },
 
+  /**
+   * A filtered part carries at most one detected dialect server-side, and
+   * creating the part from its dialect code already records that one, so
+   * nothing else has to be posted.
+   */
   async uploadDraftDialects(task: UploadTask, recordingId: number) {
     for (const draft of task.draftFilteredParts ?? []) {
       if (!draft.dialectCode) continue;
@@ -134,47 +136,6 @@ export const uploadQueueStore = reactive({
         endDate: draft.endDate,
         dialectCode: draft.dialectCode
       });
-    }
-
-    const serverParts = await getFilteredRecording(recordingId);
-
-    const findMatchingPart = (draft: DraftFilteredPart) => {
-      const targetStart = Date.parse(draft.startDate);
-      const targetEnd = Date.parse(draft.endDate);
-      return serverParts.find((part) => {
-        const startDiff = Math.abs(Date.parse(part.startDate) - targetStart);
-        const endDiff = Math.abs(Date.parse(part.endDate) - targetEnd);
-        return startDiff < 1000 && endDiff < 1000;
-      });
-    };
-
-    for (const draft of task.draftFilteredParts ?? []) {
-      const serverPart = findMatchingPart(draft);
-      if (!serverPart) continue;
-
-      const draftDetections = draft.detectedDialects ?? [];
-      const existingDetections = serverPart.detectedDialects ?? [];
-      for (const [index, source] of draftDetections.entries()) {
-        const target = existingDetections[index];
-        if (target) {
-          await updateDetectedDialect(task.token, {
-            id: target.id,
-            userGuessDialectId:
-              source.userGuessDialectId ?? target.userGuessDialectId ?? null,
-            predictedDialectId:
-              source.predictedDialectId ?? target.predictedDialectId ?? null,
-            confirmedDialectId:
-              source.confirmedDialectId ?? target.confirmedDialectId ?? null
-          });
-        } else {
-          await postDetectedDialect(task.token, {
-            filteredPartId: serverPart.id,
-            userGuessDialectId: source.userGuessDialectId ?? null,
-            predictedDialectId: source.predictedDialectId ?? null,
-            confirmedDialectId: source.confirmedDialectId ?? null
-          });
-        }
-      }
     }
   },
 

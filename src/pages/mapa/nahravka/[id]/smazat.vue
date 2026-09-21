@@ -4,10 +4,11 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRouteParams } from '@vueuse/router';
 import { deleteRecording, getRecording } from '@/api/recordings';
+import { Permissions } from '@/api/permissions';
 import { accountStore } from '@/state/AccountStore';
 import type { Numeric } from '@/types/basic';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
@@ -28,11 +29,23 @@ const {
 
 const isDeleting = ref(false);
 const deleteError = ref<string | null>(null);
+const permanent = ref(false);
+
+// Soft delete is the default; erasing a recording for good needs its own
+// permission, which the API enforces independently of this control.
+const canDeletePermanently = computed(() =>
+  accountStore.hasPermission(Permissions.DeleteRecordings)
+);
+
 const confirmDelete = async () => {
   try {
     isDeleting.value = true;
     deleteError.value = null;
-    await deleteRecording(accountStore.token!, recordingId.value);
+    await deleteRecording(
+      accountStore.token!,
+      recordingId.value,
+      canDeletePermanently.value && permanent.value
+    );
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['recordings'] }),
       queryClient.invalidateQueries({ queryKey: ['my-recordings'] }),
@@ -75,6 +88,18 @@ const confirmDelete = async () => {
         <TranslatedText identifier="common.irreversible_action" />
       </span>
     </p>
+    <label
+      v-if="canDeletePermanently"
+      class="mt-3 flex flex-row items-center gap-2"
+    >
+      <input
+        v-model="permanent"
+        type="checkbox"
+      />
+      <span class="text-sm">
+        <TranslatedText identifier="recordings.confirm.delete_permanently" />
+      </span>
+    </label>
     <div class="mt-4 space-x-2 flex flex-row">
       <button
         class="primary p-2 w-full"

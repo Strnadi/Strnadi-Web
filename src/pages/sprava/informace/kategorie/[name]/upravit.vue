@@ -10,9 +10,8 @@ import { useRouteParams } from '@vueuse/router';
 import {
   deleteArticleFromCategory,
   getArticleCategories,
-  patchArticleCategory,
   patchAssignArticleCategory,
-  type Article
+  type ArticleSummary
 } from '@/api/articles';
 import { accountStore } from '@/state/AccountStore.ts';
 import { useRouter } from 'vue-router';
@@ -23,13 +22,13 @@ const router = useRouter();
 
 const { data: categories } = useQuery({
   queryKey: ['article-categories'],
-  queryFn: () => getArticleCategories()
+  queryFn: () => getArticleCategories(true)
 });
 const currentCategory = computed(() =>
   categories.value?.find((category) => category.name === name.value)
 );
 
-const categoryArticles = ref<Article[]>([]);
+const categoryArticles = ref<ArticleSummary[]>([]);
 const originalArticleIds = ref<number[]>([]);
 const editableName = ref(name.value);
 const categoryLabel = ref('');
@@ -46,13 +45,9 @@ watch(name, (value) => {
 });
 
 const { mutate: mutateCategory, isPending, error } = useMutation({
+  // The API has no category update endpoint, so only the article assignments
+  // are editable here.
   mutationFn: async () => {
-    const originalName = name.value;
-    await patchArticleCategory(accountStore.token!, originalName, {
-      name: editableName.value,
-      label: categoryLabel.value
-    });
-
     const selectedIds = new Set(
       categoryArticles.value.flatMap((article) =>
         typeof article.id === 'number' ? [article.id] : []
@@ -98,6 +93,7 @@ const { mutate: mutateCategory, isPending, error } = useMutation({
     title-key="admin.articles.edit_category_title"
     :title-suffix="editableName"
     submit-key="buttons.save"
+    identity-readonly
     :submitting="isPending"
     @submit="mutateCategory()"
   />

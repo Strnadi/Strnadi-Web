@@ -32,8 +32,8 @@ const authorizationBaseUrl = (import.meta.env.VITE_AUTH_URL || '').replace(
 export const authorizationConfig = {
   baseUrl: authorizationBaseUrl,
   clientId: import.meta.env.VITE_AUTH_CLIENT_ID || 'strnadi-app',
-  get projectId() {
-    return projectStore.current.id;
+  get projectId(): string | null {
+    return projectStore.current?.id ?? null;
   },
   scope: import.meta.env.VITE_AUTH_SCOPE || 'offline_access'
 };

@@ -22,24 +22,28 @@ import { useFetched, useFetchedWithOptions } from '@/utils/network';
 import {
   deleteDetectedDialect,
   deleteFilteredPart,
+  FilteredRecordingPartState,
   getDialects,
-  getFilteredRecording,
+  getFilteredRecordings,
   getRecording,
   patchFilteredPart,
+  postConfirmedDialect,
   postDetectedDialect,
   postFilteredPart,
   type DetectedDialect,
   type DialectDefinition,
   type FilteredPartModel,
-  type RecordingModel,
-  type RecordingPartModel,
+  type RecordingResponse,
+  type RecordingPartResponse,
+  updateConfirmedDialect,
   updateDetectedDialect
 } from '@/api/recordings';
+import { Permissions } from '@/api/permissions';
+import { useRecordingPartAudioUrls } from '@/composables/useRecordingAudio';
 import { type Numeric } from '@/types/basic';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import { accountStore } from '@/state/AccountStore';
-import { projectStore } from '@/state/ProjectStore';
 import { uploadStore, type DraftFilteredPart } from '@/state/UploadDraftStore';
 import { draftPartToModel } from '@/utils/draft-part-to-model';
 import type {
@@ -82,20 +86,22 @@ const route = useRoute();
 
 const isDraftMode = computed(() => route.query?.['draft'] === '1');
 
+const getFilteredPartsForRecording = (recordingId: Numeric) =>
+  getFilteredRecordings({ recordingId });
+
 const recordingQuery = useFetchedWithOptions(
   getRecording,
   { enabled: computed(() => !isDraftMode.value) },
-  id,
-  false
+  id
 );
 const filteredPartsQuery = useFetchedWithOptions(
-  getFilteredRecording,
+  getFilteredPartsForRecording,
   { enabled: computed(() => !isDraftMode.value) },
   id
 );
 const dialectDefinitionsQuery = useFetched(getDialects);
 
-const draftRecording = ref<RecordingModel | null>(null);
+const draftRecording = ref<RecordingResponse | null>(null);
 const draftFilteredParts = ref<DraftFilteredPart[] | null>(null);
 const draftLoading = ref(false);
 const draftError = ref<Error | null>(null);
@@ -106,15 +112,39 @@ const recording = computed(() =>
 );
 
 
-const filteredParts = computed<FilteredPartModel[] | null>(() =>
-  isDraftMode.value
-    ? (draftFilteredParts.value?.map(draftPartToModel) ?? null)
-    : filteredPartsQuery.data.value ?? null
-);
+const filteredParts = computed<FilteredPartModel[] | null>(() => {
+  if (!isDraftMode.value) return filteredPartsQuery.data.value ?? null;
+  const base = draftRecording.value;
+  if (!base) return null;
+  return (
+    draftFilteredParts.value?.map((part) =>
+      draftPartToModel(part, dialectCodeLookup.value, base)
+    ) ?? null
+  );
+});
 
 const dialectDefinitions = computed(
   () => dialectDefinitionsQuery.data.value ?? []
 );
+
+// The API reports detected dialects by code and takes them by id, so both
+// directions of the catalog are needed.
+const dialectCodeLookup = computed<Record<number, string>>(() =>
+  Object.fromEntries(
+    dialectDefinitions.value.map((dialect) => [dialect.id, dialect.dialectCode])
+  )
+);
+
+const dialectIdLookup = computed<Record<string, number>>(() =>
+  Object.fromEntries(
+    dialectDefinitions.value.map((dialect) => [dialect.dialectCode, dialect.id])
+  )
+);
+
+function resolveDialectId(code?: string | null) {
+  if (!code) return null;
+  return dialectIdLookup.value[code] ?? null;
+}
 
 const isLoading = computed(() =>
   isDraftMode.value
@@ -162,7 +192,7 @@ const hydrateDraftData = async () => {
     }
 
     let cursor = new Date(uploadStore.dateTime ?? new Date()).getTime();
-    const parts = [] as RecordingPartModel[];
+    const parts = [] as RecordingPartResponse[];
     draftAudioUrls.value.forEach((url) => URL.revokeObjectURL(url));
     const urls: string[] = [];
 
@@ -175,16 +205,13 @@ const hydrateDraftData = async () => {
 
       parts.push({
         id: index + 1,
-        recordingId: 0,
         startDate,
         endDate,
         gpsLatitudeStart: part.location?.lat ?? 0,
         gpsLatitudeEnd: part.location?.lat ?? 0,
         gpsLongitudeStart: part.location?.lng ?? 0,
         gpsLongitudeEnd: part.location?.lng ?? 0,
-        square: null,
-        filePath: null,
-        dataBase64: null
+        length: Math.round(duration)
       });
 
       cursor += duration * 1000;
@@ -194,7 +221,7 @@ const hydrateDraftData = async () => {
 
     draftRecording.value = {
       id: 0,
-      userId: accountStore.user?.id ?? 0,
+      userId: accountStore.user?.id ?? null,
       name: uploadStore.title || 'Nahrávka',
       createdAt: uploadStore.dateTime ?? new Date().toISOString(),
       estimatedBirdsCount: uploadStore.birdCount,
@@ -202,6 +229,8 @@ const hydrateDraftData = async () => {
       device: uploadStore.device,
       note: uploadStore.note,
       notePost: null,
+      expectedPartsCount: parts.length,
+      uploadConfirmed: false,
       parts
     };
 
@@ -271,14 +300,18 @@ const availableDialects = computed<DialectDefinition[]>(
   () => dialectDefinitions.value ?? []
 );
 
-const isAdmin = computed(() => accountStore.user?.role === 'admin');
+// Confirming a dialect is a review action; the API gates every confirmed-dialect
+// endpoint on this permission.
+const canReviewFiltered = computed(() =>
+  accountStore.hasPermission(Permissions.ReviewFilteredRecordings)
+);
 const isOwner = computed(
   () => recording.value?.userId === accountStore.user?.id
 );
-const canConfirmDialects = computed(() => isAdmin.value);
+const canConfirmDialects = computed(() => canReviewFiltered.value);
 const canGuessDialects = computed(() => Boolean(accountStore.user));
 const canEditDialects = computed(
-  () => isAdmin.value || isDraftMode.value || isOwner.value
+  () => canReviewFiltered.value || isDraftMode.value || isOwner.value
 );
 
 function parseIsoDate(value?: string | null) {
@@ -295,16 +328,15 @@ const anchorTimestamp = computed(() => {
   return parseIsoDate(recordingStart ?? filteredStart);
 });
 
-const audioUrls = computed(() => {
-  if (!recording.value?.parts) return [] as string[];
-  if (isDraftMode.value) {
-    return draftAudioUrls.value;
-  }
-  return recording.value.parts.map(
-    (p) =>
-      `${projectStore.current.apiUrl}/recordings/part/${p.id}/sound`
-  );
-});
+// Stored audio is behind a bearer-authorized endpoint, so it has to be fetched
+// rather than linked; drafts already hold local object URLs.
+const { urls: storedAudioUrls } = useRecordingPartAudioUrls(() =>
+  isDraftMode.value ? [] : (recording.value?.parts ?? [])
+);
+
+const audioUrls = computed(() =>
+  isDraftMode.value ? draftAudioUrls.value : storedAudioUrls.value
+);
 
 function selectionColorResolver() {
   return resolveDialectColor(selectedDialectCode.value);
@@ -375,21 +407,6 @@ function resolveDialectColor(code?: string | null) {
   return colors[code as keyof typeof colors] ?? DEFAULT_SEGMENT_COLOR;
 }
 
-const dialectIdLookup = computed<Record<string, number>>(() =>
-  availableDialects.value.reduce(
-    (acc, dialect) => {
-      acc[dialect.dialectCode] = dialect.id;
-      return acc;
-    },
-    {} as Record<string, number>
-  )
-);
-
-function resolveDialectId(code?: string | null) {
-  if (!code) return null;
-  return dialectIdLookup.value[code] ?? null;
-}
-
 function representantFlag(part: FilteredPartModel) {
   return part.representantFlag ?? false;
 }
@@ -407,37 +424,6 @@ function inferDialectCode(part: FilteredPartModel) {
   }
   return null;
 }
-
-function findFilteredPartByTime(startDate: string, endDate: string) {
-  const parts = filteredParts.value ?? [];
-  const targetStart = convertIsoToRelative(startDate);
-  const targetEnd = convertIsoToRelative(endDate);
-  return (
-    parts.find((part) => {
-      const s = convertIsoToRelative(part.startDate);
-      const e = convertIsoToRelative(part.endDate);
-      return (
-        isApproximatelyEqual(s, targetStart) &&
-        isApproximatelyEqual(e, targetEnd)
-      );
-    }) ?? null
-  );
-}
-
-const autoConfirmDetectedDialect = async (
-  part: FilteredPartModel,
-  dialectId: number | null
-) => {
-  if (!canConfirmDialects.value || !dialectId) return;
-  const detection = part.detectedDialects?.[0];
-  if (!detection) return;
-  await updateDetectedDialect(accountStore.token!, {
-    id: detection.id,
-    userGuessDialectId: detection.userGuessDialectId ?? dialectId,
-    predictedDialectId: detection.predictedDialectId ?? null,
-    confirmedDialectId: dialectId
-  });
-};
 
 function convertIsoToRelative(iso: string) {
   const anchor = anchorTimestamp.value;
@@ -492,7 +478,7 @@ function hydrateSegments(parts: FilteredPartModel[] | null | undefined) {
       filteredPart: part,
       dialectCode: inferDialectCode(part),
       representant: representantFlag(part),
-      state: part.state,
+      state: part.state ?? FilteredRecordingPartState.AwaitingProcession,
       isNew: false,
       dirty: false,
       markedForDeletion: false,
@@ -509,6 +495,15 @@ function hydrateSegments(parts: FilteredPartModel[] | null | undefined) {
   isHydratingSegments.value = false;
 }
 
+/** The API reports dialects by code; the form controls bind to catalog ids. */
+function detectionSelection(detected: DetectedDialect): DialectSelection {
+  return {
+    userGuessDialectId: resolveDialectId(detected.userGuessDialect),
+    predictedDialectId: resolveDialectId(detected.predictedDialect),
+    confirmedDialectId: resolveDialectId(detected.confirmedDialect)
+  };
+}
+
 function hydrateDetectionForms(parts: FilteredPartModel[] | null | undefined) {
   if (!Array.isArray(parts)) {
     return;
@@ -518,11 +513,7 @@ function hydrateDetectionForms(parts: FilteredPartModel[] | null | undefined) {
   parts.forEach((part) => {
     partIds.add(part.id);
     part.detectedDialects?.forEach((det) => {
-      nextForms[det.id] = {
-        userGuessDialectId: det.userGuessDialectId ?? null,
-        predictedDialectId: det.predictedDialectId ?? null,
-        confirmedDialectId: det.confirmedDialectId ?? null
-      };
+      nextForms[det.id] = detectionSelection(det);
     });
     if (!newDetectionForms[part.id]) {
       newDetectionForms[part.id] = {
@@ -842,24 +833,26 @@ const saveSegmentChanges = async () => {
       if (!startDate || !endDate) {
         throw new Error('Nepodařilo se převést čas úseku.');
       }
-      const parentId = meta.filteredPart?.parentId;
-      if (parentId == null) {
-        throw new Error('Chybí parentId úseku.');
+      // Reviewers can move the segment and restate its confirmed dialect in a
+      // single call; everyone else may only adjust the segment itself.
+      if (canConfirmDialects.value && meta.dialectCode) {
+        await updateConfirmedDialect(token, {
+          filteredPartId: meta.filteredPart!.id,
+          startDate,
+          endDate,
+          confirmedDialectCode: meta.dialectCode,
+          representant: meta.representant
+        });
+      } else {
+        await patchFilteredPart(token, meta.filteredPart!.id, {
+          recordingId: recording.value.id,
+          startDate,
+          endDate,
+          state: meta.state,
+          representant: meta.representant
+        });
       }
-      await patchFilteredPart(token, meta.filteredPart!.id, {
-        recordingId: recording.value.id,
-        parentId,
-        startDate,
-        endDate,
-        state: meta.state,
-        representant: meta.representant
-      });
     }
-    const creationTargets: {
-      startDate: string;
-      endDate: string;
-      dialectId: number | null;
-    }[] = [];
     for (const meta of creations) {
       if (!meta.dialectCode) {
         throw new Error('Nový úsek musí mít zvolený dialekt.');
@@ -875,23 +868,22 @@ const saveSegmentChanges = async () => {
         endDate,
         dialectCode: meta.dialectCode
       };
-      await postFilteredPart(token, payload);
-      creationTargets.push({
-        startDate,
-        endDate,
-        dialectId: resolveDialectId(meta.dialectCode)
-      });
+
+      // A reviewer creates the segment already confirmed - one call that also
+      // records the representant flag - instead of creating a guess and then
+      // having to find the part again to confirm it.
+      if (canConfirmDialects.value) {
+        await postConfirmedDialect(token, {
+          ...payload,
+          representant: meta.representant
+        });
+      } else {
+        // Uploading the part records the guess from its dialect code, so no
+        // follow-up call is needed.
+        await postFilteredPart(token, payload);
+      }
     }
     await refetchFilteredParts();
-    if (creationTargets.length && filteredParts.value) {
-      for (const target of creationTargets) {
-        const part = findFilteredPartByTime(target.startDate, target.endDate);
-        if (part && target.dialectId) {
-          await autoConfirmDetectedDialect(part, target.dialectId);
-        }
-      }
-      await refetchFilteredParts();
-    }
     segmentSuccess.value = 'Změny úseků byly uloženy.';
   } catch (err) {
     segmentError.value =
@@ -996,13 +988,17 @@ async function saveDraftSegmentChanges(silent = false) {
           confirmedDialectId: canConfirmDialects.value ? dialectId : null
         });
       }
-      meta.filteredPart = draftPartToModel(created);
+      meta.filteredPart = draftPartToModel(
+        created,
+        dialectCodeLookup.value,
+        draftRecording.value!
+      );
       meta.isNew = false;
       meta.dirty = false;
     }
 
     draftFilteredParts.value = [...uploadStore.draftFilteredParts];
-    hydrateSegments((draftFilteredParts.value ?? []).map(draftPartToModel));
+    hydrateSegments(filteredParts.value ?? []);
     if (!silent) segmentSuccess.value = 'Změny úseků byly uloženy.';
   } catch (err) {
     segmentError.value =
@@ -1019,11 +1015,7 @@ const autoSaveDraft = useDebounceFn(async () => {
 
 const ensureDetectionForm = (detected: DetectedDialect): DialectSelection => {
   if (!detectionForms.value[detected.id]) {
-    detectionForms.value[detected.id] = {
-      userGuessDialectId: detected.userGuessDialectId ?? null,
-      predictedDialectId: detected.predictedDialectId ?? null,
-      confirmedDialectId: detected.confirmedDialectId ?? null
-    };
+    detectionForms.value[detected.id] = detectionSelection(detected);
   }
   return detectionForms.value[detected.id]!;
 };
@@ -1040,7 +1032,7 @@ const saveDetection = async (detected: DetectedDialect) => {
         predictedDialectId: form.predictedDialectId,
         confirmedDialectId: canConfirmDialects.value
           ? form.confirmedDialectId
-          : (detected.confirmedDialectId ?? null)
+          : resolveDialectId(detected.confirmedDialect)
       });
       detectionMessage.value = 'Záznam dialektu byl uložen.';
       draftFilteredParts.value = [...uploadStore.draftFilteredParts];
@@ -1051,7 +1043,7 @@ const saveDetection = async (detected: DetectedDialect) => {
         predictedDialectId: form.predictedDialectId,
         confirmedDialectId: canConfirmDialects.value
           ? form.confirmedDialectId
-          : (detected.confirmedDialectId ?? null)
+          : resolveDialectId(detected.confirmedDialect)
       });
       detectionMessage.value = 'Záznam dialektu byl uložen.';
       await refetchFilteredParts();
@@ -1115,20 +1107,23 @@ const createDetection = async (meta: SegmentMeta) => {
   detectionMessage.value = null;
   try {
     if (isDraftMode.value) {
-      const { filteredPartId, ...created } = uploadStore.createDraftDetection(
-        meta.filteredPart.id,
-        {
-          userGuessDialectId: form.userGuessDialectId,
-          predictedDialectId: form.predictedDialectId,
-          confirmedDialectId: canConfirmDialects.value
-            ? form.confirmedDialectId
-            : null
-        }
-      );
+      const created = uploadStore.createDraftDetection(meta.filteredPart.id, {
+        userGuessDialectId: form.userGuessDialectId,
+        predictedDialectId: form.predictedDialectId,
+        confirmedDialectId: canConfirmDialects.value
+          ? form.confirmedDialectId
+          : null
+      });
       meta.filteredPart.detectedDialects ??= [];
       meta.filteredPart.detectedDialects.push({
-        ...created,
-        filteredRecordingPartId: filteredPartId
+        id: created.id,
+        filteredRecordingPartId: created.filteredPartId,
+        userGuessDialect:
+          dialectCodeLookup.value[created.userGuessDialectId ?? -1] ?? null,
+        predictedDialect:
+          dialectCodeLookup.value[created.predictedDialectId ?? -1] ?? null,
+        confirmedDialect:
+          dialectCodeLookup.value[created.confirmedDialectId ?? -1] ?? null
       });
       draftFilteredParts.value = [...uploadStore.draftFilteredParts];
       detectionMessage.value = 'Záznam dialektu byl přidán.';
@@ -1553,7 +1548,7 @@ const confirmAll = async () => {
                 <div class="flex flex-row w-full justify-between">
                   <div
                     class="text-[11px] text-gray-500"
-                    v-if="isAdmin"
+                    v-if="canReviewFiltered"
                   >
                     ID #{{ detected.id }}
                   </div>
@@ -1578,34 +1573,23 @@ const confirmAll = async () => {
                   </label>
                 </div>
                 <div class="text-[11px] text-gray-500 flex flex-col gap-0.5">
-                  <span v-if="isAdmin">
-                    Model:
-                    {{
-                      detected.predictedDialect ??
-                      detected.predictedDialectId ??
-                      'Nezadán'
-                    }}
+                  <span v-if="canReviewFiltered">
+                    Model: {{ detected.predictedDialect ?? 'Nezadán' }}
                   </span>
-                  <span v-if="detected.userGuessDialectId">
-                    Uživatel:
-                    {{
-                      detected.userGuessDialect ?? detected.userGuessDialectId
-                    }}
+                  <span v-if="detected.userGuessDialect">
+                    Uživatel: {{ detected.userGuessDialect }}
                   </span>
                   <span
                     :class="[
                       'font-semibold',
-                      detected.confirmedDialectId
+                      detected.confirmedDialect
                         ? 'text-emerald-600'
                         : 'text-amber-600'
                     ]"
                   >
                     {{
-                      detected.confirmedDialectId
-                        ? `Potvrzeno: ${
-                            detected.confirmedDialect ??
-                            detected.confirmedDialectId
-                          }`
+                      detected.confirmedDialect
+                        ? `Potvrzeno: ${detected.confirmedDialect}`
                         : 'Nepotvrzeno'
                     }}
                   </span>
@@ -1614,43 +1598,39 @@ const confirmAll = async () => {
                 <div
                   v-if="
                     canConfirmDialects &&
-                    !detected.confirmedDialectId &&
-                    (detected.predictedDialectId || detected.userGuessDialectId)
+                    !detected.confirmedDialect &&
+                    (detected.predictedDialect || detected.userGuessDialect)
                   "
                   class="space-y-1 text-xs"
                 >
                   <div class="text-[11px] text-gray-500">Rychlé potvrzení</div>
                   <button
-                    v-if="detected.predictedDialectId"
+                    v-if="detected.predictedDialect"
                     class="w-full px-2 py-1 border border-gray-200 rounded hover:bg-gray-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
                     :disabled="detectionSaving[detected.id]"
                     @click="
                       confirmExistingDetection(
                         detected,
-                        detected.predictedDialectId,
+                        resolveDialectId(detected.predictedDialect),
                         close
                       )
                     "
                   >
-                    Potvrdit model ({{
-                      detected.predictedDialect ?? detected.predictedDialectId
-                    }})
+                    Potvrdit model ({{ detected.predictedDialect }})
                   </button>
                   <button
-                    v-if="detected.userGuessDialectId"
+                    v-if="detected.userGuessDialect"
                     class="w-full px-2 py-1 border border-gray-200 rounded hover:bg-gray-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
                     :disabled="detectionSaving[detected.id]"
                     @click="
                       confirmExistingDetection(
                         detected,
-                        detected.userGuessDialectId,
+                        resolveDialectId(detected.userGuessDialect),
                         close
                       )
                     "
                   >
-                    Potvrdit uživatel ({{
-                      detected.userGuessDialect ?? detected.userGuessDialectId
-                    }})
+                    Potvrdit uživatel ({{ detected.userGuessDialect }})
                   </button>
                 </div>
 
@@ -1695,14 +1675,6 @@ const confirmAll = async () => {
                     >
                       Uložit
                     </button>
-                    <!-- <button
-                      v-if="detected.confirmedDialectId"
-                      class="px-2 text-xs border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                      :disabled="detectionSaving[detected.id]"
-                      @click="clearConfirmedDialect(detected, close)"
-                    >
-                      Odebrat potvrzení
-                    </button> -->
                     <button
                       class="px-2 text-xs border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                       :disabled="detectionSaving[detected.id]"
@@ -1929,7 +1901,7 @@ const confirmAll = async () => {
                     </span>
                   </label>
                   <label
-                    v-if="accountStore.user?.role === 'user'"
+                    v-if="canGuessDialects"
                     class="flex flex-col flex-1 gap-1"
                   >
                     Uživatel
@@ -1951,7 +1923,7 @@ const confirmAll = async () => {
                     </select>
                   </label>
                   <label
-                    v-if="accountStore.user?.role === 'admin'"
+                    v-if="canConfirmDialects"
                     class="flex flex-col flex-1 gap-1"
                   >
                     Potvrzený
@@ -1992,13 +1964,16 @@ const confirmAll = async () => {
                 </div>
               </div>
 
+              <!-- A filtered part holds at most one detected dialect, so this
+                   only appears while the segment still has none. -->
               <div
+                v-if="!(meta.filteredPart?.detectedDialects?.length ?? 0)"
                 class="border border-dashed border-gray-300 rounded-md p-3 space-y-2"
               >
                 <p class="text-xs text-gray-500">Přidat nový záznam</p>
                 <div class="flex flex-row w-full items-center gap-2 text-sm">
                   <label
-                    v-if="accountStore.user?.role === 'user'"
+                    v-if="canGuessDialects"
                     class="flex flex-col flex-1 gap-1"
                   >
                     Uživatel
@@ -2020,7 +1995,7 @@ const confirmAll = async () => {
                     </select>
                   </label>
                   <label
-                    v-if="accountStore.user?.role === 'admin'"
+                    v-if="canConfirmDialects"
                     class="flex flex-col flex-1 gap-1"
                   >
                     Potvrzený

@@ -7,10 +7,10 @@ meta:
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { getFilteredRecordings, getDialects, getRecording, updateDetectedDialect, type FilteredPartModel, type DetectedDialect, type RecordingModel } from '@/api/recordings';
+import { getFilteredRecordings, getDialects, getRecording, updateDetectedDialect, type FilteredPartModel, type DetectedDialect, type RecordingResponse } from '@/api/recordings';
+import { useRecordingPartAudioUrls } from '@/composables/useRecordingAudio';
 
 import { accountStore } from '@/state/AccountStore';
-import { projectStore } from '@/state/ProjectStore';
 import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
@@ -19,9 +19,11 @@ import type { SpectrogramRange } from '@/types/spectrogram';
 
 const queryClient = useQueryClient();
 
+// Only the parts still awaiting a reviewer's call; the API can filter out the
+// already-verified ones for us.
 const { data: filteredParts, isLoading } = useQuery({
-  queryKey: ['filtered-recordings'],
-  queryFn: () => getFilteredRecordings()
+  queryKey: ['filtered-recordings', 'unverified'],
+  queryFn: () => getFilteredRecordings({ verified: false })
 });
 
 const { data: dialects } = useQuery({
@@ -40,7 +42,7 @@ const unconfirmed = computed<UnconfirmedEntry[]>(() => {
   for (const fp of filteredParts.value) {
     if (!fp.detectedDialects) continue;
     for (const dd of fp.detectedDialects) {
-      if (!dd.confirmedDialectId && (dd.predictedDialectId || dd.userGuessDialectId)) {
+      if (!dd.confirmedDialect && (dd.predictedDialect || dd.userGuessDialect)) {
         entries.push({ filteredPart: fp, detected: dd });
       }
     }
@@ -55,7 +57,7 @@ const progressText = computed(() => `${Math.min(currentIndex.value + 1, totalCou
 const remaining = computed(() => Math.max(0, totalCount.value - currentIndex.value));
 const isFinished = computed(() => totalCount.value > 0 && currentIndex.value >= totalCount.value);
 
-const recording = ref<RecordingModel | null>(null);
+const recording = ref<RecordingResponse | null>(null);
 const recordingLoading = ref(false);
 const recordingError = ref<string | null>(null);
 
@@ -65,7 +67,7 @@ async function loadCurrentRecording() {
   recordingLoading.value = true;
   recordingError.value = null;
   try {
-    recording.value = await getRecording(entry.filteredPart.recordingId, false);
+    recording.value = await getRecording(entry.filteredPart.recordingId);
   } catch {
     recordingError.value = t('admin.confirmation.confirmed_error');
     recording.value = null;
@@ -90,10 +92,14 @@ function convertIsoToRelative(iso: string, anchor: number): number {
   return (target - anchor) / 1000;
 }
 
+// The audio endpoint is bearer-authorized, so the bytes are fetched rather
+// than linked.
+const { urls: audioUrls } = useRecordingPartAudioUrls(
+  () => recording.value?.parts ?? []
+);
+
 function getAudioUrls(): string[] {
-  if (!recording.value?.parts?.length) return [];
-  return recording.value.parts
-    .map((p) => `${projectStore.current.apiUrl}/recordings/part/${p.id}/sound`);
+  return audioUrls.value;
 }
 
 function buildSegmentRange(): SpectrogramRange[] {
@@ -121,20 +127,25 @@ function computeRangeColors(fp: FilteredPartModel): string[] {
 }
 function getDialectColor(code: string | null | undefined): string { return resolveDialectColor(code); }
 
+// The API reports detections by code; the confirm call takes catalog ids.
+const dialectIdByCode = computed<Record<string, number>>(() =>
+  Object.fromEntries((dialects.value ?? []).map((d) => [d.dialectCode, d.id]))
+);
+
+const asChoice = (code: string | null | undefined) => {
+  if (!code) return null;
+  const id = dialectIdByCode.value[code];
+  return id === undefined ? null : { id, label: code };
+};
+
 const topPrediction = computed(() => {
   const d = currentEntry.value?.detected;
   if (!d) return null;
-  return d.predictedDialectId
-    ? { id: d.predictedDialectId, label: d.predictedDialect ?? String(d.predictedDialectId) }
-    : d.userGuessDialectId
-      ? { id: d.userGuessDialectId, label: d.userGuessDialect ?? String(d.userGuessDialectId) }
-      : null;
+  return asChoice(d.predictedDialect) ?? asChoice(d.userGuessDialect);
 });
-const userGuess = computed(() => {
-  const d = currentEntry.value?.detected;
-  if (!d || !d.userGuessDialectId) return null;
-  return { id: d.userGuessDialectId, label: d.userGuessDialect ?? String(d.userGuessDialectId) };
-});
+const userGuess = computed(() =>
+  asChoice(currentEntry.value?.detected.userGuessDialect)
+);
 
 const confirmingIds = ref<Set<number>>(new Set());
 const confirmationMessage = ref<string | null>(null);
@@ -148,8 +159,8 @@ async function confirmDialect(dialectId: number | null) {
   try {
     await updateDetectedDialect(accountStore.token, {
       id: entry.detected.id,
-      userGuessDialectId: entry.detected.userGuessDialectId ?? null,
-      predictedDialectId: entry.detected.predictedDialectId ?? null,
+      userGuessDialectId: dialectIdByCode.value[entry.detected.userGuessDialect ?? ''] ?? null,
+      predictedDialectId: dialectIdByCode.value[entry.detected.predictedDialect ?? ''] ?? null,
       confirmedDialectId: dialectId
     });
     await queryClient.invalidateQueries({ queryKey: ['filtered-recordings'] });

@@ -1,28 +1,15 @@
 <script setup vapor lang="ts">
-import axios from 'axios';
 import { computedAsync } from '@vueuse/core';
-import { extensionToMime } from '@/utils/files';
-import { authorizationConfig } from '@/api/auth';
+import { getProfilePhoto, profilePhotoDataUrl } from '@/api/account';
 
 const props = defineProps<{
-  userId: string | number;
+  userId: string;
   fallbackText?: string;
 }>();
 
 const photoSource = computedAsync(async () => {
-  try {
-    const response = await axios.get(
-      `${authorizationConfig.baseUrl}/users/${encodeURIComponent(props.userId)}/profile-photo`
-    );
-    const format = response.data.format as string;
-    const extension = format.startsWith('.') ? format : `.${format}`;
-    const mime = format.includes('/')
-      ? format
-      : extensionToMime[extension.toLowerCase()] || 'image/jpeg';
-    return `data:${mime};base64,${response.data.photoBase64}`;
-  } catch (error) {
-    return null;
-  }
+  const photo = await getProfilePhoto(props.userId);
+  return photo ? profilePhotoDataUrl(photo) : null;
 });
 </script>
 

@@ -440,15 +440,6 @@ const timeInputValue = computed({
       </p>
     </template>
 
-    <template v-else-if="accountStore.user.isEmailVerified === false">
-      <h1 class="text-xl sm:text-2xl">
-        <TranslatedText identifier="upload.title" />
-      </h1>
-      <p class="font-medium text-sm sm:text-base">
-        <TranslatedText identifier="upload.email_verification_required" />
-      </p>
-    </template>
-
     <template v-else>
       <h1 class="text-lg sm:text-xl font-bold mb-2">
         <TranslatedText :identifier="stepper.current.value.title" />

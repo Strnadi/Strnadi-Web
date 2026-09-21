@@ -26,6 +26,8 @@ export const translations = {
       postal_code: 'PSČ',
       city: 'Město',
       note: 'Poznámka',
+      note_post: 'Poznámka po nahrání',
+      birds_count: 'Odhadovaný počet strnadů',
       password_confirm: 'Heslo znovu',
       user: 'Uživatel'
     },
@@ -104,7 +106,8 @@ export const translations = {
       },
 
       auth: {
-        not_logged_in: 'Nejste přihlášeni.'
+        not_logged_in: 'Nejste přihlášeni.',
+        forbidden: 'K této sekci nemáte oprávnění.'
       },
 
       location: 'Nepodařilo se načíst umístění.'
@@ -215,10 +218,8 @@ export const translations = {
         role_label: 'Role',
         joined_label: 'Registrován',
         recordings_section: 'Nahrávky',
-        roles: {
-          user: 'Uživatel',
-          admin: 'Administrátor'
-        }
+        achievements_section: 'Získané úspěchy',
+        invalid_id: 'Neplatný identifikátor uživatele.'
       },
       not_found: {
         description: 'Tato stránka bohužel nebyla nalezena.'
@@ -228,7 +229,6 @@ export const translations = {
     upload: {
       title: 'Nahrát',
       login_required: 'Je potřeba se nejdříve přihlásit.',
-      email_verification_required: 'Je potřeba si nejdříve ověřit svůj e-mail.',
       drop_files_here: 'Upusťte soubory sem pro nahrání',
       select_or_drag_files: 'Přetáhněte nebo klikněte sem pro vybrání',
       select_multiple_audio: 'jednoho nebo několika zvukových souborů',
@@ -301,7 +301,20 @@ export const translations = {
         confirmation: 'Potvrzení dialektů'
       },
       users: {
-        title: 'Seznam uživatelů'
+        title: 'Seznam uživatelů',
+        search_placeholder: 'Hledat podle jména, e-mailu nebo města',
+        count_label: 'Zobrazeno uživatelů:',
+        registered_label: 'Registrace',
+        deleted_badge: 'Smazaný',
+        legacy_badge: 'Původní účet',
+        members_title: 'Členové projektu',
+        roles_label: 'Role',
+        no_roles: 'Bez role',
+        remove_member: 'Odebrat z projektu',
+        open_administration: 'Otevřít správu uživatelů v Administraci',
+        notify: 'Poslat oznámení',
+        empty: 'Žádní uživatelé neodpovídají hledání.',
+        load_error: 'Seznam uživatelů se nepodařilo načíst.'
       },
       notifications: {
         title: 'Správa oznámení',
@@ -339,7 +352,7 @@ export const translations = {
           clearFilter: 'Vymazat filtr',
           headers: {
             name: 'Jméno',
-            nickname: 'Přezdívka',
+            registered: 'Registrace',
             email: 'E-mail',
             city: 'Město'
           },
@@ -423,7 +436,7 @@ export const translations = {
           draftLabel: 'Koncept',
           statusDirty: 'Neuložené změny',
           statusClean: 'Vše uloženo',
-          modeEdit: 'Režim úprav',
+          basedOn: 'Vychází z úspěchu č.',
           modeCreate: 'Nový úspěch',
           closeConfirm:
             'Opravdu chcete zavřít tento editor? Neuložené změny budou ztraceny.'
@@ -531,7 +544,6 @@ export const translations = {
           translationDescriptionPlaceholder: 'Popis',
           submit: 'Vytvořit úspěch',
           create: 'Vytvořit úspěch',
-          update: 'Uložit změny',
           discard: 'Zahodit změny',
           discardConfirm: 'Opravdu chcete zahodit neuložené změny?',
           missingSql: 'Nejprve vygenerujte SQL.',
@@ -540,7 +552,6 @@ export const translations = {
           missingToken:
             'Pro vytvoření úspěchu se přihlaste jako administrátor.',
           success: 'Úspěch byl úspěšně vytvořen.',
-          updated: 'Změny byly uloženy.',
           error: 'Úspěch se nepodařilo vytvořit. Zkuste to prosím znovu.'
         }
       },
@@ -556,6 +567,8 @@ export const translations = {
         posts_title: 'Příspěvky',
         included_articles: 'Zahrnuté příspěvky',
         category_name_label: 'Název kategorie',
+        category_rename_hint:
+          'Název ani popis kategorie nelze po vytvoření změnit; upravit lze jen zařazené články.',
         category_description_label: 'Popis kategorie',
         edit_category_title: 'Úprava kategorie',
         delete_category_title: 'Smazání kategorie',
@@ -575,6 +588,7 @@ export const translations = {
         total_parts_label: 'Celkový počet částí:',
         filters_label: 'Filtrování',
         filter_out_confirmed_dialects: 'Skrýt potvrzená nářečí',
+        show_deleted: 'Zobrazit smazané nahrávky',
         filter_out_unconfirmed: 'Skrýt nepotvrzené nahrávky',
         filtered_count: 'Zobrazeno nahrávek:',
         download_selected: 'Stáhnout vybrané',
@@ -615,7 +629,9 @@ export const translations = {
     recordings: {
       id_prefix: 'Nahrávka ID:',
       status: {
-        uploaded: 'Nahráno'
+        uploaded: 'Nahráno',
+        incomplete: 'Chybí části',
+        unconfirmed: 'Neověřeno'
       },
       detail: {
         map_heading: 'Mapa',
@@ -651,9 +667,11 @@ export const translations = {
         edit_dialects_title: 'Upravit dialekty nahrávky',
         edit_recording_title: 'Upravit nahrávku',
         delete_recording_title: 'Smazání nahrávky',
-        delete_part: 'Smazat část',
         delete_recording: 'Smazat nahrávku',
         request_delete: 'Požádat o smazání',
+        upload_confirmed_label: 'Nahrání ověřeno',
+        upload_confirmed_yes: 'Ano',
+        upload_confirmed_no: 'Ne',
         not_found: 'Nahrávka nebyla nalezena.'
       },
       messages: {
@@ -661,7 +679,8 @@ export const translations = {
         deleted: 'Nahrávka byla smazána.'
       },
       confirm: {
-        delete_prompt: 'Opravdu chcete smazat nahrávku'
+        delete_prompt: 'Opravdu chcete smazat nahrávku',
+        delete_permanently: 'Smazat nenávratně (jinak jen skrýt)'
       }
     },
 
@@ -708,6 +727,33 @@ export const translations = {
       my_recordings: {
         title: 'Moje nahrávky'
       },
+      consents: {
+        title: 'Souhlasy a dokumenty',
+        description:
+          'Zde najdete podmínky a zásady, které projekt vyžaduje, a svá udělená potvrzení.',
+        outstanding_title: 'Vyžaduje váš souhlas',
+        outstanding_banner:
+          'K dokončení přístupu je potřeba potvrdit povinné dokumenty.',
+        accepted_on: 'Potvrzeno',
+        revoked_on: 'Odvoláno',
+        version_label: 'Verze',
+        effective_from: 'Účinné od',
+        required_badge: 'Povinné',
+        optional_badge: 'Nepovinné',
+        accept: 'Souhlasím',
+        revoke: 'Odvolat souhlas',
+        read: 'Přečíst dokument',
+        empty: 'Projekt zatím nevyžaduje žádné dokumenty.',
+        load_error: 'Dokumenty se nepodařilo načíst.',
+        types: {
+          terms: 'Podmínky použití',
+          privacy: 'Zásady ochrany osobních údajů',
+          processing: 'Zpracování osobních údajů',
+          marketing: 'Marketingová sdělení',
+          cookies: 'Zásady cookies'
+        }
+      },
+
       users: {
         unknown_email: 'Neznámý e-mail',
         unknown_nickname: 'bez přezdívky',
@@ -813,6 +859,8 @@ export const translations = {
       postal_code: 'ZIP code',
       city: 'City',
       note: 'Note',
+      note_post: 'Post-upload note',
+      birds_count: 'Estimated yellowhammer count',
       password_confirm: 'Repeat password',
       user: 'User'
     },
@@ -891,7 +939,8 @@ export const translations = {
       },
 
       auth: {
-        not_logged_in: 'You are not logged in.'
+        not_logged_in: 'You are not logged in.',
+        forbidden: 'You do not have permission for this section.'
       },
 
       location: 'Failed to load location.'
@@ -1002,10 +1051,8 @@ export const translations = {
         role_label: 'Role',
         joined_label: 'Joined',
         recordings_section: 'Recordings',
-        roles: {
-          user: 'User',
-          admin: 'Admin'
-        }
+        achievements_section: 'Earned achievements',
+        invalid_id: 'Invalid user identifier.'
       },
       not_found: {
         description: 'This page could not be found.'
@@ -1015,7 +1062,6 @@ export const translations = {
     upload: {
       title: 'Upload',
       login_required: 'You need to log in first.',
-      email_verification_required: 'You need to verify your email first.',
       drop_files_here: 'Drop files here to upload',
       select_or_drag_files: 'Drag or click here to select',
       select_multiple_audio: 'one or more audio files',
@@ -1124,7 +1170,7 @@ export const translations = {
           clearFilter: 'Clear filter',
           headers: {
             name: 'Name',
-            nickname: 'Nickname',
+            registered: 'Registered',
             email: 'Email',
             city: 'City'
           },
@@ -1208,7 +1254,7 @@ export const translations = {
           draftLabel: 'Draft',
           statusDirty: 'Unsaved changes',
           statusClean: 'All changes saved',
-          modeEdit: 'Edit mode',
+          basedOn: 'Based on achievement #',
           modeCreate: 'New achievement',
           closeConfirm: 'Close this editor? Any unsaved changes will be lost.'
         },
@@ -1316,7 +1362,6 @@ export const translations = {
           translationDescriptionPlaceholder: 'Description',
           submit: 'Create achievement',
           create: 'Create achievement',
-          update: 'Save changes',
           discard: 'Discard changes',
           discardConfirm: 'Discard all unsaved changes?',
           missingSql: 'Generate SQL before creating an achievement.',
@@ -1324,12 +1369,24 @@ export const translations = {
           missingContent: 'Fill in title and description for all languages.',
           missingToken: 'Sign in as an administrator to create achievements.',
           success: 'Achievement created successfully.',
-          updated: 'Changes saved successfully.',
           error: 'Failed to create the achievement. Please try again.'
         }
       },
       users: {
-        title: 'User list'
+        title: 'User list',
+        search_placeholder: 'Search by name, e-mail, or city',
+        count_label: 'Users shown:',
+        registered_label: 'Registered',
+        deleted_badge: 'Deleted',
+        legacy_badge: 'Legacy account',
+        members_title: 'Project members',
+        roles_label: 'Roles',
+        no_roles: 'No role',
+        remove_member: 'Remove from project',
+        open_administration: 'Open user management in Administration',
+        notify: 'Send notification',
+        empty: 'No users match the search.',
+        load_error: 'The user list could not be loaded.'
       },
       articles: {
         manage_title: 'Information management',
@@ -1343,6 +1400,8 @@ export const translations = {
         posts_title: 'Articles',
         included_articles: 'Included articles',
         category_name_label: 'Category title',
+        category_rename_hint:
+          'A category\'s name and label cannot be changed after it is created; only its articles can.',
         category_description_label: 'Category description',
         edit_category_title: 'Edit category',
         delete_category_title: 'Delete category',
@@ -1362,6 +1421,7 @@ export const translations = {
         total_parts_label: 'Total number of parts:',
         filters_label: 'Filters',
         filter_out_confirmed_dialects: 'Hide confirmed dialects',
+        show_deleted: 'Show deleted recordings',
         filter_out_unconfirmed: 'Hide unconfirmed recordings',
         filtered_count: 'Recordings shown:',
         download_selected: 'Download selected',
@@ -1402,7 +1462,9 @@ export const translations = {
     recordings: {
       id_prefix: 'Recording ID:',
       status: {
-        uploaded: 'Uploaded'
+        uploaded: 'Uploaded',
+        incomplete: 'Parts missing',
+        unconfirmed: 'Unverified'
       },
       detail: {
         map_heading: 'Map',
@@ -1438,9 +1500,11 @@ export const translations = {
         edit_dialects_title: 'Edit recording dialects',
         edit_recording_title: 'Edit recording',
         delete_recording_title: 'Delete recording',
-        delete_part: 'Delete part',
         delete_recording: 'Delete recording',
         request_delete: 'Request deletion',
+        upload_confirmed_label: 'Upload verified',
+        upload_confirmed_yes: 'Yes',
+        upload_confirmed_no: 'No',
         not_found: 'Recording not found.'
       },
       messages: {
@@ -1448,7 +1512,8 @@ export const translations = {
         deleted: 'Recording was deleted.'
       },
       confirm: {
-        delete_prompt: 'Do you really want to delete the recording'
+        delete_prompt: 'Do you really want to delete the recording',
+        delete_permanently: 'Delete permanently (otherwise only hidden)'
       }
     },
 
@@ -1496,6 +1561,33 @@ export const translations = {
       my_recordings: {
         title: 'My recordings'
       },
+      consents: {
+        title: 'Consents and documents',
+        description:
+          'The terms and policies this project requires, and the consents you have given.',
+        outstanding_title: 'Needs your consent',
+        outstanding_banner:
+          'Please accept the required documents to restore full access.',
+        accepted_on: 'Accepted',
+        revoked_on: 'Revoked',
+        version_label: 'Version',
+        effective_from: 'Effective from',
+        required_badge: 'Required',
+        optional_badge: 'Optional',
+        accept: 'I agree',
+        revoke: 'Withdraw consent',
+        read: 'Read document',
+        empty: 'This project does not require any documents yet.',
+        load_error: 'The documents could not be loaded.',
+        types: {
+          terms: 'Terms of service',
+          privacy: 'Privacy policy',
+          processing: 'Data processing agreement',
+          marketing: 'Marketing consent',
+          cookies: 'Cookie policy'
+        }
+      },
+
       users: {
         unknown_email: 'Unknown e-mail',
         unknown_nickname: 'no nickname',
@@ -1601,6 +1693,8 @@ export const translations = {
       postal_code: 'PLZ',
       city: 'Ort',
       note: 'Notiz',
+      note_post: 'Notiz nach dem Upload',
+      birds_count: 'Geschätzte Anzahl Goldammern',
       password_confirm: 'Passwort wiederholen',
       user: 'Benutzer'
     },
@@ -1679,7 +1773,8 @@ export const translations = {
       },
 
       auth: {
-        not_logged_in: 'Sie sind nicht angemeldet.'
+        not_logged_in: 'Sie sind nicht angemeldet.',
+        forbidden: 'Sie haben keine Berechtigung für diesen Bereich.'
       },
 
       location: 'Fehler beim Laden des Standorts.'
@@ -1792,10 +1887,8 @@ export const translations = {
         role_label: 'Rolle',
         joined_label: 'Registriert',
         recordings_section: 'Aufnahmen',
-        roles: {
-          user: 'Benutzer',
-          admin: 'Administrator'
-        }
+        achievements_section: 'Erhaltene Erfolge',
+        invalid_id: 'Ungültige Benutzerkennung.'
       },
       not_found: {
         description: 'Diese Seite wurde leider nicht gefunden.'
@@ -1805,8 +1898,6 @@ export const translations = {
     upload: {
       title: 'Hochladen',
       login_required: 'Sie müssen sich zuerst anmelden.',
-      email_verification_required:
-        'Sie müssen Ihre E-Mail-Adresse zuerst verifizieren.',
       drop_files_here: 'Dateien hier ablegen zum Hochladen',
       select_or_drag_files:
         'Ziehen Sie hierher oder klicken Sie hier, um auszuwählen',
@@ -1917,7 +2008,7 @@ export const translations = {
           clearFilter: 'Filter löschen',
           headers: {
             name: 'Name',
-            nickname: 'Spitzname',
+            registered: 'Registriert',
             email: 'E-Mail',
             city: 'Ort'
           },
@@ -2004,7 +2095,7 @@ export const translations = {
           draftLabel: 'Entwurf',
           statusDirty: 'Ungespeicherte Änderungen',
           statusClean: 'Alle Änderungen gespeichert',
-          modeEdit: 'Bearbeitungsmodus',
+          basedOn: 'Basiert auf Erfolg Nr.',
           modeCreate: 'Neuer Erfolg',
           closeConfirm:
             'Diesen Editor wirklich schließen? Ungespeicherte Änderungen gehen verloren.'
@@ -2120,7 +2211,6 @@ export const translations = {
           translationDescriptionPlaceholder: 'Beschreibung',
           submit: 'Erfolg erstellen',
           create: 'Erfolg erstellen',
-          update: 'Änderungen speichern',
           discard: 'Änderungen verwerfen',
           discardConfirm: 'Ungespeicherte Änderungen wirklich verwerfen?',
           missingSql: 'Bitte zuerst SQL generieren.',
@@ -2129,12 +2219,24 @@ export const translations = {
           missingToken:
             'Melden Sie sich als Administrator an, um Erfolge zu erstellen.',
           success: 'Erfolg wurde erstellt.',
-          updated: 'Änderungen wurden gespeichert.',
           error: 'Erfolg konnte nicht erstellt werden. Bitte erneut versuchen.'
         }
       },
       users: {
-        title: 'Benutzerliste'
+        title: 'Benutzerliste',
+        search_placeholder: 'Nach Name, E-Mail oder Ort suchen',
+        count_label: 'Angezeigte Benutzer:',
+        registered_label: 'Registriert',
+        deleted_badge: 'Gelöscht',
+        legacy_badge: 'Altes Konto',
+        members_title: 'Projektmitglieder',
+        roles_label: 'Rollen',
+        no_roles: 'Keine Rolle',
+        remove_member: 'Aus dem Projekt entfernen',
+        open_administration: 'Benutzerverwaltung in der Administration öffnen',
+        notify: 'Benachrichtigung senden',
+        empty: 'Keine Benutzer entsprechen der Suche.',
+        load_error: 'Die Benutzerliste konnte nicht geladen werden.'
       },
       articles: {
         manage_title: 'Informationsverwaltung',
@@ -2148,6 +2250,8 @@ export const translations = {
         posts_title: 'Beiträge',
         included_articles: 'Enthaltene Beiträge',
         category_name_label: 'Kategoriename',
+        category_rename_hint:
+          'Name und Beschriftung einer Kategorie lassen sich nach dem Anlegen nicht mehr ändern; nur ihre Artikel.',
         category_description_label: 'Kategoriebeschreibung',
         edit_category_title: 'Kategorie bearbeiten',
         delete_category_title: 'Kategorie löschen',
@@ -2167,6 +2271,7 @@ export const translations = {
         total_parts_label: 'Gesamtzahl der Teile:',
         filters_label: 'Filter',
         filter_out_confirmed_dialects: 'Bestätigte Dialekte ausblenden',
+        show_deleted: 'Gelöschte Aufnahmen anzeigen',
         filter_out_unconfirmed: 'Noch nicht bestätigte Aufnahmen ausblenden',
         filtered_count: 'Angezeigte Aufnahmen:',
         download_selected: 'Auswahl herunterladen',
@@ -2207,7 +2312,9 @@ export const translations = {
     recordings: {
       id_prefix: 'Aufnahme-ID:',
       status: {
-        uploaded: 'Hochgeladen'
+        uploaded: 'Hochgeladen',
+        incomplete: 'Teile fehlen',
+        unconfirmed: 'Nicht bestätigt'
       },
       detail: {
         map_heading: 'Karte',
@@ -2243,9 +2350,11 @@ export const translations = {
         edit_dialects_title: 'Dialekte der Aufnahme bearbeiten',
         edit_recording_title: 'Aufnahme bearbeiten',
         delete_recording_title: 'Aufnahme löschen',
-        delete_part: 'Teil löschen',
         delete_recording: 'Aufnahme löschen',
         request_delete: 'Löschung anfordern',
+        upload_confirmed_label: 'Upload bestätigt',
+        upload_confirmed_yes: 'Ja',
+        upload_confirmed_no: 'Nein',
         not_found: 'Aufnahme nicht gefunden.'
       },
       messages: {
@@ -2253,7 +2362,8 @@ export const translations = {
         deleted: 'Die Aufnahme wurde gelöscht.'
       },
       confirm: {
-        delete_prompt: 'Möchten Sie die Aufnahme wirklich löschen'
+        delete_prompt: 'Möchten Sie die Aufnahme wirklich löschen',
+        delete_permanently: 'Endgültig löschen (sonst nur ausgeblendet)'
       }
     },
 
@@ -2302,6 +2412,33 @@ export const translations = {
       my_recordings: {
         title: 'Meine Aufnahmen'
       },
+      consents: {
+        title: 'Einwilligungen und Dokumente',
+        description:
+          'Die vom Projekt geforderten Bedingungen und Richtlinien sowie Ihre erteilten Einwilligungen.',
+        outstanding_title: 'Benötigt Ihre Zustimmung',
+        outstanding_banner:
+          'Bitte bestätigen Sie die erforderlichen Dokumente, um den vollen Zugriff wiederherzustellen.',
+        accepted_on: 'Bestätigt',
+        revoked_on: 'Widerrufen',
+        version_label: 'Version',
+        effective_from: 'Gültig ab',
+        required_badge: 'Erforderlich',
+        optional_badge: 'Optional',
+        accept: 'Ich stimme zu',
+        revoke: 'Einwilligung widerrufen',
+        read: 'Dokument lesen',
+        empty: 'Dieses Projekt verlangt noch keine Dokumente.',
+        load_error: 'Die Dokumente konnten nicht geladen werden.',
+        types: {
+          terms: 'Nutzungsbedingungen',
+          privacy: 'Datenschutzerklärung',
+          processing: 'Auftragsverarbeitung',
+          marketing: 'Marketing-Einwilligung',
+          cookies: 'Cookie-Richtlinie'
+        }
+      },
+
       users: {
         unknown_email: 'Unbekannte E-Mail',
         unknown_nickname: 'kein Spitzname',

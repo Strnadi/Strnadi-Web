@@ -66,10 +66,22 @@ const editorContentProxy = computed({
   }
 });
 
+// With the articles included, the listing is also the source of truth for
+// which categories an article belongs to - the article payload itself carries
+// no category information.
 const { data: availableCategories } = useQuery({
-  queryKey: ['article-categories'],
-  queryFn: () => getArticleCategories()
+  queryKey: ['article-categories', 'with-articles'],
+  queryFn: () => getArticleCategories(true)
 });
+
+const categoriesOfArticle = (articleId: number | undefined): string[] =>
+  articleId === undefined
+    ? []
+    : (availableCategories.value ?? [])
+        .filter((category) =>
+          category.articles?.some((article) => article.id === articleId)
+        )
+        .map((category) => category.name);
 
 const { data: articleQuery } = useQuery({
   queryKey: ['articles', 'detail', numericArticleId],
@@ -90,28 +102,23 @@ const clearEditorMaps = () => {
   }
 };
 
-const fetchArticleFiles = async (data: Article) => {
-  const languageFiles =
-    data.files?.filter((f) =>
-      supportedLanguages.includes(f.fileName?.split('.')[0] ?? '')
-    ) ?? [];
+// GET /articles/{id} returns the article without its attachments, so the
+// per-language bodies are probed by name; a missing one simply 404s.
+const fetchArticleFiles = async (_data: Article) => {
+  if (typeof numericArticleId.value !== 'number') return;
+  const articleId = numericArticleId.value;
 
-  const promises = languageFiles.map(async (file) => {
-    if (!file.fileName || typeof numericArticleId.value !== 'number') return;
-    try {
-      const content = await getArticleFile(
-        numericArticleId.value,
-        file.fileName
-      );
-      const lang = file.fileName.split('.')[0] ?? '';
-      editorContents[lang] = content;
-      originalContents[lang] = content;
-    } catch (error) {
-      console.warn(`Failed to fetch ${file.fileName}:`, error);
-    }
-  });
-
-  await Promise.all(promises);
+  await Promise.all(
+    supportedLanguages.map(async (lang) => {
+      try {
+        const content = await getArticleFile(articleId, `${lang}.md`);
+        editorContents[lang] = content;
+        originalContents[lang] = content;
+      } catch {
+        // No body in this language yet.
+      }
+    })
+  );
 };
 
 watch(
@@ -119,8 +126,8 @@ watch(
   async (data?: Article) => {
     if (!data) return;
     name.value = data.name;
-    description.value = data.description;
-    categories.value = (data as any).categories?.map((c: any) => c.name) ?? [];
+    description.value = data.description ?? '';
+    categories.value = categoriesOfArticle(data.id);
     deleteFiles.value = [];
     files.value = [];
     clearEditorMaps();
@@ -200,12 +207,11 @@ const uploadAttachments = async (articleId: number) => {
 };
 
 const submitCreate = async () => {
-  const id = await postArticle(accountStore.token!, {
+  const numericId = await postArticle(accountStore.token!, {
     name: name.value,
     description: description.value
   });
 
-  const numericId = Number(id);
   await uploadLanguageFiles(numericId);
   await uploadAttachments(numericId);
 
@@ -219,13 +225,10 @@ const submitCreate = async () => {
 
 const submitEdit = async (articleId: number) => {
   if (article.value) {
-    const origCats = ((article.value as any)?.categories ?? []).map(
-      (c: any) => c.name
-    );
+    const origCats = categoriesOfArticle(article.value.id);
     if (
       name.value !== article.value.name ||
-      description.value !== article.value.description ||
-      JSON.stringify(categories.value) !== JSON.stringify(origCats)
+      description.value !== (article.value.description ?? '')
     ) {
       await patchArticle(accountStore.token!, articleId, {
         name: name.value,
@@ -441,7 +444,7 @@ const primaryTitleIdentifier = computed(() =>
     >
       <li
         v-if="isEditMode"
-        v-for="file in article?.files?.filter((f) => {
+        v-for="file in article?.articleAttachments?.filter((f) => {
           if (!f.fileName) return false;
           const isLangFile = Object.keys(translations).includes(
             f.fileName?.split('.')[0] ?? ''

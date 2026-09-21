@@ -9,9 +9,10 @@ import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { onClickOutside, useEventListener } from '@vueuse/core';
 import { useQuery } from '@tanstack/vue-query';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
-import { authorizedPost } from '@/api/utils';
 import { accountStore } from '@/state/AccountStore';
-import { getUsers, type User } from '@/api/account';
+import { getUsers, type UserDirectoryEntry } from '@/api/account';
+import { sendNotification } from '@/api/notifications';
+import { Permissions } from '@/api/permissions';
 import { fuzzyMatch } from '@/utils/fuzzy-match';
 import type { TranslationIdentifier } from '@/constants/Translations';
 import { useRoute } from 'vue-router';
@@ -42,11 +43,11 @@ const tabOptions = [
 
 const tableColumns = [
   { key: 'name', labelKey: 'admin.notifications.table.headers.name' },
-  { key: 'nickname', labelKey: 'admin.notifications.table.headers.nickname' },
+  { key: 'registered', labelKey: 'admin.notifications.table.headers.registered' },
   { key: 'email', labelKey: 'admin.notifications.table.headers.email' },
   { key: 'city', labelKey: 'admin.notifications.table.headers.city' }
 ] as const satisfies Array<{
-  key: 'name' | 'nickname' | 'email' | 'city';
+  key: 'name' | 'registered' | 'email' | 'city';
   labelKey: TranslationIdentifier;
 }>;
 
@@ -121,8 +122,8 @@ const {
   error: usersError
 } = useQuery({
   queryKey: ['admin-users'],
-  queryFn: () => getUsers(accountStore.token!),
-  enabled: computed(() => Boolean(accountStore.token))
+  queryFn: () => getUsers(accountStore.identityToken!),
+  enabled: computed(() => Boolean(accountStore.identityToken))
 });
 
 const usersErrorMessage = computed(() =>
@@ -131,7 +132,11 @@ const usersErrorMessage = computed(() =>
     : t('admin.notifications.errors.loadUsers')
 );
 
-const availableUsers = computed<User[]>(() => users.value ?? []);
+// Deleted accounts still come back from the directory, but pushing to them
+// would go nowhere.
+const availableUsers = computed<UserDirectoryEntry[]>(() =>
+  (users.value ?? []).filter((user) => !user.deleted)
+);
 const recipientsCount = computed(() => selectedUserIds.value.size);
 const currentTabMeta = computed(() =>
   tabOptions.find((tab) => tab.id === activeTab.value)
@@ -155,15 +160,17 @@ watch(
 const normalizeField = (value?: string | null) =>
   value ? value.toString().trim() : '';
 
-const getColumnValue = (user: User, column: ColumnKey) => {
+const getColumnValue = (user: UserDirectoryEntry, column: ColumnKey) => {
   switch (column) {
     case 'name': {
       const first = normalizeField(user.firstName);
       const last = normalizeField(user.lastName);
       return `${first} ${last}`.replace(/\s+/g, ' ').trim();
     }
-    case 'nickname':
-      return normalizeField(user.nickname);
+    case 'registered':
+      return user.createdAt
+        ? new Date(user.createdAt).toLocaleDateString('cs')
+        : '';
     case 'email':
       return normalizeField(user.email);
     case 'city':
@@ -421,12 +428,11 @@ const columnMenuContext = computed(() => {
   return { column, key, position };
 });
 
-const getUserSearchHaystack = (user: User) =>
+const getUserSearchHaystack = (user: UserDirectoryEntry) =>
   [
     user.id.toString(),
     normalizeField(user.firstName),
     normalizeField(user.lastName),
-    normalizeField(user.nickname),
     normalizeField(user.email),
     normalizeField(user.city)
   ]
@@ -438,8 +444,8 @@ const fuzzySearch = (query: string, haystack: string): [boolean, number] => {
   return q ? fuzzyMatch(q, haystack.toLowerCase()) : [true, 0];
 };
 
-const userSearchIndex = computed<Map<number, string>>(() => {
-  const map = new Map<number, string>();
+const userSearchIndex = computed<Map<string, string>>(() => {
+  const map = new Map<string, string>();
   for (const user of availableUsers.value) {
     map.set(user.id, getUserSearchHaystack(user));
   }
@@ -453,7 +459,7 @@ type MatchUsersOptions = {
 };
 
 const matchUsersByQuery = (
-  usersToFilter: User[],
+  usersToFilter: UserDirectoryEntry[],
   rawQuery: string,
   { minLength = 0, fallbackAll = true, sort = true }: MatchUsersOptions = {}
 ) => {
@@ -465,7 +471,7 @@ const matchUsersByQuery = (
     return [];
   }
 
-  const matches: Array<{ user: User; score: number }> = [];
+  const matches: Array<{ user: UserDirectoryEntry; score: number }> = [];
   for (const user of usersToFilter) {
     const haystack = userSearchIndex.value.get(user.id) ?? '';
     const [matched, score] = fuzzySearch(query, haystack);
@@ -481,7 +487,7 @@ const matchUsersByQuery = (
             getColumnValue(b.user, 'name'),
             'cs',
             { sensitivity: 'base' }
-          ) || a.user.id - b.user.id
+          ) || a.user.id.localeCompare(b.user.id)
         : b.score - a.score
     );
   }
@@ -489,7 +495,7 @@ const matchUsersByQuery = (
   return matches.map((match) => match.user);
 };
 
-const applyColumnFilters = (usersToFilter: User[]) =>
+const applyColumnFilters = (usersToFilter: UserDirectoryEntry[]) =>
   usersToFilter.filter((user) =>
     tableColumns.every(({ key }) => {
       const filterState = columnFilters[key];
@@ -498,7 +504,7 @@ const applyColumnFilters = (usersToFilter: User[]) =>
     })
   );
 
-const applyColumnSorts = (usersToSort: User[]) => {
+const applyColumnSorts = (usersToSort: UserDirectoryEntry[]) => {
   if (!columnSorts.value.length) return usersToSort;
 
   return [...usersToSort].sort((a, b) => {
@@ -622,8 +628,13 @@ const hasIncompleteLanguage = computed(() =>
   )
 );
 
+const canSendNotifications = computed(() =>
+  accountStore.hasPermission(Permissions.SendNotifications)
+);
+
 const canSend = computed(
   () =>
+    canSendNotifications.value &&
     recipientsCount.value > 0 &&
     hasAnyTitle.value &&
     hasAnyBody.value &&
@@ -641,14 +652,14 @@ const sendNotification = async () => {
   try {
     await Promise.all(
       Array.from(selectedUserIds.value).map((userId) =>
-        authorizedPost(`/utils/send-notification`, accountStore.token!, {
+        sendNotification(accountStore.token!, {
           userId,
-          titleCs: titles.cs || undefined,
-          titleEn: titles.en || undefined,
-          titleDe: titles.de || undefined,
-          bodyCs: messages.cs || undefined,
-          bodyEn: messages.en || undefined,
-          bodyDe: messages.de || undefined
+          titleCs: titles.cs || null,
+          titleEn: titles.en || null,
+          titleDe: titles.de || null,
+          bodyCs: messages.cs || null,
+          bodyEn: messages.en || null,
+          bodyDe: messages.de || null
         })
       )
     );
@@ -868,11 +879,7 @@ const messageLabels: Record<Language, TranslationIdentifier> = {
                             {{ user.email || t('account.users.unknown_email') }}
                           </p>
                           <p class="text-xs text-gray-500">
-                            {{
-                              user.nickname
-                                ? `@${user.nickname}`
-                                : t('account.users.unknown_nickname')
-                            }}
+                            {{ getColumnValue(user, 'registered') }}
                             · {{ user.city || t('account.users.unknown_city') }}
                           </p>
                         </div>
@@ -1047,9 +1054,7 @@ const messageLabels: Record<Language, TranslationIdentifier> = {
                         </p>
                       </td>
                       <td class="px-4 py-3 text-gray-700">
-                        {{
-                          user.nickname || t('account.users.unknown_nickname')
-                        }}
+                        {{ getColumnValue(user, 'registered') || '—' }}
                       </td>
                       <td class="px-4 py-3 text-gray-700">
                         {{ user.email || t('account.users.unknown_email') }}

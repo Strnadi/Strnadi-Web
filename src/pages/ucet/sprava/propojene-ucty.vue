@@ -11,7 +11,7 @@ import { accountStore } from '@/state/AccountStore';
 
 const { data, isLoading, error } = useQuery({
   queryKey: ['external-logins', accountStore.user?.id],
-  queryFn: () => getExternalLogins(accountStore.token!)
+  queryFn: () => getExternalLogins(accountStore.identityToken!)
 });
 
 const linked = computed(
