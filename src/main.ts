@@ -452,8 +452,13 @@ customElements.define(
 
 if (!isAuthorizationCallbackWindow) {
   await accountInitialization;
-  app.mount('#app');
 
-  // A popup-less browser sends the visitor back here rather than to an opener.
-  if (hasAuthorizationCallbackParams()) void completeAuthorizationInPlace();
+  // Safari signs in by redirecting this tab, so the code comes back here
+  // rather than to an opener. Finishing before the mount means the app boots
+  // on the page the visitor was after, not on the callback URL.
+  if (hasAuthorizationCallbackParams()) {
+    await completeAuthorizationInPlace({ beforeMount: true });
+  }
+
+  app.mount('#app');
 }

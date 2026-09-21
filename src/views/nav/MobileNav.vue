@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { accountStore } from '@/state/AccountStore';
 import {
   authorizationState,
+  prepareAuthorization,
   startAuthorization
 } from '@/services/authorizationPopup';
 
@@ -107,6 +108,8 @@ const isAccountRoute = computed(() =>
       type="button"
       class="mobile-nav__link"
       :aria-busy="authorizationState.pending"
+      @pointerdown="prepareAuthorization"
+      @focus="prepareAuthorization"
       @click="startAuthorization"
     >
       <AccountIcon class="mobile-nav__icon" />

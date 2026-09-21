@@ -16,6 +16,7 @@ import { applicationStore } from '@/state/ApplicationStore';
 import { projectStore, selectProject } from '@/state/ProjectStore';
 import {
   authorizationState,
+  prepareAuthorization,
   startAuthorization
 } from '@/services/authorizationPopup';
 import TranslatedText from '@/components/TranslatedText.vue';
@@ -191,7 +192,8 @@ const changeLanguage = (lang: keyof typeof translations) => {
             <li>
               <AccountDropdown v-if="accountStore.user" />
               <button v-else type="button" class="button-secondary py-2 px-4"
-                :aria-busy="authorizationState.pending" @click="startAuthorization">
+                :aria-busy="authorizationState.pending" @pointerdown="prepareAuthorization"
+                @focus="prepareAuthorization" @click="startAuthorization">
                 <TranslatedText :identifier="authorizationState.pending ? 'buttons.logging_in' : 'buttons.login'" />
               </button>
             </li>
