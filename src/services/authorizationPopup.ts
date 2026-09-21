@@ -6,10 +6,9 @@ import { consumeAuthorizationTransaction } from '@/utils/oauth';
 
 const CALLBACK_MESSAGE = 'strnadi:authorization-callback';
 
-// Marks the tab that started a redirect sign-in, so the code coming back is
-// recognised as ours and not mistaken for a popup result. Lives in this tab's
-// sessionStorage only, and survives the trip to the identity server.
-const REDIRECT_FLAG = 'strnadi.authorization.redirect';
+// Marks the tab that started a redirect sign-in. sessionStorage is scoped to
+// the tab and survives the round trip through the identity server.
+const REDIRECT_STATE_KEY = 'strnadi.authorization.redirect-state';
 
 // The identity server only redirects back to URIs it has registered, so the
 // popup still returns to this path even though no page lives there any more.
@@ -20,22 +19,12 @@ const CALLBACK_PATH = '/ucet/prihlaseni';
 // small enough that the page behind it stays visible.
 const POPUP_WIDTH = 500;
 const POPUP_HEIGHT = 800;
+const SAFARI_POPUP_SETTLE_MS = 60;
 
 // Long enough to cover a visitor who signs in right after a guard turns them
 // away, short enough that a much later sign-in does not teleport them.
 const PENDING_TARGET_TTL_MS = 5 * 60 * 1000;
-
-// Some browsers lay the new window out after `window.open` has already
-// returned, so the first `resizeTo` is overwritten and only a later one
-// sticks. Rather than guess how much later, retry until the window reports
-// the size we asked for; one that honours the feature string gets it right on
-// the first attempt and waits for nothing.
-const GEOMETRY_RETRY_MS = 40;
-const GEOMETRY_TIMEOUT_MS = 600;
-
-// How long a prepared authorization URL may sit unused. The PKCE transaction
-// behind it lives for ten minutes, so this stays well inside that.
-const PREPARED_TTL_MS = 5 * 60 * 1000;
+const REDIRECT_STATE_TTL_MS = 10 * 60 * 1000;
 
 export const authorizationState = reactive({
   pending: false,
@@ -48,9 +37,6 @@ let listening = false;
 let router: Router | null = null;
 let pendingReturnTo: string | null = null;
 let pendingReturnToAt = 0;
-let prepared: { url: string; returnTo: string; createdAt: number } | null =
-  null;
-let preparing = false;
 
 /** Lets the sign-in return the visitor to a page without importing the app. */
 export const setAuthorizationRouter = (instance: Router) => {
@@ -63,67 +49,14 @@ export const rememberAuthorizationTarget = (fullPath: string) => {
   pendingReturnToAt = Date.now();
 };
 
-const peekAuthorizationTarget = (): string | null =>
-  pendingReturnTo && Date.now() - pendingReturnToAt < PENDING_TARGET_TTL_MS
-    ? pendingReturnTo
-    : null;
-
 const takeAuthorizationTarget = (): string | null => {
-  const target = peekAuthorizationTarget();
+  const target = pendingReturnTo;
+  const rememberedAt = pendingReturnToAt;
   pendingReturnTo = null;
-  return target;
-};
 
-const intendedReturnTo = (): string =>
-  peekAuthorizationTarget() ?? router?.currentRoute.value.fullPath ?? '/';
-
-/**
- * Builds the authorization URL before it is needed, so that the click handler
- * can hand it to `window.open` synchronously. Safari only applies the size
- * features to a window it opens on a real URL, and re-lays the window out when
- * it navigates across origins, so opening on about:blank and navigating
- * afterwards costs us the size no matter what we do in between.
- *
- * Called on pointerdown and focus: both come far enough ahead of the click for
- * the PKCE digest, which is the only asynchronous part.
- */
-export const prepareAuthorization = (): void => {
-  if (preparing) return;
-
-  const returnTo = intendedReturnTo();
-  if (
-    prepared &&
-    prepared.returnTo === returnTo &&
-    Date.now() - prepared.createdAt < PREPARED_TTL_MS
-  ) {
-    return;
-  }
-
-  preparing = true;
-  void createAuthorizationUrl(returnTo, CALLBACK_PATH)
-    .then((url) => {
-      prepared = { url, returnTo, createdAt: Date.now() };
-    })
-    .catch(() => {
-      // Leave the click to report it: it has somewhere to show the message.
-      prepared = null;
-    })
-    .finally(() => {
-      preparing = false;
-    });
-};
-
-const takePreparedUrl = (returnTo: string): string | null => {
-  const ready =
-    prepared &&
-    prepared.returnTo === returnTo &&
-    Date.now() - prepared.createdAt < PREPARED_TTL_MS
-      ? prepared.url
-      : null;
-
-  // The transaction behind it is one-use, so it cannot be handed out twice.
-  if (ready) prepared = null;
-  return ready;
+  return target && Date.now() - rememberedAt < PENDING_TARGET_TTL_MS
+    ? target
+    : null;
 };
 
 export const dismissAuthorizationError = () => {
@@ -198,69 +131,39 @@ const popupGeometry = (): PopupGeometry => {
   };
 };
 
-/**
- * Safari ignores the size features for scripted windows — on about:blank and
- * on a real URL alike — and re-lays the window out when it navigates across
- * origins, so its popup comes up filling the screen with no way to shrink it
- * from here. Every browser on iOS is Safari underneath and turns the popup
- * into a tab anyway. Those sign in by redirecting the page instead: no window
- * to size, and the code is picked up on the way back in.
- */
-const prefersRedirect = (): boolean => {
-  const ua = navigator.userAgent;
-  const isIOS =
-    /iPad|iPhone|iPod/.test(ua) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isSafari =
-    /Safari\//.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|Edg|Android/.test(ua);
+const isIOS = (): boolean =>
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  return isIOS || isSafari;
+const isDesktopSafari = (): boolean => {
+  const ua = navigator.userAgent;
+  return (
+    !isIOS() &&
+    /Safari\//.test(ua) &&
+    !/Chrome|Chromium|CriOS|FxiOS|Edg|Android/.test(ua)
+  );
 };
 
+// iOS turns auxiliary windows into tabs, so there is no useful popup geometry
+// to preserve. Redirect the current tab there and finish the callback in place.
+const prefersRedirect = (): boolean => isIOS();
+
 const redirectTo = (authorizationUrl: string) => {
-  sessionStorage.setItem(REDIRECT_FLAG, '1');
+  const state = new URL(authorizationUrl).searchParams.get('state');
+  if (!state) throw new Error('Přihlašovací adresa neobsahuje parametr state.');
+
+  sessionStorage.setItem(
+    REDIRECT_STATE_KEY,
+    JSON.stringify({ state, createdAt: Date.now() })
+  );
   window.location.assign(authorizationUrl);
 };
 
-// A name Safari has never seen, so it cannot restore the geometry of some
-// earlier login window instead of using ours.
 const popupName = (): string =>
   `strnadi-login-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
-/**
- * Resizes the popup until it takes, and resolves once it has. Only works while
- * the window is still on about:blank: `resizeTo` on a window that has reached
- * the identity server is cross-origin and throws, so this has to finish before
- * we navigate it.
- */
-const enforceGeometry = (
-  target: Window,
-  geometry: PopupGeometry
-): Promise<void> =>
-  new Promise((resolve) => {
-    const deadline = Date.now() + GEOMETRY_TIMEOUT_MS;
-
-    const attempt = () => {
-      try {
-        if (target.closed) return resolve();
-
-        target.resizeTo(geometry.width, geometry.height);
-        target.moveTo(geometry.left, geometry.top);
-
-        const settled =
-          Math.abs(target.outerWidth - geometry.width) <= 2 &&
-          Math.abs(target.outerHeight - geometry.height) <= 2;
-        if (settled || Date.now() >= deadline) return resolve();
-      } catch {
-        // Opened as a tab, or the browser forbids sizing it. Leave it alone.
-        return resolve();
-      }
-
-      window.setTimeout(attempt, GEOMETRY_RETRY_MS);
-    };
-
-    attempt();
-  });
+const wait = (milliseconds: number): Promise<void> =>
+  new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
 const popupFeatures = ({ width, height, left, top }: PopupGeometry): string =>
   [
@@ -347,18 +250,11 @@ export const startAuthorization = (): void => {
 
   authorizationState.error = '';
 
-  const returnTo = intendedReturnTo();
-  const authorizationUrl = takePreparedUrl(returnTo);
+  const returnTo =
+    takeAuthorizationTarget() ?? router?.currentRoute.value.fullPath ?? '/';
 
   if (prefersRedirect()) {
-    takeAuthorizationTarget();
     authorizationState.pending = true;
-
-    if (authorizationUrl) {
-      redirectTo(authorizationUrl);
-      return;
-    }
-
     void createAuthorizationUrl(returnTo, CALLBACK_PATH)
       .then(redirectTo)
       .catch((startError: unknown) => {
@@ -370,40 +266,42 @@ export const startAuthorization = (): void => {
 
   listen();
   const geometry = popupGeometry();
-
-  // Opening straight on the authorization URL saves the window a trip through
-  // about:blank and lets the browser apply the size features to a real page
-  // load. Without a prepared URL we fall back to opening blank and navigating.
-  popup = window.open(
-    authorizationUrl ?? 'about:blank',
-    popupName(),
-    popupFeatures(geometry)
-  );
+  const needsSafariDelay = isDesktopSafari();
+  popup = window.open('about:blank', popupName(), popupFeatures(geometry));
   if (!popup) {
     authorizationState.error =
       'Prohlížeč zablokoval přihlašovací okno. Povolte vyskakovací okna a zkuste to znovu.';
     return;
   }
 
-  takeAuthorizationTarget();
+  if (!needsSafariDelay) {
+    try {
+      popup.resizeTo(geometry.width, geometry.height);
+      popup.moveTo(geometry.left, geometry.top);
+    } catch {
+      // Opened as a tab, or the browser forbids moving it. Leave it alone.
+    }
+  }
+
   authorizationState.pending = true;
   watchPopup();
-  popup.focus();
 
-  // Nothing left to do: the window opened on the identity server itself. The
-  // next pointerdown on the button prepares the next URL.
-  if (authorizationUrl) return;
-
+  // Desktop Safari overwrites geometry applied immediately after window.open.
+  // Once its initial layout has settled, resizing and navigating in the same
+  // callback preserves the requested size across the cross-origin navigation.
   void Promise.all([
     createAuthorizationUrl(returnTo, CALLBACK_PATH),
-    // Sizing only works while the window is still on about:blank, and Safari
-    // undoes it on the navigation below. Other browsers keep it.
-    enforceGeometry(popup, geometry)
+    needsSafariDelay ? wait(SAFARI_POPUP_SETTLE_MS) : Promise.resolve()
   ])
-    .then(([freshUrl]) => {
-      if (!popup) return;
-      popup.location.replace(freshUrl);
-      popup.focus();
+    .then(([authorizationUrl]) => {
+      if (!popup || popup.closed) return;
+      try {
+        popup.resizeTo(geometry.width, geometry.height);
+        popup.moveTo(geometry.left, geometry.top);
+      } catch {
+        // Navigation still works when a browser refuses window positioning.
+      }
+      popup.location.replace(authorizationUrl);
     })
     .catch((startError: unknown) => {
       closePopup();
@@ -412,8 +310,30 @@ export const startAuthorization = (): void => {
 };
 
 export const hasAuthorizationCallbackParams = (): boolean => {
+  if (window.location.pathname !== CALLBACK_PATH) return false;
   const params = new URLSearchParams(window.location.search);
   return params.has('code') || params.has('error') || params.has('state');
+};
+
+const isRedirectCallback = (params: URLSearchParams): boolean => {
+  const stored = sessionStorage.getItem(REDIRECT_STATE_KEY);
+  sessionStorage.removeItem(REDIRECT_STATE_KEY);
+  if (!stored) return false;
+
+  try {
+    const marker = JSON.parse(stored) as {
+      state?: unknown;
+      createdAt?: unknown;
+    };
+    return (
+      typeof marker.state === 'string' &&
+      marker.state === params.get('state') &&
+      typeof marker.createdAt === 'number' &&
+      Date.now() - marker.createdAt <= REDIRECT_STATE_TTL_MS
+    );
+  } catch {
+    return false;
+  }
 };
 
 /**
@@ -424,13 +344,12 @@ export const hasAuthorizationCallbackParams = (): boolean => {
 export const deliverAuthorizationCallback = (): boolean => {
   if (!hasAuthorizationCallbackParams()) return false;
 
+  const params = new URLSearchParams(window.location.search);
+
   // This tab sent itself to the identity server, so the result belongs here
   // however it was opened. Without this a tab that happens to have an opener
   // would hand its code to an unrelated window and close itself.
-  if (sessionStorage.getItem(REDIRECT_FLAG)) {
-    sessionStorage.removeItem(REDIRECT_FLAG);
-    return false;
-  }
+  if (isRedirectCallback(params)) return false;
 
   if (!window.opener || window.opener === window) return false;
 
@@ -442,30 +361,13 @@ export const deliverAuthorizationCallback = (): boolean => {
   return true;
 };
 
-/**
- * Finishes a sign-in that came back in this window instead of a popup. Before
- * the app is mounted the router cannot navigate yet, so the address bar is
- * rewritten instead and the app boots straight onto the right page — no
- * flash of the callback URL, which is not a page any more.
- */
-export const completeAuthorizationInPlace = async ({
-  beforeMount = false
-} = {}): Promise<void> => {
-  const land = async (target: string) => {
-    if (beforeMount) {
-      window.history.replaceState(null, '', target);
-      return;
-    }
-    if (router && router.currentRoute.value.fullPath !== target) {
-      await router.replace(target);
-    }
-  };
-
+/** Finishes a sign-in that came back in this window instead of a popup. */
+export const completeAuthorizationInPlace = async (): Promise<void> => {
   try {
-    await land(await exchange(new URLSearchParams(window.location.search)));
+    await settle(new URLSearchParams(window.location.search));
   } catch (callbackError) {
     fail(callbackError);
-    await land('/');
+    await router?.replace('/');
   } finally {
     authorizationState.pending = false;
   }

@@ -431,7 +431,6 @@ config({
   }
 });
 
-app.use(router);
 app.use(firebasePlugin);
 app.use(VueQueryPlugin);
 // app.use(Vue3RouterPrefetch as any, { type: 'hover', name: 'RouterLink' });
@@ -453,12 +452,13 @@ customElements.define(
 if (!isAuthorizationCallbackWindow) {
   await accountInitialization;
 
-  // Safari signs in by redirecting this tab, so the code comes back here
-  // rather than to an opener. Finishing before the mount means the app boots
-  // on the page the visitor was after, not on the callback URL.
+  // iOS signs in by redirecting this tab. Resolve that callback before the
+  // router is installed so its initial navigation never sees the route-less
+  // callback URL.
   if (hasAuthorizationCallbackParams()) {
-    await completeAuthorizationInPlace({ beforeMount: true });
+    await completeAuthorizationInPlace();
   }
 
+  app.use(router);
   app.mount('#app');
 }
