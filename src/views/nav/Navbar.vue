@@ -186,7 +186,7 @@ const changeLanguage = (lang: keyof typeof translations) => {
 
             <li>
               <AccountDropdown v-if="accountStore.user" />
-              <RouterLink v-else to="/ucet/vitejte" class="button-secondary py-2 px-4">
+              <RouterLink v-else to="/ucet/prihlaseni" class="button-secondary py-2 px-4">
                 <TranslatedText identifier="buttons.login" />
               </RouterLink>
             </li>

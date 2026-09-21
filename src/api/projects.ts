@@ -4,7 +4,7 @@ export interface Project {
   id: string;
   name: string;
   description: string | null;
-  domain: string | null;
+  domain: string;
   apiUrl: string;
   logoUrl: string | null;
 }
@@ -30,19 +30,9 @@ const parseProject = (value: unknown): Project | null => {
   const item = value as Record<string, unknown>;
   const id = item['id'] ?? item['projectId'];
   const name = item['name'] ?? item['projectName'];
-  // /projects uses apiDomain; the default project's apiDomain may be null.
-  const apiUrl =
-    projectUrl(
-      item['apiDomain'] ??
-        item['apiUrl'] ??
-        item['apiBaseUrl'] ??
-        item['tenantApiUrl'] ??
-        item['tenantApiBaseUrl']
-    ) ??
-    (id === import.meta.env.VITE_PROJECT_ID
-      ? projectUrl(import.meta.env.VITE_API_URL)
-      : null);
-  if (typeof id !== 'string' || typeof name !== 'string' || !apiUrl)
+  const apiUrl = projectUrl(item['apiDomain']);
+  const domain = projectUrl(item['domain']);
+  if (typeof id !== 'string' || typeof name !== 'string' || !apiUrl || !domain)
     return null;
 
   return {
@@ -50,11 +40,7 @@ const parseProject = (value: unknown): Project | null => {
     name,
     description:
       typeof item['description'] === 'string' ? item['description'] : null,
-    domain:
-      projectUrl(item['domain']) ??
-      (id === import.meta.env.VITE_PROJECT_ID
-        ? projectUrl(import.meta.env.VITE_PUBLIC_URL)
-        : null),
+    domain,
     apiUrl,
     logoUrl: projectUrl(item['logoUrl'] ?? item['logo'])
   };

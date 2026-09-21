@@ -717,9 +717,6 @@ export const translations = {
     },
 
     auth: {
-      welcome: {
-        continue_without_account: 'Pokračovat bez účtu'
-      },
       login: {
         title: 'Přihlášení'
       },
@@ -1507,9 +1504,6 @@ export const translations = {
     },
 
     auth: {
-      welcome: {
-        continue_without_account: 'Continue without an account'
-      },
       login: {
         title: 'Log in'
       },
@@ -2315,9 +2309,6 @@ export const translations = {
     },
 
     auth: {
-      welcome: {
-        continue_without_account: 'Ohne Konto fortfahren'
-      },
       login: {
         title: 'Anmeldung'
       },

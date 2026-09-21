@@ -26,7 +26,7 @@ import { setupLayouts } from 'virtual:meta-layouts';
 import { EditorView } from '@codemirror/view';
 import { config } from 'md-editor-v3';
 import { initializeAccount, accountStore } from '@/state/AccountStore';
-import { initializeProjects } from '@/state/ProjectStore';
+import { initializeProjects, projectStore } from '@/state/ProjectStore';
 import type { MobilePresentation } from '@/router-meta';
 
 // // @ts-expect-error No types available.
@@ -164,7 +164,6 @@ const annotateAccess = (
     const dialogRoutes = [
       '/aplikace',
       '/vitejte',
-      '/ucet/vitejte',
       '/ucet/prihlaseni',
       '/ucet/zapomenute-heslo',
       '/ucet/obnova-hesla',
@@ -387,7 +386,9 @@ axios.interceptors.response.use(
   }
 );
 
-const accountInitialization = initializeProjects().then(initializeAccount);
+const accountInitialization = initializeProjects().then(() =>
+  projectStore.current ? initializeAccount() : undefined
+);
 
 // Directive definition
 // const autoScrollbar = {

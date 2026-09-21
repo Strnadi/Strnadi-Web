@@ -2,65 +2,51 @@ import axios from 'axios';
 import { reactive } from 'vue';
 import { getProjects, type Project } from '@/api/projects';
 
-const STORAGE_KEY = 'strnadi.project-id.v1';
-const defaultProject: Project = {
-  id: import.meta.env.VITE_PROJECT_ID || '',
-  name: 'Nářečí českých strnadů',
-  description: null,
-  domain: import.meta.env.VITE_PUBLIC_URL.replace(/\/+$/, ''),
-  apiUrl: import.meta.env.VITE_API_URL.replace(/\/+$/, ''),
-  logoUrl: null
-};
-
 export const projectStore = reactive({
-  current: defaultProject,
-  projects: [defaultProject] as Project[],
+  current: null as Project | null,
+  projects: [] as Project[],
   loading: true,
   error: null as string | null
 });
 
 export const resolveCurrentProject = (
   projects: Project[],
-  currentOrigin: string,
-  savedId: string | null
-): Project =>
-  projects.find(
-    (project) =>
-      project.domain && new URL(project.domain).origin === currentOrigin
-  ) ??
-  projects.find((project) => project.id === savedId) ??
-  projects.find((project) => project.id === defaultProject.id) ??
-  defaultProject;
+  currentOrigin: string
+): Project | null =>
+  projects.find((project) => new URL(project.domain).origin === currentOrigin) ??
+  null;
+
+export const getCurrentProject = (): Project => {
+  if (!projectStore.current) {
+    throw new Error('Pro tento web není nakonfigurován projekt.');
+  }
+  return projectStore.current;
+};
 
 export const initializeProjects = async (): Promise<void> => {
+  projectStore.loading = true;
   try {
-    const projects = await getProjects();
-    if (!projects.length) throw new Error('No projects with API URLs');
-    projectStore.projects = projects.some(
-      (project) => project.id === defaultProject.id
-    )
-      ? projects
-      : [defaultProject, ...projects];
-    const savedId = window.localStorage.getItem(STORAGE_KEY);
+    projectStore.projects = await getProjects();
     projectStore.current = resolveCurrentProject(
       projectStore.projects,
-      window.location.origin,
-      savedId
+      window.location.origin
     );
-    projectStore.error = null;
+    projectStore.error = projectStore.current
+      ? null
+      : 'Pro tuto doménu nebyl nalezen projekt. Vyberte projekt ze seznamu.';
+    axios.defaults.baseURL = projectStore.current?.apiUrl;
   } catch {
-    projectStore.projects = [defaultProject];
-    projectStore.current = defaultProject;
+    projectStore.current = null;
+    projectStore.projects = [];
     projectStore.error = 'Projekty se nepodařilo načíst.';
+    axios.defaults.baseURL = undefined;
   } finally {
-    axios.defaults.baseURL = projectStore.current.apiUrl;
     projectStore.loading = false;
   }
 };
 
 export const selectProject = (project: Project): void => {
-  if (project.id === projectStore.current.id) return;
+  if (project.id === projectStore.current?.id) return;
   if (!projectStore.projects.some((item) => item.id === project.id)) return;
-  window.localStorage.setItem(STORAGE_KEY, project.id);
-  window.location.assign(project.domain || '/');
+  window.location.assign(project.domain);
 };

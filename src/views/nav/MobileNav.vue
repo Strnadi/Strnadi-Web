@@ -19,7 +19,7 @@ const matchesRoute = (...prefixes: string[]) =>
   );
 
 const accountLink = computed(() =>
-  accountStore.user ? '/ucet/muj-ucet' : '/ucet/vitejte'
+  accountStore.user ? '/ucet/muj-ucet' : '/ucet/prihlaseni'
 );
 const accountLabelIdentifier = computed(() =>
   accountStore.user ? 'navigation.account' : 'navigation.login'

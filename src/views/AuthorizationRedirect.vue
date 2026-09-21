@@ -273,6 +273,16 @@ onBeforeUnmount(() => {
           Zpět na úvod
         </RouterLink>
       </div>
+      <RouterLink
+        :to="registration ? '/ucet/prihlaseni' : '/ucet/registrace'"
+        class="auth-transition__link"
+      >
+        {{
+          registration
+            ? 'Už máte účet? Přihlaste se'
+            : 'Nemáte účet? Zaregistrujte se'
+        }}
+      </RouterLink>
     </template>
   </div>
 </template>
