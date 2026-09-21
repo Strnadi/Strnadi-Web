@@ -77,12 +77,6 @@ const location = window.location.href;
           </tr>
         </tbody>
       </table>
-
-      <hr />
-
-      <span class="font-medium text-justify italic [text-align-last:center] text-sm text-red-600">
-        <TranslatedText identifier="app.development" />
-      </span>
     </div>
   </div>
 </template>

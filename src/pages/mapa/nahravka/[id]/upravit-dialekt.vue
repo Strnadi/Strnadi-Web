@@ -247,6 +247,7 @@ const segmentMetas = reactive<Record<number, SegmentMeta>>({});
 const detectionForms = ref<Record<number, DialectSelection>>({});
 const newDetectionForms = reactive<Record<number, DialectSelection>>({});
 const detectionSaving = reactive<Record<number, boolean>>({});
+const detectionCreateSaving = reactive<Record<number, boolean>>({});
 const detectionMessage = ref<string | null>(null);
 const detectionError = ref<string | null>(null);
 const segmentError = ref<string | null>(null);
@@ -347,6 +348,10 @@ watch(segments, (newRanges, oldRanges) => {
     autoSaveDraft();
   }
 });
+
+const activeSegmentMetas = computed(() =>
+  Object.values(segmentMetas).filter((meta) => !meta.markedForDeletion)
+);
 
 const deletedSegmentMetas = computed(() =>
   Object.values(segmentMetas).filter(
@@ -456,6 +461,18 @@ function formatRelativeTime(seconds: number) {
     .toString()
     .padStart(2, '0');
   return `${sign}${minutes}:${secs}`;
+}
+
+function formatAbsoluteFromSeconds(seconds: number) {
+  const anchor = anchorTimestamp.value;
+  if (anchor === null || !Number.isFinite(seconds)) return '--:--';
+  const date = new Date(anchor + seconds * 1000);
+  if (isNaN(date.getTime())) return '--:--';
+  return date.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
 }
 
 function hydrateSegments(parts: FilteredPartModel[] | null | undefined) {
@@ -1070,6 +1087,75 @@ const deleteDetection = async (detected: DetectedDialect) => {
         : 'Nepodařilo se odstranit záznam dialektu.';
   } finally {
     detectionSaving[detected.id] = false;
+  }
+};
+
+const createDetection = async (meta: SegmentMeta) => {
+  if (!meta.filteredPart) {
+    detectionError.value = 'Nejprve uložte úsek.';
+    return;
+  }
+  const form =
+    newDetectionForms[meta.key] ??
+    (newDetectionForms[meta.key] = {
+      userGuessDialectId: null,
+      predictedDialectId: null,
+      confirmedDialectId: null
+    });
+  const hasValue =
+    form.userGuessDialectId ??
+    form.predictedDialectId ??
+    form.confirmedDialectId;
+  if (!hasValue) {
+    detectionError.value = 'Vyberte alespoň jednu hodnotu dialektu.';
+    return;
+  }
+  detectionCreateSaving[meta.key] = true;
+  detectionError.value = null;
+  detectionMessage.value = null;
+  try {
+    if (isDraftMode.value) {
+      const { filteredPartId, ...created } = uploadStore.createDraftDetection(
+        meta.filteredPart.id,
+        {
+          userGuessDialectId: form.userGuessDialectId,
+          predictedDialectId: form.predictedDialectId,
+          confirmedDialectId: canConfirmDialects.value
+            ? form.confirmedDialectId
+            : null
+        }
+      );
+      meta.filteredPart.detectedDialects ??= [];
+      meta.filteredPart.detectedDialects.push({
+        ...created,
+        filteredRecordingPartId: filteredPartId
+      });
+      draftFilteredParts.value = [...uploadStore.draftFilteredParts];
+      detectionMessage.value = 'Záznam dialektu byl přidán.';
+    } else {
+      await postDetectedDialect(accountStore.token!, {
+        filteredPartId: meta.filteredPart.id,
+        userGuessDialectId: form.userGuessDialectId,
+        predictedDialectId: form.predictedDialectId,
+        confirmedDialectId: canConfirmDialects.value
+          ? form.confirmedDialectId
+          : null
+      });
+      detectionMessage.value = 'Záznam dialektu byl přidán.';
+      await refetchFilteredParts();
+    }
+    newDetectionForms[meta.key] = {
+      userGuessDialectId: null,
+      predictedDialectId: null,
+      confirmedDialectId: null
+    };
+  } catch (err) {
+    detectionError.value =
+      err instanceof Error
+        ? err.message
+        : 'Nepodařilo se přidat záznam dialektu.';
+  } finally {
+    detectionCreateSaving[meta.key] = false;
   }
 };
 
@@ -1729,6 +1815,247 @@ const confirmAll = async () => {
           </button>
         </div>
       </div>
+
+      <details>
+        <summary>Úseky</summary>
+        <section class="space-y-4">
+          <article
+            v-for="meta in activeSegmentMetas"
+            :key="meta.key"
+            class="border border-gray-200 rounded-lg p-4 space-y-4"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p class="text-sm font-semibold">
+                  {{ formatRelativeTime(meta.start) }} –
+                  {{ formatRelativeTime(meta.end) }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ formatAbsoluteFromSeconds(meta.start) }} →
+                  {{ formatAbsoluteFromSeconds(meta.end) }}
+                </p>
+              </div>
+              <div class="flex flex-wrap gap-2 text-xs uppercase text-gray-500">
+                <span
+                  v-if="meta.isNew"
+                  class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full"
+                >
+                  Nový
+                </span>
+                <span
+                  v-if="meta.dirty && !meta.isNew"
+                  class="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full"
+                >
+                  Upravený
+                </span>
+                <span
+                  v-if="meta.representant"
+                  class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full"
+                >
+                  Reprezentant
+                </span>
+              </div>
+            </div>
+
+            <div class="grid gap-3 md:grid-cols-2">
+              <div class="text-sm text-gray-700 flex flex-col gap-1">
+                <span>Dialekt úseku</span>
+                <span
+                  class="border border-gray-300 rounded-md px-3 py-1 text-sm bg-gray-50 text-gray-600"
+                >
+                  {{ meta.dialectCode ?? 'Nezadáno' }}
+                </span>
+              </div>
+
+              <label
+                class="text-sm text-gray-700 inline-flex items-center gap-2"
+              >
+                <input
+                  type="checkbox"
+                  class="rounded border-gray-300"
+                  :checked="meta.representant"
+                  :disabled="!canEditDialects"
+                  @change="
+                    toggleRepresentant(
+                      meta,
+                      ($event.target as HTMLInputElement).checked
+                    )
+                  "
+                />
+                Reprezentant
+              </label>
+            </div>
+
+            <div class="flex flex-wrap justify-end">
+              <button
+                class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="!canEditDialects"
+                @click="removeSegment(meta)"
+              >
+                Smazat úsek
+              </button>
+            </div>
+
+            <div
+              v-if="meta.filteredPart"
+              class="space-y-3"
+            >
+              <h3 class="text-sm font-semibold">Detekované dialekty</h3>
+
+              <div
+                v-for="detected in meta.filteredPart.detectedDialects ?? []"
+                :key="detected.id"
+                class="border border-gray-200 rounded-md p-3 space-y-3"
+              >
+                <div class="text-xs text-gray-500">ID #{{ detected.id }}</div>
+
+                <div class="flex flex-row w-full items-center gap-2 text-sm">
+                  <label class="flex flex-col flex-1 gap-1">
+                    Model
+                    <span
+                      class="border border-gray-300 rounded px-2 py-1 bg-gray-50 text-gray-600 cursor-not-allowed select-none min-h-9 flex items-center"
+                    >
+                      {{
+                        (() => {
+                          const id =
+                            detectionForms[detected.id]?.predictedDialectId;
+                          if (id == null) return 'Nezadán';
+                          const dialect = availableDialects.find(
+                            (d) => d.id === id
+                          );
+                          return dialect ? dialect.dialectCode : id;
+                        })()
+                      }}
+                    </span>
+                  </label>
+                  <label
+                    v-if="accountStore.user?.role === 'user'"
+                    class="flex flex-col flex-1 gap-1"
+                  >
+                    Uživatel
+                    <select
+                      v-model="detectionForms[detected.id]!.userGuessDialectId"
+                      class="border border-gray-300 rounded px-2 py-1"
+                      :disabled="
+                        !canEditDialects || detectionSaving[detected.id]
+                      "
+                    >
+                      <option :value="null">Nezadán</option>
+                      <option
+                        v-for="dialect in availableDialects"
+                        :key="dialect.id"
+                        :value="dialect.id"
+                      >
+                        {{ dialect.dialectCode }}
+                      </option>
+                    </select>
+                  </label>
+                  <label
+                    v-if="accountStore.user?.role === 'admin'"
+                    class="flex flex-col flex-1 gap-1"
+                  >
+                    Potvrzený
+                    <select
+                      v-model="detectionForms[detected.id]!.confirmedDialectId"
+                      class="border border-gray-300 rounded px-2 py-1"
+                      :disabled="
+                        !canEditDialects || detectionSaving[detected.id]
+                      "
+                    >
+                      <option :value="null">Nezadán</option>
+                      <option
+                        v-for="dialect in availableDialects"
+                        :key="dialect.id"
+                        :value="dialect.id"
+                      >
+                        {{ dialect.dialectCode }}
+                      </option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    class="button-primary px-3 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="!canEditDialects || detectionSaving[detected.id]"
+                    @click="saveDetection(detected)"
+                  >
+                    Uložit
+                  </button>
+                  <button
+                    class="danger px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="!canEditDialects || detectionSaving[detected.id]"
+                    @click="deleteDetection(detected)"
+                  >
+                    Smazat
+                  </button>
+                </div>
+              </div>
+
+              <div
+                class="border border-dashed border-gray-300 rounded-md p-3 space-y-2"
+              >
+                <p class="text-xs text-gray-500">Přidat nový záznam</p>
+                <div class="flex flex-row w-full items-center gap-2 text-sm">
+                  <label
+                    v-if="accountStore.user?.role === 'user'"
+                    class="flex flex-col flex-1 gap-1"
+                  >
+                    Uživatel
+                    <select
+                      v-model="newDetectionForms[meta.key]!.userGuessDialectId"
+                      class="border border-gray-300 rounded px-2 py-1"
+                      :disabled="
+                        !canEditDialects || detectionCreateSaving[meta.key]
+                      "
+                    >
+                      <option :value="null">Nezadán</option>
+                      <option
+                        v-for="dialect in availableDialects"
+                        :key="dialect.id"
+                        :value="dialect.id"
+                      >
+                        {{ dialect.dialectCode }}
+                      </option>
+                    </select>
+                  </label>
+                  <label
+                    v-if="accountStore.user?.role === 'admin'"
+                    class="flex flex-col flex-1 gap-1"
+                  >
+                    Potvrzený
+                    <select
+                      v-model="newDetectionForms[meta.key]!.confirmedDialectId"
+                      class="border border-gray-300 rounded px-2 py-1"
+                      :disabled="
+                        !canEditDialects || detectionCreateSaving[meta.key]
+                      "
+                    >
+                      <option :value="null">Nezadán</option>
+                      <option
+                        v-for="dialect in availableDialects"
+                        :key="dialect.id"
+                        :value="dialect.id"
+                      >
+                        {{ dialect.dialectCode }}
+                      </option>
+                    </select>
+                  </label>
+                </div>
+                <button
+                  class="button-primary px-3 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="
+                    !canEditDialects || detectionCreateSaving[meta.key]
+                  "
+                  @click="createDetection(meta)"
+                >
+                  Přidat záznam
+                </button>
+              </div>
+            </div>
+          </article>
+        </section>
+      </details>
 
       <section
         v-if="deletedSegmentMetas.length"
