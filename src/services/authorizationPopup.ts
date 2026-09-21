@@ -14,7 +14,7 @@ const CALLBACK_PATH = '/ucet/prihlaseni';
 // Roughly the size of Google's sign-in window: room for the provider's form,
 // small enough that the page behind it stays visible.
 const POPUP_WIDTH = 500;
-const POPUP_HEIGHT = 650;
+const POPUP_HEIGHT = 800;
 
 // Long enough to cover a visitor who signs in right after a guard turns them
 // away, short enough that a much later sign-in does not teleport them.
