@@ -33,8 +33,11 @@ const canViewUsers = computed(() =>
     Permissions.ManageUsers
   )
 );
-const canManageUsers = computed(() =>
-  accountStore.hasPermission(Permissions.ManageUsers)
+// Project membership and roles are gated on ManageRoles, not on the
+// user-directory permissions - both the members listing and the removal
+// endpoint check that one.
+const canManageRoles = computed(() =>
+  accountStore.hasPermission(Permissions.ManageRoles)
 );
 const canSendNotifications = computed(() =>
   accountStore.hasPermission(Permissions.SendNotifications)
@@ -59,7 +62,9 @@ const { data: members } = useQuery({
   queryFn: () =>
     getProjectMembers(projectId.value!, accountStore.identityToken!),
   enabled: computed(() =>
-    Boolean(projectId.value && accountStore.identityToken && canViewUsers.value)
+    Boolean(
+      projectId.value && accountStore.identityToken && canManageRoles.value
+    )
   )
 });
 
@@ -213,7 +218,7 @@ const { mutate: removeMember, isPending: isRemoving } = useMutation({
                 <TranslatedText identifier="admin.users.notify" />
               </RouterLink>
               <button
-                v-if="canManageUsers && rolesByUserId[user.id]"
+                v-if="canManageRoles && rolesByUserId[user.id]"
                 type="button"
                 class="button-danger px-3 py-1.5 text-sm"
                 :disabled="isRemoving"

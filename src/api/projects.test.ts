@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import axios from 'axios';
-import { getProjects, getUserProjectIds } from './projects';
+import { getProjects, getUserProjectIds, joinProject } from './projects';
 import { resolveCurrentProject } from '@/state/ProjectStore';
 import { authorizationConfig } from './auth';
 
@@ -92,5 +92,38 @@ describe('getUserProjectIds', () => {
     await expect(getUserProjectIds('user-id', 'token')).rejects.toThrow(
       'Invalid user projects response'
     );
+  });
+});
+
+describe('joinProject', () => {
+  it('joins by e-mail with no role, which is all a self-join may ask for', async () => {
+    const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: {} });
+
+    await joinProject('project-id', 'identity-token', {
+      email: 'someone@example.test'
+    });
+
+    expect(post).toHaveBeenCalledWith(
+      `${authorizationConfig.baseUrl}/projects/project-id/members`,
+      { email: 'someone@example.test', roleId: null },
+      {
+        headers: { Authorization: 'Bearer identity-token' },
+        timeout: 10000
+      }
+    );
+  });
+
+  it('passes a role through for callers allowed to assign one', async () => {
+    const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: {} });
+
+    await joinProject('project-id', 'identity-token', {
+      email: 'someone@example.test',
+      roleId: 'role-id'
+    });
+
+    expect(post.mock.calls[0]![1]).toEqual({
+      email: 'someone@example.test',
+      roleId: 'role-id'
+    });
   });
 });

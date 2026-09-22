@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { kebabize } from '@/utils/strings';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { accountStore } from '@/state/AccountStore';
 import { getArticleCategories } from '@/api/articles';
-import { getUserProjectIds } from '@/api/projects';
+import { getUserProjectIds, joinProject, type Project } from '@/api/projects';
 
 import Dropdown from '@/components/Dropdown.vue';
 import AccountDropdown from '@/views/dropdown/account/AccountDropdown.vue';
@@ -46,8 +46,45 @@ const visibleProjects = computed(() =>
       )
 );
 
+// Joining is a self-service call: without the roles permission the API only
+// lets a caller add themselves, by their own e-mail and with no role.
+const joinEmail = computed(() => accountStore.user?.email ?? null);
+const joiningProjectId = ref<string | null>(null);
+const joinError = ref<string | null>(null);
+
+const canJoin = (project: Project) =>
+  Boolean(
+    joinEmail.value &&
+      identityToken.value &&
+      memberProjectIds.value &&
+      !memberProjectIdSet.value.has(project.id)
+  );
+
+const { mutate: joinSelectedProject } = useMutation({
+  mutationFn: (project: Project) =>
+    joinProject(project.id, identityToken.value!, { email: joinEmail.value! }),
+  onMutate: (project: Project) => {
+    joiningProjectId.value = project.id;
+    joinError.value = null;
+  },
+  onSuccess: () =>
+    queryClient.invalidateQueries({
+      queryKey: ['member-projects', userId.value]
+    }),
+  onError: (cause) => {
+    joinError.value =
+      cause instanceof Error && cause.message
+        ? cause.message
+        : 'Připojení k projektu se nezdařilo.';
+  },
+  onSettled: () => {
+    joiningProjectId.value = null;
+  }
+});
+
 watch(userId, () => {
   showAllProjects.value = false;
+  joinError.value = null;
 });
 
 const {
@@ -98,12 +135,19 @@ const changeLanguage = (lang: keyof typeof translations) => {
                   @click="selectProject(project)">
                   <span class="truncate">{{ project.name }}</span>
                 </button>
-                <button v-if="userId && showAllProjects && memberProjectIds && !memberProjectIdSet.has(project.id)"
+                <button v-if="userId && showAllProjects && canJoin(project)"
                   type="button" class="join-project-button rounded-lg px-2 py-1 text-xs font-semibold"
                   :aria-label="`Připojit se k projektu ${project.name}`"
-                  title="Připojení k projektu zatím není dostupné">
-                  Připojit se
+                  :disabled="joiningProjectId !== null"
+                  @click="joinSelectedProject(project)">
+                  {{ joiningProjectId === project.id ? 'Připojuji…' : 'Připojit se' }}
                 </button>
+              </li>
+              <li v-if="joinError" class="px-3 py-2 text-sm text-red-700" role="alert">
+                {{ joinError }}
+              </li>
+              <li v-if="userId && showAllProjects && !joinEmail" class="px-3 py-2 text-sm text-gray-600" role="status">
+                K připojení k projektu je potřeba e-mail u účtu.
               </li>
               <li v-if="userId && membershipsLoading" class="px-3 py-2 text-sm text-gray-600" role="status">
                 Načítání projektů…
@@ -244,6 +288,11 @@ nav {
 .join-project-button {
   border: 1px solid #e5e7eb;
   background: #fdfcdc;
+}
+
+.join-project-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 @media (max-width: 78rem) {
