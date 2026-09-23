@@ -565,6 +565,52 @@ onBeforeUnmount(() => {
       @click="(event: LeafletMouseEvent) => emit('click', { event })"
       @update:zoom="updateZoom"
     >
+      <!--
+        Controls must stay first. LControl hands its root <div> to Leaflet,
+        which moves it into .leaflet-control-container, outside this element.
+        When a v-if/v-for sibling placed right before an <l-control> mounts,
+        Vue uses that moved <div> as the insertBefore anchor and throws
+        NotFoundError (e.g. the current-location marker once geolocation
+        resolves), after which every map re-render retries and throws again.
+      -->
+      <!-- Mapy.cz Logo -->
+      <l-control position="bottomleft">
+        <div class="z-[40]">
+          <a
+            href="https://mapy.cz/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              src="https://api.mapy.cz/img/api/logo.svg"
+              alt="Mapy.cz Logo"
+            />
+          </a>
+        </div>
+      </l-control>
+
+      <l-control position="bottomleft">
+        <button
+          type="button"
+          class="rounded bg-white px-3 py-2 shadow"
+          :aria-label="t('mobile.map_tools.reset')"
+          @click.stop="resetProjectView"
+        >
+          {{ t('mobile.map_tools.reset') }}
+        </button>
+      </l-control>
+
+      <!-- Controls -->
+      <l-control-scale
+        v-if="scaleBar"
+        :imperial="false"
+      />
+
+      <l-control-zoom
+        v-if="zoomControl"
+        position="bottomleft"
+      />
+
       <!-- Tile Layers -->
       <l-tile-layer
         :url="`${env.VITE_API_URL}/map/v1/maptiles/${mode}/${mode !== 'aerial' ? vectorTileSize : '256'}/{z}/{x}/{y}`"
@@ -622,44 +668,6 @@ onBeforeUnmount(() => {
         :lat-lng="[coords.latitude, coords.longitude]"
         :rotation-angle="coords.heading || 0"
         :icon="coords.heading ? iconCurrentHeading : iconCurrent"
-      />
-
-      <!-- Mapy.cz Logo -->
-      <l-control position="bottomleft">
-        <div class="z-[40]">
-          <a
-            href="https://mapy.cz/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img
-              src="https://api.mapy.cz/img/api/logo.svg"
-              alt="Mapy.cz Logo"
-            />
-          </a>
-        </div>
-      </l-control>
-
-      <l-control position="bottomleft">
-        <button
-          type="button"
-          class="rounded bg-white px-3 py-2 shadow"
-          :aria-label="t('mobile.map_tools.reset')"
-          @click.stop="resetProjectView"
-        >
-          {{ t('mobile.map_tools.reset') }}
-        </button>
-      </l-control>
-
-      <!-- Controls -->
-      <l-control-scale
-        v-if="scaleBar"
-        :imperial="false"
-      />
-
-      <l-control-zoom
-        v-if="zoomControl"
-        position="bottomleft"
       />
     </l-map>
   </div>
