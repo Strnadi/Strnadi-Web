@@ -34,6 +34,7 @@ import {
   setAuthorizationRouter
 } from '@/services/authorizationPopup';
 import { initializeProjects, projectStore } from '@/state/ProjectStore';
+import { installAppUpdates } from '@/services/appUpdate';
 import type { MobilePresentation } from '@/router-meta';
 
 // // @ts-expect-error No types available.
@@ -304,6 +305,10 @@ const router = createRouter({
 });
 
 setAuthorizationRouter(router);
+
+// Registered before the other guards so a pending update can turn the
+// navigation into a full page load before anything else runs.
+if (!isAuthorizationCallbackWindow) installAppUpdates(router);
 
 router.beforeEach(async (to) => {
   await accountInitialization;

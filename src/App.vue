@@ -4,6 +4,7 @@ import { initializeProjects, projectStore, selectProject } from '@/state/Project
 import { authorizationState, dismissAuthorizationError } from '@/services/authorizationPopup';
 import { accountStore } from '@/state/AccountStore';
 import { consentStore } from '@/state/ConsentStore';
+import { appUpdate, applyUpdate } from '@/services/appUpdate';
 
 const retry = async () => {
   await initializeProjects();
@@ -28,6 +29,15 @@ watch(
     <span>{{ authorizationState.error }}</span>
     <button type="button" aria-label="Zavřít" @click="dismissAuthorizationError">
       &times;
+    </button>
+  </div>
+
+  <!-- Only shown when the update couldn't be applied unnoticed; the next
+       navigation applies it anyway. -->
+  <div v-if="appUpdate.ready" class="update-banner" role="status">
+    <span>Je k dispozici nová verze aplikace.</span>
+    <button type="button" :disabled="appUpdate.reloading" @click="applyUpdate()">
+      Aktualizovat
     </button>
   </div>
 
@@ -75,6 +85,33 @@ watch(
   padding: 0.75rem 1rem;
   color: #92400e;
   box-shadow: 0 10px 30px rgba(62, 51, 20, 0.18);
+}
+
+.update-banner {
+  position: fixed;
+  z-index: 9998;
+  top: calc(env(safe-area-inset-top, 0px) + 1rem);
+  left: 50%;
+  display: flex;
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid #fcd34d;
+  border-radius: 0.75rem;
+  background: #fffbeb;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  color: #3e3314;
+  box-shadow: 0 10px 30px rgba(62, 51, 20, 0.18);
+}
+
+.update-banner button {
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  background: #ffd641;
+  padding: 0.375rem 0.75rem;
+  font-weight: 600;
 }
 
 .auth-error {

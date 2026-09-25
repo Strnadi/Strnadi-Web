@@ -26,9 +26,6 @@ import fs from 'node:fs';
 
 // import * as workbox from 'workbox';
 
-// Add a unique build identifier that changes on every deployment. This will be appended
-// to runtime cache names so they become versioned and won‘t clash with older builds.
-const BUILD_VERSION = new Date().toISOString().replace(/[-:T.Z]/g, '');
 const uploadSourcemaps =
   process.env['SENTRY_UPLOAD_SOURCEMAPS'] === 'true' &&
   Boolean(process.env['SENTRY_AUTH_TOKEN']);
@@ -56,35 +53,57 @@ export default defineConfig(({ mode }) => ({
       skipTopLevelRouteLayout: false
     }),
     VitePWA({
+      // The new service worker takes over as soon as it is installed; the open
+      // page decides when to reload into it (src/services/appUpdate.ts).
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      injectRegister: false,
       devOptions: {
         enabled: process.env['PWA_DEV'] === 'true'
       },
       manifest: {
         name: 'Strnadi - web',
         short_name: 'Strnadi - Web',
+        description:
+          'Zapojte se do mapování dialektů strnadů obecných na území Česka.',
         theme_color: '#ffd641',
         background_color: '#ffffff',
         lang: 'cs-CZ',
         display: 'standalone',
         start_url: '/',
+        scope: '/',
         id: 'cz.delta-skola.strnadi',
         icons: [
           {
-            src: '/logo.svg',
-            sizes: '121x42',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
+            src: '/pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/maskable-icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },
       workbox: {
         globPatterns: ['**/*.{js,css,ico,png,svg,html}'],
+        // Only one of the LiteRT runtimes is ever used, and only when training;
+        // the runtime cache below picks it up on demand.
+        globIgnores: ['wasm/**'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
         navigateFallback: 'index.html',
+        // Paths the server answers itself (see serverGuard in main.ts).
+        navigateFallbackDenylist: [/^\/\.well-known\//, /^\/__/],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         runtimeCaching: [
           {
@@ -112,13 +131,16 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            urlPattern: /^https:\/\/(?:(new|dev|staging)\.)?strnadi\.cz\/.*$/,
+            // Large, unhashed files. The name must stay the same across builds,
+            // otherwise every deployment strands another copy on the device.
+            urlPattern: ({ sameOrigin, url }) =>
+              sameOrigin && /^\/(?:models|wasm)\//.test(url.pathname),
             handler: 'NetworkFirst',
             options: {
-              cacheName: `strnadi-api-cache-${BUILD_VERSION}`,
+              cacheName: 'strnadi-static',
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 24 * 60 * 60 * 7 // 1 week
+                maxEntries: 20,
+                maxAgeSeconds: 24 * 60 * 60 * 30 // 30 days
               },
               networkTimeoutSeconds: 5
             }

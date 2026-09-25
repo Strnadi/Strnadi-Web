@@ -2,6 +2,7 @@
 /// <reference types="vite-svg-loader" />
 /// <reference types="unplugin-vue-router/client" />
 /// <reference types="vite-plugin-vue-meta-layouts/client" />
+/// <reference types="vite-plugin-pwa/vanillajs" />
 
 declare module '*.vue' {
   import type { DefineComponent } from 'vue';
