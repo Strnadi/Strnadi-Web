@@ -4,7 +4,8 @@ import { createAuthorizationTransaction } from '@/utils/oauth';
 export const createAuthorizationUrl = async (
   returnTo = '/',
   callbackPath = '/ucet/prihlaseni',
-  registration = false
+  registration = false,
+  prompt?: 'login'
 ): Promise<string> => {
   if (!authorizationConfig.baseUrl) {
     throw new Error('Chybí adresa autorizačního serveru.');
@@ -31,6 +32,7 @@ export const createAuthorizationUrl = async (
   if (authorizationConfig.scope) {
     authorizeUrl.searchParams.set('scope', authorizationConfig.scope);
   }
+  if (prompt) authorizeUrl.searchParams.set('prompt', prompt);
 
   if (registration) {
     const registrationUrl = new URL(

@@ -2,9 +2,21 @@ import { reactive } from 'vue';
 import type { Router } from 'vue-router';
 import { accountStore } from '@/state/AccountStore';
 import { createAuthorizationUrl } from '@/services/auth';
-import { consumeAuthorizationTransaction } from '@/utils/oauth';
+import {
+  consumeAuthorizationTransaction,
+  discardAuthorizationTransactions,
+  hasAuthorizationTransaction
+} from '@/utils/oauth';
 
 const CALLBACK_MESSAGE = 'strnadi:authorization-callback';
+// Carries the result when the popup has lost `window.opener`, which any
+// Cross-Origin-Opener-Policy on the way back through the identity server does.
+const CALLBACK_CHANNEL = 'strnadi:authorization';
+
+// After a failed sign-in the identity server's own session may be what is
+// broken, and its cookie is out of our reach. Asking it to show the login form
+// again instead of reusing that session is the next best thing.
+const FORCE_LOGIN_KEY = 'strnadi.auth.force-login';
 
 // Marks the tab that started a redirect sign-in. sessionStorage is scoped to
 // the tab and survives the round trip through the identity server.
@@ -34,6 +46,7 @@ export const authorizationState = reactive({
 let popup: Window | null = null;
 let popupWatcher: number | null = null;
 let listening = false;
+let callbackChannel: BroadcastChannel | null = null;
 let router: Router | null = null;
 let pendingReturnTo: string | null = null;
 let pendingReturnToAt = 0;
@@ -95,7 +108,11 @@ const closePopup = () => {
 };
 
 const fail = (authorizationError: unknown) => {
+  // Start the next attempt from nothing: no tokens, no leftover transactions
+  // and no reuse of the identity server's session.
   accountStore.logout();
+  discardAuthorizationTransactions();
+  sessionStorage.setItem(FORCE_LOGIN_KEY, 'true');
   authorizationState.error =
     authorizationError instanceof Error
       ? authorizationError.message
@@ -199,6 +216,7 @@ const exchange = async (params: URLSearchParams): Promise<string> => {
     transaction.codeVerifier,
     transaction.redirectUri
   );
+  sessionStorage.removeItem(FORCE_LOGIN_KEY);
 
   return transaction.returnTo;
 };
@@ -210,21 +228,18 @@ const settle = async (params: URLSearchParams) => {
   }
 };
 
-const receiveCallback = async (event: MessageEvent) => {
-  if (
-    event.origin !== window.location.origin ||
-    event.source !== popup ||
-    typeof event.data !== 'object' ||
-    event.data === null ||
-    event.data.type !== CALLBACK_MESSAGE ||
-    typeof event.data.search !== 'string'
-  ) {
-    return;
-  }
+const isCallbackMessage = (
+  data: unknown
+): data is { type: string; search: string } =>
+  typeof data === 'object' &&
+  data !== null &&
+  (data as { type?: unknown }).type === CALLBACK_MESSAGE &&
+  typeof (data as { search?: unknown }).search === 'string';
 
+const finishCallback = async (search: string) => {
   clearPopupWatcher();
   try {
-    await settle(new URLSearchParams(event.data.search));
+    await settle(new URLSearchParams(search));
     closePopup();
   } catch (callbackError) {
     closePopup();
@@ -232,9 +247,35 @@ const receiveCallback = async (event: MessageEvent) => {
   }
 };
 
+const receiveCallback = (event: MessageEvent) => {
+  if (
+    event.origin !== window.location.origin ||
+    event.source !== popup ||
+    !isCallbackMessage(event.data)
+  ) {
+    return;
+  }
+
+  void finishCallback(event.data.search);
+};
+
+// Every tab of the site hears the channel. Only the one holding the
+// transaction for this state started the sign-in, so only it answers.
+const receiveBroadcastCallback = (event: MessageEvent) => {
+  if (!isCallbackMessage(event.data)) return;
+  const state = new URLSearchParams(event.data.search).get('state');
+  if (!state || !hasAuthorizationTransaction(state)) return;
+
+  void finishCallback(event.data.search);
+};
+
 const listen = () => {
   if (listening) return;
   window.addEventListener('message', receiveCallback);
+  if ('BroadcastChannel' in window) {
+    callbackChannel = new BroadcastChannel(CALLBACK_CHANNEL);
+    callbackChannel.addEventListener('message', receiveBroadcastCallback);
+  }
   listening = true;
 };
 
@@ -252,10 +293,11 @@ export const startAuthorization = (): void => {
 
   const returnTo =
     takeAuthorizationTarget() ?? router?.currentRoute.value.fullPath ?? '/';
+  const prompt = sessionStorage.getItem(FORCE_LOGIN_KEY) ? 'login' : undefined;
 
   if (prefersRedirect()) {
     authorizationState.pending = true;
-    void createAuthorizationUrl(returnTo, CALLBACK_PATH)
+    void createAuthorizationUrl(returnTo, CALLBACK_PATH, false, prompt)
       .then(redirectTo)
       .catch((startError: unknown) => {
         authorizationState.pending = false;
@@ -290,7 +332,7 @@ export const startAuthorization = (): void => {
   // Once its initial layout has settled, resizing and navigating in the same
   // callback preserves the requested size across the cross-origin navigation.
   void Promise.all([
-    createAuthorizationUrl(returnTo, CALLBACK_PATH),
+    createAuthorizationUrl(returnTo, CALLBACK_PATH, false, prompt),
     needsSafariDelay ? wait(SAFARI_POPUP_SETTLE_MS) : Promise.resolve()
   ])
     .then(([authorizationUrl]) => {
@@ -336,10 +378,36 @@ const isRedirectCallback = (params: URLSearchParams): boolean => {
   }
 };
 
+// Shown only if the browser refuses to let the popup close itself, which it
+// does once a COOP header has detached the popup from its opener.
+const showPopupDoneNotice = () => {
+  const root = document.getElementById('app') ?? document.body;
+  const notice = document.createElement('main');
+  notice.style.cssText =
+    'display:flex;min-height:100svh;flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:1.5rem;text-align:center;font-family:system-ui,sans-serif;background:#fdfcdc;color:#2d2b18';
+  const text = document.createElement('p');
+  text.textContent =
+    'Výsledek přihlášení byl předán do okna, ze kterého jste se přihlašovali. Toto okno můžete zavřít.';
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.textContent = 'Zavřít okno';
+  close.style.cssText =
+    'border-radius:0.75rem;background:#ffd641;padding:0.5rem 1.25rem;font-weight:600';
+  close.addEventListener('click', () => window.close());
+  // For a callback URL reopened from history, where there is nothing to close.
+  const home = document.createElement('a');
+  home.href = '/';
+  home.textContent = 'Pokračovat na web';
+  home.style.cssText = 'text-decoration:underline';
+  notice.append(text, close, home);
+  root.replaceChildren(notice);
+};
+
 /**
  * Runs in the popup itself: hands the result to the window that opened it and
  * closes. Returns whether this window was such a popup, in which case the app
- * has nothing to render and should not boot.
+ * has nothing to render and should not boot. Errors are reported by the
+ * window that started the sign-in, never here.
  */
 export const deliverAuthorizationCallback = (): boolean => {
   if (!hasAuthorizationCallbackParams()) return false;
@@ -351,13 +419,19 @@ export const deliverAuthorizationCallback = (): boolean => {
   // would hand its code to an unrelated window and close itself.
   if (isRedirectCallback(params)) return false;
 
-  if (!window.opener || window.opener === window) return false;
+  const message = { type: CALLBACK_MESSAGE, search: window.location.search };
+  if (window.opener && window.opener !== window) {
+    window.opener.postMessage(message, window.location.origin);
+  } else if ('BroadcastChannel' in window) {
+    const channel = new BroadcastChannel(CALLBACK_CHANNEL);
+    channel.postMessage(message);
+    channel.close();
+  } else {
+    return false;
+  }
 
-  window.opener.postMessage(
-    { type: CALLBACK_MESSAGE, search: window.location.search },
-    window.location.origin
-  );
   window.close();
+  showPopupDoneNotice();
   return true;
 };
 

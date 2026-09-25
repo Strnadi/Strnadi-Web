@@ -59,6 +59,20 @@ export const createAuthorizationTransaction = async (
   };
 };
 
+/** Whether this tab started the sign-in that `state` belongs to. */
+export const hasAuthorizationTransaction = (state: string): boolean =>
+  sessionStorage.getItem(`${AUTHORIZATION_STORAGE_PREFIX}${state}`) !== null;
+
+/** Forgets every sign-in this tab has started, finished or not. */
+export const discardAuthorizationTransactions = (): void => {
+  const keys: string[] = [];
+  for (let index = 0; index < sessionStorage.length; index++) {
+    const key = sessionStorage.key(index);
+    if (key?.startsWith(AUTHORIZATION_STORAGE_PREFIX)) keys.push(key);
+  }
+  for (const key of keys) sessionStorage.removeItem(key);
+};
+
 /** Reads and immediately removes a PKCE transaction, preventing code replay. */
 export const consumeAuthorizationTransaction = (
   state: string
