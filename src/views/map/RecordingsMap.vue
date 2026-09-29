@@ -105,12 +105,17 @@ function buildPartRanges(parts: RecordingPartModel[]): PartRange[] {
   }));
 }
 
+// Part dates and audio lengths drift apart by up to a few seconds.
+const PART_EDGE_TOLERANCE_MS = 5000;
+
 function overlapsRecording(
   part: TimedFilteredPart,
   ranges: PartRange[]
 ): boolean {
   return ranges.some(
-    ({ start, end }) => part.endMs >= start && part.startMs <= end
+    ({ start, end }) =>
+      part.endMs >= start - PART_EDGE_TOLERANCE_MS &&
+      part.startMs <= end + PART_EDGE_TOLERANCE_MS
   );
 }
 

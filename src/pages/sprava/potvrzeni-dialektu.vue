@@ -15,6 +15,12 @@ import MultiColorSquare from '@/components/MultiColorSquare.vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import Spectrogram from '@/views/Spectrogram.vue';
 import type { SpectrogramRange } from '@/types/spectrogram';
+import {
+  buildRecordingTimeline,
+  parseApiDate,
+  realTimeToOffset,
+  type TimelinePart
+} from '@/utils/recording-timeline';
 
 const queryClient = useQueryClient();
 
@@ -75,18 +81,10 @@ async function loadCurrentRecording() {
 
 watch(currentEntry, () => loadCurrentRecording(), { immediate: true });
 
-function parseIsoDate(value?: string | null): number | null {
-  if (!value) return null;
-  const hasTimezone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(value);
-  const normalized = hasTimezone ? value : `${value}Z`;
-  const ts = Date.parse(normalized);
-  return Number.isFinite(ts) ? ts : null;
-}
-
-function convertIsoToRelative(iso: string, anchor: number): number {
-  const target = parseIsoDate(iso);
+function convertIsoToRelative(iso: string, timeline: TimelinePart[]): number {
+  const target = parseApiDate(iso);
   if (target === null) return 0;
-  return (target - anchor) / 1000;
+  return realTimeToOffset(timeline, target) ?? 0;
 }
 
 function getAudioUrls(): string[] {
@@ -97,10 +95,10 @@ function getAudioUrls(): string[] {
 
 function buildSegmentRange(): SpectrogramRange[] {
   if (!currentEntry.value || !recording.value?.parts?.length) return [];
-  const anchor = parseIsoDate(recording.value.parts[0]?.startDate);
-  if (anchor === null) return [];
+  const timeline = buildRecordingTimeline(recording.value.parts);
+  if (!timeline.length) return [];
   const fp = currentEntry.value.filteredPart;
-  return [{ id: fp.id, start: convertIsoToRelative(fp.startDate, anchor), end: convertIsoToRelative(fp.endDate, anchor), colors: computeRangeColors(fp) }];
+  return [{ id: fp.id, start: convertIsoToRelative(fp.startDate, timeline), end: convertIsoToRelative(fp.endDate, timeline), colors: computeRangeColors(fp) }];
 }
 
 const DEFAULT_SEGMENT_COLOR = '#4B5563';

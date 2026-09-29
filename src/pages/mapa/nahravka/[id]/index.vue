@@ -20,6 +20,11 @@ import TextualCoords from '@/components/map/TextualCoords.vue';
 import ProfilePhoto from '@/components/ProfilePhoto.vue';
 import TranslatedText, { t } from '@/components/TranslatedText.vue';
 import { getDialectStrings } from '@/utils/dialects';
+import {
+  buildRecordingTimeline,
+  parseApiDate,
+  realTimeToOffset
+} from '@/utils/recording-timeline';
 
 const recordingId = useRouteParams<Numeric>('id');
 const env = import.meta.env;
@@ -63,20 +68,23 @@ const recordingCoordinates = computed(() => {
     : null;
 });
 
-const firstPartStart = computed(() => {
-  const start = recording.value?.parts?.[0]?.startDate;
-  return start ? new Date(start).getTime() : null;
-});
+const timeline = computed(() => buildRecordingTimeline(recording.value?.parts ?? []));
+
+/** Seconds into the recording's joined audio. */
+const toAudioOffset = (dateStr: string) => {
+  const ms = parseApiDate(dateStr);
+  return ms === null ? null : realTimeToOffset(timeline.value, ms);
+};
 
 const formatRelTime = (dateStr: string) => {
-  if (!firstPartStart.value) return '0:00';
-  const diffSec = Math.max(0, (new Date(dateStr).getTime() - firstPartStart.value) / 1000);
+  const offset = toAudioOffset(dateStr);
+  if (offset === null) return '0:00';
+  const diffSec = Math.max(0, offset);
   return `${Math.floor(diffSec / 60)}:${Math.floor(diffSec % 60).toString().padStart(2, '0')}`;
 };
 
 const segments = computed(() => {
-  const firstPart = recording.value?.parts?.[0];
-  if (!filteredRec.value || !DialectColors.value || !firstPart) return [];
+  if (!filteredRec.value || !DialectColors.value || !timeline.value.length) return [];
   let index = 0;
   return filteredRec.value
     .filter((part) => {
@@ -86,8 +94,8 @@ const segments = computed(() => {
     })
     .map((part) => ({
       id: part.id * 1000 + index++,
-      start: (new Date(part.startDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000,
-      end: (new Date(part.endDate).getTime() - new Date(firstPart.startDate).getTime()) / 1000,
+      start: toAudioOffset(part.startDate) ?? 0,
+      end: toAudioOffset(part.endDate) ?? 0,
       colors: getDialectStrings(part)
         .map((code) => DialectColors.value?.[code as keyof typeof DialectColors.value])
         .filter(Boolean) as string[],

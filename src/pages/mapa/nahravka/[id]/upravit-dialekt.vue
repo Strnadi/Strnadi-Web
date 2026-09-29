@@ -41,6 +41,13 @@ import { DialectColors } from '@/views/map/RecordingsMap.vue';
 import { accountStore } from '@/state/AccountStore';
 import { uploadStore, type DraftFilteredPart } from '@/state/UploadDraftStore';
 import { draftPartToModel } from '@/utils/draft-part-to-model';
+import {
+  buildRecordingTimeline,
+  offsetToRealTime,
+  parseApiDate,
+  realTimeToOffset,
+  type TimelinePart
+} from '@/utils/recording-timeline';
 import type {
   SpectrogramRange as SharedSpectrogramRange,
   SpectrogramRangeCreated
@@ -281,18 +288,19 @@ const canEditDialects = computed(
   () => isAdmin.value || isDraftMode.value || isOwner.value
 );
 
-function parseIsoDate(value?: string | null) {
-  if (!value) return null;
-  const hasTimezone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(value);
-  const normalized = hasTimezone ? value : `${value}Z`;
-  const ts = Date.parse(normalized);
-  return Number.isFinite(ts) ? ts : null;
-}
+// Measured lengths of the part audio files, reported by the spectrogram.
+const partAudioDurations = ref<number[] | null>(null);
 
-const anchorTimestamp = computed(() => {
-  const recordingStart = recording.value?.parts?.[0]?.startDate;
-  const filteredStart = filteredParts.value?.[0]?.startDate;
-  return parseIsoDate(recordingStart ?? filteredStart);
+const timeline = computed<TimelinePart[]>(() => {
+  const built = buildRecordingTimeline(
+    recording.value?.parts ?? [],
+    partAudioDurations.value
+  );
+  if (built.length) return built;
+  const filteredStart = parseApiDate(filteredParts.value?.[0]?.startDate);
+  return filteredStart === null
+    ? []
+    : [{ startMs: filteredStart, offset: 0, duration: Infinity }];
 });
 
 const audioUrls = computed(() => {
@@ -326,12 +334,21 @@ watch(
 );
 
 watch(
-  [filteredParts, anchorTimestamp, () => DialectColors.value],
+  [filteredParts, () => DialectColors.value],
   ([parts]) => {
     hydrateSegments(parts ?? []);
   },
   { immediate: true }
 );
+
+watch(
+  () => audioUrls.value.join('|'),
+  () => {
+    partAudioDurations.value = null;
+  }
+);
+
+watch(timeline, () => remapSegmentsToTimeline());
 
 watch(
   filteredParts,
@@ -440,16 +457,14 @@ const autoConfirmDetectedDialect = async (
 };
 
 function convertIsoToRelative(iso: string) {
-  const anchor = anchorTimestamp.value;
-  const target = parseIsoDate(iso);
-  if (anchor === null || target === null) return 0;
-  return (target - anchor) / 1000;
+  const target = parseApiDate(iso);
+  if (target === null) return 0;
+  return realTimeToOffset(timeline.value, target) ?? 0;
 }
 
-function convertRelativeToIso(seconds: number) {
-  const anchor = anchorTimestamp.value;
-  if (anchor === null || !Number.isFinite(seconds)) return null;
-  return new Date(anchor + seconds * 1000).toISOString();
+function convertRelativeToIso(seconds: number, edge: 'start' | 'end') {
+  const ms = offsetToRealTime(timeline.value, seconds, edge);
+  return ms === null ? null : new Date(ms).toISOString();
 }
 
 function formatRelativeTime(seconds: number) {
@@ -463,10 +478,10 @@ function formatRelativeTime(seconds: number) {
   return `${sign}${minutes}:${secs}`;
 }
 
-function formatAbsoluteFromSeconds(seconds: number) {
-  const anchor = anchorTimestamp.value;
-  if (anchor === null || !Number.isFinite(seconds)) return '--:--';
-  const date = new Date(anchor + seconds * 1000);
+function formatAbsoluteFromSeconds(seconds: number, edge: 'start' | 'end') {
+  const ms = offsetToRealTime(timeline.value, seconds, edge);
+  if (ms === null) return '--:--';
+  const date = new Date(ms);
   if (isNaN(date.getTime())) return '--:--';
   return date.toLocaleTimeString([], {
     hour: '2-digit',
@@ -506,6 +521,33 @@ function hydrateSegments(parts: FilteredPartModel[] | null | undefined) {
   segments.value = Object.values(segmentMetas).map((meta) =>
     createRangeFromMeta(meta)
   );
+  isHydratingSegments.value = false;
+}
+
+// The timeline changes when the recording or the measured audio lengths
+// arrive. Move saved segments to match without discarding unsaved edits.
+function remapSegmentsToTimeline() {
+  for (const meta of Object.values(segmentMetas)) {
+    const part = meta.filteredPart;
+    if (!part || meta.isNew) continue;
+    const start = convertIsoToRelative(part.startDate);
+    const end = convertIsoToRelative(part.endDate);
+    const moved =
+      !isApproximatelyEqual(meta.start, meta.originalStart) ||
+      !isApproximatelyEqual(meta.end, meta.originalEnd);
+    if (!moved) {
+      meta.start = start;
+      meta.end = end;
+    }
+    meta.originalStart = start;
+    meta.originalEnd = end;
+  }
+  if (!segments.value) return;
+  isHydratingSegments.value = true;
+  segments.value = segments.value.map((range) => {
+    const meta = segmentMetas[range.id];
+    return meta ? { ...range, start: meta.start, end: meta.end } : range;
+  });
   isHydratingSegments.value = false;
 }
 
@@ -808,7 +850,7 @@ const saveSegmentChanges = async () => {
     segmentError.value = 'Chybí metadata nahrávky.';
     return;
   }
-  if (anchorTimestamp.value === null) {
+  if (!timeline.value.length) {
     segmentError.value = 'Není k dispozici časový základ pro nahrávku.';
     return;
   }
@@ -837,8 +879,8 @@ const saveSegmentChanges = async () => {
       await deleteFilteredPart(token, meta.filteredPart!.id);
     }
     for (const meta of updates) {
-      const startDate = convertRelativeToIso(meta.start);
-      const endDate = convertRelativeToIso(meta.end);
+      const startDate = convertRelativeToIso(meta.start, 'start');
+      const endDate = convertRelativeToIso(meta.end, 'end');
       if (!startDate || !endDate) {
         throw new Error('Nepodařilo se převést čas úseku.');
       }
@@ -860,8 +902,8 @@ const saveSegmentChanges = async () => {
       if (!meta.dialectCode) {
         throw new Error('Nový úsek musí mít zvolený dialekt.');
       }
-      const startDate = convertRelativeToIso(meta.start);
-      const endDate = convertRelativeToIso(meta.end);
+      const startDate = convertRelativeToIso(meta.start, 'start');
+      const endDate = convertRelativeToIso(meta.end, 'end');
       if (!startDate || !endDate) {
         throw new Error('Nepodařilo se převést čas úseku.');
       }
@@ -898,7 +940,7 @@ const saveSegmentChanges = async () => {
 };
 
 async function saveDraftSegmentChanges(silent = false) {
-  if (anchorTimestamp.value === null) {
+  if (!timeline.value.length) {
     if (!silent)
       segmentError.value = 'Není k dispozici časový základ pro nahrávku.';
     return;
@@ -935,8 +977,8 @@ async function saveDraftSegmentChanges(silent = false) {
     }
 
     for (const meta of updates) {
-      const startDate = convertRelativeToIso(meta.start);
-      const endDate = convertRelativeToIso(meta.end);
+      const startDate = convertRelativeToIso(meta.start, 'start');
+      const endDate = convertRelativeToIso(meta.end, 'end');
       if (!startDate || !endDate) {
         throw new Error('Nepodařilo se převést čas úseku.');
       }
@@ -969,8 +1011,8 @@ async function saveDraftSegmentChanges(silent = false) {
       if (!meta.dialectCode) {
         throw new Error('Nový úsek musí mít zvolený dialekt.');
       }
-      const startDate = convertRelativeToIso(meta.start);
-      const endDate = convertRelativeToIso(meta.end);
+      const startDate = convertRelativeToIso(meta.start, 'start');
+      const endDate = convertRelativeToIso(meta.end, 'end');
       if (!startDate || !endDate) {
         throw new Error('Nepodařilo se převést čas úseku.');
       }
@@ -1476,6 +1518,7 @@ const confirmAll = async () => {
         :readonly="!canEditDialects"
         :secondary-button-selection="canEditDialects"
         @range-created="onRangeCreated"
+        @part-durations="partAudioDurations = $event"
       >
         <template #context-menu="{ range: rangeId, close }">
           <div
@@ -1827,8 +1870,8 @@ const confirmAll = async () => {
                   {{ formatRelativeTime(meta.end) }}
                 </p>
                 <p class="text-xs text-gray-500">
-                  {{ formatAbsoluteFromSeconds(meta.start) }} →
-                  {{ formatAbsoluteFromSeconds(meta.end) }}
+                  {{ formatAbsoluteFromSeconds(meta.start, 'start') }} →
+                  {{ formatAbsoluteFromSeconds(meta.end, 'end') }}
                 </p>
               </div>
               <div class="flex flex-wrap gap-2 text-xs uppercase text-gray-500">

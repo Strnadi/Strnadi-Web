@@ -788,6 +788,8 @@ const emit = defineEmits<{
   'update:selected': [range: Range[]];
   'update:currentTime': [currentTime: number];
   'range-created': [event: SpectrogramRangeCreated];
+  // Measured length of each audio file, once the full audio has loaded.
+  'part-durations': [durations: number[]];
 }>();
 
 // Helper function to set alpha on any color format
@@ -1763,6 +1765,13 @@ async function loadAndProcessAudioImpl() {
   if (cached?.audioBuffer) {
     audioBuffer.value = cached.audioBuffer;
     audioDuration.value = cached.audioBuffer.duration;
+    if (cached.partDurations) {
+      let cumulative = 0;
+      spliceTimes.value = cached.partDurations
+        .slice(0, -1)
+        .map((duration) => (cumulative += duration));
+      emit('part-durations', cached.partDurations);
+    }
     audioProgress.value = 1;
     await generateSpectrogramDataOffline(cacheKey);
     isLoading.value = false;
@@ -2205,7 +2214,9 @@ async function legacyFullDownload(
     audioDuration.value = combined.duration;
     updateSpliceMarkersForBuffers(buffers);
     if (buffers.length === urls.length) {
-      setSpectrogramCache(cacheKey, { audioBuffer: combined });
+      const partDurations = buffers.map((buf) => buf.duration);
+      setSpectrogramCache(cacheKey, { audioBuffer: combined, partDurations });
+      emit('part-durations', partDurations);
     }
     await generateSpectrogramDataOffline(cacheKey);
   };

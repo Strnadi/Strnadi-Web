@@ -1,5 +1,6 @@
 export interface SpectrogramCachedData {
   audioBuffer?: AudioBuffer;
+  partDurations?: number[]; // seconds per audio URL, full-audio loads only
   palette?: Uint8ClampedArray; // 256*4 RGBA colors
   melBinToFreqBin?: [number, number][]; // mapping used for mel aggregation
 }
