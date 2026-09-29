@@ -48,7 +48,8 @@ export interface DetectedDialect {
 
 export interface FilteredPartModel {
   id: number;
-  parentId: number;
+  // Not returned by GET /recordings/filtered
+  parentId?: number | null;
   startDate: string;
   endDate: string;
   state: number;
@@ -284,10 +285,14 @@ export const postFilteredPart = async (
 export const patchFilteredPart = async (
   token: string,
   id: Numeric,
-  patchedFilteredPart: Omit<
-    FilteredPartModel,
-    'id' | 'detectedDialects' | 'representantFlag'
-  > & { representant: boolean }
+  patchedFilteredPart: {
+    recordingId?: number | null;
+    parentId?: number | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    state?: number;
+    representant?: boolean | null;
+  }
 ): Promise<void> =>
   authorizedPatch(`/recordings/filtered/${id}`, token, patchedFilteredPart);
 

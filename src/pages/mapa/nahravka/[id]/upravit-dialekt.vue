@@ -842,13 +842,9 @@ const saveSegmentChanges = async () => {
       if (!startDate || !endDate) {
         throw new Error('Nepodařilo se převést čas úseku.');
       }
-      const parentId = meta.filteredPart?.parentId;
-      if (parentId == null) {
-        throw new Error('Chybí parentId úseku.');
-      }
       await patchFilteredPart(token, meta.filteredPart!.id, {
         recordingId: recording.value.id,
-        parentId,
+        parentId: meta.filteredPart?.parentId ?? null,
         startDate,
         endDate,
         state: meta.state,
