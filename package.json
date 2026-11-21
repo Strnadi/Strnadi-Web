@@ -50,8 +50,8 @@
     "md-editor-v3": "^6.5.0",
     "posthog-js": "^1.422.5",
     "qrcode.vue": "^3.10.0",
-    "vue": "npm:vue@v3.6.0-rc.6",
-    "vue-router": "https://pkg.pr.new/vue-router@2509",
+    "vue": "npm:vue@3.6.0-rc.16",
+    "vue-router": "https://pkg.pr.new/vue-router@5108904",
     "vue-select": "npm:vue-select@beta",
     "vue-virtual-scroller": "npm:vue-virtual-scroller@next",
     "vuedraggable": "npm:vuedraggable@next"
@@ -107,6 +107,6 @@
   },
   "overrides": {
     "vite": "npm:vite@beta",
-    "vue": "3.6.0-rc.6"
+    "vue": "3.6.0-rc.16"
   }
 }
