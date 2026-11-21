@@ -75,7 +75,7 @@ WORKDIR /usr/src/app
 COPY patches patches
 COPY scripts scripts
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+RUN bun install
 
 COPY src src
 COPY public public
