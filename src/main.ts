@@ -15,6 +15,8 @@ import { createHead } from '@unhead/vue/client';
 import {
   createRouter,
   createWebHistory,
+  RouterLink,
+  RouterView,
   type RouteLocationNormalized,
   type RouteLocationRaw,
   type RouteRecordRaw
@@ -423,6 +425,12 @@ config({
 });
 
 app.use(router);
+// vue-router 5.4 skips registering RouterLink/RouterView when app.vapor is set,
+// leaving <router-view> unresolved (blank page). Most layouts and pages are
+// VDOM components relying on the VDOM versions (e.g. v-slot="{ Component }"),
+// so register those globally; Vapor components use them through interop.
+app.component('RouterLink', RouterLink);
+app.component('RouterView', RouterView);
 app.use(firebasePlugin);
 app.use(VueQueryPlugin);
 // app.use(Vue3RouterPrefetch as any, { type: 'hover', name: 'RouterLink' });
