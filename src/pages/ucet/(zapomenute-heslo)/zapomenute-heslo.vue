@@ -3,7 +3,7 @@ meta:
   layout: desktop/small-popup
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { getPasswordResetRequest } from '@/api/account';
 import { useMutation } from '@tanstack/vue-query';
 import { ref } from 'vue';

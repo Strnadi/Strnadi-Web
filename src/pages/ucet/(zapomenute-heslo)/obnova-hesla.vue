@@ -3,7 +3,7 @@ meta:
   layout: desktop/small-popup
 </route>
 
-<script setup lang="ts"></script>
+<script setup vapor lang="ts"></script>
 
 <template>
   <div class="flex flex-col items-center gap-y-5 text-center">

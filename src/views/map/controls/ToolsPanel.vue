@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useGeolocation } from '@vueuse/core';
 import LocationSearch from '@/components/map/LocationSearch.vue';

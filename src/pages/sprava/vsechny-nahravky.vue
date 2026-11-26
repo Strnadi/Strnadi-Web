@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import axios from 'axios';

@@ -4,7 +4,7 @@ meta:
   landing-bypass: true
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import AuthorizationRedirect from '@/views/AuthorizationRedirect.vue';
 </script>
 

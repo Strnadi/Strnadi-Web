@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { authorizationConfig } from '@/api/auth';
 import TranslatedText from '@/components/TranslatedText.vue';
 

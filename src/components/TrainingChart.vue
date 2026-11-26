@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import type { EpochLog } from '@/services/tfjs/training';
 

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { kebabize } from '@/utils/strings';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { accountStore } from '@/state/AccountStore';

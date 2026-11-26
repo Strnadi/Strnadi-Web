@@ -4,7 +4,7 @@ meta:
   mobilePresentation: workspace
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { getFilteredRecordings, getDialects, getRecording, updateDetectedDialect, type FilteredPartModel, type DetectedDialect, type RecordingModel } from '@/api/recordings';

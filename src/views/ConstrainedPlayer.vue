@@ -47,7 +47,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup vapor>
 import { ref, computed, watch, onMounted } from 'vue'
 
 /**

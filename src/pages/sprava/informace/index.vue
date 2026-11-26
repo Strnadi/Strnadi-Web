@@ -3,7 +3,7 @@ meta:
   layout: desktop/center
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { getArticleCategories, getArticles } from '@/api/articles';
 import { useQuery } from '@tanstack/vue-query';
 import { computed } from 'vue';

@@ -3,7 +3,7 @@ meta:
   layout: desktop/small-popup
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRouteParams } from '@vueuse/router';

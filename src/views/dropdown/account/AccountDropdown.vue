@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import DropdownIcon from '@/icons/interface/dropdown.svg';
 import { accountStore } from '@/state/AccountStore';
 import Dropdown from '@/components/Dropdown.vue';
