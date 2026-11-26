@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed, onMounted } from 'vue';
 import { DocumentType, documentViewUrl, type Document } from '@/api/documents';
 import { consentStore } from '@/state/ConsentStore';

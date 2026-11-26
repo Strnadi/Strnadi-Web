@@ -4,7 +4,7 @@ meta:
   landing-bypass: true
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { useRouteParams } from '@vueuse/router';
 import { computed } from 'vue';

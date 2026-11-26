@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script lang="ts" setup>
+<script setup vapor lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { getIncompleteRecordings, getRecordings } from '@/api/recordings';
 import { accountStore } from '@/state/AccountStore';

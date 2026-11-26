@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { applicationStore } from '@/state/ApplicationStore';
 import Notification from '@/views/Notification.vue';
 

@@ -3,7 +3,7 @@ meta:
   layout: mobile/default
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { getExternalLogins, getExternalLoginUrl } from '@/api/account';

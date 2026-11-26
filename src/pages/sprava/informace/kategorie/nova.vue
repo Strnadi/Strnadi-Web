@@ -3,7 +3,7 @@ meta:
   layout: desktop/center
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref } from 'vue';
 import { useMutation } from '@tanstack/vue-query';
 import {

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import Close from '@/icons/interface/icon-close.svg';
 import Back from '@/icons/interface/icon-back.svg';
 import { useRouter } from 'vue-router';

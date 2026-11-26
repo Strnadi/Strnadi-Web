@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed, ref, watch } from 'vue';
 import { kebabize } from '@/utils/strings';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';

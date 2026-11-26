@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { computed } from 'vue';
 import { Permissions } from '@/api/permissions';
 import { accountStore } from '@/state/AccountStore';
