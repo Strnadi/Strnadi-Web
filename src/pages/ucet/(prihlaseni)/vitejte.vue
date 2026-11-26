@@ -3,7 +3,7 @@ meta:
   layout: desktop/popup
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import HorizontalLineWithText from '@/components/HorizontalLineWithText.vue';
 import TranslatedText from '@/components/TranslatedText.vue';
 </script>

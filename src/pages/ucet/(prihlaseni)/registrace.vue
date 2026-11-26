@@ -46,7 +46,7 @@ export const registerStore = reactive({
 });
 </script>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import * as jose from 'jose';
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';

@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref, computed, onBeforeUnmount } from 'vue';
 import Dropzone from '@/components/Dropzone.vue';
 import SegmentedProgress from '@/components/SegmentedProgress.vue';

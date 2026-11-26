@@ -19,7 +19,7 @@ export interface OAuthButtonProps {
 }
 </script>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import {

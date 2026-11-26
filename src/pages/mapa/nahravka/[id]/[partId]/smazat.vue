@@ -3,7 +3,7 @@ meta:
   layout: desktop/small-popup
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { ref } from 'vue';
 import { useRouteParams } from '@vueuse/router';
 import { useQueryClient } from '@tanstack/vue-query';

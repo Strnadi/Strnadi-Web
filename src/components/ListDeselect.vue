@@ -1,3 +1,3 @@
-<template>
+<template vapor>
   <span>❌</span>
 </template>

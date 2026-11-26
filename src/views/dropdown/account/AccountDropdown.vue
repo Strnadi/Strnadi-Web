@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import ProfileIcon from '@/icons/interface/icon-profile.svg';
 import DropdownIcon from '@/icons/interface/dropdown.svg';
 import { accountStore } from '@/state/AccountStore';

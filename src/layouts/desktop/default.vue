@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { applicationStore } from '@/state/ApplicationStore';
 import Map from '@/views/map/RecordingsMap.vue';
 import MapControls from '@/views/map/controls/Desktop.vue';

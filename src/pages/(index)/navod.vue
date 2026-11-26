@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<template>
+<template vapor>
   <article class="w-full space-y-4">
     <h1 class="text-2xl font-bold">Jak přispět nahrávkou</h1>
     <ol class="list-decimal space-y-2 pl-6">

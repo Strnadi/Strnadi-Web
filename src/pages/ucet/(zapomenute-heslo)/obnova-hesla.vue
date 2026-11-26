@@ -3,7 +3,7 @@ meta:
   layout: desktop/small-popup
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { patchPasswordChange } from '@/api/account';
 import RevealablePasswordInput from '@/components/RevealablePasswordInput.vue';
 import { useMutation } from '@tanstack/vue-query';

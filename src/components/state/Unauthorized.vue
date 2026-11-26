@@ -1,1 +1,1 @@
-<template>K tomuto prostředku nemáte přístup.</template>
+<template vapor>K tomuto prostředku nemáte přístup.</template>

@@ -1,4 +1,4 @@
-<template>
+<template vapor>
   <li>
     <RouterLink
       to="/podminky-pouziti"

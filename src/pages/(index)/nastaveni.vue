@@ -8,7 +8,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { applicationStore } from '@/state/ApplicationStore';
 import { translations } from '@/constants/Translations';
 import { requestPushNotifications } from '@/plugins/vue/firebase';

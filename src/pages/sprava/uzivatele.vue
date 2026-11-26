@@ -3,7 +3,7 @@ meta:
   layout: desktop/side
 </route>
 
-<script setup lang="ts">
+<script setup vapor lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed } from 'vue';
 import { getUsers } from '@/api/account';
